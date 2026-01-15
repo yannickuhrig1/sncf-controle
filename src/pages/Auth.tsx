@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { Train, Loader2 } from 'lucide-react';
+import { Train, Loader2, Phone } from 'lucide-react';
 
 export default function Auth() {
   const { user, loading, signIn, signUp } = useAuth();
@@ -23,6 +23,7 @@ export default function Auth() {
   const [registerPassword, setRegisterPassword] = useState('');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
 
   if (loading) {
     return (
@@ -62,11 +63,11 @@ export default function Auth() {
     e.preventDefault();
     setIsSubmitting(true);
 
-    if (!firstName.trim() || !lastName.trim()) {
+    if (!firstName.trim() || !lastName.trim() || !phoneNumber.trim()) {
       toast({
         variant: 'destructive',
         title: 'Erreur',
-        description: 'Veuillez remplir tous les champs',
+        description: 'Veuillez remplir tous les champs obligatoires',
       });
       setIsSubmitting(false);
       return;
@@ -75,6 +76,7 @@ export default function Auth() {
     const { error } = await signUp(registerEmail, registerPassword, {
       first_name: firstName.trim(),
       last_name: lastName.trim(),
+      phone_number: phoneNumber.trim(),
     });
 
     if (error) {
@@ -176,6 +178,21 @@ export default function Auth() {
                         placeholder="Dupont"
                         value={lastName}
                         onChange={(e) => setLastName(e.target.value)}
+                        required
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="phone">Téléphone</Label>
+                    <div className="relative">
+                      <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="phone"
+                        type="tel"
+                        placeholder="06 12 34 56 78"
+                        className="pl-10"
+                        value={phoneNumber}
+                        onChange={(e) => setPhoneNumber(e.target.value)}
                         required
                       />
                     </div>
