@@ -14,16 +14,190 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      controls: {
+        Row: {
+          agent_id: string
+          control_date: string
+          control_time: string
+          created_at: string
+          id: string
+          location: string
+          location_type: Database["public"]["Enums"]["location_type"]
+          nb_en_regle: number
+          nb_passagers: number
+          notes: string | null
+          pv: number
+          ri_negative: number
+          ri_positive: number
+          rnv: number
+          stt_100: number
+          stt_50: number
+          tarifs_controle: number
+          team_id: string | null
+          train_number: string | null
+          updated_at: string
+        }
+        Insert: {
+          agent_id: string
+          control_date?: string
+          control_time?: string
+          created_at?: string
+          id?: string
+          location: string
+          location_type?: Database["public"]["Enums"]["location_type"]
+          nb_en_regle?: number
+          nb_passagers?: number
+          notes?: string | null
+          pv?: number
+          ri_negative?: number
+          ri_positive?: number
+          rnv?: number
+          stt_100?: number
+          stt_50?: number
+          tarifs_controle?: number
+          team_id?: string | null
+          train_number?: string | null
+          updated_at?: string
+        }
+        Update: {
+          agent_id?: string
+          control_date?: string
+          control_time?: string
+          created_at?: string
+          id?: string
+          location?: string
+          location_type?: Database["public"]["Enums"]["location_type"]
+          nb_en_regle?: number
+          nb_passagers?: number
+          notes?: string | null
+          pv?: number
+          ri_negative?: number
+          ri_positive?: number
+          rnv?: number
+          stt_100?: number
+          stt_50?: number
+          tarifs_controle?: number
+          team_id?: string | null
+          train_number?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "controls_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "controls_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          first_name: string
+          id: string
+          last_name: string
+          matricule: string | null
+          role: Database["public"]["Enums"]["app_role"]
+          team_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          first_name: string
+          id?: string
+          last_name: string
+          matricule?: string | null
+          role?: Database["public"]["Enums"]["app_role"]
+          team_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          first_name?: string
+          id?: string
+          last_name?: string
+          matricule?: string | null
+          role?: Database["public"]["Enums"]["app_role"]
+          team_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profiles_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      teams: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          manager_id: string | null
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          manager_id?: string | null
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          manager_id?: string | null
+          name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "teams_manager_id_fkey"
+            columns: ["manager_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_current_profile_id: { Args: never; Returns: string }
+      get_user_role: {
+        Args: never
+        Returns: Database["public"]["Enums"]["app_role"]
+      }
+      get_user_team_id: { Args: never; Returns: string }
+      is_admin: { Args: never; Returns: boolean }
+      is_manager: { Args: never; Returns: boolean }
+      is_manager_of_team: { Args: { p_team_id: string }; Returns: boolean }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "agent" | "manager" | "admin"
+      location_type: "train" | "gare" | "quai"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +324,9 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["agent", "manager", "admin"],
+      location_type: ["train", "gare", "quai"],
+    },
   },
 } as const
