@@ -106,6 +106,7 @@ export type Database = {
           id: string
           last_name: string
           matricule: string | null
+          phone_number: string | null
           role: Database["public"]["Enums"]["app_role"]
           team_id: string | null
           updated_at: string
@@ -118,6 +119,7 @@ export type Database = {
           id?: string
           last_name: string
           matricule?: string | null
+          phone_number?: string | null
           role?: Database["public"]["Enums"]["app_role"]
           team_id?: string | null
           updated_at?: string
@@ -130,6 +132,7 @@ export type Database = {
           id?: string
           last_name?: string
           matricule?: string | null
+          phone_number?: string | null
           role?: Database["public"]["Enums"]["app_role"]
           team_id?: string | null
           updated_at?: string
