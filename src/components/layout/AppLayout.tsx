@@ -1,6 +1,6 @@
 import { ReactNode } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Train, Building2, History, User, BarChart3, Settings } from 'lucide-react';
+import { LayoutDashboard, Train, Building2, History, User, BarChart3, Settings, Shield } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -16,7 +16,8 @@ const baseNavItems = [
   { href: '/history', icon: History, label: 'Historique' },
 ];
 
-const adminNavItem = { href: '/admin', icon: Settings, label: 'Admin' };
+const settingsNavItem = { href: '/settings', icon: Settings, label: 'Paramètres' };
+const adminNavItem = { href: '/admin', icon: Shield, label: 'Admin' };
 const profileNavItem = { href: '/profile', icon: User, label: 'Profil' };
 
 export function AppLayout({ children }: AppLayoutProps) {
@@ -26,8 +27,8 @@ export function AppLayout({ children }: AppLayoutProps) {
   const isUserAdmin = profile?.role === 'admin';
 
   const navItems = isUserAdmin 
-    ? [...baseNavItems, adminNavItem, profileNavItem]
-    : [...baseNavItems, profileNavItem];
+    ? [...baseNavItems, settingsNavItem, adminNavItem, profileNavItem]
+    : [...baseNavItems, settingsNavItem, profileNavItem];
 
   return (
     <div className="min-h-screen flex flex-col pb-20">
