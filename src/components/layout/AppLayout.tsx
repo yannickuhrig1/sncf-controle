@@ -1,6 +1,6 @@
 import { ReactNode } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Plus, History, User, Train, BarChart3, Settings } from 'lucide-react';
+import { LayoutDashboard, Train, Building2, History, User, BarChart3, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -10,7 +10,8 @@ interface AppLayoutProps {
 
 const baseNavItems = [
   { href: '/', icon: LayoutDashboard, label: 'Accueil' },
-  { href: '/control/new', icon: Plus, label: 'Contrôle' },
+  { href: '/onboard', icon: Train, label: 'À bord' },
+  { href: '/station', icon: Building2, label: 'En gare' },
   { href: '/statistics', icon: BarChart3, label: 'Stats' },
   { href: '/history', icon: History, label: 'Historique' },
 ];

@@ -17,67 +17,163 @@ export type Database = {
       controls: {
         Row: {
           agent_id: string
+          autre_tarif: number | null
+          autre_tarif_amount: number | null
           control_date: string
           control_time: string
           created_at: string
+          destination: string | null
+          doc_naissance: number | null
+          doc_naissance_amount: number | null
           id: string
           location: string
           location_type: Database["public"]["Enums"]["location_type"]
           nb_en_regle: number
           nb_passagers: number
           notes: string | null
+          origin: string | null
+          platform_number: string | null
           pv: number
+          pv_absence_titre: number | null
+          pv_absence_titre_amount: number | null
+          pv_autre: number | null
+          pv_autre_amount: number | null
+          pv_refus_controle: number | null
+          pv_refus_controle_amount: number | null
+          pv_titre_invalide: number | null
+          pv_titre_invalide_amount: number | null
           ri_negative: number
           ri_positive: number
           rnv: number
+          rnv_amount: number | null
           stt_100: number
+          stt_100_amount: number | null
           stt_50: number
+          stt_50_amount: number | null
+          tarif_bord_autre: number | null
+          tarif_bord_autre_amount: number | null
+          tarif_bord_doc_naissance: number | null
+          tarif_bord_doc_naissance_amount: number | null
+          tarif_bord_rnv: number | null
+          tarif_bord_rnv_amount: number | null
+          tarif_bord_stt_100: number | null
+          tarif_bord_stt_100_amount: number | null
+          tarif_bord_stt_50: number | null
+          tarif_bord_stt_50_amount: number | null
+          tarif_bord_titre_tiers: number | null
+          tarif_bord_titre_tiers_amount: number | null
           tarifs_controle: number
           team_id: string | null
+          titre_tiers: number | null
+          titre_tiers_amount: number | null
           train_number: string | null
           updated_at: string
         }
         Insert: {
           agent_id: string
+          autre_tarif?: number | null
+          autre_tarif_amount?: number | null
           control_date?: string
           control_time?: string
           created_at?: string
+          destination?: string | null
+          doc_naissance?: number | null
+          doc_naissance_amount?: number | null
           id?: string
           location: string
           location_type?: Database["public"]["Enums"]["location_type"]
           nb_en_regle?: number
           nb_passagers?: number
           notes?: string | null
+          origin?: string | null
+          platform_number?: string | null
           pv?: number
+          pv_absence_titre?: number | null
+          pv_absence_titre_amount?: number | null
+          pv_autre?: number | null
+          pv_autre_amount?: number | null
+          pv_refus_controle?: number | null
+          pv_refus_controle_amount?: number | null
+          pv_titre_invalide?: number | null
+          pv_titre_invalide_amount?: number | null
           ri_negative?: number
           ri_positive?: number
           rnv?: number
+          rnv_amount?: number | null
           stt_100?: number
+          stt_100_amount?: number | null
           stt_50?: number
+          stt_50_amount?: number | null
+          tarif_bord_autre?: number | null
+          tarif_bord_autre_amount?: number | null
+          tarif_bord_doc_naissance?: number | null
+          tarif_bord_doc_naissance_amount?: number | null
+          tarif_bord_rnv?: number | null
+          tarif_bord_rnv_amount?: number | null
+          tarif_bord_stt_100?: number | null
+          tarif_bord_stt_100_amount?: number | null
+          tarif_bord_stt_50?: number | null
+          tarif_bord_stt_50_amount?: number | null
+          tarif_bord_titre_tiers?: number | null
+          tarif_bord_titre_tiers_amount?: number | null
           tarifs_controle?: number
           team_id?: string | null
+          titre_tiers?: number | null
+          titre_tiers_amount?: number | null
           train_number?: string | null
           updated_at?: string
         }
         Update: {
           agent_id?: string
+          autre_tarif?: number | null
+          autre_tarif_amount?: number | null
           control_date?: string
           control_time?: string
           created_at?: string
+          destination?: string | null
+          doc_naissance?: number | null
+          doc_naissance_amount?: number | null
           id?: string
           location?: string
           location_type?: Database["public"]["Enums"]["location_type"]
           nb_en_regle?: number
           nb_passagers?: number
           notes?: string | null
+          origin?: string | null
+          platform_number?: string | null
           pv?: number
+          pv_absence_titre?: number | null
+          pv_absence_titre_amount?: number | null
+          pv_autre?: number | null
+          pv_autre_amount?: number | null
+          pv_refus_controle?: number | null
+          pv_refus_controle_amount?: number | null
+          pv_titre_invalide?: number | null
+          pv_titre_invalide_amount?: number | null
           ri_negative?: number
           ri_positive?: number
           rnv?: number
+          rnv_amount?: number | null
           stt_100?: number
+          stt_100_amount?: number | null
           stt_50?: number
+          stt_50_amount?: number | null
+          tarif_bord_autre?: number | null
+          tarif_bord_autre_amount?: number | null
+          tarif_bord_doc_naissance?: number | null
+          tarif_bord_doc_naissance_amount?: number | null
+          tarif_bord_rnv?: number | null
+          tarif_bord_rnv_amount?: number | null
+          tarif_bord_stt_100?: number | null
+          tarif_bord_stt_100_amount?: number | null
+          tarif_bord_stt_50?: number | null
+          tarif_bord_stt_50_amount?: number | null
+          tarif_bord_titre_tiers?: number | null
+          tarif_bord_titre_tiers_amount?: number | null
           tarifs_controle?: number
           team_id?: string | null
+          titre_tiers?: number | null
+          titre_tiers_amount?: number | null
           train_number?: string | null
           updated_at?: string
         }

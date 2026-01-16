@@ -7,6 +7,8 @@ import { AuthProvider } from "@/hooks/useAuth";
 import Dashboard from "./pages/Dashboard";
 import Auth from "./pages/Auth";
 import NewControl from "./pages/NewControl";
+import OnboardControl from "./pages/OnboardControl";
+import StationControl from "./pages/StationControl";
 import HistoryPage from "./pages/History";
 import ProfilePage from "./pages/Profile";
 import AdminPage from "./pages/Admin";
@@ -26,6 +28,8 @@ const App = () => (
             <Route path="/" element={<Dashboard />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/control/new" element={<NewControl />} />
+            <Route path="/onboard" element={<OnboardControl />} />
+            <Route path="/station" element={<StationControl />} />
             <Route path="/history" element={<HistoryPage />} />
             <Route path="/statistics" element={<StatisticsPage />} />
             <Route path="/profile" element={<ProfilePage />} />
