@@ -28,32 +28,59 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        fetchProfile(session.user.id);
-      } else {
-        setLoading(false);
-      }
-    });
+    // Safety net: if auth init hangs for any reason, don't block the whole app forever.
+    const initTimeout = window.setTimeout(() => {
+      console.warn('Auth init timeout: forcing loading=false');
+      setLoading(false);
+    }, 8000);
 
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
+    // Get initial session
+    supabase.auth
+      .getSession()
+      .then(({ data: { session } }) => {
+        window.clearTimeout(initTimeout);
+
         setSession(session);
         setUser(session?.user ?? null);
         if (session?.user) {
-          await fetchProfile(session.user.id);
+          fetchProfile(session.user.id);
         } else {
           setProfile(null);
           setLoading(false);
         }
-      }
-    );
+      })
+      .catch((error) => {
+        window.clearTimeout(initTimeout);
 
-    return () => subscription.unsubscribe();
+        // If getSession fails (storage blocked/corrupted, iOS private mode, etc.),
+        // ensure we don't stay stuck in an infinite loading state.
+        console.error('Error getting session:', error);
+        setSession(null);
+        setUser(null);
+        setProfile(null);
+        setLoading(false);
+      });
+
+    // Listen for auth changes
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      setLoading(true);
+      setSession(session);
+      setUser(session?.user ?? null);
+
+      if (session?.user) {
+        await fetchProfile(session.user.id);
+      } else {
+        setProfile(null);
+        setLoading(false);
+      }
+    });
+
+    return () => {
+      window.clearTimeout(initTimeout);
+      subscription.unsubscribe();
+    };
   }, []);
 
   const fetchProfile = async (userId: string) => {
