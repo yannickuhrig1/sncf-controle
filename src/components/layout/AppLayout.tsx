@@ -1,9 +1,10 @@
 import { ReactNode, useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { LayoutDashboard, Train, Building2, History, User, BarChart3, Settings, Shield, Menu, UserCheck } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
-import { useUserPreferences, PageId, DEFAULT_VISIBLE_PAGES } from '@/hooks/useUserPreferences';
+import { useUserPreferences, PageId, DEFAULT_VISIBLE_PAGES, DEFAULT_BOTTOM_BAR_PAGES } from '@/hooks/useUserPreferences';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 
@@ -52,12 +53,13 @@ export function AppLayout({ children }: AppLayoutProps) {
 
   const isUserAdmin = isAdmin();
   const isUserManager = isManager();
-  const navigationStyle = preferences?.navigation_style || 'bottom';
+  const showBottomBar = preferences?.show_bottom_bar ?? true;
+  const showBurgerMenu = preferences?.show_burger_menu ?? false;
   const visiblePages = preferences?.visible_pages || DEFAULT_VISIBLE_PAGES;
+  const bottomBarPages = preferences?.bottom_bar_pages || DEFAULT_BOTTOM_BAR_PAGES;
 
-  // Filter and order nav items based on visibility, role, and user preference order
-  const navItems = (() => {
-    // Separate always-visible items from orderable ones
+  // Filter and order nav items for burger menu based on visibility and role
+  const burgerNavItems = (() => {
     const alwaysVisibleItems = allNavItems.filter(item => {
       if (item.adminOnly && !isUserAdmin) return false;
       if (item.managerOnly && !isUserManager && !isUserAdmin) return false;
@@ -71,7 +73,6 @@ export function AppLayout({ children }: AppLayoutProps) {
       return visiblePages.includes(item.pageId);
     });
     
-    // Sort orderable items by the order in visiblePages
     const sortedOrderableItems = [...orderableItems].sort((a, b) => {
       const indexA = visiblePages.indexOf(a.pageId);
       const indexB = visiblePages.indexOf(b.pageId);
@@ -81,36 +82,92 @@ export function AppLayout({ children }: AppLayoutProps) {
     return [...sortedOrderableItems, ...alwaysVisibleItems];
   })();
 
-  const renderNavLinks = (isBurger = false) => (
+  // Filter and order nav items for bottom bar
+  const bottomNavItems = (() => {
+    const alwaysVisibleItems = allNavItems.filter(item => {
+      if (item.adminOnly && !isUserAdmin) return false;
+      if (item.managerOnly && !isUserManager && !isUserAdmin) return false;
+      return item.alwaysVisible;
+    });
+    
+    const orderableItems = allNavItems.filter(item => {
+      if (item.adminOnly) return false;
+      if (item.managerOnly) return false;
+      if (item.alwaysVisible) return false;
+      return bottomBarPages.includes(item.pageId);
+    });
+    
+    const sortedOrderableItems = [...orderableItems].sort((a, b) => {
+      const indexA = bottomBarPages.indexOf(a.pageId);
+      const indexB = bottomBarPages.indexOf(b.pageId);
+      return indexA - indexB;
+    });
+    
+    return [...sortedOrderableItems, ...alwaysVisibleItems];
+  })();
+
+  const renderBurgerLinks = () => (
     <>
-      {navItems.map((item) => {
+      {burgerNavItems.map((item) => {
         const isActive = location.pathname === item.href;
         return (
-          <Link
+          <motion.div
             key={item.href}
-            to={item.href}
-            onClick={() => isBurger && setBurgerOpen(false)}
-            className={cn(
-              isBurger 
-                ? 'flex items-center gap-3 px-4 py-3 rounded-lg transition-colors'
-                : 'flex flex-col items-center justify-center flex-1 h-full gap-1 transition-colors',
-              isActive 
-                ? isBurger 
-                  ? 'bg-primary text-primary-foreground' 
-                  : 'text-primary'
-                : 'text-muted-foreground hover:text-foreground'
-            )}
+            whileHover={{ scale: 1.02, x: 4 }}
+            whileTap={{ scale: 0.98 }}
+            transition={{ duration: 0.15 }}
           >
-            <item.icon className={cn('h-5 w-5', isActive && !isBurger && 'text-primary')} />
-            <span className={isBurger ? 'font-medium' : 'text-xs'}>{item.label}</span>
-          </Link>
+            <Link
+              to={item.href}
+              onClick={() => setBurgerOpen(false)}
+              className={cn(
+                'flex items-center gap-3 px-4 py-3 rounded-lg transition-colors',
+                isActive 
+                  ? 'bg-primary text-primary-foreground' 
+                  : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+              )}
+            >
+              <item.icon className="h-5 w-5" />
+              <span className="font-medium">{item.label}</span>
+            </Link>
+          </motion.div>
+        );
+      })}
+    </>
+  );
+
+  const renderBottomNavLinks = () => (
+    <>
+      {bottomNavItems.map((item) => {
+        const isActive = location.pathname === item.href;
+        return (
+          <motion.div
+            key={item.href}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            transition={{ duration: 0.1 }}
+            className="flex flex-col items-center justify-center flex-1 h-full"
+          >
+            <Link
+              to={item.href}
+              className={cn(
+                'flex flex-col items-center justify-center gap-1 transition-colors w-full h-full',
+                isActive 
+                  ? 'text-primary'
+                  : 'text-muted-foreground hover:text-foreground'
+              )}
+            >
+              <item.icon className={cn('h-5 w-5', isActive && 'text-primary')} />
+              <span className="text-xs">{item.label}</span>
+            </Link>
+          </motion.div>
         );
       })}
     </>
   );
 
   return (
-    <div className={cn('min-h-screen flex flex-col', navigationStyle === 'bottom' && 'pb-20')}>
+    <div className={cn('min-h-screen flex flex-col', showBottomBar && 'pb-20')}>
       {/* Header - Glass Effect on Scroll */}
       <header 
         className={cn(
@@ -127,13 +184,18 @@ export function AppLayout({ children }: AppLayoutProps) {
             <span className="font-semibold">SNCF Contrôles</span>
           </div>
           
-          {/* Burger Menu Button */}
-          {navigationStyle === 'burger' && (
+          {/* Burger Menu Button - Always visible if enabled */}
+          {showBurgerMenu && (
             <Sheet open={burgerOpen} onOpenChange={setBurgerOpen}>
               <SheetTrigger asChild>
-                <Button variant="ghost" size="icon" className="text-primary-foreground hover:bg-primary/90">
-                  <Menu className="h-5 w-5" />
-                </Button>
+                <motion.div
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <Button variant="ghost" size="icon" className="text-primary-foreground hover:bg-primary/90">
+                    <Menu className="h-5 w-5" />
+                  </Button>
+                </motion.div>
               </SheetTrigger>
               <SheetContent side="right" className="w-72 p-0">
                 <SheetHeader className="p-4 border-b">
@@ -143,7 +205,7 @@ export function AppLayout({ children }: AppLayoutProps) {
                   </SheetTitle>
                 </SheetHeader>
                 <nav className="flex flex-col gap-1 p-2">
-                  {renderNavLinks(true)}
+                  {renderBurgerLinks()}
                 </nav>
               </SheetContent>
             </Sheet>
@@ -157,10 +219,10 @@ export function AppLayout({ children }: AppLayoutProps) {
       </main>
 
       {/* Bottom Navigation - Glass Effect */}
-      {navigationStyle === 'bottom' && (
+      {showBottomBar && (
         <nav className="fixed bottom-0 left-0 right-0 z-50 glass-frosted border-t border-border/50 dark:border-white/10 safe-area-inset-bottom">
           <div className="flex justify-around items-center h-16">
-            {renderNavLinks(false)}
+            {renderBottomNavLinks()}
           </div>
         </nav>
       )}

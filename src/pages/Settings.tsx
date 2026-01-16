@@ -1,6 +1,6 @@
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import { useUserPreferences, PageId, DEFAULT_VISIBLE_PAGES } from '@/hooks/useUserPreferences';
+import { useUserPreferences, PageId, DEFAULT_VISIBLE_PAGES, DEFAULT_BOTTOM_BAR_PAGES } from '@/hooks/useUserPreferences';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
@@ -30,6 +30,7 @@ import {
   Menu,
   LayoutGrid,
   Eye,
+  PanelBottom,
 } from 'lucide-react';
 import {
   AlertDialog,
@@ -72,11 +73,24 @@ export default function Settings() {
   } = useUserPreferences();
 
   const visiblePages = preferences?.visible_pages || DEFAULT_VISIBLE_PAGES;
+  const bottomBarPages = preferences?.bottom_bar_pages || DEFAULT_BOTTOM_BAR_PAGES;
+  const showBottomBar = preferences?.show_bottom_bar ?? true;
+  const showBurgerMenu = preferences?.show_burger_menu ?? false;
 
-  // Order PAGE_OPTIONS based on current visible_pages order
-  const orderedPageOptions = [...PAGE_OPTIONS].sort((a, b) => {
+  // Order PAGE_OPTIONS based on current visible_pages order (for burger menu)
+  const orderedBurgerPages = [...PAGE_OPTIONS].sort((a, b) => {
     const indexA = visiblePages.indexOf(a.id);
     const indexB = visiblePages.indexOf(b.id);
+    if (indexA === -1 && indexB === -1) return 0;
+    if (indexA === -1) return 1;
+    if (indexB === -1) return -1;
+    return indexA - indexB;
+  });
+
+  // Order PAGE_OPTIONS based on current bottom_bar_pages order
+  const orderedBottomBarPages = [...PAGE_OPTIONS].sort((a, b) => {
+    const indexA = bottomBarPages.indexOf(a.id);
+    const indexB = bottomBarPages.indexOf(b.id);
     if (indexA === -1 && indexB === -1) return 0;
     if (indexA === -1) return 1;
     if (indexB === -1) return -1;
@@ -107,7 +121,7 @@ export default function Settings() {
     toast.success('Paramètres exportés');
   };
 
-  const togglePage = (pageId: PageId) => {
+  const toggleBurgerPage = (pageId: PageId) => {
     if (!preferences) return;
     
     const currentPages = preferences.visible_pages || DEFAULT_VISIBLE_PAGES;
@@ -118,7 +132,18 @@ export default function Settings() {
     updatePreferences({ visible_pages: newPages });
   };
 
-  const handleDragEnd = (event: DragEndEvent) => {
+  const toggleBottomBarPage = (pageId: PageId) => {
+    if (!preferences) return;
+    
+    const currentPages = preferences.bottom_bar_pages || DEFAULT_BOTTOM_BAR_PAGES;
+    const newPages = currentPages.includes(pageId)
+      ? currentPages.filter(p => p !== pageId)
+      : [...currentPages, pageId];
+    
+    updatePreferences({ bottom_bar_pages: newPages });
+  };
+
+  const handleBurgerDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
     
     if (over && active.id !== over.id) {
@@ -130,6 +155,22 @@ export default function Settings() {
       if (oldIndex !== -1 && newIndex !== -1) {
         const newOrder = arrayMove(currentPages, oldIndex, newIndex);
         updatePreferences({ visible_pages: newOrder });
+      }
+    }
+  };
+
+  const handleBottomBarDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    
+    if (over && active.id !== over.id) {
+      const currentPages = bottomBarPages.length > 0 ? [...bottomBarPages] : [...DEFAULT_BOTTOM_BAR_PAGES];
+      
+      const oldIndex = currentPages.indexOf(active.id as PageId);
+      const newIndex = currentPages.indexOf(over.id as PageId);
+      
+      if (oldIndex !== -1 && newIndex !== -1) {
+        const newOrder = arrayMove(currentPages, oldIndex, newIndex);
+        updatePreferences({ bottom_bar_pages: newOrder });
       }
     }
   };
@@ -147,7 +188,6 @@ export default function Settings() {
   }
 
   const currentTheme = preferences?.theme || 'system';
-  const currentNavStyle = preferences?.navigation_style || 'bottom';
 
   return (
     <AppLayout>
@@ -251,73 +291,124 @@ export default function Settings() {
               <Navigation className="h-4 w-4" />
               Navigation
             </CardTitle>
-            <CardDescription>Configurez le style et les pages visibles</CardDescription>
+            <CardDescription>Configurez les navigations et les pages visibles</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label>Style de navigation</Label>
-              <Select
-                value={currentNavStyle}
-                onValueChange={(value: 'bottom' | 'burger') =>
-                  updatePreferences({ navigation_style: value })
+          <CardContent className="space-y-6">
+            {/* Bottom Bar Toggle */}
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label className="flex items-center gap-2">
+                  <PanelBottom className="h-4 w-4" />
+                  Barre de navigation en bas
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  Affiche une barre de navigation fixe en bas de l'écran
+                </p>
+              </div>
+              <Switch
+                checked={showBottomBar}
+                onCheckedChange={(checked) =>
+                  updatePreferences({ show_bottom_bar: checked })
                 }
                 disabled={isUpdating}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="bottom">
-                    <div className="flex items-center gap-2">
-                      <LayoutGrid className="h-4 w-4" />
-                      Barre en bas
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="burger">
-                    <div className="flex items-center gap-2">
-                      <Menu className="h-4 w-4" />
-                      Menu burger
-                    </div>
-                  </SelectItem>
-                </SelectContent>
-              </Select>
+              />
             </div>
+
+            {/* Bottom Bar Pages - Only show if bottom bar is enabled */}
+            {showBottomBar && (
+              <div className="space-y-3 pl-4 border-l-2 border-muted">
+                <div className="flex items-center gap-2">
+                  <LayoutGrid className="h-4 w-4" />
+                  <Label>Pages dans la barre du bas</Label>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Glissez pour réordonner, utilisez les toggles pour afficher/masquer
+                </p>
+                
+                <DndContext
+                  collisionDetection={closestCenter}
+                  onDragEnd={handleBottomBarDragEnd}
+                >
+                  <SortableContext
+                    items={orderedBottomBarPages.map(p => p.id)}
+                    strategy={verticalListSortingStrategy}
+                  >
+                    <div className="space-y-2">
+                      {orderedBottomBarPages.map((page) => (
+                        <SortablePageItem
+                          key={page.id}
+                          id={page.id}
+                          label={page.label}
+                          isVisible={bottomBarPages.includes(page.id)}
+                          canDisable={page.canDisable}
+                          isUpdating={isUpdating}
+                          onToggle={() => toggleBottomBarPage(page.id)}
+                        />
+                      ))}
+                    </div>
+                  </SortableContext>
+                </DndContext>
+              </div>
+            )}
 
             <Separator />
 
-            <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <Eye className="h-4 w-4" />
-                <Label>Pages visibles</Label>
+            {/* Burger Menu Toggle */}
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label className="flex items-center gap-2">
+                  <Menu className="h-4 w-4" />
+                  Menu burger
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  Affiche un menu hamburger dans le header
+                </p>
               </div>
-              <p className="text-xs text-muted-foreground">
-                Glissez pour réordonner, utilisez les toggles pour afficher/masquer
-              </p>
-              
-              <DndContext
-                collisionDetection={closestCenter}
-                onDragEnd={handleDragEnd}
-              >
-                <SortableContext
-                  items={orderedPageOptions.map(p => p.id)}
-                  strategy={verticalListSortingStrategy}
-                >
-                  <div className="space-y-2">
-                    {orderedPageOptions.map((page) => (
-                      <SortablePageItem
-                        key={page.id}
-                        id={page.id}
-                        label={page.label}
-                        isVisible={visiblePages.includes(page.id)}
-                        canDisable={page.canDisable}
-                        isUpdating={isUpdating}
-                        onToggle={() => togglePage(page.id)}
-                      />
-                    ))}
-                  </div>
-                </SortableContext>
-              </DndContext>
+              <Switch
+                checked={showBurgerMenu}
+                onCheckedChange={(checked) =>
+                  updatePreferences({ show_burger_menu: checked })
+                }
+                disabled={isUpdating}
+              />
             </div>
+
+            {/* Burger Menu Pages - Only show if burger menu is enabled */}
+            {showBurgerMenu && (
+              <div className="space-y-3 pl-4 border-l-2 border-muted">
+                <div className="flex items-center gap-2">
+                  <Eye className="h-4 w-4" />
+                  <Label>Pages dans le menu burger</Label>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Glissez pour réordonner, utilisez les toggles pour afficher/masquer
+                </p>
+                
+                <DndContext
+                  collisionDetection={closestCenter}
+                  onDragEnd={handleBurgerDragEnd}
+                >
+                  <SortableContext
+                    items={orderedBurgerPages.map(p => p.id)}
+                    strategy={verticalListSortingStrategy}
+                  >
+                    <div className="space-y-2">
+                      {orderedBurgerPages.map((page) => (
+                        <SortablePageItem
+                          key={page.id}
+                          id={page.id}
+                          label={page.label}
+                          isVisible={visiblePages.includes(page.id)}
+                          canDisable={page.canDisable}
+                          isUpdating={isUpdating}
+                          onToggle={() => toggleBurgerPage(page.id)}
+                        />
+                      ))}
+                    </div>
+                  </SortableContext>
+                </DndContext>
+              </div>
+            )}
           </CardContent>
         </Card>
 
