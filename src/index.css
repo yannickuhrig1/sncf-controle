@@ -2,107 +2,123 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Paladin-inspired Dark Theme - All colors in HSL */
+/* LAFEA Pastel Theme - All colors in HSL */
 
 @layer base {
   :root {
-    /* Brand Colors */
-    --sncf-primary: 343 100% 38%;
-    --sncf-secondary: 210 100% 35%;
-    --sncf-success: 142 76% 36%;
+    /* Brand Colors - Pastel palette */
+    --sncf-primary: 180 45% 65%;
+    --sncf-secondary: 350 70% 75%;
+    --sncf-success: 150 50% 70%;
     --sncf-warning: 38 92% 50%;
     --sncf-danger: 0 84% 60%;
 
-    --background: 220 20% 97%;
-    --foreground: 220 20% 10%;
+    --background: 210 20% 96%;
+    --foreground: 220 20% 15%;
 
     --card: 0 0% 100%;
-    --card-foreground: 220 20% 10%;
+    --card-foreground: 220 20% 15%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 220 20% 10%;
+    --popover-foreground: 220 20% 15%;
 
-    --primary: 343 100% 38%;
-    --primary-foreground: 0 0% 100%;
+    --primary: 180 45% 55%;
+    --primary-foreground: 220 20% 15%;
 
-    --secondary: 220 15% 92%;
-    --secondary-foreground: 220 20% 20%;
+    --secondary: 350 65% 85%;
+    --secondary-foreground: 350 50% 30%;
 
-    --muted: 220 15% 95%;
+    --muted: 210 15% 92%;
     --muted-foreground: 220 10% 45%;
 
-    --accent: 220 15% 92%;
-    --accent-foreground: 220 20% 10%;
+    --accent: 150 45% 85%;
+    --accent-foreground: 150 40% 25%;
 
-    --destructive: 0 84% 60%;
+    --destructive: 0 70% 65%;
     --destructive-foreground: 0 0% 100%;
 
-    --success: 142 76% 36%;
-    --success-foreground: 0 0% 100%;
+    --success: 150 50% 60%;
+    --success-foreground: 150 40% 15%;
 
-    --warning: 38 92% 50%;
-    --warning-foreground: 0 0% 0%;
+    --warning: 38 85% 55%;
+    --warning-foreground: 38 80% 15%;
 
-    --border: 220 15% 90%;
-    --input: 220 15% 90%;
-    --ring: 343 100% 38%;
+    --border: 210 15% 88%;
+    --input: 210 15% 90%;
+    --ring: 180 45% 55%;
 
     --radius: 0.75rem;
 
+    /* Card variants for sections */
+    --card-cyan: 180 50% 92%;
+    --card-cyan-foreground: 180 40% 25%;
+    --card-rose: 350 70% 92%;
+    --card-rose-foreground: 350 50% 30%;
+    --card-mint: 150 45% 92%;
+    --card-mint-foreground: 150 40% 25%;
+
     --sidebar-background: 0 0% 100%;
     --sidebar-foreground: 220 20% 30%;
-    --sidebar-primary: 343 100% 38%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 220 15% 95%;
-    --sidebar-accent-foreground: 220 20% 10%;
-    --sidebar-border: 220 15% 90%;
-    --sidebar-ring: 343 100% 38%;
+    --sidebar-primary: 180 45% 55%;
+    --sidebar-primary-foreground: 220 20% 15%;
+    --sidebar-accent: 180 40% 92%;
+    --sidebar-accent-foreground: 180 35% 25%;
+    --sidebar-border: 210 15% 88%;
+    --sidebar-ring: 180 45% 55%;
   }
 
   .dark {
-    /* Paladin-inspired dark theme */
-    --background: 222 30% 8%;
-    --foreground: 220 15% 90%;
+    /* Dark mode with pastel accents */
+    --background: 220 25% 10%;
+    --foreground: 210 20% 90%;
 
-    --card: 222 25% 12%;
-    --card-foreground: 220 15% 90%;
+    --card: 220 22% 14%;
+    --card-foreground: 210 20% 90%;
 
-    --popover: 222 25% 12%;
-    --popover-foreground: 220 15% 90%;
+    --popover: 220 22% 14%;
+    --popover-foreground: 210 20% 90%;
 
-    --primary: 142 70% 45%;
+    --primary: 180 50% 50%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 222 20% 18%;
-    --secondary-foreground: 220 15% 85%;
+    --secondary: 350 45% 35%;
+    --secondary-foreground: 350 50% 85%;
 
-    --muted: 222 20% 16%;
-    --muted-foreground: 220 10% 55%;
+    --muted: 220 20% 18%;
+    --muted-foreground: 210 15% 55%;
 
-    --accent: 222 20% 18%;
-    --accent-foreground: 220 15% 90%;
+    --accent: 150 40% 30%;
+    --accent-foreground: 150 40% 90%;
 
-    --destructive: 0 70% 50%;
+    --destructive: 0 65% 50%;
     --destructive-foreground: 0 0% 100%;
 
-    --success: 142 70% 45%;
+    --success: 150 50% 45%;
     --success-foreground: 0 0% 100%;
 
-    --warning: 38 92% 50%;
+    --warning: 38 85% 50%;
     --warning-foreground: 0 0% 0%;
 
-    --border: 222 20% 20%;
-    --input: 222 20% 20%;
-    --ring: 142 70% 45%;
+    --border: 220 18% 22%;
+    --input: 220 18% 22%;
+    --ring: 180 50% 50%;
 
-    --sidebar-background: 222 28% 10%;
-    --sidebar-foreground: 220 15% 85%;
-    --sidebar-primary: 142 70% 45%;
+    /* Card variants for dark mode */
+    --card-cyan: 180 35% 18%;
+    --card-cyan-foreground: 180 50% 80%;
+    --card-rose: 350 35% 20%;
+    --card-rose-foreground: 350 50% 85%;
+    --card-mint: 150 30% 18%;
+    --card-mint-foreground: 150 45% 80%;
+
+    --sidebar-background: 220 25% 12%;
+    --sidebar-foreground: 210 15% 85%;
+    --sidebar-primary: 180 50% 50%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 222 20% 16%;
-    --sidebar-accent-foreground: 220 15% 90%;
-    --sidebar-border: 222 20% 18%;
-    --sidebar-ring: 142 70% 45%;
+    --sidebar-accent: 180 30% 20%;
+    --sidebar-accent-foreground: 180 40% 85%;
+    --sidebar-border: 220 18% 20%;
+    --sidebar-ring: 180 50% 50%;
   }
 }
 
