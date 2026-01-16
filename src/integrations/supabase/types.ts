@@ -279,6 +279,63 @@ export type Database = {
           },
         ]
       }
+      user_preferences: {
+        Row: {
+          created_at: string
+          data_auto_save: boolean
+          data_keep_history_days: number
+          default_page: string
+          display_compact_mode: boolean
+          display_show_totals: boolean
+          id: string
+          navigation_style: string
+          notifications_email: boolean
+          notifications_fraud_alerts: boolean
+          notifications_new_controls: boolean
+          notifications_push: boolean
+          theme: string
+          updated_at: string
+          user_id: string
+          visible_pages: Json
+        }
+        Insert: {
+          created_at?: string
+          data_auto_save?: boolean
+          data_keep_history_days?: number
+          default_page?: string
+          display_compact_mode?: boolean
+          display_show_totals?: boolean
+          id?: string
+          navigation_style?: string
+          notifications_email?: boolean
+          notifications_fraud_alerts?: boolean
+          notifications_new_controls?: boolean
+          notifications_push?: boolean
+          theme?: string
+          updated_at?: string
+          user_id: string
+          visible_pages?: Json
+        }
+        Update: {
+          created_at?: string
+          data_auto_save?: boolean
+          data_keep_history_days?: number
+          default_page?: string
+          display_compact_mode?: boolean
+          display_show_totals?: boolean
+          id?: string
+          navigation_style?: string
+          notifications_email?: boolean
+          notifications_fraud_alerts?: boolean
+          notifications_new_controls?: boolean
+          notifications_push?: boolean
+          theme?: string
+          updated_at?: string
+          user_id?: string
+          visible_pages?: Json
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
