@@ -18,10 +18,19 @@ export default function ProfilePage() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const [firstName, setFirstName] = useState(profile?.first_name ?? '');
-  const [lastName, setLastName] = useState(profile?.last_name ?? '');
-  const [matricule, setMatricule] = useState(profile?.matricule ?? '');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [matricule, setMatricule] = useState('');
   const [isUpdating, setIsUpdating] = useState(false);
+  const [initialized, setInitialized] = useState(false);
+
+  // Initialize form values when profile loads
+  if (profile && !initialized) {
+    setFirstName(profile.first_name ?? '');
+    setLastName(profile.last_name ?? '');
+    setMatricule(profile.matricule ?? '');
+    setInitialized(true);
+  }
 
   if (authLoading) {
     return (

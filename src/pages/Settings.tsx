@@ -91,6 +91,18 @@ export default function Settings() {
   
   const sensors = useSensors(pointerSensor, touchSensor, keyboardSensor);
 
+  const visiblePages = preferences?.visible_pages || DEFAULT_VISIBLE_PAGES;
+  
+  // Order PAGE_OPTIONS based on current visible_pages order
+  const orderedPageOptions = [...PAGE_OPTIONS].sort((a, b) => {
+    const indexA = visiblePages.indexOf(a.id);
+    const indexB = visiblePages.indexOf(b.id);
+    if (indexA === -1 && indexB === -1) return 0;
+    if (indexA === -1) return 1;
+    if (indexB === -1) return -1;
+    return indexA - indexB;
+  });
+
   const handleClearCache = () => {
     Object.keys(localStorage).forEach(key => {
       if (key.startsWith('form-draft-') || key.startsWith('onboard-control')) {
@@ -141,19 +153,6 @@ export default function Settings() {
       }
     }
   };
-
-  const visiblePages = preferences?.visible_pages || DEFAULT_VISIBLE_PAGES;
-  
-  // Order PAGE_OPTIONS based on current visible_pages order
-  const orderedPageOptions = [...PAGE_OPTIONS].sort((a, b) => {
-    const indexA = visiblePages.indexOf(a.id);
-    const indexB = visiblePages.indexOf(b.id);
-    // If not in visible_pages, put at the end
-    if (indexA === -1 && indexB === -1) return 0;
-    if (indexA === -1) return 1;
-    if (indexB === -1) return -1;
-    return indexA - indexB;
-  });
 
   if (authLoading || prefsLoading) {
     return (
