@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { AppLayout } from '@/components/layout/AppLayout';
@@ -22,15 +22,13 @@ export default function ProfilePage() {
   const [lastName, setLastName] = useState('');
   const [matricule, setMatricule] = useState('');
   const [isUpdating, setIsUpdating] = useState(false);
-  const [initialized, setInitialized] = useState(false);
 
-  // Initialize form values when profile loads
-  if (profile && !initialized) {
+  useEffect(() => {
+    if (!profile) return;
     setFirstName(profile.first_name ?? '');
     setLastName(profile.last_name ?? '');
     setMatricule(profile.matricule ?? '');
-    setInitialized(true);
-  }
+  }, [profile?.id]);
 
   if (authLoading) {
     return (

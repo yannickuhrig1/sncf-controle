@@ -43,7 +43,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setSession(session);
         setUser(session?.user ?? null);
         if (session?.user) {
-          fetchProfile(session.user.id);
+          fetchProfile(session.user);
         } else {
           setProfile(null);
           setLoading(false);
@@ -70,7 +70,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(session?.user ?? null);
 
       if (session?.user) {
-        await fetchProfile(session.user.id);
+        await fetchProfile(session.user);
       } else {
         setProfile(null);
         setLoading(false);
@@ -83,21 +83,62 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  const fetchProfile = async (userId: string) => {
+  const fetchProfile = async (authUser: User) => {
+    const userId = authUser.id;
+
     try {
-      const { data, error } = await supabase
+      // 1) Primary lookup by user_id
+      let { data, error } = await supabase
         .from('profiles')
         .select('*')
         .eq('user_id', userId)
-        .single();
+        .maybeSingle();
 
       if (error) {
-        console.error('Error fetching profile:', error);
-      } else {
-        setProfile(data);
+        console.error('Error fetching profile (user_id):', error);
       }
+
+      // 2) Fallback lookup by id (legacy schema / older users)
+      if (!data) {
+        const res = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', userId)
+          .maybeSingle();
+
+        data = res.data;
+        if (res.error) {
+          console.error('Error fetching profile (id):', res.error);
+        }
+      }
+
+      // 3) If still missing, create a minimal profile (user can edit it later)
+      if (!data) {
+        const meta = (authUser.user_metadata ?? {}) as Record<string, any>;
+        const emailPrefix = (authUser.email ?? '').split('@')[0] || 'Utilisateur';
+
+        const insertRes = await supabase
+          .from('profiles')
+          .insert({
+            user_id: userId,
+            first_name: (meta.first_name as string | undefined) ?? emailPrefix,
+            last_name: (meta.last_name as string | undefined) ?? 'Profil',
+            phone_number: (meta.phone_number as string | undefined) ?? null,
+          })
+          .select('*')
+          .single();
+
+        if (insertRes.error) {
+          console.error('Error creating profile:', insertRes.error);
+        } else {
+          data = insertRes.data;
+        }
+      }
+
+      setProfile((data as Profile) ?? null);
     } catch (error) {
       console.error('Error fetching profile:', error);
+      setProfile(null);
     } finally {
       setLoading(false);
     }
