@@ -56,15 +56,15 @@ export default function Dashboard() {
         {/* Quick Actions */}
         <div className="grid grid-cols-2 gap-4">
           <Button asChild size="lg" className="h-auto py-4 flex flex-col gap-2">
-            <Link to="/control/new">
-              <Plus className="h-6 w-6" />
-              <span>Nouveau contrôle</span>
+            <Link to="/onboard">
+              <Train className="h-6 w-6" />
+              <span>Contrôle à bord</span>
             </Link>
           </Button>
           <Button asChild variant="outline" size="lg" className="h-auto py-4 flex flex-col gap-2">
-            <Link to="/history">
-              <TrendingUp className="h-6 w-6" />
-              <span>Historique</span>
+            <Link to="/station">
+              <Building2 className="h-6 w-6" />
+              <span>Contrôle en gare</span>
             </Link>
           </Button>
         </div>
