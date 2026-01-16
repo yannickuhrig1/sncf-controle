@@ -9,6 +9,8 @@ import Auth from "./pages/Auth";
 import NewControl from "./pages/NewControl";
 import HistoryPage from "./pages/History";
 import ProfilePage from "./pages/Profile";
+import AdminPage from "./pages/Admin";
+import StatisticsPage from "./pages/Statistics";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -25,7 +27,9 @@ const App = () => (
             <Route path="/auth" element={<Auth />} />
             <Route path="/control/new" element={<NewControl />} />
             <Route path="/history" element={<HistoryPage />} />
+            <Route path="/statistics" element={<StatisticsPage />} />
             <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/admin" element={<AdminPage />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
