@@ -78,9 +78,7 @@ export default function Settings() {
   } = useUserPreferences();
 
   const pointerSensor = useSensor(PointerSensor, {
-    activationConstraint: {
-      distance: 8,
-    },
+    activationConstraint: { distance: 8 },
   });
 
   const touchSensor = useSensor(TouchSensor, {
