@@ -1,7 +1,8 @@
 import { ReactNode } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Plus, History, User, Train } from 'lucide-react';
+import { LayoutDashboard, Plus, History, User, Train, BarChart3, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/hooks/useAuth';
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -10,12 +11,18 @@ interface AppLayoutProps {
 const navItems = [
   { href: '/', icon: LayoutDashboard, label: 'Accueil' },
   { href: '/control/new', icon: Plus, label: 'Contrôle' },
+  { href: '/statistics', icon: BarChart3, label: 'Stats' },
   { href: '/history', icon: History, label: 'Historique' },
   { href: '/profile', icon: User, label: 'Profil' },
 ];
 
 export function AppLayout({ children }: AppLayoutProps) {
   const location = useLocation();
+  const { isAdmin } = useAuth();
+
+  const allNavItems = isAdmin() 
+    ? [...navItems.slice(0, 4), { href: '/admin', icon: Settings, label: 'Admin' }, navItems[4]]
+    : navItems;
 
   return (
     <div className="min-h-screen flex flex-col pb-20">
@@ -35,7 +42,7 @@ export function AppLayout({ children }: AppLayoutProps) {
       {/* Bottom Navigation */}
       <nav className="fixed bottom-0 left-0 right-0 z-50 bg-card border-t safe-area-inset-bottom">
         <div className="flex justify-around items-center h-16">
-          {navItems.map((item) => {
+          {allNavItems.map((item) => {
             const isActive = location.pathname === item.href;
             return (
               <Link
