@@ -1,12 +1,13 @@
 import { ReactNode, useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Train, Building2, History, User, BarChart3, Settings, Shield, Menu, UserCheck } from 'lucide-react';
+import { LayoutDashboard, Train, Building2, History, User, BarChart3, Settings, Shield, Menu, UserCheck, Wifi, WifiOff } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserPreferences, PageId, DEFAULT_VISIBLE_PAGES, DEFAULT_BOTTOM_BAR_PAGES } from '@/hooks/useUserPreferences';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -36,10 +37,25 @@ const allNavItems: NavItem[] = [
 
 export function AppLayout({ children }: AppLayoutProps) {
   const location = useLocation();
-  const { profile, isManager, isAdmin } = useAuth();
+  const { profile, isManager, isAdmin, user } = useAuth();
   const { preferences } = useUserPreferences();
   const [burgerOpen, setBurgerOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+
+  // Track online/offline status
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+    
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
 
   // Detect scroll for header glass effect
   useEffect(() => {
@@ -184,32 +200,79 @@ export function AppLayout({ children }: AppLayoutProps) {
             <span className="font-semibold">SNCF Contrôles</span>
           </div>
           
-          {/* Burger Menu Button - Always visible if enabled */}
-          {showBurgerMenu && (
-            <Sheet open={burgerOpen} onOpenChange={setBurgerOpen}>
-              <SheetTrigger asChild>
-                <motion.div
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  <Button variant="ghost" size="icon" className="text-primary-foreground hover:bg-primary/90">
-                    <Menu className="h-5 w-5" />
-                  </Button>
-                </motion.div>
-              </SheetTrigger>
-              <SheetContent side="right" className="w-72 p-0">
-                <SheetHeader className="p-4 border-b">
-                  <SheetTitle className="flex items-center gap-2">
-                    <Train className="h-5 w-5 text-primary" />
-                    Navigation
-                  </SheetTitle>
-                </SheetHeader>
-                <nav className="flex flex-col gap-1 p-2">
-                  {renderBurgerLinks()}
-                </nav>
-              </SheetContent>
-            </Sheet>
-          )}
+          <div className="flex items-center gap-2">
+            {/* Connection Status Indicator */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-white/10">
+                  {isOnline && user ? (
+                    <>
+                      <motion.div
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        className="h-2 w-2 rounded-full bg-green-400"
+                      />
+                      <Wifi className="h-3.5 w-3.5 text-green-400" />
+                    </>
+                  ) : isOnline && !user ? (
+                    <>
+                      <motion.div
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        className="h-2 w-2 rounded-full bg-yellow-400"
+                      />
+                      <Wifi className="h-3.5 w-3.5 text-yellow-400" />
+                    </>
+                  ) : (
+                    <>
+                      <motion.div
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        className="h-2 w-2 rounded-full bg-red-400"
+                      />
+                      <WifiOff className="h-3.5 w-3.5 text-red-400" />
+                    </>
+                  )}
+                </div>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">
+                {isOnline && user ? (
+                  <p>Connecté à Supabase</p>
+                ) : isOnline && !user ? (
+                  <p>En ligne - Non authentifié</p>
+                ) : (
+                  <p>Hors ligne</p>
+                )}
+              </TooltipContent>
+            </Tooltip>
+
+            {/* Burger Menu Button - Always visible if enabled */}
+            {showBurgerMenu && (
+              <Sheet open={burgerOpen} onOpenChange={setBurgerOpen}>
+                <SheetTrigger asChild>
+                  <motion.div
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    <Button variant="ghost" size="icon" className="text-primary-foreground hover:bg-primary/90">
+                      <Menu className="h-5 w-5" />
+                    </Button>
+                  </motion.div>
+                </SheetTrigger>
+                <SheetContent side="right" className="w-72 p-0">
+                  <SheetHeader className="p-4 border-b">
+                    <SheetTitle className="flex items-center gap-2">
+                      <Train className="h-5 w-5 text-primary" />
+                      Navigation
+                    </SheetTitle>
+                  </SheetHeader>
+                  <nav className="flex flex-col gap-1 p-2">
+                    {renderBurgerLinks()}
+                  </nav>
+                </SheetContent>
+              </Sheet>
+            )}
+          </div>
         </div>
       </header>
 
