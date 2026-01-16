@@ -137,9 +137,9 @@ export function AppLayout({ children }: AppLayoutProps) {
         {children}
       </main>
 
-      {/* Bottom Navigation */}
+      {/* Bottom Navigation - Glass Effect */}
       {navigationStyle === 'bottom' && (
-        <nav className="fixed bottom-0 left-0 right-0 z-50 bg-card border-t safe-area-inset-bottom">
+        <nav className="fixed bottom-0 left-0 right-0 z-50 glass-frosted border-t border-border/50 dark:border-white/10 safe-area-inset-bottom">
           <div className="flex justify-around items-center h-16">
             {renderNavLinks(false)}
           </div>
