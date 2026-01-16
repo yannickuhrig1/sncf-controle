@@ -2,40 +2,40 @@
 @tailwind components;
 @tailwind utilities;
 
-/* SNCF Design System - All colors in HSL */
+/* Paladin-inspired Dark Theme - All colors in HSL */
 
 @layer base {
   :root {
-    /* SNCF Brand Colors */
+    /* Brand Colors */
     --sncf-primary: 343 100% 38%;
     --sncf-secondary: 210 100% 35%;
     --sncf-success: 142 76% 36%;
     --sncf-warning: 38 92% 50%;
     --sncf-danger: 0 84% 60%;
 
-    --background: 210 20% 98%;
-    --foreground: 222.2 84% 4.9%;
+    --background: 220 20% 97%;
+    --foreground: 220 20% 10%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 220 20% 10%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover-foreground: 220 20% 10%;
 
     --primary: 343 100% 38%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 210 100% 35%;
-    --secondary-foreground: 0 0% 100%;
+    --secondary: 220 15% 92%;
+    --secondary-foreground: 220 20% 20%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted: 220 15% 95%;
+    --muted-foreground: 220 10% 45%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --accent: 220 15% 92%;
+    --accent-foreground: 220 20% 10%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
 
     --success: 142 76% 36%;
     --success-foreground: 0 0% 100%;
@@ -43,65 +43,66 @@
     --warning: 38 92% 50%;
     --warning-foreground: 0 0% 0%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
+    --border: 220 15% 90%;
+    --input: 220 15% 90%;
     --ring: 343 100% 38%;
 
-    --radius: 0.5rem;
+    --radius: 0.75rem;
 
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 220 20% 30%;
     --sidebar-primary: 343 100% 38%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 4.8% 95.9%;
-    --sidebar-accent-foreground: 240 5.9% 10%;
-    --sidebar-border: 220 13% 91%;
+    --sidebar-accent: 220 15% 95%;
+    --sidebar-accent-foreground: 220 20% 10%;
+    --sidebar-border: 220 15% 90%;
     --sidebar-ring: 343 100% 38%;
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
+    /* Paladin-inspired dark theme */
+    --background: 222 30% 8%;
+    --foreground: 220 15% 90%;
 
-    --card: 222.2 84% 6%;
-    --card-foreground: 210 40% 98%;
+    --card: 222 25% 12%;
+    --card-foreground: 220 15% 90%;
 
-    --popover: 222.2 84% 6%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 222 25% 12%;
+    --popover-foreground: 220 15% 90%;
 
-    --primary: 343 100% 50%;
+    --primary: 142 70% 45%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 210 100% 50%;
-    --secondary-foreground: 0 0% 100%;
+    --secondary: 222 20% 18%;
+    --secondary-foreground: 220 15% 85%;
 
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
+    --muted: 222 20% 16%;
+    --muted-foreground: 220 10% 55%;
 
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
+    --accent: 222 20% 18%;
+    --accent-foreground: 220 15% 90%;
 
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 70% 50%;
+    --destructive-foreground: 0 0% 100%;
 
-    --success: 142 76% 42%;
+    --success: 142 70% 45%;
     --success-foreground: 0 0% 100%;
 
     --warning: 38 92% 50%;
     --warning-foreground: 0 0% 0%;
 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 343 100% 50%;
+    --border: 222 20% 20%;
+    --input: 222 20% 20%;
+    --ring: 142 70% 45%;
 
-    --sidebar-background: 222.2 84% 6%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 343 100% 50%;
+    --sidebar-background: 222 28% 10%;
+    --sidebar-foreground: 220 15% 85%;
+    --sidebar-primary: 142 70% 45%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 343 100% 50%;
+    --sidebar-accent: 222 20% 16%;
+    --sidebar-accent-foreground: 220 15% 90%;
+    --sidebar-border: 222 20% 18%;
+    --sidebar-ring: 142 70% 45%;
   }
 }
 
@@ -113,6 +114,11 @@
   body {
     @apply bg-background text-foreground;
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  }
+
+  /* Smooth transitions for theme switching */
+  * {
+    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.15s ease;
   }
 }
 
@@ -128,4 +134,15 @@
     -webkit-user-select: none;
     user-select: none;
   }
+}
+
+/* Card hover effect for dark theme */
+.dark .card-hover:hover {
+  background: hsl(222 25% 14%);
+  border-color: hsl(222 20% 25%);
+}
+
+/* Subtle glow effect for success elements */
+.dark .glow-success {
+  box-shadow: 0 0 20px hsl(142 70% 45% / 0.15);
 }
