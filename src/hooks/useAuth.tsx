@@ -34,7 +34,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(false);
     }, 8000);
 
-    // Get initial session
+    // IMPORTANT: subscribe first to avoid missing events during init
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      window.clearTimeout(initTimeout);
+
+      setSession(session);
+      setUser(session?.user ?? null);
+
+      if (session?.user) {
+        setLoading(true);
+        // Defer any additional Supabase calls to avoid deadlocks
+        window.setTimeout(() => {
+          fetchProfile(session.user);
+        }, 0);
+      } else {
+        setProfile(null);
+        setLoading(false);
+      }
+    });
+
+    // Then fetch initial session
     supabase.auth
       .getSession()
       .then(({ data: { session } }) => {
@@ -42,8 +63,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         setSession(session);
         setUser(session?.user ?? null);
+
         if (session?.user) {
-          fetchProfile(session.user);
+          setLoading(true);
+          window.setTimeout(() => {
+            fetchProfile(session.user);
+          }, 0);
         } else {
           setProfile(null);
           setLoading(false);
@@ -51,31 +76,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       })
       .catch((error) => {
         window.clearTimeout(initTimeout);
-
-        // If getSession fails (storage blocked/corrupted, iOS private mode, etc.),
-        // ensure we don't stay stuck in an infinite loading state.
         console.error('Error getting session:', error);
         setSession(null);
         setUser(null);
         setProfile(null);
         setLoading(false);
       });
-
-    // Listen for auth changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      setLoading(true);
-      setSession(session);
-      setUser(session?.user ?? null);
-
-      if (session?.user) {
-        await fetchProfile(session.user);
-      } else {
-        setProfile(null);
-        setLoading(false);
-      }
-    });
 
     return () => {
       window.clearTimeout(initTimeout);
