@@ -8,6 +8,7 @@ import { TarifTypeToggle } from '@/components/controls/TarifTypeToggle';
 import { CounterInput } from '@/components/controls/CounterInput';
 import { TarifListItem, TarifEntry } from '@/components/controls/TarifListItem';
 import { FraudSummaryCard } from '@/components/controls/FraudSummaryCard';
+import { StationAutocomplete } from '@/components/controls/StationAutocomplete';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -417,24 +418,21 @@ export default function OnboardControl() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="origin">Origine</Label>
-                    <Input
+                    <StationAutocomplete
                       id="origin"
-                      placeholder="Paris"
+                      placeholder="Gare de départ"
                       value={formState.origin}
-                      onChange={(e) => setFormState((p) => ({ ...p, origin: e.target.value }))}
+                      onChange={(v) => setFormState((p) => ({ ...p, origin: v }))}
                     />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="destination">Destination</Label>
-                    <div className="flex items-center gap-2">
-                      <ArrowRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                      <Input
-                        id="destination"
-                        placeholder="Lyon"
-                        value={formState.destination}
-                        onChange={(e) => setFormState((p) => ({ ...p, destination: e.target.value }))}
-                      />
-                    </div>
+                    <StationAutocomplete
+                      id="destination"
+                      placeholder="Gare d'arrivée"
+                      value={formState.destination}
+                      onChange={(v) => setFormState((p) => ({ ...p, destination: v }))}
+                    />
                   </div>
                 </div>
 
