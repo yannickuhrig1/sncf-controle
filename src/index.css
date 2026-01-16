@@ -146,3 +146,55 @@
 .dark .glow-success {
   box-shadow: 0 0 20px hsl(142 70% 45% / 0.15);
 }
+
+/* Glassmorphism utilities */
+.glass {
+  background: hsl(var(--card) / 0.8);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid hsl(var(--border) / 0.5);
+}
+
+.dark .glass {
+  background: hsl(var(--card) / 0.6);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid hsl(0 0% 100% / 0.1);
+}
+
+/* Glass card with subtle gradient */
+.glass-card {
+  background: linear-gradient(
+    135deg,
+    hsl(var(--card) / 0.9) 0%,
+    hsl(var(--card) / 0.7) 100%
+  );
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid hsl(var(--border) / 0.4);
+}
+
+.dark .glass-card {
+  background: linear-gradient(
+    135deg,
+    hsl(222 25% 14% / 0.8) 0%,
+    hsl(222 25% 10% / 0.6) 100%
+  );
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid hsl(0 0% 100% / 0.08);
+  box-shadow: 
+    0 4px 24px -1px hsl(0 0% 0% / 0.2),
+    inset 0 1px 0 0 hsl(0 0% 100% / 0.05);
+}
+
+/* Frosted glass effect for nav/overlays */
+.glass-frosted {
+  background: hsl(var(--background) / 0.85);
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+}
+
+.dark .glass-frosted {
+  background: hsl(var(--background) / 0.75);
+}
