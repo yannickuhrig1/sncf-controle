@@ -1,4 +1,4 @@
-import { ReactNode, useState } from 'react';
+import { ReactNode, useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { LayoutDashboard, Train, Building2, History, User, BarChart3, Settings, Shield, Menu, UserCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -38,6 +38,17 @@ export function AppLayout({ children }: AppLayoutProps) {
   const { profile, isManager, isAdmin } = useAuth();
   const { preferences } = useUserPreferences();
   const [burgerOpen, setBurgerOpen] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
+
+  // Detect scroll for header glass effect
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 10);
+    };
+    
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   const isUserAdmin = isAdmin();
   const isUserManager = isManager();
@@ -100,8 +111,16 @@ export function AppLayout({ children }: AppLayoutProps) {
 
   return (
     <div className={cn('min-h-screen flex flex-col', navigationStyle === 'bottom' && 'pb-20')}>
-      {/* Header */}
-      <header className="sticky top-0 z-40 bg-primary text-primary-foreground">
+      {/* Header - Glass Effect on Scroll */}
+      <header 
+        className={cn(
+          "sticky top-0 z-40 transition-all duration-300",
+          isScrolled 
+            ? "bg-primary/90 backdrop-blur-md shadow-lg dark:bg-primary/80" 
+            : "bg-primary",
+          "text-primary-foreground"
+        )}
+      >
         <div className="flex items-center justify-between px-4 py-3">
           <div className="flex items-center gap-2">
             <Train className="h-5 w-5" />
