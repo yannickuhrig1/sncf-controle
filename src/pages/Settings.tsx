@@ -72,22 +72,24 @@ export default function Settings() {
   const { user, loading: authLoading } = useAuth();
   const { preferences, isLoading: prefsLoading, updatePreferences, isUpdating } = useUserPreferences();
 
-  const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: {
-        distance: 8,
-      },
-    }),
-    useSensor(TouchSensor, {
-      activationConstraint: {
-        delay: 250,
-        tolerance: 5,
-      },
-    }),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    })
-  );
+  const pointerSensor = useSensor(PointerSensor, {
+    activationConstraint: {
+      distance: 8,
+    },
+  });
+  
+  const touchSensor = useSensor(TouchSensor, {
+    activationConstraint: {
+      delay: 250,
+      tolerance: 5,
+    },
+  });
+  
+  const keyboardSensor = useSensor(KeyboardSensor, {
+    coordinateGetter: sortableKeyboardCoordinates,
+  });
+  
+  const sensors = useSensors(pointerSensor, touchSensor, keyboardSensor);
 
   const handleClearCache = () => {
     Object.keys(localStorage).forEach(key => {
