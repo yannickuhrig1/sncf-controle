@@ -7,7 +7,7 @@ import { AppLayout } from '@/components/layout/AppLayout';
 import { TarifTypeToggle } from '@/components/controls/TarifTypeToggle';
 import { CounterInput } from '@/components/controls/CounterInput';
 import { TarifListItem, TarifEntry } from '@/components/controls/TarifListItem';
-import { FraudSummaryCard } from '@/components/controls/FraudSummaryCard';
+import { FraudSummary } from '@/components/controls/FraudSummary';
 import { StationAutocomplete } from '@/components/controls/StationAutocomplete';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -385,6 +385,20 @@ export default function OnboardControl() {
           </Button>
         </div>
 
+        {/* Fraud Summary - Sticky Banner */}
+        <div className="sticky top-16 z-30">
+          <FraudSummary
+            passengers={formState.passengers}
+            fraudCount={fraudStats.fraudCount}
+            fraudRate={fraudStats.fraudRate}
+            onPassengersChange={(v) => setFormState((p) => ({ ...p, passengers: v }))}
+            tarifsControle={formState.tarifsControle}
+            pvList={formState.pvList}
+            stt50Count={formState.stt50Count}
+            stt100Count={formState.stt100Count}
+          />
+        </div>
+
         {/* Main Content - 3 Column Layout on Desktop */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Left Column - Form (2/3 on desktop) */}
@@ -683,24 +697,9 @@ export default function OnboardControl() {
             </Card>
           </div>
 
-          {/* Right Column - Summary (1/3 on desktop) */}
+          {/* Right Column - Action Buttons (1/3 on desktop) */}
           <div className="lg:col-span-1">
-            <div className="space-y-4 lg:sticky lg:top-20">
-              <FraudSummaryCard
-                passengers={formState.passengers}
-                fraudCount={fraudStats.fraudCount}
-                fraudRate={fraudStats.fraudRate}
-                tarifsBord={formState.tarifsBord}
-                tarifsControle={formState.tarifsControle}
-                pvList={formState.pvList}
-                stt50Count={formState.stt50Count}
-                stt100Count={formState.stt100Count}
-                onReset={handleReset}
-                onSubmit={handleSubmit}
-                isSubmitting={isCreating}
-              />
-
-              {/* Action Buttons */}
+            <div className="space-y-4 lg:sticky lg:top-52">
               <div className="flex flex-col gap-2">
                 <Button
                   size="lg"
