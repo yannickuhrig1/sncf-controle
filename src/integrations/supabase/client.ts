@@ -8,10 +8,43 @@ const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiO
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
 
+// Safe storage with memory fallback for environments where localStorage is unavailable
+type SimpleStorage = {
+  getItem: (key: string) => string | null;
+  setItem: (key: string, value: string) => void;
+  removeItem: (key: string) => void;
+};
+
+function createMemoryStorage(): SimpleStorage {
+  const store = new Map<string, string>();
+  return {
+    getItem: (key) => store.get(key) ?? null,
+    setItem: (key, value) => { store.set(key, value); },
+    removeItem: (key) => { store.delete(key); },
+  };
+}
+
+function getSafeStorage(): SimpleStorage {
+  if (typeof window === 'undefined') {
+    return createMemoryStorage();
+  }
+  
+  try {
+    const testKey = '__sncf_storage_test__';
+    window.localStorage.setItem(testKey, '1');
+    window.localStorage.removeItem(testKey);
+    return window.localStorage;
+  } catch {
+    // localStorage unavailable (private browsing, iOS restrictions, etc.)
+    console.warn('localStorage unavailable, using memory storage');
+    return createMemoryStorage();
+  }
+}
+
 export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   auth: {
-    storage: localStorage,
+    storage: getSafeStorage(),
     persistSession: true,
     autoRefreshToken: true,
-  }
+  },
 });
