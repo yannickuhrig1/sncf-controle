@@ -84,10 +84,7 @@ export default function Settings() {
   });
 
   const touchSensor = useSensor(TouchSensor, {
-    activationConstraint: {
-      delay: 250,
-      tolerance: 5,
-    },
+    activationConstraint: { delay: 250, tolerance: 5 },
   });
 
   const keyboardSensor = useSensor(KeyboardSensor, {
@@ -96,7 +93,8 @@ export default function Settings() {
 
   const sensors = useSensors(pointerSensor, touchSensor, keyboardSensor);
 
-  
+  const visiblePages = preferences?.visible_pages || DEFAULT_VISIBLE_PAGES;
+
   // Order PAGE_OPTIONS based on current visible_pages order
   const orderedPageOptions = [...PAGE_OPTIONS].sort((a, b) => {
     const indexA = visiblePages.indexOf(a.id);
