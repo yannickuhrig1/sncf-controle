@@ -126,7 +126,6 @@ export default function OnboardControl() {
   const { clearDraft } = useFormPersistence('onboard-control', formState, setFormState, INITIAL_FORM_STATE);
 
   // Tarif input states
-  const [bordTarifType, setBordTarifType] = useState('stt');
   const [bordTarifMontant, setBordTarifMontant] = useState('');
   const [controleTarifType, setControleTarifType] = useState('stt');
   const [controleTarifMontant, setControleTarifMontant] = useState('');
@@ -181,17 +180,16 @@ export default function OnboardControl() {
   const addTarifBord = useCallback(() => {
     const montant = parseFloat(bordTarifMontant);
     if (!montant || montant <= 0) return;
-    const typeLabel = TARIF_TYPES.find((t) => t.value === bordTarifType)?.label || bordTarifType;
     const newEntry: TarifEntry = {
       id: crypto.randomUUID(),
-      type: bordTarifType,
-      typeLabel,
+      type: formState.tarifMode,
+      typeLabel: formState.tarifMode === 'bord' ? 'Bord' : 'Exceptionnel',
       montant,
       category: formState.tarifMode,
     };
     setFormState((prev) => ({ ...prev, tarifsBord: [...prev.tarifsBord, newEntry] }));
     setBordTarifMontant('');
-  }, [bordTarifType, bordTarifMontant, formState.tarifMode]);
+  }, [bordTarifMontant, formState.tarifMode]);
 
   const addTarifControle = useCallback(() => {
     const montant = parseFloat(controleTarifMontant);
@@ -469,20 +467,14 @@ export default function OnboardControl() {
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="passengers">Nombre de passagers *</Label>
-                  <Input
-                    id="passengers"
-                    type="number"
-                    min="0"
-                    placeholder="0"
-                    value={formState.passengers || ''}
-                    onChange={(e) =>
-                      setFormState((p) => ({ ...p, passengers: parseInt(e.target.value) || 0 }))
-                    }
-                    required
-                  />
-                </div>
+                <CounterInput
+                  label="Nombre de passagers *"
+                  value={formState.passengers}
+                  onChange={(v) => setFormState((p) => ({ ...p, passengers: v }))}
+                  min={0}
+                  max={9999}
+                  steps={[1, 10]}
+                />
               </CardContent>
             </Card>
 
@@ -515,9 +507,6 @@ export default function OnboardControl() {
                     Exceptionnel
                   </Button>
                 </div>
-
-                {/* Type selector */}
-                <TarifTypeToggle types={TARIF_TYPES} value={bordTarifType} onChange={setBordTarifType} />
 
                 {/* Amount input + Add button */}
                 <div className="flex gap-2">
