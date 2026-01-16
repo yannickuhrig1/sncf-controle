@@ -1,22 +1,20 @@
-import { Navigate } from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom';
+import { AppLayout } from '@/components/layout/AppLayout';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { buttonVariants } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { useControls } from '@/hooks/useControls';
-import { calculateStats, formatFraudRate, getFraudRateColor, getFraudRateBgColor } from '@/lib/stats';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { 
-  Users, 
-  AlertTriangle, 
-  CheckCircle2, 
-  TrendingUp, 
-  Loader2, 
-  Plus,
-  Train,
+import { calculateStats, formatFraudRate, getFraudRateBgColor, getFraudRateColor } from '@/lib/stats';
+import { cn } from '@/lib/utils';
+import {
+  AlertTriangle,
   Building2,
-  LayoutDashboard
+  CheckCircle2,
+  LayoutDashboard,
+  Loader2,
+  Train,
+  Users,
 } from 'lucide-react';
-import { Link } from 'react-router-dom';
-import { AppLayout } from '@/components/layout/AppLayout';
 
 export default function Dashboard() {
   const { user, profile, loading: authLoading } = useAuth();
@@ -55,18 +53,27 @@ export default function Dashboard() {
 
         {/* Quick Actions */}
         <div className="grid grid-cols-2 gap-4">
-          <Button asChild size="lg" className="h-auto py-4 flex flex-col gap-2">
-            <Link to="/onboard">
-              <Train className="h-6 w-6" />
-              <span>Contrôle à bord</span>
-            </Link>
-          </Button>
-          <Button asChild variant="outline" size="lg" className="h-auto py-4 flex flex-col gap-2">
-            <Link to="/station">
-              <Building2 className="h-6 w-6" />
-              <span>Contrôle en gare</span>
-            </Link>
-          </Button>
+          <Link
+            to="/onboard"
+            className={cn(
+              buttonVariants({ size: 'lg' }),
+              'h-auto py-4 flex flex-col gap-2'
+            )}
+          >
+            <Train className="h-6 w-6" />
+            <span>Contrôle à bord</span>
+          </Link>
+
+          <Link
+            to="/station"
+            className={cn(
+              buttonVariants({ variant: 'outline', size: 'lg' }),
+              'h-auto py-4 flex flex-col gap-2'
+            )}
+          >
+            <Building2 className="h-6 w-6" />
+            <span>Contrôle en gare</span>
+          </Link>
         </div>
 
         {/* Today's Stats */}

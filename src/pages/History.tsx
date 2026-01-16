@@ -164,9 +164,9 @@ export default function HistoryPage() {
             <p className="text-muted-foreground mb-4">
               Vous n'avez pas encore enregistré de contrôles.
             </p>
-            <Button asChild>
-              <a href="/control/new">Nouveau contrôle</a>
-            </Button>
+            <Link to="/control/new" className={buttonVariants({})}>
+              Nouveau contrôle
+            </Link>
           </div>
         ) : (
           <div className="space-y-6">
