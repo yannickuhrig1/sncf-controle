@@ -1,6 +1,6 @@
 import { ReactNode, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Train, Building2, History, User, BarChart3, Settings, Shield, Menu } from 'lucide-react';
+import { LayoutDashboard, Train, Building2, History, User, BarChart3, Settings, Shield, Menu, UserCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserPreferences, PageId, DEFAULT_VISIBLE_PAGES } from '@/hooks/useUserPreferences';
@@ -18,6 +18,7 @@ interface NavItem {
   pageId: PageId;
   alwaysVisible?: boolean;
   adminOnly?: boolean;
+  managerOnly?: boolean;
 }
 
 const allNavItems: NavItem[] = [
@@ -26,6 +27,7 @@ const allNavItems: NavItem[] = [
   { href: '/station', icon: Building2, label: 'En gare', pageId: 'station' },
   { href: '/statistics', icon: BarChart3, label: 'Stats', pageId: 'statistics' },
   { href: '/history', icon: History, label: 'Historique', pageId: 'history' },
+  { href: '/manager', icon: UserCheck, label: 'Manager', pageId: 'manager', managerOnly: true, alwaysVisible: true },
   { href: '/settings', icon: Settings, label: 'Paramètres', pageId: 'settings', alwaysVisible: true },
   { href: '/admin', icon: Shield, label: 'Admin', pageId: 'admin', adminOnly: true, alwaysVisible: true },
   { href: '/profile', icon: User, label: 'Profil', pageId: 'profile', alwaysVisible: true },
@@ -33,11 +35,12 @@ const allNavItems: NavItem[] = [
 
 export function AppLayout({ children }: AppLayoutProps) {
   const location = useLocation();
-  const { profile } = useAuth();
+  const { profile, isManager, isAdmin } = useAuth();
   const { preferences } = useUserPreferences();
   const [burgerOpen, setBurgerOpen] = useState(false);
 
-  const isUserAdmin = profile?.role === 'admin';
+  const isUserAdmin = isAdmin();
+  const isUserManager = isManager();
   const navigationStyle = preferences?.navigation_style || 'bottom';
   const visiblePages = preferences?.visible_pages || DEFAULT_VISIBLE_PAGES;
 
@@ -46,11 +49,13 @@ export function AppLayout({ children }: AppLayoutProps) {
     // Separate always-visible items from orderable ones
     const alwaysVisibleItems = allNavItems.filter(item => {
       if (item.adminOnly && !isUserAdmin) return false;
+      if (item.managerOnly && !isUserManager && !isUserAdmin) return false;
       return item.alwaysVisible;
     });
     
     const orderableItems = allNavItems.filter(item => {
       if (item.adminOnly) return false;
+      if (item.managerOnly) return false;
       if (item.alwaysVisible) return false;
       return visiblePages.includes(item.pageId);
     });

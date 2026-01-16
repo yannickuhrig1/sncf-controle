@@ -3,11 +3,13 @@ import { useAuth } from '@/hooks/useAuth';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { AppLayout } from '@/components/layout/AppLayout';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
+import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Select,
@@ -26,6 +28,17 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+import {
   Table,
   TableBody,
   TableCell,
@@ -43,15 +56,18 @@ import {
   Shield,
   ShieldCheck,
   UserCog,
-  Settings
+  Settings,
+  Database,
+  Download,
 } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
-import type { Database } from '@/integrations/supabase/types';
+import type { Database as DbType } from '@/integrations/supabase/types';
+import { useUserPreferences } from '@/hooks/useUserPreferences';
 
-type Profile = Database['public']['Tables']['profiles']['Row'];
-type Team = Database['public']['Tables']['teams']['Row'];
-type AppRole = Database['public']['Enums']['app_role'];
+type Profile = DbType['public']['Tables']['profiles']['Row'];
+type Team = DbType['public']['Tables']['teams']['Row'];
+type AppRole = DbType['public']['Enums']['app_role'];
 
 const roleLabels: Record<AppRole, string> = {
   admin: 'Administrateur',
@@ -68,6 +84,7 @@ const roleBadgeVariants: Record<AppRole, 'default' | 'secondary' | 'outline'> = 
 export default function AdminPage() {
   const { user, profile, loading: authLoading, isAdmin } = useAuth();
   const queryClient = useQueryClient();
+  const { preferences, updatePreferences, isUpdating } = useUserPreferences();
   
   // Team dialog state
   const [teamDialogOpen, setTeamDialogOpen] = useState(false);
@@ -281,7 +298,7 @@ export default function AdminPage() {
 
         {/* Tabs */}
         <Tabs defaultValue="users" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="users" className="flex items-center gap-2">
               <Users className="h-4 w-4" />
               Utilisateurs
@@ -289,6 +306,10 @@ export default function AdminPage() {
             <TabsTrigger value="teams" className="flex items-center gap-2">
               <Building2 className="h-4 w-4" />
               Équipes
+            </TabsTrigger>
+            <TabsTrigger value="data" className="flex items-center gap-2">
+              <Database className="h-4 w-4" />
+              Données
             </TabsTrigger>
           </TabsList>
 
@@ -475,6 +496,118 @@ export default function AdminPage() {
                     </Table>
                   </div>
                 )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Data & Storage Tab */}
+          <TabsContent value="data" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Database className="h-5 w-5" />
+                  Données et stockage
+                </CardTitle>
+                <CardDescription>
+                  Gérez les données et le stockage de l'application
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label>Sauvegarde automatique</Label>
+                    <p className="text-xs text-muted-foreground">
+                      Sauvegarde les brouillons automatiquement
+                    </p>
+                  </div>
+                  <Switch
+                    checked={preferences?.data_auto_save ?? true}
+                    onCheckedChange={(checked) =>
+                      updatePreferences({ data_auto_save: checked })
+                    }
+                    disabled={isUpdating}
+                  />
+                </div>
+
+                <Separator />
+
+                <div className="space-y-2">
+                  <Label>Conservation de l'historique</Label>
+                  <Select
+                    value={String(preferences?.data_keep_history_days || 90)}
+                    onValueChange={(value) =>
+                      updatePreferences({ data_keep_history_days: parseInt(value) })
+                    }
+                    disabled={isUpdating}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="30">30 jours</SelectItem>
+                      <SelectItem value="60">60 jours</SelectItem>
+                      <SelectItem value="90">90 jours</SelectItem>
+                      <SelectItem value="180">6 mois</SelectItem>
+                      <SelectItem value="365">1 an</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <Separator />
+
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => {
+                      const data = {
+                        preferences,
+                        exportDate: new Date().toISOString(),
+                      };
+                      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+                      const url = URL.createObjectURL(blob);
+                      const a = document.createElement('a');
+                      a.href = url;
+                      a.download = `sncf-controles-settings-${new Date().toISOString().split('T')[0]}.json`;
+                      a.click();
+                      URL.revokeObjectURL(url);
+                      toast.success('Paramètres exportés');
+                    }}
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    Exporter
+                  </Button>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="outline" size="sm">
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Vider le cache
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Vider le cache ?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Cette action supprimera tous les brouillons et données en cache.
+                          Vos contrôles enregistrés ne seront pas affectés.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Annuler</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => {
+                          Object.keys(localStorage).forEach(key => {
+                            if (key.startsWith('form-draft-') || key.startsWith('onboard-control')) {
+                              localStorage.removeItem(key);
+                            }
+                          });
+                          toast.success('Cache vidé avec succès');
+                        }}>
+                          Vider
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
