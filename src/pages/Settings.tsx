@@ -1,12 +1,12 @@
-import { useState } from 'react';
+import { useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { useUserPreferences, PageId, DEFAULT_VISIBLE_PAGES } from '@/hooks/useUserPreferences';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import {
   Select,
   SelectContent,
@@ -15,22 +15,22 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import {
   Loader2,
   Settings as SettingsIcon,
   Bell,
   Palette,
-  Shield,
-  Smartphone,
   Moon,
   Sun,
   Monitor,
-  Save,
-  RotateCcw,
   Database,
   Trash2,
   Download,
+  Navigation,
+  Menu,
+  LayoutGrid,
+  Eye,
 } from 'lucide-react';
 import {
   AlertDialog,
@@ -44,115 +44,30 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 
-interface UserSettings {
-  theme: 'light' | 'dark' | 'system';
-  notifications: {
-    push: boolean;
-    email: boolean;
-    fraudAlerts: boolean;
-    newControls: boolean;
-  };
-  display: {
-    compactMode: boolean;
-    showTotals: boolean;
-    defaultPage: string;
-  };
-  data: {
-    autoSave: boolean;
-    keepHistoryDays: number;
-  };
-}
-
-const DEFAULT_SETTINGS: UserSettings = {
-  theme: 'system',
-  notifications: {
-    push: true,
-    email: false,
-    fraudAlerts: true,
-    newControls: false,
-  },
-  display: {
-    compactMode: false,
-    showTotals: true,
-    defaultPage: '/',
-  },
-  data: {
-    autoSave: true,
-    keepHistoryDays: 90,
-  },
-};
+const PAGE_OPTIONS: { id: PageId; label: string; canDisable: boolean }[] = [
+  { id: 'dashboard', label: 'Accueil', canDisable: false },
+  { id: 'onboard', label: 'Contrôle à bord', canDisable: true },
+  { id: 'station', label: 'Contrôle en gare', canDisable: true },
+  { id: 'statistics', label: 'Statistiques', canDisable: true },
+  { id: 'history', label: 'Historique', canDisable: true },
+];
 
 export default function Settings() {
   const { user, loading: authLoading } = useAuth();
-  const { toast } = useToast();
-  
-  const [settings, setSettings] = useState<UserSettings>(() => {
-    const saved = localStorage.getItem('user-settings');
-    return saved ? { ...DEFAULT_SETTINGS, ...JSON.parse(saved) } : DEFAULT_SETTINGS;
-  });
-  
-  const [isSaving, setIsSaving] = useState(false);
-
-  const handleSave = async () => {
-    setIsSaving(true);
-    try {
-      localStorage.setItem('user-settings', JSON.stringify(settings));
-      
-      // Apply theme
-      const root = document.documentElement;
-      if (settings.theme === 'dark') {
-        root.classList.add('dark');
-      } else if (settings.theme === 'light') {
-        root.classList.remove('dark');
-      } else {
-        // System preference
-        if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-          root.classList.add('dark');
-        } else {
-          root.classList.remove('dark');
-        }
-      }
-      
-      toast({
-        title: 'Paramètres sauvegardés',
-        description: 'Vos préférences ont été enregistrées',
-      });
-    } catch (error) {
-      toast({
-        variant: 'destructive',
-        title: 'Erreur',
-        description: 'Impossible de sauvegarder les paramètres',
-      });
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  const handleReset = () => {
-    setSettings(DEFAULT_SETTINGS);
-    localStorage.removeItem('user-settings');
-    toast({
-      title: 'Paramètres réinitialisés',
-      description: 'Les paramètres par défaut ont été restaurés',
-    });
-  };
+  const { preferences, isLoading: prefsLoading, updatePreferences, isUpdating } = useUserPreferences();
 
   const handleClearCache = () => {
-    // Clear form drafts
     Object.keys(localStorage).forEach(key => {
       if (key.startsWith('form-draft-') || key.startsWith('onboard-control')) {
         localStorage.removeItem(key);
       }
     });
-    toast({
-      title: 'Cache vidé',
-      description: 'Les brouillons et données en cache ont été supprimés',
-    });
+    toast.success('Cache vidé avec succès');
   };
 
   const handleExportData = () => {
     const data = {
-      settings,
+      preferences,
       exportDate: new Date().toISOString(),
     };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -162,13 +77,21 @@ export default function Settings() {
     a.download = `sncf-controles-settings-${new Date().toISOString().split('T')[0]}.json`;
     a.click();
     URL.revokeObjectURL(url);
-    toast({
-      title: 'Export réussi',
-      description: 'Vos paramètres ont été exportés',
-    });
+    toast.success('Paramètres exportés');
   };
 
-  if (authLoading) {
+  const togglePage = (pageId: PageId) => {
+    if (!preferences) return;
+    
+    const currentPages = preferences.visible_pages || DEFAULT_VISIBLE_PAGES;
+    const newPages = currentPages.includes(pageId)
+      ? currentPages.filter(p => p !== pageId)
+      : [...currentPages, pageId];
+    
+    updatePreferences({ visible_pages: newPages });
+  };
+
+  if (authLoading || prefsLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -179,6 +102,10 @@ export default function Settings() {
   if (!user) {
     return <Navigate to="/auth" replace />;
   }
+
+  const currentTheme = preferences?.theme || 'system';
+  const currentNavStyle = preferences?.navigation_style || 'bottom';
+  const visiblePages = preferences?.visible_pages || DEFAULT_VISIBLE_PAGES;
 
   return (
     <AppLayout>
@@ -207,10 +134,11 @@ export default function Settings() {
             <div className="space-y-2">
               <Label>Thème</Label>
               <Select
-                value={settings.theme}
+                value={currentTheme}
                 onValueChange={(value: 'light' | 'dark' | 'system') =>
-                  setSettings((s) => ({ ...s, theme: value }))
+                  updatePreferences({ theme: value })
                 }
+                disabled={isUpdating}
               >
                 <SelectTrigger>
                   <SelectValue />
@@ -248,13 +176,11 @@ export default function Settings() {
                 </p>
               </div>
               <Switch
-                checked={settings.display.compactMode}
+                checked={preferences?.display_compact_mode || false}
                 onCheckedChange={(checked) =>
-                  setSettings((s) => ({
-                    ...s,
-                    display: { ...s.display, compactMode: checked },
-                  }))
+                  updatePreferences({ display_compact_mode: checked })
                 }
+                disabled={isUpdating}
               />
             </div>
 
@@ -266,14 +192,76 @@ export default function Settings() {
                 </p>
               </div>
               <Switch
-                checked={settings.display.showTotals}
+                checked={preferences?.display_show_totals ?? true}
                 onCheckedChange={(checked) =>
-                  setSettings((s) => ({
-                    ...s,
-                    display: { ...s.display, showTotals: checked },
-                  }))
+                  updatePreferences({ display_show_totals: checked })
                 }
+                disabled={isUpdating}
               />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Navigation Settings */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              <Navigation className="h-4 w-4" />
+              Navigation
+            </CardTitle>
+            <CardDescription>Configurez le style et les pages visibles</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label>Style de navigation</Label>
+              <Select
+                value={currentNavStyle}
+                onValueChange={(value: 'bottom' | 'burger') =>
+                  updatePreferences({ navigation_style: value })
+                }
+                disabled={isUpdating}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="bottom">
+                    <div className="flex items-center gap-2">
+                      <LayoutGrid className="h-4 w-4" />
+                      Barre en bas
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="burger">
+                    <div className="flex items-center gap-2">
+                      <Menu className="h-4 w-4" />
+                      Menu burger
+                    </div>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <Separator />
+
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <Eye className="h-4 w-4" />
+                <Label>Pages visibles</Label>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Choisissez les pages à afficher dans la navigation
+              </p>
+              
+              {PAGE_OPTIONS.map((page) => (
+                <div key={page.id} className="flex items-center justify-between">
+                  <Label className="font-normal">{page.label}</Label>
+                  <Switch
+                    checked={visiblePages.includes(page.id)}
+                    onCheckedChange={() => togglePage(page.id)}
+                    disabled={!page.canDisable || isUpdating}
+                  />
+                </div>
+              ))}
             </div>
           </CardContent>
         </Card>
@@ -296,13 +284,11 @@ export default function Settings() {
                 </p>
               </div>
               <Switch
-                checked={settings.notifications.push}
+                checked={preferences?.notifications_push ?? true}
                 onCheckedChange={(checked) =>
-                  setSettings((s) => ({
-                    ...s,
-                    notifications: { ...s.notifications, push: checked },
-                  }))
+                  updatePreferences({ notifications_push: checked })
                 }
+                disabled={isUpdating}
               />
             </div>
 
@@ -316,13 +302,11 @@ export default function Settings() {
                 </p>
               </div>
               <Switch
-                checked={settings.notifications.fraudAlerts}
+                checked={preferences?.notifications_fraud_alerts ?? true}
                 onCheckedChange={(checked) =>
-                  setSettings((s) => ({
-                    ...s,
-                    notifications: { ...s.notifications, fraudAlerts: checked },
-                  }))
+                  updatePreferences({ notifications_fraud_alerts: checked })
                 }
+                disabled={isUpdating}
               />
             </div>
 
@@ -334,13 +318,11 @@ export default function Settings() {
                 </p>
               </div>
               <Switch
-                checked={settings.notifications.newControls}
+                checked={preferences?.notifications_new_controls ?? false}
                 onCheckedChange={(checked) =>
-                  setSettings((s) => ({
-                    ...s,
-                    notifications: { ...s.notifications, newControls: checked },
-                  }))
+                  updatePreferences({ notifications_new_controls: checked })
                 }
+                disabled={isUpdating}
               />
             </div>
 
@@ -352,13 +334,11 @@ export default function Settings() {
                 </p>
               </div>
               <Switch
-                checked={settings.notifications.email}
+                checked={preferences?.notifications_email ?? false}
                 onCheckedChange={(checked) =>
-                  setSettings((s) => ({
-                    ...s,
-                    notifications: { ...s.notifications, email: checked },
-                  }))
+                  updatePreferences({ notifications_email: checked })
                 }
+                disabled={isUpdating}
               />
             </div>
           </CardContent>
@@ -382,13 +362,11 @@ export default function Settings() {
                 </p>
               </div>
               <Switch
-                checked={settings.data.autoSave}
+                checked={preferences?.data_auto_save ?? true}
                 onCheckedChange={(checked) =>
-                  setSettings((s) => ({
-                    ...s,
-                    data: { ...s.data, autoSave: checked },
-                  }))
+                  updatePreferences({ data_auto_save: checked })
                 }
+                disabled={isUpdating}
               />
             </div>
 
@@ -397,13 +375,11 @@ export default function Settings() {
             <div className="space-y-2">
               <Label>Conservation de l'historique</Label>
               <Select
-                value={String(settings.data.keepHistoryDays)}
+                value={String(preferences?.data_keep_history_days || 90)}
                 onValueChange={(value) =>
-                  setSettings((s) => ({
-                    ...s,
-                    data: { ...s.data, keepHistoryDays: parseInt(value) },
-                  }))
+                  updatePreferences({ data_keep_history_days: parseInt(value) })
                 }
+                disabled={isUpdating}
               >
                 <SelectTrigger>
                   <SelectValue />
@@ -452,44 +428,13 @@ export default function Settings() {
           </CardContent>
         </Card>
 
-        {/* Actions */}
-        <div className="flex flex-col sm:flex-row gap-3">
-          <Button onClick={handleSave} disabled={isSaving} className="flex-1">
-            {isSaving ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Sauvegarde...
-              </>
-            ) : (
-              <>
-                <Save className="mr-2 h-4 w-4" />
-                Sauvegarder
-              </>
-            )}
-          </Button>
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button variant="outline">
-                <RotateCcw className="mr-2 h-4 w-4" />
-                Réinitialiser
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Réinitialiser les paramètres ?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Tous vos paramètres seront remis aux valeurs par défaut.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Annuler</AlertDialogCancel>
-                <AlertDialogAction onClick={handleReset}>
-                  Réinitialiser
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-        </div>
+        {/* Sync indicator */}
+        {isUpdating && (
+          <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            Synchronisation...
+          </div>
+        )}
       </div>
     </AppLayout>
   );
