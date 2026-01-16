@@ -1,6 +1,6 @@
 import { ReactNode, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Train, Building2, History, User, BarChart3, Settings, Shield, Menu, X } from 'lucide-react';
+import { LayoutDashboard, Train, Building2, History, User, BarChart3, Settings, Shield, Menu } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserPreferences, PageId, DEFAULT_VISIBLE_PAGES } from '@/hooks/useUserPreferences';
@@ -41,17 +41,29 @@ export function AppLayout({ children }: AppLayoutProps) {
   const navigationStyle = preferences?.navigation_style || 'bottom';
   const visiblePages = preferences?.visible_pages || DEFAULT_VISIBLE_PAGES;
 
-  // Filter nav items based on visibility and role
-  const navItems = allNavItems.filter((item) => {
-    // Admin-only items
-    if (item.adminOnly && !isUserAdmin) return false;
+  // Filter and order nav items based on visibility, role, and user preference order
+  const navItems = (() => {
+    // Separate always-visible items from orderable ones
+    const alwaysVisibleItems = allNavItems.filter(item => {
+      if (item.adminOnly && !isUserAdmin) return false;
+      return item.alwaysVisible;
+    });
     
-    // Always visible items (settings, admin, profile)
-    if (item.alwaysVisible) return true;
+    const orderableItems = allNavItems.filter(item => {
+      if (item.adminOnly) return false;
+      if (item.alwaysVisible) return false;
+      return visiblePages.includes(item.pageId);
+    });
     
-    // Check if page is in visible pages
-    return visiblePages.includes(item.pageId);
-  });
+    // Sort orderable items by the order in visiblePages
+    const sortedOrderableItems = [...orderableItems].sort((a, b) => {
+      const indexA = visiblePages.indexOf(a.pageId);
+      const indexB = visiblePages.indexOf(b.pageId);
+      return indexA - indexB;
+    });
+    
+    return [...sortedOrderableItems, ...alwaysVisibleItems];
+  })();
 
   const renderNavLinks = (isBurger = false) => (
     <>

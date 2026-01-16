@@ -1,4 +1,3 @@
-import { useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserPreferences, PageId, DEFAULT_VISIBLE_PAGES } from '@/hooks/useUserPreferences';
@@ -43,6 +42,22 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { SortablePageItem } from '@/components/settings/SortablePageItem';
 
 const PAGE_OPTIONS: { id: PageId; label: string; canDisable: boolean }[] = [
   { id: 'dashboard', label: 'Accueil', canDisable: false },
@@ -55,6 +70,17 @@ const PAGE_OPTIONS: { id: PageId; label: string; canDisable: boolean }[] = [
 export default function Settings() {
   const { user, loading: authLoading } = useAuth();
   const { preferences, isLoading: prefsLoading, updatePreferences, isUpdating } = useUserPreferences();
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   const handleClearCache = () => {
     Object.keys(localStorage).forEach(key => {
@@ -91,6 +117,35 @@ export default function Settings() {
     updatePreferences({ visible_pages: newPages });
   };
 
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    
+    if (over && active.id !== over.id) {
+      const currentPages = visiblePages.length > 0 ? [...visiblePages] : [...DEFAULT_VISIBLE_PAGES];
+      
+      const oldIndex = currentPages.indexOf(active.id as PageId);
+      const newIndex = currentPages.indexOf(over.id as PageId);
+      
+      if (oldIndex !== -1 && newIndex !== -1) {
+        const newOrder = arrayMove(currentPages, oldIndex, newIndex);
+        updatePreferences({ visible_pages: newOrder });
+      }
+    }
+  };
+
+  const visiblePages = preferences?.visible_pages || DEFAULT_VISIBLE_PAGES;
+  
+  // Order PAGE_OPTIONS based on current visible_pages order
+  const orderedPageOptions = [...PAGE_OPTIONS].sort((a, b) => {
+    const indexA = visiblePages.indexOf(a.id);
+    const indexB = visiblePages.indexOf(b.id);
+    // If not in visible_pages, put at the end
+    if (indexA === -1 && indexB === -1) return 0;
+    if (indexA === -1) return 1;
+    if (indexB === -1) return -1;
+    return indexA - indexB;
+  });
+
   if (authLoading || prefsLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -105,7 +160,6 @@ export default function Settings() {
 
   const currentTheme = preferences?.theme || 'system';
   const currentNavStyle = preferences?.navigation_style || 'bottom';
-  const visiblePages = preferences?.visible_pages || DEFAULT_VISIBLE_PAGES;
 
   return (
     <AppLayout>
@@ -249,19 +303,33 @@ export default function Settings() {
                 <Label>Pages visibles</Label>
               </div>
               <p className="text-xs text-muted-foreground">
-                Choisissez les pages à afficher dans la navigation
+                Glissez pour réordonner, utilisez les toggles pour afficher/masquer
               </p>
               
-              {PAGE_OPTIONS.map((page) => (
-                <div key={page.id} className="flex items-center justify-between">
-                  <Label className="font-normal">{page.label}</Label>
-                  <Switch
-                    checked={visiblePages.includes(page.id)}
-                    onCheckedChange={() => togglePage(page.id)}
-                    disabled={!page.canDisable || isUpdating}
-                  />
-                </div>
-              ))}
+              <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragEnd={handleDragEnd}
+              >
+                <SortableContext
+                  items={orderedPageOptions.map(p => p.id)}
+                  strategy={verticalListSortingStrategy}
+                >
+                  <div className="space-y-2">
+                    {orderedPageOptions.map((page) => (
+                      <SortablePageItem
+                        key={page.id}
+                        id={page.id}
+                        label={page.label}
+                        isVisible={visiblePages.includes(page.id)}
+                        canDisable={page.canDisable}
+                        isUpdating={isUpdating}
+                        onToggle={() => togglePage(page.id)}
+                      />
+                    ))}
+                  </div>
+                </SortableContext>
+              </DndContext>
             </div>
           </CardContent>
         </Card>
