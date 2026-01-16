@@ -45,17 +45,11 @@ import {
 import {
   DndContext,
   closestCenter,
-  KeyboardSensor,
-  PointerSensor,
-  TouchSensor,
-  useSensor,
-  useSensors,
   DragEndEvent,
 } from '@dnd-kit/core';
 import {
   arrayMove,
   SortableContext,
-  sortableKeyboardCoordinates,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { SortablePageItem } from '@/components/settings/SortablePageItem';
@@ -76,20 +70,6 @@ export default function Settings() {
     updatePreferences,
     isUpdating,
   } = useUserPreferences();
-
-  const pointerSensor = useSensor(PointerSensor, {
-    activationConstraint: { distance: 8 },
-  });
-
-  const touchSensor = useSensor(TouchSensor, {
-    activationConstraint: { delay: 250, tolerance: 5 },
-  });
-
-  const keyboardSensor = useSensor(KeyboardSensor, {
-    coordinateGetter: sortableKeyboardCoordinates,
-  });
-
-  const sensors = useSensors(pointerSensor, touchSensor, keyboardSensor);
 
   const visiblePages = preferences?.visible_pages || DEFAULT_VISIBLE_PAGES;
 
@@ -315,7 +295,6 @@ export default function Settings() {
               </p>
               
               <DndContext
-                sensors={sensors}
                 collisionDetection={closestCenter}
                 onDragEnd={handleDragEnd}
               >
