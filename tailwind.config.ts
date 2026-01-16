@@ -52,6 +52,10 @@ export default {
           "rose-foreground": "hsl(var(--card-rose-foreground))",
           mint: "hsl(var(--card-mint))",
           "mint-foreground": "hsl(var(--card-mint-foreground))",
+          amber: "hsl(var(--card-amber))",
+          "amber-foreground": "hsl(var(--card-amber-foreground))",
+          violet: "hsl(var(--card-violet))",
+          "violet-foreground": "hsl(var(--card-violet-foreground))",
         },
         success: {
           DEFAULT: "hsl(var(--success))",
