@@ -31,7 +31,9 @@ import {
   LayoutGrid,
   Eye,
   PanelBottom,
+  Check,
 } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -323,6 +325,20 @@ export default function Settings() {
             <CardTitle className="text-base flex items-center gap-2">
               <Navigation className="h-4 w-4" />
               Navigation
+              <div className="flex gap-1 ml-auto">
+                {showBottomBar && (
+                  <Badge variant="secondary" className="text-xs gap-1">
+                    <PanelBottom className="h-3 w-3" />
+                    Barre
+                  </Badge>
+                )}
+                {showBurgerMenu && (
+                  <Badge variant="secondary" className="text-xs gap-1">
+                    <Menu className="h-3 w-3" />
+                    Menu
+                  </Badge>
+                )}
+              </div>
             </CardTitle>
             <CardDescription>Configurez les navigations et les pages visibles</CardDescription>
           </CardHeader>
@@ -333,6 +349,9 @@ export default function Settings() {
                 <Label className="flex items-center gap-2">
                   <PanelBottom className="h-4 w-4" />
                   Barre de navigation en bas
+                  {showBottomBar && (
+                    <Check className="h-4 w-4 text-green-500" />
+                  )}
                 </Label>
                 <p className="text-xs text-muted-foreground">
                   Affiche une barre de navigation fixe en bas de l'écran
@@ -390,6 +409,9 @@ export default function Settings() {
                 <Label className="flex items-center gap-2">
                   <Menu className="h-4 w-4" />
                   Menu burger
+                  {showBurgerMenu && (
+                    <Check className="h-4 w-4 text-green-500" />
+                  )}
                 </Label>
                 <p className="text-xs text-muted-foreground">
                   Affiche un menu hamburger dans le header
