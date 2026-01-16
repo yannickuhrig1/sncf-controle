@@ -12,6 +12,7 @@ import StationControl from "./pages/StationControl";
 import HistoryPage from "./pages/History";
 import ProfilePage from "./pages/Profile";
 import AdminPage from "./pages/Admin";
+import ManagerPage from "./pages/Manager";
 import StatisticsPage from "./pages/Statistics";
 import SettingsPage from "./pages/Settings";
 import NotFound from "./pages/NotFound";
@@ -35,6 +36,7 @@ const App = () => (
             <Route path="/statistics" element={<StatisticsPage />} />
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/settings" element={<SettingsPage />} />
+            <Route path="/manager" element={<ManagerPage />} />
             <Route path="/admin" element={<AdminPage />} />
             <Route path="*" element={<NotFound />} />
           </Routes>

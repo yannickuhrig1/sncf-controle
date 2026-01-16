@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 
 export type NavigationStyle = 'bottom' | 'burger';
 
-export type PageId = 'dashboard' | 'onboard' | 'station' | 'statistics' | 'history' | 'settings' | 'admin' | 'profile';
+export type PageId = 'dashboard' | 'onboard' | 'station' | 'statistics' | 'history' | 'settings' | 'admin' | 'profile' | 'manager';
 
 export interface UserPreferences {
   id: string;
