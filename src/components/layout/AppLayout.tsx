@@ -8,21 +8,25 @@ interface AppLayoutProps {
   children: ReactNode;
 }
 
-const navItems = [
+const baseNavItems = [
   { href: '/', icon: LayoutDashboard, label: 'Accueil' },
   { href: '/control/new', icon: Plus, label: 'Contrôle' },
   { href: '/statistics', icon: BarChart3, label: 'Stats' },
   { href: '/history', icon: History, label: 'Historique' },
-  { href: '/profile', icon: User, label: 'Profil' },
 ];
+
+const adminNavItem = { href: '/admin', icon: Settings, label: 'Admin' };
+const profileNavItem = { href: '/profile', icon: User, label: 'Profil' };
 
 export function AppLayout({ children }: AppLayoutProps) {
   const location = useLocation();
-  const { isAdmin } = useAuth();
+  const { profile } = useAuth();
 
-  const allNavItems = isAdmin() 
-    ? [...navItems.slice(0, 4), { href: '/admin', icon: Settings, label: 'Admin' }, navItems[4]]
-    : navItems;
+  const isUserAdmin = profile?.role === 'admin';
+
+  const navItems = isUserAdmin 
+    ? [...baseNavItems, adminNavItem, profileNavItem]
+    : [...baseNavItems, profileNavItem];
 
   return (
     <div className="min-h-screen flex flex-col pb-20">
@@ -42,7 +46,7 @@ export function AppLayout({ children }: AppLayoutProps) {
       {/* Bottom Navigation */}
       <nav className="fixed bottom-0 left-0 right-0 z-50 bg-card border-t safe-area-inset-bottom">
         <div className="flex justify-around items-center h-16">
-          {allNavItems.map((item) => {
+          {navItems.map((item) => {
             const isActive = location.pathname === item.href;
             return (
               <Link
