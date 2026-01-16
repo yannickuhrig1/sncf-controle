@@ -55,16 +55,20 @@ import {
 } from '@dnd-kit/sortable';
 import { SortablePageItem } from '@/components/settings/SortablePageItem';
 
-const PAGE_OPTIONS: { id: PageId; label: string; canDisable: boolean }[] = [
+const PAGE_OPTIONS: { id: PageId; label: string; canDisable: boolean; roleRequired?: 'manager' | 'admin' }[] = [
   { id: 'dashboard', label: 'Accueil', canDisable: false },
   { id: 'onboard', label: 'Contrôle à bord', canDisable: true },
   { id: 'station', label: 'Contrôle en gare', canDisable: true },
   { id: 'statistics', label: 'Statistiques', canDisable: true },
   { id: 'history', label: 'Historique', canDisable: true },
+  { id: 'manager', label: 'Manager', canDisable: true, roleRequired: 'manager' },
+  { id: 'profile', label: 'Profil', canDisable: true },
+  { id: 'settings', label: 'Paramètres', canDisable: true },
+  { id: 'admin', label: 'Administration', canDisable: true, roleRequired: 'admin' },
 ];
 
 export default function Settings() {
-  const { user, loading: authLoading } = useAuth();
+  const { user, profile, loading: authLoading } = useAuth();
   const {
     preferences,
     isLoading: prefsLoading,
@@ -72,13 +76,23 @@ export default function Settings() {
     isUpdating,
   } = useUserPreferences();
 
+  const isManager = profile?.role === 'manager' || profile?.role === 'admin';
+  const isAdmin = profile?.role === 'admin';
+
+  // Filter pages based on user role
+  const availablePages = PAGE_OPTIONS.filter(page => {
+    if (page.roleRequired === 'admin' && !isAdmin) return false;
+    if (page.roleRequired === 'manager' && !isManager) return false;
+    return true;
+  });
+
   const visiblePages = preferences?.visible_pages || DEFAULT_VISIBLE_PAGES;
   const bottomBarPages = preferences?.bottom_bar_pages || DEFAULT_BOTTOM_BAR_PAGES;
   const showBottomBar = preferences?.show_bottom_bar ?? true;
   const showBurgerMenu = preferences?.show_burger_menu ?? false;
 
-  // Order PAGE_OPTIONS based on current visible_pages order (for burger menu)
-  const orderedBurgerPages = [...PAGE_OPTIONS].sort((a, b) => {
+  // Order available pages based on current visible_pages order (for burger menu)
+  const orderedBurgerPages = [...availablePages].sort((a, b) => {
     const indexA = visiblePages.indexOf(a.id);
     const indexB = visiblePages.indexOf(b.id);
     if (indexA === -1 && indexB === -1) return 0;
@@ -87,8 +101,8 @@ export default function Settings() {
     return indexA - indexB;
   });
 
-  // Order PAGE_OPTIONS based on current bottom_bar_pages order
-  const orderedBottomBarPages = [...PAGE_OPTIONS].sort((a, b) => {
+  // Order available pages based on current bottom_bar_pages order
+  const orderedBottomBarPages = [...availablePages].sort((a, b) => {
     const indexA = bottomBarPages.indexOf(a.id);
     const indexB = bottomBarPages.indexOf(b.id);
     if (indexA === -1 && indexB === -1) return 0;
@@ -96,6 +110,25 @@ export default function Settings() {
     if (indexB === -1) return -1;
     return indexA - indexB;
   });
+
+  // Handler for toggling navigation modes with constraint
+  const handleToggleBottomBar = (checked: boolean) => {
+    // Can't disable both - if burger is off and trying to turn off bottom bar, prevent it
+    if (!checked && !showBurgerMenu) {
+      toast.error('Au moins un mode de navigation doit être actif');
+      return;
+    }
+    updatePreferences({ show_bottom_bar: checked });
+  };
+
+  const handleToggleBurgerMenu = (checked: boolean) => {
+    // Can't disable both - if bottom bar is off and trying to turn off burger, prevent it
+    if (!checked && !showBottomBar) {
+      toast.error('Au moins un mode de navigation doit être actif');
+      return;
+    }
+    updatePreferences({ show_burger_menu: checked });
+  };
 
   const handleClearCache = () => {
     Object.keys(localStorage).forEach(key => {
@@ -307,9 +340,7 @@ export default function Settings() {
               </div>
               <Switch
                 checked={showBottomBar}
-                onCheckedChange={(checked) =>
-                  updatePreferences({ show_bottom_bar: checked })
-                }
+                onCheckedChange={handleToggleBottomBar}
                 disabled={isUpdating}
               />
             </div>
@@ -366,9 +397,7 @@ export default function Settings() {
               </div>
               <Switch
                 checked={showBurgerMenu}
-                onCheckedChange={(checked) =>
-                  updatePreferences({ show_burger_menu: checked })
-                }
+                onCheckedChange={handleToggleBurgerMenu}
                 disabled={isUpdating}
               />
             </div>

@@ -29,7 +29,7 @@ export interface UserPreferences {
   updated_at: string;
 }
 
-export const DEFAULT_VISIBLE_PAGES: PageId[] = ['dashboard', 'onboard', 'station', 'statistics', 'history'];
+export const DEFAULT_VISIBLE_PAGES: PageId[] = ['dashboard', 'onboard', 'station', 'statistics', 'history', 'profile', 'settings'];
 export const DEFAULT_BOTTOM_BAR_PAGES: PageId[] = ['dashboard', 'onboard', 'station', 'statistics', 'history'];
 
 export const DEFAULT_PREFERENCES: Omit<UserPreferences, 'id' | 'user_id' | 'created_at' | 'updated_at'> = {
