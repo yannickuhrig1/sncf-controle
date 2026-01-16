@@ -204,7 +204,10 @@ export function AppLayout({ children }: AppLayoutProps) {
             {/* Connection Status Indicator */}
             <Tooltip>
               <TooltipTrigger asChild>
-                <div className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-white/10">
+                <div className={cn(
+                  "flex items-center gap-1.5 px-2 py-1 rounded-full bg-white/10",
+                  (!isOnline || !user) && "animate-pulse"
+                )}>
                   {isOnline && user ? (
                     <>
                       <motion.div
@@ -218,7 +221,14 @@ export function AppLayout({ children }: AppLayoutProps) {
                     <>
                       <motion.div
                         initial={{ scale: 0 }}
-                        animate={{ scale: 1 }}
+                        animate={{ 
+                          scale: [1, 1.2, 1],
+                        }}
+                        transition={{
+                          duration: 1.5,
+                          repeat: Infinity,
+                          ease: "easeInOut"
+                        }}
                         className="h-2 w-2 rounded-full bg-yellow-400"
                       />
                       <Wifi className="h-3.5 w-3.5 text-yellow-400" />
@@ -227,10 +237,29 @@ export function AppLayout({ children }: AppLayoutProps) {
                     <>
                       <motion.div
                         initial={{ scale: 0 }}
-                        animate={{ scale: 1 }}
+                        animate={{ 
+                          scale: [1, 1.3, 1],
+                          opacity: [1, 0.5, 1]
+                        }}
+                        transition={{
+                          duration: 1,
+                          repeat: Infinity,
+                          ease: "easeInOut"
+                        }}
                         className="h-2 w-2 rounded-full bg-red-400"
                       />
-                      <WifiOff className="h-3.5 w-3.5 text-red-400" />
+                      <motion.div
+                        animate={{ 
+                          opacity: [1, 0.5, 1]
+                        }}
+                        transition={{
+                          duration: 1,
+                          repeat: Infinity,
+                          ease: "easeInOut"
+                        }}
+                      >
+                        <WifiOff className="h-3.5 w-3.5 text-red-400" />
+                      </motion.div>
                     </>
                   )}
                 </div>
