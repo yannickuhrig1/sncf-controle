@@ -281,6 +281,7 @@ export type Database = {
       }
       user_preferences: {
         Row: {
+          bottom_bar_pages: Json | null
           created_at: string
           data_auto_save: boolean
           data_keep_history_days: number
@@ -293,12 +294,15 @@ export type Database = {
           notifications_fraud_alerts: boolean
           notifications_new_controls: boolean
           notifications_push: boolean
+          show_bottom_bar: boolean | null
+          show_burger_menu: boolean | null
           theme: string
           updated_at: string
           user_id: string
           visible_pages: Json
         }
         Insert: {
+          bottom_bar_pages?: Json | null
           created_at?: string
           data_auto_save?: boolean
           data_keep_history_days?: number
@@ -311,12 +315,15 @@ export type Database = {
           notifications_fraud_alerts?: boolean
           notifications_new_controls?: boolean
           notifications_push?: boolean
+          show_bottom_bar?: boolean | null
+          show_burger_menu?: boolean | null
           theme?: string
           updated_at?: string
           user_id: string
           visible_pages?: Json
         }
         Update: {
+          bottom_bar_pages?: Json | null
           created_at?: string
           data_auto_save?: boolean
           data_keep_history_days?: number
@@ -329,6 +336,8 @@ export type Database = {
           notifications_fraud_alerts?: boolean
           notifications_new_controls?: boolean
           notifications_push?: boolean
+          show_bottom_bar?: boolean | null
+          show_burger_menu?: boolean | null
           theme?: string
           updated_at?: string
           user_id?: string

@@ -13,6 +13,9 @@ export interface UserPreferences {
   theme: 'light' | 'dark' | 'system';
   navigation_style: NavigationStyle;
   visible_pages: PageId[];
+  show_bottom_bar: boolean;
+  show_burger_menu: boolean;
+  bottom_bar_pages: PageId[];
   notifications_push: boolean;
   notifications_email: boolean;
   notifications_fraud_alerts: boolean;
@@ -27,11 +30,15 @@ export interface UserPreferences {
 }
 
 export const DEFAULT_VISIBLE_PAGES: PageId[] = ['dashboard', 'onboard', 'station', 'statistics', 'history'];
+export const DEFAULT_BOTTOM_BAR_PAGES: PageId[] = ['dashboard', 'onboard', 'station', 'statistics', 'history'];
 
 export const DEFAULT_PREFERENCES: Omit<UserPreferences, 'id' | 'user_id' | 'created_at' | 'updated_at'> = {
   theme: 'system',
   navigation_style: 'bottom',
   visible_pages: DEFAULT_VISIBLE_PAGES,
+  show_bottom_bar: true,
+  show_burger_menu: false,
+  bottom_bar_pages: DEFAULT_BOTTOM_BAR_PAGES,
   notifications_push: true,
   notifications_email: false,
   notifications_fraud_alerts: true,
@@ -121,6 +128,11 @@ export function useUserPreferences() {
     visible_pages: Array.isArray(preferences.visible_pages) 
       ? preferences.visible_pages 
       : DEFAULT_VISIBLE_PAGES,
+    bottom_bar_pages: Array.isArray(preferences.bottom_bar_pages)
+      ? preferences.bottom_bar_pages
+      : DEFAULT_BOTTOM_BAR_PAGES,
+    show_bottom_bar: preferences.show_bottom_bar ?? true,
+    show_burger_menu: preferences.show_burger_menu ?? false,
   } as UserPreferences : null;
 
   return {
