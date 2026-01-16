@@ -46,6 +46,20 @@ export default {
         card: {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
+          cyan: "hsl(var(--card-cyan))",
+          "cyan-foreground": "hsl(var(--card-cyan-foreground))",
+          rose: "hsl(var(--card-rose))",
+          "rose-foreground": "hsl(var(--card-rose-foreground))",
+          mint: "hsl(var(--card-mint))",
+          "mint-foreground": "hsl(var(--card-mint-foreground))",
+        },
+        success: {
+          DEFAULT: "hsl(var(--success))",
+          foreground: "hsl(var(--success-foreground))",
+        },
+        warning: {
+          DEFAULT: "hsl(var(--warning))",
+          foreground: "hsl(var(--warning-foreground))",
         },
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
