@@ -2,17 +2,136 @@
 @tailwind components;
 @tailwind utilities;
 
-/* LAFEA Pastel Theme - All colors in HSL */
+/* Theme System - All colors in HSL */
 
 @layer base {
+  /* ===== SNCF THEME (Default) ===== */
   :root {
-    /* Brand Colors - Pastel palette */
-    --sncf-primary: 180 45% 65%;
-    --sncf-secondary: 350 70% 75%;
-    --sncf-success: 150 50% 70%;
+    /* Brand Colors */
+    --sncf-primary: 343 100% 38%;
+    --sncf-secondary: 210 100% 35%;
+    --sncf-success: 142 76% 36%;
     --sncf-warning: 38 92% 50%;
     --sncf-danger: 0 84% 60%;
 
+    --background: 220 20% 97%;
+    --foreground: 220 20% 10%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 220 20% 10%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 20% 10%;
+
+    --primary: 343 100% 38%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 220 15% 92%;
+    --secondary-foreground: 220 20% 20%;
+
+    --muted: 220 15% 95%;
+    --muted-foreground: 220 10% 45%;
+
+    --accent: 220 15% 92%;
+    --accent-foreground: 220 20% 10%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --success: 142 76% 36%;
+    --success-foreground: 0 0% 100%;
+
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 0%;
+
+    --border: 220 15% 90%;
+    --input: 220 15% 90%;
+    --ring: 343 100% 38%;
+
+    --radius: 0.75rem;
+
+    /* Section colors (neutral for SNCF theme) */
+    --card-cyan: 0 0% 100%;
+    --card-cyan-foreground: 220 20% 10%;
+    --card-rose: 0 0% 100%;
+    --card-rose-foreground: 220 20% 10%;
+    --card-mint: 0 0% 100%;
+    --card-mint-foreground: 220 20% 10%;
+    --card-amber: 0 0% 100%;
+    --card-amber-foreground: 220 20% 10%;
+    --card-violet: 0 0% 100%;
+    --card-violet-foreground: 220 20% 10%;
+
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 220 20% 30%;
+    --sidebar-primary: 343 100% 38%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 220 15% 95%;
+    --sidebar-accent-foreground: 220 20% 10%;
+    --sidebar-border: 220 15% 90%;
+    --sidebar-ring: 343 100% 38%;
+  }
+
+  .dark {
+    /* SNCF dark theme */
+    --background: 222 30% 8%;
+    --foreground: 220 15% 90%;
+
+    --card: 222 25% 12%;
+    --card-foreground: 220 15% 90%;
+
+    --popover: 222 25% 12%;
+    --popover-foreground: 220 15% 90%;
+
+    --primary: 343 90% 50%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 222 20% 18%;
+    --secondary-foreground: 220 15% 85%;
+
+    --muted: 222 20% 16%;
+    --muted-foreground: 220 10% 55%;
+
+    --accent: 222 20% 18%;
+    --accent-foreground: 220 15% 90%;
+
+    --destructive: 0 70% 50%;
+    --destructive-foreground: 0 0% 100%;
+
+    --success: 142 70% 45%;
+    --success-foreground: 0 0% 100%;
+
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 0%;
+
+    --border: 222 20% 20%;
+    --input: 222 20% 20%;
+    --ring: 343 90% 50%;
+
+    /* Section colors (neutral for SNCF dark) */
+    --card-cyan: 222 25% 12%;
+    --card-cyan-foreground: 220 15% 90%;
+    --card-rose: 222 25% 12%;
+    --card-rose-foreground: 220 15% 90%;
+    --card-mint: 222 25% 12%;
+    --card-mint-foreground: 220 15% 90%;
+    --card-amber: 222 25% 12%;
+    --card-amber-foreground: 220 15% 90%;
+    --card-violet: 222 25% 12%;
+    --card-violet-foreground: 220 15% 90%;
+
+    --sidebar-background: 222 28% 10%;
+    --sidebar-foreground: 220 15% 85%;
+    --sidebar-primary: 343 90% 50%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 222 20% 16%;
+    --sidebar-accent-foreground: 220 15% 90%;
+    --sidebar-border: 222 20% 18%;
+    --sidebar-ring: 343 90% 50%;
+  }
+
+  /* ===== LAFEA PASTEL THEME ===== */
+  .theme-lafea {
     --background: 210 20% 96%;
     --foreground: 220 20% 15%;
 
@@ -47,15 +166,17 @@
     --input: 210 15% 90%;
     --ring: 180 45% 55%;
 
-    --radius: 0.75rem;
-
-    /* Card variants for sections */
+    /* Section colors - Pastel variants */
     --card-cyan: 180 50% 92%;
     --card-cyan-foreground: 180 40% 25%;
     --card-rose: 350 70% 92%;
     --card-rose-foreground: 350 50% 30%;
     --card-mint: 150 45% 92%;
     --card-mint-foreground: 150 40% 25%;
+    --card-amber: 38 70% 90%;
+    --card-amber-foreground: 38 60% 25%;
+    --card-violet: 270 50% 92%;
+    --card-violet-foreground: 270 40% 30%;
 
     --sidebar-background: 0 0% 100%;
     --sidebar-foreground: 220 20% 30%;
@@ -67,8 +188,7 @@
     --sidebar-ring: 180 45% 55%;
   }
 
-  .dark {
-    /* Dark mode with pastel accents */
+  .theme-lafea.dark {
     --background: 220 25% 10%;
     --foreground: 210 20% 90%;
 
@@ -103,13 +223,17 @@
     --input: 220 18% 22%;
     --ring: 180 50% 50%;
 
-    /* Card variants for dark mode */
+    /* Section colors - Dark pastel variants */
     --card-cyan: 180 35% 18%;
     --card-cyan-foreground: 180 50% 80%;
     --card-rose: 350 35% 20%;
     --card-rose-foreground: 350 50% 85%;
     --card-mint: 150 30% 18%;
     --card-mint-foreground: 150 45% 80%;
+    --card-amber: 38 35% 18%;
+    --card-amber-foreground: 38 50% 80%;
+    --card-violet: 270 30% 20%;
+    --card-violet-foreground: 270 45% 85%;
 
     --sidebar-background: 220 25% 12%;
     --sidebar-foreground: 210 15% 85%;

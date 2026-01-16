@@ -404,7 +404,7 @@ export default function OnboardControl() {
           {/* Left Column - Form (2/3 on desktop) */}
           <div className="lg:col-span-2 space-y-4">
             {/* Card 1: Train Info */}
-            <Card>
+            <Card className="bg-card-cyan text-card-cyan-foreground border-card-cyan">
               <CardHeader className="pb-3">
                 <CardTitle className="text-base flex items-center gap-2">
                   <Train className="h-4 w-4" />
@@ -491,13 +491,13 @@ export default function OnboardControl() {
             </Card>
 
             {/* Card 2: Tarifs à bord */}
-            <Card>
+            <Card className="bg-card-mint text-card-mint-foreground border-card-mint">
               <CardHeader className="pb-3">
                 <CardTitle className="text-base flex items-center gap-2">
                   <Ticket className="h-4 w-4" />
                   Tarif à bord / exceptionnel
                 </CardTitle>
-                <CardDescription>Ces tarifs ne comptent PAS dans le taux de fraude</CardDescription>
+                <CardDescription className="text-card-mint-foreground/70">Ces tarifs ne comptent PAS dans le taux de fraude</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 {/* Toggle Bord / Exceptionnel */}
@@ -550,13 +550,13 @@ export default function OnboardControl() {
             </Card>
 
             {/* Card 3: Tarifs contrôle */}
-            <Card>
+            <Card className="bg-card-amber text-card-amber-foreground border-card-amber">
               <CardHeader className="pb-3">
                 <CardTitle className="text-base flex items-center gap-2">
                   <FileText className="h-4 w-4" />
                   Tarif contrôle
                 </CardTitle>
-                <CardDescription>Infractions régularisées sur place</CardDescription>
+                <CardDescription className="text-card-amber-foreground/70">Infractions régularisées sur place</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <TarifTypeToggle types={TARIF_TYPES} value={controleTarifType} onChange={setControleTarifType} />
@@ -600,13 +600,13 @@ export default function OnboardControl() {
             </Card>
 
             {/* Card 4: PV */}
-            <Card>
+            <Card className="bg-card-rose text-card-rose-foreground border-card-rose">
               <CardHeader className="pb-3">
-                <CardTitle className="text-base flex items-center gap-2 text-destructive">
+                <CardTitle className="text-base flex items-center gap-2">
                   <AlertTriangle className="h-4 w-4" />
                   Procès-verbaux (PV)
                 </CardTitle>
-                <CardDescription>Infractions verbalisées</CardDescription>
+                <CardDescription className="text-card-rose-foreground/70">Infractions verbalisées</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <TarifTypeToggle types={TARIF_TYPES} value={pvTarifType} onChange={setPvTarifType} />
@@ -651,7 +651,7 @@ export default function OnboardControl() {
             </Card>
 
             {/* Card 5: RI */}
-            <Card>
+            <Card className="bg-card-violet text-card-violet-foreground border-card-violet">
               <CardHeader className="pb-3">
                 <CardTitle className="text-base flex items-center gap-2">
                   <User className="h-4 w-4" />

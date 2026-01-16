@@ -237,7 +237,7 @@ export default function StationControl() {
 
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Station Info */}
-          <Card>
+          <Card className="bg-card-cyan text-card-cyan-foreground border-card-cyan">
             <CardHeader>
               <CardTitle className="text-base">Informations gare</CardTitle>
             </CardHeader>
@@ -294,7 +294,7 @@ export default function StationControl() {
           </Card>
 
           {/* Passengers */}
-          <Card>
+          <Card className="bg-card-mint text-card-mint-foreground border-card-mint">
             <CardHeader>
               <CardTitle className="text-base">Voyageurs</CardTitle>
             </CardHeader>
@@ -329,6 +329,7 @@ export default function StationControl() {
             title="Tarifs à bord"
             description="Ventes réalisées"
             items={tarifsBordItems}
+            variant="mint"
           />
 
           {/* Tarifs contrôle */}
@@ -336,6 +337,7 @@ export default function StationControl() {
             title="Tarifs contrôle"
             description="Infractions régularisées sur place"
             items={tarifsControleItems}
+            variant="amber"
           />
 
           {/* PV */}
@@ -343,10 +345,11 @@ export default function StationControl() {
             title="Procès-Verbaux (PV)"
             description="Infractions verbalisées"
             items={pvItems}
+            variant="rose"
           />
 
           {/* RI */}
-          <Card>
+          <Card className="bg-card-violet text-card-violet-foreground border-card-violet">
             <CardHeader>
               <CardTitle className="text-base">Relevés d'Identité (RI)</CardTitle>
             </CardHeader>
