@@ -2,8 +2,10 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
+import { AnimatePresence } from "framer-motion";
+import { PageTransition } from "@/components/layout/PageTransition";
 import Dashboard from "./pages/Dashboard";
 import Auth from "./pages/Auth";
 import NewControl from "./pages/NewControl";
@@ -19,6 +21,29 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
+const AnimatedRoutes = () => {
+  const location = useLocation();
+  
+  return (
+    <AnimatePresence mode="wait">
+      <Routes location={location} key={location.pathname}>
+        <Route path="/" element={<PageTransition><Dashboard /></PageTransition>} />
+        <Route path="/auth" element={<PageTransition><Auth /></PageTransition>} />
+        <Route path="/control/new" element={<PageTransition><NewControl /></PageTransition>} />
+        <Route path="/onboard" element={<PageTransition><OnboardControl /></PageTransition>} />
+        <Route path="/station" element={<PageTransition><StationControl /></PageTransition>} />
+        <Route path="/history" element={<PageTransition><HistoryPage /></PageTransition>} />
+        <Route path="/statistics" element={<PageTransition><StatisticsPage /></PageTransition>} />
+        <Route path="/profile" element={<PageTransition><ProfilePage /></PageTransition>} />
+        <Route path="/settings" element={<PageTransition><SettingsPage /></PageTransition>} />
+        <Route path="/manager" element={<PageTransition><ManagerPage /></PageTransition>} />
+        <Route path="/admin" element={<PageTransition><AdminPage /></PageTransition>} />
+        <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
+      </Routes>
+    </AnimatePresence>
+  );
+};
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
@@ -26,20 +51,7 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/auth" element={<Auth />} />
-            <Route path="/control/new" element={<NewControl />} />
-            <Route path="/onboard" element={<OnboardControl />} />
-            <Route path="/station" element={<StationControl />} />
-            <Route path="/history" element={<HistoryPage />} />
-            <Route path="/statistics" element={<StatisticsPage />} />
-            <Route path="/profile" element={<ProfilePage />} />
-            <Route path="/settings" element={<SettingsPage />} />
-            <Route path="/manager" element={<ManagerPage />} />
-            <Route path="/admin" element={<AdminPage />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+          <AnimatedRoutes />
         </BrowserRouter>
       </TooltipProvider>
     </AuthProvider>
