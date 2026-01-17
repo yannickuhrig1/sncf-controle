@@ -86,7 +86,9 @@ export function useUserPreferences() {
   });
 
   const updatePreferences = useMutation({
-    mutationFn: async (updates: Partial<Omit<UserPreferences, 'id' | 'user_id' | 'created_at' | 'updated_at'>>) => {
+    mutationFn: async (
+      updates: Partial<Omit<UserPreferences, 'id' | 'user_id' | 'created_at' | 'updated_at'>>,
+    ) => {
       if (!user) throw new Error('Not authenticated');
 
       const { data, error } = await supabase
@@ -99,9 +101,27 @@ export function useUserPreferences() {
       if (error) throw error;
       return data as UserPreferences;
     },
+    onMutate: async (updates) => {
+      await queryClient.cancelQueries({ queryKey: ['user-preferences', user?.id] });
+
+      const previous = queryClient.getQueryData<UserPreferences | null>([
+        'user-preferences',
+        user?.id,
+      ]);
+
+      // Optimistic merge
+      if (previous) {
+        queryClient.setQueryData(['user-preferences', user?.id], {
+          ...previous,
+          ...updates,
+        });
+      }
+
+      return { previous };
+    },
     onSuccess: (data) => {
       queryClient.setQueryData(['user-preferences', user?.id], data);
-      
+
       // Apply theme immediately
       const root = document.documentElement;
       if (data.theme === 'dark') {
@@ -116,7 +136,10 @@ export function useUserPreferences() {
         }
       }
     },
-    onError: (error) => {
+    onError: (error, _updates, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(['user-preferences', user?.id], context.previous);
+      }
       toast.error('Erreur lors de la sauvegarde: ' + error.message);
     },
   });
