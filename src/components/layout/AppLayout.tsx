@@ -18,7 +18,6 @@ interface NavItem {
   icon: React.ElementType;
   label: string;
   pageId: PageId;
-  alwaysVisible?: boolean;
   adminOnly?: boolean;
   managerOnly?: boolean;
 }
@@ -29,10 +28,10 @@ const allNavItems: NavItem[] = [
   { href: '/station', icon: Building2, label: 'En gare', pageId: 'station' },
   { href: '/statistics', icon: BarChart3, label: 'Stats', pageId: 'statistics' },
   { href: '/history', icon: History, label: 'Historique', pageId: 'history' },
-  { href: '/manager', icon: UserCheck, label: 'Manager', pageId: 'manager', managerOnly: true, alwaysVisible: true },
-  { href: '/settings', icon: Settings, label: 'Paramètres', pageId: 'settings', alwaysVisible: true },
-  { href: '/admin', icon: Shield, label: 'Admin', pageId: 'admin', adminOnly: true, alwaysVisible: true },
-  { href: '/profile', icon: User, label: 'Profil', pageId: 'profile', alwaysVisible: true },
+  { href: '/manager', icon: UserCheck, label: 'Manager', pageId: 'manager', managerOnly: true },
+  { href: '/settings', icon: Settings, label: 'Paramètres', pageId: 'settings' },
+  { href: '/admin', icon: Shield, label: 'Admin', pageId: 'admin', adminOnly: true },
+  { href: '/profile', icon: User, label: 'Profil', pageId: 'profile' },
 ];
 
 export function AppLayout({ children }: AppLayoutProps) {
@@ -74,52 +73,34 @@ export function AppLayout({ children }: AppLayoutProps) {
   const visiblePages = preferences?.visible_pages || DEFAULT_VISIBLE_PAGES;
   const bottomBarPages = preferences?.bottom_bar_pages || DEFAULT_BOTTOM_BAR_PAGES;
 
-  // Filter and order nav items for burger menu based on visibility and role
+  // Filter and order nav items for burger menu
   const burgerNavItems = (() => {
-    const alwaysVisibleItems = allNavItems.filter(item => {
+    const allowedItems = allNavItems.filter(item => {
       if (item.adminOnly && !isUserAdmin) return false;
       if (item.managerOnly && !isUserManager && !isUserAdmin) return false;
-      return item.alwaysVisible;
-    });
-    
-    const orderableItems = allNavItems.filter(item => {
-      if (item.adminOnly) return false;
-      if (item.managerOnly) return false;
-      if (item.alwaysVisible) return false;
       return visiblePages.includes(item.pageId);
     });
-    
-    const sortedOrderableItems = [...orderableItems].sort((a, b) => {
+
+    return [...allowedItems].sort((a, b) => {
       const indexA = visiblePages.indexOf(a.pageId);
       const indexB = visiblePages.indexOf(b.pageId);
       return indexA - indexB;
     });
-    
-    return [...sortedOrderableItems, ...alwaysVisibleItems];
   })();
 
   // Filter and order nav items for bottom bar
   const bottomNavItems = (() => {
-    const alwaysVisibleItems = allNavItems.filter(item => {
+    const allowedItems = allNavItems.filter(item => {
       if (item.adminOnly && !isUserAdmin) return false;
       if (item.managerOnly && !isUserManager && !isUserAdmin) return false;
-      return item.alwaysVisible;
-    });
-    
-    const orderableItems = allNavItems.filter(item => {
-      if (item.adminOnly) return false;
-      if (item.managerOnly) return false;
-      if (item.alwaysVisible) return false;
       return bottomBarPages.includes(item.pageId);
     });
-    
-    const sortedOrderableItems = [...orderableItems].sort((a, b) => {
+
+    return [...allowedItems].sort((a, b) => {
       const indexA = bottomBarPages.indexOf(a.pageId);
       const indexB = bottomBarPages.indexOf(b.pageId);
       return indexA - indexB;
     });
-    
-    return [...sortedOrderableItems, ...alwaysVisibleItems];
   })();
 
   const renderBurgerLinks = () => (
