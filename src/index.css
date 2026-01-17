@@ -130,8 +130,8 @@
     --sidebar-ring: 343 90% 50%;
   }
 
-  /* ===== LAFEA PASTEL THEME ===== */
-  .theme-lafea {
+  /* ===== COLORÉ THEME (Pastel sections) ===== */
+  .theme-colore {
     --background: 210 20% 96%;
     --foreground: 220 20% 15%;
 
@@ -141,8 +141,8 @@
     --popover: 0 0% 100%;
     --popover-foreground: 220 20% 15%;
 
-    --primary: 180 45% 55%;
-    --primary-foreground: 220 20% 15%;
+    --primary: 180 45% 45%;
+    --primary-foreground: 0 0% 100%;
 
     --secondary: 350 65% 85%;
     --secondary-foreground: 350 50% 30%;
@@ -166,29 +166,29 @@
     --input: 210 15% 90%;
     --ring: 180 45% 55%;
 
-    /* Section colors - Pastel variants */
-    --card-cyan: 180 50% 92%;
-    --card-cyan-foreground: 180 40% 25%;
-    --card-rose: 350 70% 92%;
-    --card-rose-foreground: 350 50% 30%;
-    --card-mint: 150 45% 92%;
-    --card-mint-foreground: 150 40% 25%;
-    --card-amber: 38 70% 90%;
-    --card-amber-foreground: 38 60% 25%;
-    --card-violet: 270 50% 92%;
-    --card-violet-foreground: 270 40% 30%;
+    /* Section colors - Based on original LAFEA app screenshot */
+    --card-cyan: 185 55% 88%;
+    --card-cyan-foreground: 185 50% 25%;
+    --card-rose: 350 75% 90%;
+    --card-rose-foreground: 350 60% 35%;
+    --card-mint: 145 50% 88%;
+    --card-mint-foreground: 145 45% 25%;
+    --card-amber: 38 75% 88%;
+    --card-amber-foreground: 38 65% 28%;
+    --card-violet: 270 55% 90%;
+    --card-violet-foreground: 270 45% 30%;
 
     --sidebar-background: 0 0% 100%;
     --sidebar-foreground: 220 20% 30%;
-    --sidebar-primary: 180 45% 55%;
-    --sidebar-primary-foreground: 220 20% 15%;
+    --sidebar-primary: 180 45% 45%;
+    --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 180 40% 92%;
     --sidebar-accent-foreground: 180 35% 25%;
     --sidebar-border: 210 15% 88%;
-    --sidebar-ring: 180 45% 55%;
+    --sidebar-ring: 180 45% 45%;
   }
 
-  .theme-lafea.dark {
+  .theme-colore.dark {
     --background: 220 25% 10%;
     --foreground: 210 20% 90%;
 
@@ -224,16 +224,16 @@
     --ring: 180 50% 50%;
 
     /* Section colors - Dark pastel variants */
-    --card-cyan: 180 35% 18%;
-    --card-cyan-foreground: 180 50% 80%;
-    --card-rose: 350 35% 20%;
-    --card-rose-foreground: 350 50% 85%;
-    --card-mint: 150 30% 18%;
-    --card-mint-foreground: 150 45% 80%;
-    --card-amber: 38 35% 18%;
-    --card-amber-foreground: 38 50% 80%;
-    --card-violet: 270 30% 20%;
-    --card-violet-foreground: 270 45% 85%;
+    --card-cyan: 185 40% 18%;
+    --card-cyan-foreground: 185 50% 80%;
+    --card-rose: 350 40% 20%;
+    --card-rose-foreground: 350 55% 85%;
+    --card-mint: 145 35% 18%;
+    --card-mint-foreground: 145 45% 80%;
+    --card-amber: 38 40% 18%;
+    --card-amber-foreground: 38 55% 80%;
+    --card-violet: 270 35% 20%;
+    --card-violet-foreground: 270 50% 85%;
 
     --sidebar-background: 220 25% 12%;
     --sidebar-foreground: 210 15% 85%;

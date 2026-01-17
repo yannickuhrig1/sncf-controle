@@ -256,16 +256,15 @@ export default function Settings() {
             <div className="space-y-2">
               <Label>Style de thème</Label>
               <Select
-                value={preferences?.navigation_style === 'burger' ? 'lafea' : 'sncf'}
-                onValueChange={(value: 'sncf' | 'lafea') => {
+                value={preferences?.navigation_style === 'burger' ? 'colore' : 'sncf'}
+                onValueChange={(value: 'sncf' | 'colore') => {
                   const root = document.documentElement;
-                  if (value === 'lafea') {
-                    root.classList.add('theme-lafea');
-                  } else {
-                    root.classList.remove('theme-lafea');
+                  root.classList.remove('theme-colore');
+                  if (value === 'colore') {
+                    root.classList.add('theme-colore');
                   }
                   // Store in navigation_style temporarily (we'll use a proper field later)
-                  updatePreferences({ navigation_style: value === 'lafea' ? 'burger' : 'bottom' });
+                  updatePreferences({ navigation_style: value === 'colore' ? 'burger' : 'bottom' });
                 }}
                 disabled={isUpdating}
               >
@@ -279,10 +278,10 @@ export default function Settings() {
                       SNCF Classique
                     </div>
                   </SelectItem>
-                  <SelectItem value="lafea">
+                  <SelectItem value="colore">
                     <div className="flex items-center gap-2">
-                      <div className="h-4 w-4 rounded-full bg-[hsl(180,45%,55%)]" />
-                      LAFEA Pastel
+                      <div className="h-4 w-4 rounded-full bg-[hsl(180,45%,45%)]" />
+                      Coloré
                     </div>
                   </SelectItem>
                 </SelectContent>
