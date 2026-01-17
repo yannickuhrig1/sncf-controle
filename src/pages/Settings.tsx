@@ -170,11 +170,16 @@ export default function Settings() {
   const toggleBottomBarPage = (pageId: PageId) => {
     if (!preferences) return;
     
-    const currentPages = preferences.bottom_bar_pages || DEFAULT_BOTTOM_BAR_PAGES;
+    // Get current pages, ensuring it's a proper array
+    const currentPages = Array.isArray(preferences.bottom_bar_pages) 
+      ? [...preferences.bottom_bar_pages] 
+      : [...DEFAULT_BOTTOM_BAR_PAGES];
+    
     const newPages = currentPages.includes(pageId)
       ? currentPages.filter(p => p !== pageId)
       : [...currentPages, pageId];
     
+    console.log('Toggle bottom bar page:', pageId, 'Current:', currentPages, 'New:', newPages);
     updatePreferences({ bottom_bar_pages: newPages });
   };
 
