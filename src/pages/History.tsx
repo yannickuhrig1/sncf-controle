@@ -1,13 +1,29 @@
-import { Link, Navigate } from 'react-router-dom';
+import { useState } from 'react';
+import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useControls } from '@/hooks/useControls';
 import { AppLayout } from '@/components/layout/AppLayout';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { buttonVariants } from '@/components/ui/button';
-import { Loader2, History, Train, Building2, TrainTrack, Calendar, Clock, Users, AlertTriangle } from 'lucide-react';
+import { Button, buttonVariants } from '@/components/ui/button';
+import { ControlDetailDialog } from '@/components/controls/ControlDetailDialog';
+import { ExportDialog } from '@/components/controls/ExportDialog';
+import { 
+  Loader2, 
+  History, 
+  Train, 
+  Building2, 
+  TrainTrack, 
+  Calendar, 
+  Clock, 
+  Users, 
+  AlertTriangle,
+  Download,
+  ChevronRight,
+} from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { toast } from 'sonner';
 import type { Database } from '@/integrations/supabase/types';
 
 type Control = Database['public']['Tables']['controls']['Row'];
@@ -19,96 +35,72 @@ const locationIcons: Record<LocationType, React.ComponentType<{ className?: stri
   quai: TrainTrack,
 };
 
-function ControlCard({ control }: { control: Control }) {
+interface ControlRowProps {
+  control: Control;
+  onClick: () => void;
+}
+
+function ControlRow({ control, onClick }: ControlRowProps) {
   const Icon = locationIcons[control.location_type];
   const fraudCount = control.tarifs_controle + control.pv;
   const fraudRate = control.nb_passagers > 0 
-    ? ((fraudCount / control.nb_passagers) * 100).toFixed(1)
-    : '0';
+    ? ((fraudCount / control.nb_passagers) * 100)
+    : 0;
 
   return (
-    <Card>
-      <CardHeader className="pb-2">
-        <div className="flex items-start justify-between">
-          <div className="flex items-center gap-2">
-            <div className="p-2 rounded-lg bg-primary/10">
-              <Icon className="h-4 w-4 text-primary" />
-            </div>
-            <div>
-              <CardTitle className="text-base">{control.location}</CardTitle>
+    <Card 
+      className="cursor-pointer hover:bg-muted/50 transition-colors"
+      onClick={onClick}
+    >
+      <CardContent className="p-4">
+        <div className="flex items-center gap-3">
+          {/* Icon */}
+          <div className="p-2 rounded-lg bg-primary/10 shrink-0">
+            <Icon className="h-4 w-4 text-primary" />
+          </div>
+          
+          {/* Main info */}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2">
+              <span className="font-medium truncate">{control.location}</span>
               {control.train_number && (
-                <p className="text-xs text-muted-foreground">N° {control.train_number}</p>
+                <Badge variant="outline" className="text-xs shrink-0">
+                  N° {control.train_number}
+                </Badge>
+              )}
+            </div>
+            <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1">
+              <span className="flex items-center gap-1">
+                <Clock className="h-3 w-3" />
+                {control.control_time.slice(0, 5)}
+              </span>
+              {control.origin && control.destination && (
+                <span className="truncate">
+                  {control.origin} → {control.destination}
+                </span>
               )}
             </div>
           </div>
-          <Badge variant={control.location_type === 'train' ? 'default' : 'secondary'}>
-            {control.location_type}
-          </Badge>
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        <div className="flex items-center gap-4 text-sm text-muted-foreground">
-          <div className="flex items-center gap-1">
-            <Calendar className="h-3.5 w-3.5" />
-            {format(new Date(control.control_date), 'dd MMM yyyy', { locale: fr })}
-          </div>
-          <div className="flex items-center gap-1">
-            <Clock className="h-3.5 w-3.5" />
-            {control.control_time.slice(0, 5)}
-          </div>
-        </div>
-
-        <div className="grid grid-cols-3 gap-4 pt-2 border-t">
-          <div className="text-center">
-            <div className="flex items-center justify-center gap-1 text-sm font-medium">
-              <Users className="h-3.5 w-3.5" />
-              {control.nb_passagers}
+          
+          {/* Stats */}
+          <div className="flex items-center gap-4 shrink-0">
+            <div className="text-center hidden sm:block">
+              <div className="flex items-center gap-1 text-sm font-medium">
+                <Users className="h-3 w-3" />
+                {control.nb_passagers}
+              </div>
             </div>
-            <p className="text-xs text-muted-foreground">Voyageurs</p>
-          </div>
-          <div className="text-center">
-            <div className="text-sm font-medium text-green-600">{control.nb_en_regle}</div>
-            <p className="text-xs text-muted-foreground">En règle</p>
-          </div>
-          <div className="text-center">
-            <div className={`flex items-center justify-center gap-1 text-sm font-medium ${parseFloat(fraudRate) > 5 ? 'text-red-600' : 'text-orange-600'}`}>
-              <AlertTriangle className="h-3.5 w-3.5" />
-              {fraudRate}%
+            <div className={`text-center ${
+              fraudRate > 10 ? 'text-red-600' : fraudRate > 5 ? 'text-orange-600' : 'text-green-600'
+            }`}>
+              <div className="flex items-center gap-1 text-sm font-semibold">
+                <AlertTriangle className="h-3 w-3" />
+                {fraudRate.toFixed(1)}%
+              </div>
             </div>
-            <p className="text-xs text-muted-foreground">Fraude</p>
+            <ChevronRight className="h-4 w-4 text-muted-foreground" />
           </div>
         </div>
-
-        {(control.pv > 0 || control.tarifs_controle > 0) && (
-          <div className="flex gap-2 pt-2 border-t">
-            {control.pv > 0 && (
-              <Badge variant="destructive" className="text-xs">
-                {control.pv} PV
-              </Badge>
-            )}
-            {control.tarifs_controle > 0 && (
-              <Badge variant="outline" className="text-xs">
-                {control.tarifs_controle} Tarifs
-              </Badge>
-            )}
-            {control.stt_50 > 0 && (
-              <Badge variant="outline" className="text-xs">
-                {control.stt_50} STT50
-              </Badge>
-            )}
-            {control.stt_100 > 0 && (
-              <Badge variant="outline" className="text-xs">
-                {control.stt_100} STT100
-              </Badge>
-            )}
-          </div>
-        )}
-
-        {control.notes && (
-          <p className="text-sm text-muted-foreground pt-2 border-t italic">
-            {control.notes}
-          </p>
-        )}
       </CardContent>
     </Card>
   );
@@ -116,7 +108,12 @@ function ControlCard({ control }: { control: Control }) {
 
 export default function HistoryPage() {
   const { user, loading: authLoading } = useAuth();
-  const { controls, isLoading } = useControls();
+  const { controls, isLoading, deleteControl } = useControls();
+  const navigate = useNavigate();
+  
+  const [selectedControl, setSelectedControl] = useState<Control | null>(null);
+  const [detailOpen, setDetailOpen] = useState(false);
+  const [exportOpen, setExportOpen] = useState(false);
 
   if (authLoading) {
     return (
@@ -129,6 +126,29 @@ export default function HistoryPage() {
   if (!user) {
     return <Navigate to="/auth" replace />;
   }
+
+  const handleControlClick = (control: Control) => {
+    setSelectedControl(control);
+    setDetailOpen(true);
+  };
+
+  const handleEdit = (control: Control) => {
+    // Navigate to edit page based on location type
+    if (control.location_type === 'train') {
+      navigate(`/control/onboard?edit=${control.id}`);
+    } else {
+      navigate(`/control/station?edit=${control.id}`);
+    }
+  };
+
+  const handleDelete = async (control: Control) => {
+    try {
+      await deleteControl(control.id);
+      toast.success('Contrôle supprimé');
+    } catch {
+      toast.error('Erreur lors de la suppression');
+    }
+  };
 
   // Group controls by date
   const groupedControls = controls.reduce((groups, control) => {
@@ -148,9 +168,17 @@ export default function HistoryPage() {
     <AppLayout>
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex items-center gap-3">
-          <History className="h-6 w-6 text-primary" />
-          <h1 className="text-2xl font-bold">Historique</h1>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <History className="h-6 w-6 text-primary" />
+            <h1 className="text-2xl font-bold">Historique</h1>
+          </div>
+          {controls.length > 0 && (
+            <Button variant="outline" size="sm" onClick={() => setExportOpen(true)}>
+              <Download className="h-4 w-4 mr-2" />
+              Exporter
+            </Button>
+          )}
         </div>
 
         {isLoading ? (
@@ -171,13 +199,21 @@ export default function HistoryPage() {
         ) : (
           <div className="space-y-6">
             {sortedDates.map((date) => (
-              <div key={date} className="space-y-3">
-                <h2 className="text-sm font-medium text-muted-foreground sticky top-0 bg-background py-2">
+              <div key={date} className="space-y-2">
+                <h2 className="text-sm font-medium text-muted-foreground sticky top-0 bg-background py-2 flex items-center gap-2">
+                  <Calendar className="h-4 w-4" />
                   {format(new Date(date), 'EEEE d MMMM yyyy', { locale: fr })}
+                  <Badge variant="secondary" className="ml-auto">
+                    {groupedControls[date].length} contrôle{groupedControls[date].length > 1 ? 's' : ''}
+                  </Badge>
                 </h2>
-                <div className="space-y-3">
+                <div className="space-y-2">
                   {groupedControls[date].map((control) => (
-                    <ControlCard key={control.id} control={control} />
+                    <ControlRow 
+                      key={control.id} 
+                      control={control} 
+                      onClick={() => handleControlClick(control)}
+                    />
                   ))}
                 </div>
               </div>
@@ -185,6 +221,22 @@ export default function HistoryPage() {
           </div>
         )}
       </div>
+      
+      {/* Detail Dialog */}
+      <ControlDetailDialog
+        control={selectedControl}
+        open={detailOpen}
+        onOpenChange={setDetailOpen}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+      />
+      
+      {/* Export Dialog */}
+      <ExportDialog
+        controls={controls}
+        open={exportOpen}
+        onOpenChange={setExportOpen}
+      />
     </AppLayout>
   );
 }
