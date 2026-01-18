@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useControls } from '@/hooks/useControls';
@@ -6,6 +6,8 @@ import { AppLayout } from '@/components/layout/AppLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button, buttonVariants } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { ControlDetailDialog } from '@/components/controls/ControlDetailDialog';
 import { ExportDialog } from '@/components/controls/ExportDialog';
 import { 
@@ -20,6 +22,9 @@ import {
   AlertTriangle,
   Download,
   ChevronRight,
+  Search,
+  X,
+  Filter,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -114,6 +119,33 @@ export default function HistoryPage() {
   const [selectedControl, setSelectedControl] = useState<Control | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [locationFilter, setLocationFilter] = useState<LocationType | 'all'>('all');
+
+  // Filter controls based on search and location type
+  const filteredControls = useMemo(() => {
+    return controls.filter(control => {
+      // Location type filter
+      if (locationFilter !== 'all' && control.location_type !== locationFilter) {
+        return false;
+      }
+      
+      // Search filter
+      if (searchQuery.trim()) {
+        const query = searchQuery.toLowerCase().trim();
+        const matchesLocation = control.location.toLowerCase().includes(query);
+        const matchesTrainNumber = control.train_number?.toLowerCase().includes(query);
+        const matchesOrigin = control.origin?.toLowerCase().includes(query);
+        const matchesDestination = control.destination?.toLowerCase().includes(query);
+        
+        if (!matchesLocation && !matchesTrainNumber && !matchesOrigin && !matchesDestination) {
+          return false;
+        }
+      }
+      
+      return true;
+    });
+  }, [controls, searchQuery, locationFilter]);
 
   if (authLoading) {
     return (
@@ -150,19 +182,30 @@ export default function HistoryPage() {
     }
   };
 
-  // Group controls by date
-  const groupedControls = controls.reduce((groups, control) => {
-    const date = control.control_date;
-    if (!groups[date]) {
-      groups[date] = [];
-    }
-    groups[date].push(control);
-    return groups;
-  }, {} as Record<string, Control[]>);
+  // Group filtered controls by date
+  const groupedControls = useMemo(() => {
+    return filteredControls.reduce((groups, control) => {
+      const date = control.control_date;
+      if (!groups[date]) {
+        groups[date] = [];
+      }
+      groups[date].push(control);
+      return groups;
+    }, {} as Record<string, Control[]>);
+  }, [filteredControls]);
 
-  const sortedDates = Object.keys(groupedControls).sort((a, b) => 
-    new Date(b).getTime() - new Date(a).getTime()
-  );
+  const sortedDates = useMemo(() => {
+    return Object.keys(groupedControls).sort((a, b) => 
+      new Date(b).getTime() - new Date(a).getTime()
+    );
+  }, [groupedControls]);
+
+  const hasActiveFilters = searchQuery.trim() !== '' || locationFilter !== 'all';
+
+  const clearFilters = () => {
+    setSearchQuery('');
+    setLocationFilter('all');
+  };
 
   return (
     <AppLayout>
@@ -181,6 +224,73 @@ export default function HistoryPage() {
           )}
         </div>
 
+        {/* Filters */}
+        {controls.length > 0 && (
+          <div className="space-y-3">
+            {/* Search */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Rechercher par train, lieu, trajet..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9 pr-9"
+              />
+              {searchQuery && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
+                  onClick={() => setSearchQuery('')}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
+            
+            {/* Location type filter */}
+            <div className="flex items-center gap-2">
+              <Filter className="h-4 w-4 text-muted-foreground" />
+              <ToggleGroup 
+                type="single" 
+                value={locationFilter} 
+                onValueChange={(v) => v && setLocationFilter(v as LocationType | 'all')}
+                className="justify-start"
+              >
+                <ToggleGroupItem value="all" aria-label="Tous" size="sm">
+                  Tous
+                </ToggleGroupItem>
+                <ToggleGroupItem value="train" aria-label="Train" size="sm" className="gap-1">
+                  <Train className="h-3.5 w-3.5" />
+                  Train
+                </ToggleGroupItem>
+                <ToggleGroupItem value="gare" aria-label="Gare" size="sm" className="gap-1">
+                  <Building2 className="h-3.5 w-3.5" />
+                  Gare
+                </ToggleGroupItem>
+                <ToggleGroupItem value="quai" aria-label="Quai" size="sm" className="gap-1">
+                  <TrainTrack className="h-3.5 w-3.5" />
+                  Quai
+                </ToggleGroupItem>
+              </ToggleGroup>
+              
+              {hasActiveFilters && (
+                <Button variant="ghost" size="sm" onClick={clearFilters} className="ml-auto text-muted-foreground">
+                  <X className="h-3.5 w-3.5 mr-1" />
+                  Effacer
+                </Button>
+              )}
+            </div>
+            
+            {/* Results count */}
+            {hasActiveFilters && (
+              <p className="text-sm text-muted-foreground">
+                {filteredControls.length} résultat{filteredControls.length !== 1 ? 's' : ''} sur {controls.length} contrôle{controls.length !== 1 ? 's' : ''}
+              </p>
+            )}
+          </div>
+        )}
+
         {isLoading ? (
           <div className="flex justify-center py-12">
             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -195,6 +305,17 @@ export default function HistoryPage() {
             <Link to="/control/new" className={buttonVariants({})}>
               Nouveau contrôle
             </Link>
+          </div>
+        ) : filteredControls.length === 0 ? (
+          <div className="text-center py-12">
+            <Search className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+            <h2 className="text-lg font-semibold mb-2">Aucun résultat</h2>
+            <p className="text-muted-foreground mb-4">
+              Aucun contrôle ne correspond à vos critères de recherche.
+            </p>
+            <Button variant="outline" onClick={clearFilters}>
+              Effacer les filtres
+            </Button>
           </div>
         ) : (
           <div className="space-y-6">
