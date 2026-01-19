@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ControlDetailDialog } from '@/components/controls/ControlDetailDialog';
 import { ExportDialog } from '@/components/controls/ExportDialog';
 import { 
@@ -25,6 +26,7 @@ import {
   Search,
   X,
   Filter,
+  ArrowUpDown,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -33,6 +35,7 @@ import type { Database } from '@/integrations/supabase/types';
 
 type Control = Database['public']['Tables']['controls']['Row'];
 type LocationType = Database['public']['Enums']['location_type'];
+type SortOption = 'date' | 'fraud_desc' | 'fraud_asc' | 'passengers_desc' | 'passengers_asc';
 
 const locationIcons: Record<LocationType, React.ComponentType<{ className?: string }>> = {
   train: Train,
@@ -121,10 +124,17 @@ export default function HistoryPage() {
   const [exportOpen, setExportOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [locationFilter, setLocationFilter] = useState<LocationType | 'all'>('all');
+  const [sortOption, setSortOption] = useState<SortOption>('date');
 
-  // Filter controls based on search and location type
+  // Helper to calculate fraud rate
+  const getFraudRate = (control: Control) => {
+    const fraudCount = control.tarifs_controle + control.pv;
+    return control.nb_passagers > 0 ? (fraudCount / control.nb_passagers) * 100 : 0;
+  };
+
+  // Filter and sort controls
   const filteredControls = useMemo(() => {
-    return controls.filter(control => {
+    let result = controls.filter(control => {
       // Location type filter
       if (locationFilter !== 'all' && control.location_type !== locationFilter) {
         return false;
@@ -145,7 +155,29 @@ export default function HistoryPage() {
       
       return true;
     });
-  }, [controls, searchQuery, locationFilter]);
+
+    // Sort based on selected option
+    switch (sortOption) {
+      case 'fraud_desc':
+        result = [...result].sort((a, b) => getFraudRate(b) - getFraudRate(a));
+        break;
+      case 'fraud_asc':
+        result = [...result].sort((a, b) => getFraudRate(a) - getFraudRate(b));
+        break;
+      case 'passengers_desc':
+        result = [...result].sort((a, b) => b.nb_passagers - a.nb_passagers);
+        break;
+      case 'passengers_asc':
+        result = [...result].sort((a, b) => a.nb_passagers - b.nb_passagers);
+        break;
+      case 'date':
+      default:
+        // Keep original order (by date desc)
+        break;
+    }
+
+    return result;
+  }, [controls, searchQuery, locationFilter, sortOption]);
 
   if (authLoading) {
     return (
@@ -200,11 +232,12 @@ export default function HistoryPage() {
     );
   }, [groupedControls]);
 
-  const hasActiveFilters = searchQuery.trim() !== '' || locationFilter !== 'all';
+  const hasActiveFilters = searchQuery.trim() !== '' || locationFilter !== 'all' || sortOption !== 'date';
 
   const clearFilters = () => {
     setSearchQuery('');
     setLocationFilter('all');
+    setSortOption('date');
   };
 
   return (
@@ -248,9 +281,9 @@ export default function HistoryPage() {
               )}
             </div>
             
-            {/* Location type filter */}
-            <div className="flex items-center gap-2">
-              <Filter className="h-4 w-4 text-muted-foreground" />
+            {/* Location type filter and sort */}
+            <div className="flex flex-wrap items-center gap-2">
+              <Filter className="h-4 w-4 text-muted-foreground shrink-0" />
               <ToggleGroup 
                 type="single" 
                 value={locationFilter} 
@@ -273,6 +306,23 @@ export default function HistoryPage() {
                   Quai
                 </ToggleGroupItem>
               </ToggleGroup>
+            </div>
+
+            {/* Sort options */}
+            <div className="flex items-center gap-2">
+              <ArrowUpDown className="h-4 w-4 text-muted-foreground shrink-0" />
+              <Select value={sortOption} onValueChange={(v) => setSortOption(v as SortOption)}>
+                <SelectTrigger className="w-[200px] h-8">
+                  <SelectValue placeholder="Trier par..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="date">Date (récent)</SelectItem>
+                  <SelectItem value="fraud_desc">Fraude ↓ (élevée)</SelectItem>
+                  <SelectItem value="fraud_asc">Fraude ↑ (faible)</SelectItem>
+                  <SelectItem value="passengers_desc">Voyageurs ↓</SelectItem>
+                  <SelectItem value="passengers_asc">Voyageurs ↑</SelectItem>
+                </SelectContent>
+              </Select>
               
               {hasActiveFilters && (
                 <Button variant="ghost" size="sm" onClick={clearFilters} className="ml-auto text-muted-foreground">
