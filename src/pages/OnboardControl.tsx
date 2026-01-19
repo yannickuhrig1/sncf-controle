@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useOnboardControls, type OnboardControl as OnboardControlType } from '@/hooks/useOnboardControls';
@@ -9,13 +9,15 @@ import { CounterInput } from '@/components/controls/CounterInput';
 import { TarifListItem, TarifEntry } from '@/components/controls/TarifListItem';
 import { FraudSummary } from '@/components/controls/FraudSummary';
 import { StationAutocomplete } from '@/components/controls/StationAutocomplete';
+import { ControlDetailDialog } from '@/components/controls/ControlDetailDialog';
+import { ExportDialog } from '@/components/controls/ExportDialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -27,23 +29,8 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from '@/components/ui/dialog';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
+import { toast as sonnerToast } from 'sonner';
 import {
   Loader2,
   Train,
@@ -56,19 +43,21 @@ import {
   RotateCcw,
   Download,
   Search,
-  Eye,
-  Pencil,
-  Trash2,
   Plus,
   Calendar,
   Clock,
-  ArrowRight,
-  CheckCircle,
-  Filter,
+  Users,
+  ChevronRight,
+  X,
+  ArrowUpDown,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
+import type { Database } from '@/integrations/supabase/types';
+
+type Control = Database['public']['Tables']['controls']['Row'];
+type SortOption = 'date' | 'fraud_desc' | 'fraud_asc' | 'passengers_desc' | 'passengers_asc';
 
 // Types
 const TARIF_TYPES = [
@@ -135,14 +124,12 @@ export default function OnboardControl() {
 
   // History filter states
   const [searchQuery, setSearchQuery] = useState('');
-  const [dateFrom, setDateFrom] = useState('');
-  const [dateTo, setDateTo] = useState('');
-  const [showFilters, setShowFilters] = useState(false);
+  const [sortOption, setSortOption] = useState<SortOption>('date');
+  const [exportOpen, setExportOpen] = useState(false);
 
   // Dialog states
-  const [viewControl, setViewControl] = useState<OnboardControlType | null>(null);
-  const [editControl, setEditControl] = useState<OnboardControlType | null>(null);
-  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [selectedControl, setSelectedControl] = useState<Control | null>(null);
+  const [detailOpen, setDetailOpen] = useState(false);
 
   // Recent trains for autocomplete
   const recentTrains = useMemo(() => {
@@ -159,23 +146,74 @@ export default function OnboardControl() {
     return { fraudCount, fraudRate, tarifsControleCount, pvCount };
   }, [formState.tarifsControle, formState.stt50Count, formState.pvList, formState.stt100Count, formState.passengers]);
 
-  // Filter history
+  // Helper to calculate fraud rate (works with both Control and OnboardControlType)
+  const getFraudRate = (control: { tarifs_controle: number; pv: number; nb_passagers: number }) => {
+    const fraudCount = control.tarifs_controle + control.pv;
+    return control.nb_passagers > 0 ? (fraudCount / control.nb_passagers) * 100 : 0;
+  };
+
+  // Filter and sort history
   const filteredControls = useMemo(() => {
-    return controls.filter((control) => {
+    let result = controls.filter((control) => {
       // Search filter
-      if (searchQuery) {
-        const query = searchQuery.toLowerCase();
+      if (searchQuery.trim()) {
+        const query = searchQuery.toLowerCase().trim();
         const matchesTrain = control.train_number?.toLowerCase().includes(query);
         const matchesOrigin = control.origin?.toLowerCase().includes(query);
         const matchesDest = control.destination?.toLowerCase().includes(query);
-        if (!matchesTrain && !matchesOrigin && !matchesDest) return false;
+        const matchesLocation = control.location?.toLowerCase().includes(query);
+        if (!matchesTrain && !matchesOrigin && !matchesDest && !matchesLocation) return false;
       }
-      // Date range filter
-      if (dateFrom && control.control_date < dateFrom) return false;
-      if (dateTo && control.control_date > dateTo) return false;
       return true;
     });
-  }, [controls, searchQuery, dateFrom, dateTo]);
+
+    // Sort based on selected option
+    switch (sortOption) {
+      case 'fraud_desc':
+        result = [...result].sort((a, b) => getFraudRate(b) - getFraudRate(a));
+        break;
+      case 'fraud_asc':
+        result = [...result].sort((a, b) => getFraudRate(a) - getFraudRate(b));
+        break;
+      case 'passengers_desc':
+        result = [...result].sort((a, b) => b.nb_passagers - a.nb_passagers);
+        break;
+      case 'passengers_asc':
+        result = [...result].sort((a, b) => a.nb_passagers - b.nb_passagers);
+        break;
+      case 'date':
+      default:
+        // Keep original order (by date desc)
+        break;
+    }
+
+    return result;
+  }, [controls, searchQuery, sortOption]);
+
+  // Group controls by date
+  const groupedControls = useMemo(() => {
+    return filteredControls.reduce((groups, control) => {
+      const date = control.control_date;
+      if (!groups[date]) {
+        groups[date] = [];
+      }
+      groups[date].push(control as Control);
+      return groups;
+    }, {} as Record<string, Control[]>);
+  }, [filteredControls]);
+
+  const sortedDates = useMemo(() => {
+    return Object.keys(groupedControls).sort((a, b) => 
+      new Date(b).getTime() - new Date(a).getTime()
+    );
+  }, [groupedControls]);
+
+  const hasActiveFilters = searchQuery.trim() !== '' || sortOption !== 'date';
+
+  const clearFilters = () => {
+    setSearchQuery('');
+    setSortOption('date');
+  };
 
   // Add tarif handlers
   const addTarifBord = useCallback(() => {
@@ -325,32 +363,25 @@ export default function OnboardControl() {
     });
   };
 
-  // Delete handler
-  const handleDelete = async () => {
-    if (!deleteId) return;
+  // Control click handler
+  const handleControlClick = (control: Control) => {
+    setSelectedControl(control);
+    setDetailOpen(true);
+  };
+
+  // Edit handler
+  const handleEdit = (control: Control) => {
+    navigate(`/control/onboard?edit=${control.id}`);
+  };
+
+  // Delete handler  
+  const handleDeleteControl = async (control: Control) => {
     try {
-      await deleteControl(deleteId);
-      setDeleteId(null);
-    } catch (error: any) {
-      toast({
-        variant: 'destructive',
-        title: 'Erreur',
-        description: error.message || 'Impossible de supprimer le contrôle',
-      });
+      await deleteControl(control.id);
+      sonnerToast.success('Contrôle supprimé');
+    } catch (error) {
+      sonnerToast.error('Erreur lors de la suppression');
     }
-  };
-
-  // Calculate fraud rate color
-  const getFraudRateColor = (rate: number) => {
-    if (rate < 5) return 'text-green-600 dark:text-green-400';
-    if (rate < 10) return 'text-yellow-600 dark:text-yellow-400';
-    return 'text-red-600 dark:text-red-400';
-  };
-
-  const getFraudBadgeVariant = (rate: number): 'default' | 'secondary' | 'destructive' => {
-    if (rate < 5) return 'default';
-    if (rate < 10) return 'secondary';
-    return 'destructive';
   };
 
   if (authLoading) {
@@ -748,233 +779,198 @@ export default function OnboardControl() {
         </div>
 
         {/* History Section */}
-        <Card className="mt-8">
-          <CardHeader>
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-              <CardTitle className="text-lg">Historique des contrôles</CardTitle>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowFilters(!showFilters)}
-              >
-                <Filter className="h-4 w-4 mr-2" />
-                Filtres
+        <div className="mt-8 space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <h2 className="text-lg font-semibold flex items-center gap-2">
+              <Calendar className="h-5 w-5 text-primary" />
+              Historique des contrôles
+            </h2>
+            {filteredControls.length > 0 && (
+              <Button variant="outline" size="sm" onClick={() => setExportOpen(true)}>
+                <Download className="h-4 w-4 mr-2" />
+                Exporter
               </Button>
+            )}
+          </div>
+
+          {/* Filters */}
+          <div className="space-y-3">
+            {/* Search */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Rechercher par train, trajet..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9 pr-9"
+              />
+              {searchQuery && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
+                  onClick={() => setSearchQuery('')}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              )}
             </div>
 
-            {/* Filters */}
-            {showFilters && (
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4 pt-4 border-t">
-                <div className="space-y-2">
-                  <Label>Recherche</Label>
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      placeholder="Train, trajet..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="pl-10"
-                    />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label>Du</Label>
-                  <Input
-                    type="date"
-                    value={dateFrom}
-                    onChange={(e) => setDateFrom(e.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Au</Label>
-                  <Input
-                    type="date"
-                    value={dateTo}
-                    onChange={(e) => setDateTo(e.target.value)}
-                  />
-                </div>
-              </div>
+            {/* Sort options */}
+            <div className="flex items-center gap-2">
+              <ArrowUpDown className="h-4 w-4 text-muted-foreground shrink-0" />
+              <Select value={sortOption} onValueChange={(v) => setSortOption(v as SortOption)}>
+                <SelectTrigger className="w-[200px] h-8">
+                  <SelectValue placeholder="Trier par..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="date">Date (récent)</SelectItem>
+                  <SelectItem value="fraud_desc">Fraude ↓ (élevée)</SelectItem>
+                  <SelectItem value="fraud_asc">Fraude ↑ (faible)</SelectItem>
+                  <SelectItem value="passengers_desc">Voyageurs ↓</SelectItem>
+                  <SelectItem value="passengers_asc">Voyageurs ↑</SelectItem>
+                </SelectContent>
+              </Select>
+              
+              {hasActiveFilters && (
+                <Button variant="ghost" size="sm" onClick={clearFilters} className="ml-auto text-muted-foreground">
+                  <X className="h-3.5 w-3.5 mr-1" />
+                  Effacer
+                </Button>
+              )}
+            </div>
+            
+            {/* Results count */}
+            {hasActiveFilters && (
+              <p className="text-sm text-muted-foreground">
+                {filteredControls.length} résultat{filteredControls.length !== 1 ? 's' : ''} sur {controls.length} contrôle{controls.length !== 1 ? 's' : ''}
+              </p>
             )}
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <div className="flex items-center justify-center py-8">
-                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-              </div>
-            ) : filteredControls.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                <Train className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                <p>Aucun contrôle trouvé</p>
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Train</TableHead>
-                      <TableHead>Trajet</TableHead>
-                      <TableHead>Date/Heure</TableHead>
-                      <TableHead className="text-right">Passagers</TableHead>
-                      <TableHead className="text-right">Fraudes</TableHead>
-                      <TableHead className="text-right">Taux</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredControls.map((control) => {
+          </div>
+
+          {/* Controls list */}
+          {isLoading ? (
+            <div className="flex justify-center py-12">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            </div>
+          ) : controls.length === 0 ? (
+            <div className="text-center py-12">
+              <Train className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+              <h3 className="text-lg font-semibold mb-2">Aucun contrôle</h3>
+              <p className="text-muted-foreground">
+                Vous n'avez pas encore enregistré de contrôles à bord.
+              </p>
+            </div>
+          ) : filteredControls.length === 0 ? (
+            <div className="text-center py-12">
+              <Search className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+              <h3 className="text-lg font-semibold mb-2">Aucun résultat</h3>
+              <p className="text-muted-foreground mb-4">
+                Aucun contrôle ne correspond à vos critères de recherche.
+              </p>
+              <Button variant="outline" onClick={clearFilters}>
+                Effacer les filtres
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-6">
+              {sortedDates.map((date) => (
+                <div key={date} className="space-y-2">
+                  <h3 className="text-sm font-medium text-muted-foreground sticky top-0 bg-background py-2 flex items-center gap-2">
+                    <Calendar className="h-4 w-4" />
+                    {format(new Date(date), 'EEEE d MMMM yyyy', { locale: fr })}
+                    <Badge variant="secondary" className="ml-auto">
+                      {groupedControls[date].length} contrôle{groupedControls[date].length > 1 ? 's' : ''}
+                    </Badge>
+                  </h3>
+                  <div className="space-y-2">
+                    {groupedControls[date].map((control) => {
                       const fraudCount = control.tarifs_controle + control.pv;
-                      const fraudRate = control.nb_passagers > 0 ? (fraudCount / control.nb_passagers) * 100 : 0;
+                      const fraudRate = control.nb_passagers > 0 
+                        ? ((fraudCount / control.nb_passagers) * 100)
+                        : 0;
                       return (
-                        <TableRow key={control.id}>
-                          <TableCell className="font-medium">{control.train_number || '-'}</TableCell>
-                          <TableCell>
-                            {control.origin && control.destination
-                              ? `${control.origin} → ${control.destination}`
-                              : control.location}
-                          </TableCell>
-                          <TableCell>
-                            <div className="text-sm">
-                              {format(new Date(control.control_date), 'dd/MM/yyyy', { locale: fr })}
+                        <Card 
+                          key={control.id}
+                          className="cursor-pointer hover:bg-muted/50 transition-colors"
+                          onClick={() => handleControlClick(control)}
+                        >
+                          <CardContent className="p-4">
+                            <div className="flex items-center gap-3">
+                              {/* Icon */}
+                              <div className="p-2 rounded-lg bg-primary/10 shrink-0">
+                                <Train className="h-4 w-4 text-primary" />
+                              </div>
+                              
+                              {/* Main info */}
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2">
+                                  <span className="font-medium truncate">
+                                    {control.origin && control.destination 
+                                      ? `${control.origin} → ${control.destination}`
+                                      : control.location}
+                                  </span>
+                                  {control.train_number && (
+                                    <Badge variant="outline" className="text-xs shrink-0">
+                                      N° {control.train_number}
+                                    </Badge>
+                                  )}
+                                </div>
+                                <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1">
+                                  <span className="flex items-center gap-1">
+                                    <Clock className="h-3 w-3" />
+                                    {control.control_time.slice(0, 5)}
+                                  </span>
+                                </div>
+                              </div>
+                              
+                              {/* Stats */}
+                              <div className="flex items-center gap-4 shrink-0">
+                                <div className="text-center hidden sm:block">
+                                  <div className="flex items-center gap-1 text-sm font-medium">
+                                    <Users className="h-3 w-3" />
+                                    {control.nb_passagers}
+                                  </div>
+                                </div>
+                                <div className={cn(
+                                  'text-center',
+                                  fraudRate > 10 ? 'text-red-600' : fraudRate > 5 ? 'text-orange-600' : 'text-green-600'
+                                )}>
+                                  <div className="flex items-center gap-1 text-sm font-semibold">
+                                    <AlertTriangle className="h-3 w-3" />
+                                    {fraudRate.toFixed(1)}%
+                                  </div>
+                                </div>
+                                <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                              </div>
                             </div>
-                            <div className="text-xs text-muted-foreground">{control.control_time}</div>
-                          </TableCell>
-                          <TableCell className="text-right">{control.nb_passagers}</TableCell>
-                          <TableCell className="text-right">
-                            <Badge variant={getFraudBadgeVariant(fraudRate)}>{fraudCount}</Badge>
-                          </TableCell>
-                          <TableCell className={cn('text-right font-medium', getFraudRateColor(fraudRate))}>
-                            {fraudRate.toFixed(1)}%
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <div className="flex items-center justify-end gap-1">
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8"
-                                onClick={() => setViewControl(control)}
-                              >
-                                <Eye className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8"
-                                onClick={() => setEditControl(control)}
-                              >
-                                <Pencil className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 text-destructive hover:text-destructive"
-                                onClick={() => setDeleteId(control.id)}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
+                          </CardContent>
+                        </Card>
                       );
                     })}
-                  </TableBody>
-                </Table>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* View Dialog */}
-        <Dialog open={!!viewControl} onOpenChange={() => setViewControl(null)}>
-          <DialogContent className="max-w-lg">
-            <DialogHeader>
-              <DialogTitle>Détail du contrôle</DialogTitle>
-              <DialogDescription>
-                {viewControl?.train_number} - {viewControl?.control_date}
-              </DialogDescription>
-            </DialogHeader>
-            {viewControl && (
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <p className="text-muted-foreground">Train</p>
-                    <p className="font-medium">{viewControl.train_number}</p>
-                  </div>
-                  <div>
-                    <p className="text-muted-foreground">Trajet</p>
-                    <p className="font-medium">
-                      {viewControl.origin} → {viewControl.destination}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-muted-foreground">Passagers</p>
-                    <p className="font-medium">{viewControl.nb_passagers}</p>
-                  </div>
-                  <div>
-                    <p className="text-muted-foreground">En règle</p>
-                    <p className="font-medium">{viewControl.nb_en_regle}</p>
-                  </div>
-                  <div>
-                    <p className="text-muted-foreground">Tarifs contrôle</p>
-                    <p className="font-medium">{viewControl.tarifs_controle}</p>
-                  </div>
-                  <div>
-                    <p className="text-muted-foreground">PV</p>
-                    <p className="font-medium">{viewControl.pv}</p>
-                  </div>
-                  <div>
-                    <p className="text-muted-foreground">STT 50%</p>
-                    <p className="font-medium">{viewControl.stt_50}</p>
-                  </div>
-                  <div>
-                    <p className="text-muted-foreground">STT 100%</p>
-                    <p className="font-medium">{viewControl.stt_100}</p>
-                  </div>
-                  <div>
-                    <p className="text-muted-foreground">RI+</p>
-                    <p className="font-medium text-green-600">{viewControl.ri_positive}</p>
-                  </div>
-                  <div>
-                    <p className="text-muted-foreground">RI-</p>
-                    <p className="font-medium text-red-600">{viewControl.ri_negative}</p>
                   </div>
                 </div>
-                {viewControl.notes && (
-                  <div>
-                    <p className="text-muted-foreground text-sm">Notes</p>
-                    <p className="text-sm mt-1 p-3 bg-muted rounded-lg">{viewControl.notes}</p>
-                  </div>
-                )}
-              </div>
-            )}
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setViewControl(null)}>
-                Fermer
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-
-        {/* Delete Confirmation Dialog */}
-        <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Supprimer ce contrôle ?</AlertDialogTitle>
-              <AlertDialogDescription>
-                Cette action est irréversible. Le contrôle sera définitivement supprimé.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Annuler</AlertDialogCancel>
-              <AlertDialogAction
-                onClick={handleDelete}
-                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              >
-                Supprimer
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
+      
+      {/* Detail Dialog */}
+      <ControlDetailDialog
+        control={selectedControl}
+        open={detailOpen}
+        onOpenChange={setDetailOpen}
+        onEdit={handleEdit}
+        onDelete={handleDeleteControl}
+      />
+      
+      {/* Export Dialog */}
+      <ExportDialog
+        controls={controls as Control[]}
+        open={exportOpen}
+        onOpenChange={setExportOpen}
+      />
     </AppLayout>
   );
 }
