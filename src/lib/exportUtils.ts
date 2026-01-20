@@ -136,8 +136,28 @@ function calculateExtendedStats(controls: Control[]) {
 }
 
 export function exportToPDF({ controls, title, dateRange, includeStats }: ExportOptions) {
+  // Validate inputs early
+  if (!controls || controls.length === 0) {
+    throw new Error('Aucun contrôle à exporter');
+  }
+
   const doc = new jsPDF();
   const stats = calculateExtendedStats(controls);
+  let pageNumber = 1;
+  
+  // Helper to add footer on each page
+  const addFooter = () => {
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const pageWidth = doc.internal.pageSize.getWidth();
+    doc.setFontSize(8);
+    doc.setTextColor(150, 150, 150);
+    doc.text(
+      `SNCF Contrôles - Page ${pageNumber}`,
+      pageWidth / 2,
+      pageHeight - 10,
+      { align: 'center' }
+    );
+  };
   
   // Header
   doc.setFontSize(20);
@@ -145,11 +165,11 @@ export function exportToPDF({ controls, title, dateRange, includeStats }: Export
   doc.text('SNCF Contrôles', 14, 20);
   
   doc.setFontSize(14);
-  doc.setTextColor(60);
+  doc.setTextColor(60, 60, 60);
   doc.text('Rapport détaillé', 14, 28);
   
   doc.setFontSize(10);
-  doc.setTextColor(100);
+  doc.setTextColor(100, 100, 100);
   doc.text(title, 14, 36);
   doc.text(`Période: ${dateRange}`, 14, 42);
   doc.text(`Généré le: ${format(new Date(), 'dd/MM/yyyy à HH:mm', { locale: fr })}`, 14, 48);
@@ -160,7 +180,7 @@ export function exportToPDF({ controls, title, dateRange, includeStats }: Export
   if (includeStats) {
     // Main statistics
     doc.setFontSize(12);
-    doc.setTextColor(0);
+    doc.setTextColor(0, 0, 0);
     doc.text('Statistiques générales', 14, yPosition);
     yPosition += 8;
 
@@ -346,20 +366,26 @@ export function exportToPDF({ controls, title, dateRange, includeStats }: Export
       10: { cellWidth: 15 },
     },
     margin: { left: 14, right: 14 },
-    didDrawPage: function(data) {
-      // Footer on each page
-      doc.setFontSize(8);
-      doc.setTextColor(150);
-      doc.text(
-        `SNCF Contrôles - Page ${doc.getCurrentPageInfo().pageNumber}`,
-        doc.internal.pageSize.getWidth() / 2,
-        doc.internal.pageSize.getHeight() - 10,
-        { align: 'center' }
-      );
+    didDrawPage: function() {
+      // Footer on each page - use closure variable for page number
+      addFooter();
+      pageNumber++;
     }
   });
 
-  doc.save(`controles-${format(new Date(), 'yyyy-MM-dd-HHmm')}.pdf`);
+  // Generate filename with safe date
+  const filename = `controles-${format(new Date(), 'yyyy-MM-dd-HHmm')}.pdf`;
+  
+  try {
+    doc.save(filename);
+  } catch (error) {
+    console.error('PDF save error:', error);
+    // Fallback: try to open in new window
+    const pdfBlob = doc.output('blob');
+    const url = URL.createObjectURL(pdfBlob);
+    window.open(url, '_blank');
+    setTimeout(() => URL.revokeObjectURL(url), 10000);
+  }
 }
 
 export function exportToHTML({ controls, title, dateRange, includeStats }: ExportOptions): string {
