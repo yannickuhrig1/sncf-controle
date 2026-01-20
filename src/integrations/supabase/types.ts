@@ -296,7 +296,9 @@ export type Database = {
           notifications_push: boolean
           show_bottom_bar: boolean | null
           show_burger_menu: boolean | null
+          show_onboard_fraud_chart: boolean
           theme: string
+          theme_variant: string
           updated_at: string
           user_id: string
           visible_pages: Json
@@ -317,7 +319,9 @@ export type Database = {
           notifications_push?: boolean
           show_bottom_bar?: boolean | null
           show_burger_menu?: boolean | null
+          show_onboard_fraud_chart?: boolean
           theme?: string
+          theme_variant?: string
           updated_at?: string
           user_id: string
           visible_pages?: Json
@@ -338,7 +342,9 @@ export type Database = {
           notifications_push?: boolean
           show_bottom_bar?: boolean | null
           show_burger_menu?: boolean | null
+          show_onboard_fraud_chart?: boolean
           theme?: string
+          theme_variant?: string
           updated_at?: string
           user_id?: string
           visible_pages?: Json
