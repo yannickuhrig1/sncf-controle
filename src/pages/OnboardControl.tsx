@@ -371,7 +371,7 @@ export default function OnboardControl() {
 
   // Edit handler
   const handleEdit = (control: Control) => {
-    navigate(`/control/onboard?edit=${control.id}`);
+    navigate(`/onboard?edit=${control.id}`);
   };
 
   // Delete handler  

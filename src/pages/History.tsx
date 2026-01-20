@@ -199,9 +199,9 @@ export default function HistoryPage() {
   const handleEdit = (control: Control) => {
     // Navigate to edit page based on location type
     if (control.location_type === 'train') {
-      navigate(`/control/onboard?edit=${control.id}`);
+      navigate(`/onboard?edit=${control.id}`);
     } else {
-      navigate(`/control/station?edit=${control.id}`);
+      navigate(`/station?edit=${control.id}`);
     }
   };
 
