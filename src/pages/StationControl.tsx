@@ -1,5 +1,5 @@
-import { useState, useMemo } from 'react';
-import { Navigate, useNavigate } from 'react-router-dom';
+import { useState, useMemo, useEffect } from 'react';
+import { Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useControls } from '@/hooks/useControls';
 import { AppLayout } from '@/components/layout/AppLayout';
@@ -10,8 +10,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Building2, ArrowLeft, Save, ArrowRight } from 'lucide-react';
+import { Loader2, Building2, ArrowLeft, Save, ArrowRight, X } from 'lucide-react';
 
 // Liste des gares principales
 const GARES_PRINCIPALES = [
@@ -39,9 +40,14 @@ const GARES_PRINCIPALES = [
 
 export default function StationControl() {
   const { user, loading: authLoading } = useAuth();
-  const { createControl, isCreating } = useControls();
+  const { controls, createControl, updateControl, isCreating, isUpdating } = useControls();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { toast } = useToast();
+
+  // Edit mode
+  const editId = searchParams.get('edit');
+  const [isEditMode, setIsEditMode] = useState(false);
 
   // Station info
   const [stationName, setStationName] = useState('');
@@ -91,6 +97,49 @@ export default function StationControl() {
     return { fraudCount, fraudRate, tarifsControleCount, pvCount };
   }, [nbPassagers, stt50, stt100, rnv, titreTiers, docNaissance, autreTarif, pvAbsenceTitre, pvTitreInvalide, pvRefusControle, pvAutre]);
 
+  // Load control for editing
+  useEffect(() => {
+    if (editId && controls.length > 0) {
+      const controlToEdit = controls.find(c => c.id === editId);
+      if (controlToEdit) {
+        setIsEditMode(true);
+        // Parse station name and platform from location
+        const locationParts = controlToEdit.location.split(' - Quai ');
+        setStationName(locationParts[0] || '');
+        setPlatformNumber(locationParts[1] || controlToEdit.platform_number || '');
+        setOrigin(controlToEdit.origin || '');
+        setDestination(controlToEdit.destination || '');
+        setNbPassagers(controlToEdit.nb_passagers || 0);
+        setNbEnRegle(controlToEdit.nb_en_regle || 0);
+        setStt50({ count: controlToEdit.stt_50 || 0, amount: Number(controlToEdit.stt_50_amount) || 0 });
+        setStt100({ count: controlToEdit.stt_100 || 0, amount: Number(controlToEdit.stt_100_amount) || 0 });
+        setRnv({ count: controlToEdit.rnv || 0, amount: Number(controlToEdit.rnv_amount) || 0 });
+        setRiPositive(controlToEdit.ri_positive || 0);
+        setRiNegative(controlToEdit.ri_negative || 0);
+        setNotes(controlToEdit.notes || '');
+      }
+    }
+  }, [editId, controls]);
+
+  // Cancel edit mode
+  const handleCancelEdit = () => {
+    setIsEditMode(false);
+    setSearchParams({});
+    // Reset form
+    setStationName('');
+    setPlatformNumber('');
+    setOrigin('');
+    setDestination('');
+    setNbPassagers(0);
+    setNbEnRegle(0);
+    setStt50({ count: 0, amount: 0 });
+    setStt100({ count: 0, amount: 0 });
+    setRnv({ count: 0, amount: 0 });
+    setRiPositive(0);
+    setRiNegative(0);
+    setNotes('');
+  };
+
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -120,8 +169,8 @@ export default function StationControl() {
         ? `${stationName} - Quai ${platformNumber}` 
         : stationName;
 
-      await createControl({
-        location_type: 'gare',
+      const controlData = {
+        location_type: 'gare' as const,
         location: locationName,
         train_number: null,
         origin: origin.trim() || null,
@@ -170,12 +219,23 @@ export default function StationControl() {
         ri_positive: riPositive,
         ri_negative: riNegative,
         notes: notes.trim() || null,
-      } as any);
+      };
 
-      toast({
-        title: 'Contrôle enregistré',
-        description: 'Le contrôle en gare a été ajouté avec succès',
-      });
+      if (isEditMode && editId) {
+        await updateControl({ id: editId, ...controlData } as any);
+        toast({
+          title: 'Contrôle modifié',
+          description: 'Le contrôle en gare a été mis à jour avec succès',
+        });
+        setIsEditMode(false);
+        setSearchParams({});
+      } else {
+        await createControl(controlData as any);
+        toast({
+          title: 'Contrôle enregistré',
+          description: 'Le contrôle en gare a été ajouté avec succès',
+        });
+      }
 
       navigate('/');
     } catch (error: any) {
@@ -217,12 +277,15 @@ export default function StationControl() {
       <div className="space-y-6">
         {/* Header */}
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
-            <ArrowLeft className="h-5 w-5" />
+          <Button variant="ghost" size="icon" onClick={() => isEditMode ? handleCancelEdit() : navigate(-1)}>
+            {isEditMode ? <X className="h-5 w-5" /> : <ArrowLeft className="h-5 w-5" />}
           </Button>
           <div className="flex items-center gap-2">
             <Building2 className="h-5 w-5 text-primary" />
-            <h1 className="text-xl font-bold">Contrôle en gare</h1>
+            <h1 className="text-xl font-bold">
+              {isEditMode ? 'Modifier le contrôle' : 'Contrôle en gare'}
+            </h1>
+            {isEditMode && <Badge variant="secondary">Mode édition</Badge>}
           </div>
         </div>
 
