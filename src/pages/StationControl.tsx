@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useControls } from '@/hooks/useControls';
+import { supabase } from '@/integrations/supabase/client';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { TarifSection } from '@/components/controls/TarifSection';
 import { FraudSummary } from '@/components/controls/FraudSummary';
@@ -97,29 +98,88 @@ export default function StationControl() {
     return { fraudCount, fraudRate, tarifsControleCount, pvCount };
   }, [nbPassagers, stt50, stt100, rnv, titreTiers, docNaissance, autreTarif, pvAbsenceTitre, pvTitreInvalide, pvRefusControle, pvAutre]);
 
-  // Load control for editing
+  // Load control for editing - fetch directly if needed
   useEffect(() => {
-    if (editId && controls.length > 0) {
+    const loadControlForEdit = async () => {
+      if (!editId) return;
+      
+      // First check in already loaded controls
       const controlToEdit = controls.find(c => c.id === editId);
+      
       if (controlToEdit) {
+        // Check if it's a train control - redirect to onboard
+        if (controlToEdit.location_type === 'train') {
+          navigate(`/onboard?edit=${editId}`, { replace: true });
+          return;
+        }
+        
         setIsEditMode(true);
-        // Parse station name and platform from location
-        const locationParts = controlToEdit.location.split(' - Quai ');
-        setStationName(locationParts[0] || '');
-        setPlatformNumber(locationParts[1] || controlToEdit.platform_number || '');
-        setOrigin(controlToEdit.origin || '');
-        setDestination(controlToEdit.destination || '');
-        setNbPassagers(controlToEdit.nb_passagers || 0);
-        setNbEnRegle(controlToEdit.nb_en_regle || 0);
-        setStt50({ count: controlToEdit.stt_50 || 0, amount: Number(controlToEdit.stt_50_amount) || 0 });
-        setStt100({ count: controlToEdit.stt_100 || 0, amount: Number(controlToEdit.stt_100_amount) || 0 });
-        setRnv({ count: controlToEdit.rnv || 0, amount: Number(controlToEdit.rnv_amount) || 0 });
-        setRiPositive(controlToEdit.ri_positive || 0);
-        setRiNegative(controlToEdit.ri_negative || 0);
-        setNotes(controlToEdit.notes || '');
+        loadControlData(controlToEdit);
+      } else if (user) {
+        // Control not in local data - fetch directly from DB
+        const { data, error } = await supabase
+          .from('controls')
+          .select('*')
+          .eq('id', editId)
+          .single();
+        
+        if (error || !data) {
+          toast({
+            variant: 'destructive',
+            title: 'Erreur',
+            description: 'Contrôle non trouvé',
+          });
+          setSearchParams({});
+          return;
+        }
+        
+        // If it's a train control, redirect to onboard
+        if (data.location_type === 'train') {
+          navigate(`/onboard?edit=${editId}`, { replace: true });
+          return;
+        }
+        
+        setIsEditMode(true);
+        loadControlData(data);
       }
-    }
-  }, [editId, controls]);
+    };
+    
+    loadControlForEdit();
+  }, [editId, controls, user, navigate, setSearchParams, toast]);
+  
+  // Helper to load control data into form
+  const loadControlData = (data: any) => {
+    const locationParts = data.location.split(' - Quai ');
+    setStationName(locationParts[0] || '');
+    setPlatformNumber(locationParts[1] || data.platform_number || '');
+    setOrigin(data.origin || '');
+    setDestination(data.destination || '');
+    setNbPassagers(data.nb_passagers || 0);
+    setNbEnRegle(data.nb_en_regle || 0);
+    // Tarifs contrôle
+    setStt50({ count: data.stt_50 || 0, amount: Number(data.stt_50_amount) || 0 });
+    setStt100({ count: data.stt_100 || 0, amount: Number(data.stt_100_amount) || 0 });
+    setRnv({ count: data.rnv || 0, amount: Number(data.rnv_amount) || 0 });
+    setTitreTiers({ count: data.titre_tiers || 0, amount: Number(data.titre_tiers_amount) || 0 });
+    setDocNaissance({ count: data.doc_naissance || 0, amount: Number(data.doc_naissance_amount) || 0 });
+    setAutreTarif({ count: data.autre_tarif || 0, amount: Number(data.autre_tarif_amount) || 0 });
+    // Tarifs bord
+    setTarifBordStt50({ count: data.tarif_bord_stt_50 || 0, amount: Number(data.tarif_bord_stt_50_amount) || 0 });
+    setTarifBordStt100({ count: data.tarif_bord_stt_100 || 0, amount: Number(data.tarif_bord_stt_100_amount) || 0 });
+    setTarifBordRnv({ count: data.tarif_bord_rnv || 0, amount: Number(data.tarif_bord_rnv_amount) || 0 });
+    setTarifBordTitreTiers({ count: data.tarif_bord_titre_tiers || 0, amount: Number(data.tarif_bord_titre_tiers_amount) || 0 });
+    setTarifBordDocNaissance({ count: data.tarif_bord_doc_naissance || 0, amount: Number(data.tarif_bord_doc_naissance_amount) || 0 });
+    setTarifBordAutre({ count: data.tarif_bord_autre || 0, amount: Number(data.tarif_bord_autre_amount) || 0 });
+    // PV
+    setPvAbsenceTitre({ count: data.pv_absence_titre || 0, amount: Number(data.pv_absence_titre_amount) || 0 });
+    setPvTitreInvalide({ count: data.pv_titre_invalide || 0, amount: Number(data.pv_titre_invalide_amount) || 0 });
+    setPvRefusControle({ count: data.pv_refus_controle || 0, amount: Number(data.pv_refus_controle_amount) || 0 });
+    setPvAutre({ count: data.pv_autre || 0, amount: Number(data.pv_autre_amount) || 0 });
+    // RI
+    setRiPositive(data.ri_positive || 0);
+    setRiNegative(data.ri_negative || 0);
+    setNotes(data.notes || '');
+  };
 
   // Cancel edit mode
   const handleCancelEdit = () => {
