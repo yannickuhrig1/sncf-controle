@@ -4,6 +4,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useUserPreferences } from '@/hooks/useUserPreferences';
 import { useOnboardControls, type OnboardControl as OnboardControlType } from '@/hooks/useOnboardControls';
 import { useFormPersistence } from '@/hooks/useFormPersistence';
+import { supabase } from '@/integrations/supabase/client';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { TarifTypeToggle } from '@/components/controls/TarifTypeToggle';
 import { CounterInput } from '@/components/controls/CounterInput';
@@ -139,10 +140,14 @@ export default function OnboardControl() {
   const [selectedControl, setSelectedControl] = useState<Control | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
 
-  // Load control for editing
+  // Load control for editing - fetch directly if needed
   useEffect(() => {
-    if (editId && controls.length > 0) {
+    const loadControlForEdit = async () => {
+      if (!editId || isLoading) return;
+      
+      // First check in already loaded controls
       const controlToEdit = controls.find(c => c.id === editId);
+      
       if (controlToEdit) {
         setIsEditMode(true);
         setFormState({
@@ -162,9 +167,54 @@ export default function OnboardControl() {
           riNegatif: controlToEdit.ri_negative || 0,
           commentaire: controlToEdit.notes || '',
         });
+      } else if (profile) {
+        // Control not in local data - fetch directly from DB to check location_type
+        const { data, error } = await supabase
+          .from('controls')
+          .select('*')
+          .eq('id', editId)
+          .single();
+        
+        if (error || !data) {
+          toast({
+            variant: 'destructive',
+            title: 'Erreur',
+            description: 'Contrôle non trouvé',
+          });
+          setSearchParams({});
+          return;
+        }
+        
+        // If it's not a train control, redirect to station
+        if (data.location_type !== 'train') {
+          navigate(`/station?edit=${editId}`, { replace: true });
+          return;
+        }
+        
+        // It's a train control, load it
+        setIsEditMode(true);
+        setFormState({
+          trainNumber: data.train_number || '',
+          origin: data.origin || '',
+          destination: data.destination || '',
+          controlDate: data.control_date,
+          controlTime: data.control_time,
+          passengers: data.nb_passagers,
+          tarifsBord: [],
+          tarifMode: 'bord',
+          tarifsControle: [],
+          stt50Count: data.stt_50 || 0,
+          pvList: [],
+          stt100Count: data.stt_100 || 0,
+          riPositif: data.ri_positive || 0,
+          riNegatif: data.ri_negative || 0,
+          commentaire: data.notes || '',
+        });
       }
-    }
-  }, [editId, controls]);
+    };
+    
+    loadControlForEdit();
+  }, [editId, controls, isLoading, profile, navigate, setSearchParams, toast]);
 
   // Cancel edit mode
   const handleCancelEdit = () => {
