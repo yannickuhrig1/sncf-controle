@@ -11,6 +11,7 @@ export interface UserPreferences {
   id: string;
   user_id: string;
   theme: 'light' | 'dark' | 'system';
+  theme_variant: 'sncf' | 'colore';
   navigation_style: NavigationStyle;
   visible_pages: PageId[];
   show_bottom_bar: boolean;
@@ -25,6 +26,7 @@ export interface UserPreferences {
   default_page: string;
   data_auto_save: boolean;
   data_keep_history_days: number;
+  show_onboard_fraud_chart: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -34,6 +36,7 @@ export const DEFAULT_BOTTOM_BAR_PAGES: PageId[] = ['dashboard', 'onboard', 'stat
 
 export const DEFAULT_PREFERENCES: Omit<UserPreferences, 'id' | 'user_id' | 'created_at' | 'updated_at'> = {
   theme: 'system',
+  theme_variant: 'sncf',
   navigation_style: 'bottom',
   visible_pages: DEFAULT_VISIBLE_PAGES,
   show_bottom_bar: true,
@@ -48,6 +51,7 @@ export const DEFAULT_PREFERENCES: Omit<UserPreferences, 'id' | 'user_id' | 'crea
   default_page: '/',
   data_auto_save: true,
   data_keep_history_days: 90,
+  show_onboard_fraud_chart: true,
 };
 
 export function useUserPreferences() {
@@ -135,6 +139,12 @@ export function useUserPreferences() {
           root.classList.remove('dark');
         }
       }
+
+      // Apply theme variant
+      root.classList.remove('theme-colore');
+      if (data.theme_variant === 'colore') {
+        root.classList.add('theme-colore');
+      }
     },
     onError: (error, _updates, context) => {
       if (context?.previous) {
@@ -156,6 +166,8 @@ export function useUserPreferences() {
       : DEFAULT_BOTTOM_BAR_PAGES,
     show_bottom_bar: preferences.show_bottom_bar ?? true,
     show_burger_menu: preferences.show_burger_menu ?? false,
+    theme_variant: preferences.theme_variant ?? 'sncf',
+    show_onboard_fraud_chart: preferences.show_onboard_fraud_chart ?? true,
   } as UserPreferences : null;
 
   return {

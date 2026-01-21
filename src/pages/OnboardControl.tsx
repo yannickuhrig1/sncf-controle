@@ -1,6 +1,7 @@
-import { useState, useMemo, useCallback } from 'react';
-import { Navigate, useNavigate } from 'react-router-dom';
+import { useState, useMemo, useCallback, useEffect } from 'react';
+import { Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { useUserPreferences } from '@/hooks/useUserPreferences';
 import { useOnboardControls, type OnboardControl as OnboardControlType } from '@/hooks/useOnboardControls';
 import { useFormPersistence } from '@/hooks/useFormPersistence';
 import { AppLayout } from '@/components/layout/AppLayout';
@@ -11,6 +12,7 @@ import { FraudSummary } from '@/components/controls/FraudSummary';
 import { StationAutocomplete } from '@/components/controls/StationAutocomplete';
 import { ControlDetailDialog } from '@/components/controls/ControlDetailDialog';
 import { ExportDialog } from '@/components/controls/ExportDialog';
+import { FraudRateChart } from '@/components/charts/FraudRateChart';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -106,10 +108,16 @@ const INITIAL_FORM_STATE: FormState = {
 
 export default function OnboardControl() {
   const { user, loading: authLoading, profile } = useAuth();
-  const { controls, isLoading, createControl, updateControl, deleteControl, isCreating } =
+  const { preferences } = useUserPreferences();
+  const { controls, isLoading, createControl, updateControl, deleteControl, isCreating, isUpdating } =
     useOnboardControls();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { toast } = useToast();
+
+  // Edit mode
+  const editId = searchParams.get('edit');
+  const [isEditMode, setIsEditMode] = useState(false);
 
   // Form state
   const [formState, setFormState] = useState<FormState>(INITIAL_FORM_STATE);
@@ -130,6 +138,40 @@ export default function OnboardControl() {
   // Dialog states
   const [selectedControl, setSelectedControl] = useState<Control | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
+
+  // Load control for editing
+  useEffect(() => {
+    if (editId && controls.length > 0) {
+      const controlToEdit = controls.find(c => c.id === editId);
+      if (controlToEdit) {
+        setIsEditMode(true);
+        setFormState({
+          trainNumber: controlToEdit.train_number || '',
+          origin: controlToEdit.origin || '',
+          destination: controlToEdit.destination || '',
+          controlDate: controlToEdit.control_date,
+          controlTime: controlToEdit.control_time,
+          passengers: controlToEdit.nb_passagers,
+          tarifsBord: [],
+          tarifMode: 'bord',
+          tarifsControle: [],
+          stt50Count: controlToEdit.stt_50 || 0,
+          pvList: [],
+          stt100Count: controlToEdit.stt_100 || 0,
+          riPositif: controlToEdit.ri_positive || 0,
+          riNegatif: controlToEdit.ri_negative || 0,
+          commentaire: controlToEdit.notes || '',
+        });
+      }
+    }
+  }, [editId, controls]);
+
+  // Cancel edit mode
+  const handleCancelEdit = () => {
+    setIsEditMode(false);
+    setSearchParams({});
+    setFormState(INITIAL_FORM_STATE);
+  };
 
   // Recent trains for autocomplete
   const recentTrains = useMemo(() => {
@@ -317,7 +359,7 @@ export default function OnboardControl() {
           ? `${formState.origin} → ${formState.destination}`
           : formState.trainNumber;
 
-      await createControl({
+      const controlData = {
         location: locationName,
         train_number: formState.trainNumber.trim(),
         origin: formState.origin.trim() || null,
@@ -334,12 +376,24 @@ export default function OnboardControl() {
         ri_positive: formState.riPositif,
         ri_negative: formState.riNegatif,
         notes: formState.commentaire.trim() || null,
-      } as any);
+      };
 
-      toast({
-        title: 'Contrôle enregistré',
-        description: 'Le contrôle à bord a été ajouté avec succès',
-      });
+      if (isEditMode && editId) {
+        await updateControl({ id: editId, data: controlData as any });
+        toast({
+          title: 'Contrôle modifié',
+          description: 'Le contrôle a été mis à jour avec succès',
+        });
+        setIsEditMode(false);
+        setSearchParams({});
+      } else {
+        await createControl(controlData as any);
+        toast({
+          title: 'Contrôle enregistré',
+          description: 'Le contrôle à bord a été ajouté avec succès',
+        });
+      }
+      
       triggerHaptic('success');
       clearDraft();
       setFormState(INITIAL_FORM_STATE);
@@ -404,17 +458,38 @@ export default function OnboardControl() {
           <div>
             <div className="flex items-center gap-2">
               <Train className="h-6 w-6 text-primary" />
-              <h1 className="text-2xl font-bold">Contrôle à bord</h1>
+              <h1 className="text-2xl font-bold">
+                {isEditMode ? 'Modifier le contrôle' : 'Contrôle à bord'}
+              </h1>
+              {isEditMode && (
+                <Badge variant="secondary">Mode édition</Badge>
+              )}
             </div>
             <p className="text-sm text-muted-foreground mt-1">
-              Saisissez les données du contrôle et consultez l'historique
+              {isEditMode 
+                ? 'Modifiez les données du contrôle sélectionné'
+                : 'Saisissez les données du contrôle et consultez l\'historique'
+              }
             </p>
           </div>
-          <Button variant="outline" size="sm">
-            <Download className="h-4 w-4 mr-2" />
-            Exporter
-          </Button>
+          <div className="flex gap-2">
+            {isEditMode && (
+              <Button variant="outline" size="sm" onClick={handleCancelEdit}>
+                <X className="h-4 w-4 mr-2" />
+                Annuler
+              </Button>
+            )}
+            <Button variant="outline" size="sm" onClick={() => setExportOpen(true)}>
+              <Download className="h-4 w-4 mr-2" />
+              Exporter
+            </Button>
+          </div>
         </div>
+
+        {/* Fraud Rate Chart - toggleable from settings */}
+        {preferences?.show_onboard_fraud_chart && controls.length > 0 && (
+          <FraudRateChart controls={controls as Control[]} title="Évolution du taux de fraude (14 jours)" />
+        )}
 
         {/* Fraud Summary - Sticky Banner */}
         <div className="sticky top-16 z-30">
@@ -736,17 +811,17 @@ export default function OnboardControl() {
                   size="lg"
                   className="w-full"
                   onClick={handleSubmit}
-                  disabled={isCreating}
+                  disabled={isCreating || isUpdating}
                 >
-                  {isCreating ? (
+                  {(isCreating || isUpdating) ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Enregistrement...
+                      {isEditMode ? 'Mise à jour...' : 'Enregistrement...'}
                     </>
                   ) : (
                     <>
                       <Save className="mr-2 h-4 w-4" />
-                      Enregistrer le contrôle
+                      {isEditMode ? 'Mettre à jour' : 'Enregistrer le contrôle'}
                     </>
                   )}
                 </Button>

@@ -254,15 +254,14 @@ export default function Settings() {
             <div className="space-y-2">
               <Label>Style de thème</Label>
               <Select
-                value={preferences?.navigation_style === 'burger' ? 'colore' : 'sncf'}
+                value={preferences?.theme_variant || 'sncf'}
                 onValueChange={(value: 'sncf' | 'colore') => {
                   const root = document.documentElement;
                   root.classList.remove('theme-colore');
                   if (value === 'colore') {
                     root.classList.add('theme-colore');
                   }
-                  // Store in navigation_style temporarily (we'll use a proper field later)
-                  updatePreferences({ navigation_style: value === 'colore' ? 'burger' : 'bottom' });
+                  updatePreferences({ theme_variant: value });
                 }}
                 disabled={isUpdating}
               >
@@ -352,6 +351,24 @@ export default function Settings() {
                 checked={preferences?.display_show_totals ?? true}
                 onCheckedChange={(checked) =>
                   updatePreferences({ display_show_totals: checked })
+                }
+                disabled={isUpdating}
+              />
+            </div>
+
+            <Separator />
+
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label>Graphique évolution fraude</Label>
+                <p className="text-xs text-muted-foreground">
+                  Affiche le graphique d'évolution du taux de fraude sur la page "Contrôle à bord"
+                </p>
+              </div>
+              <Switch
+                checked={preferences?.show_onboard_fraud_chart ?? true}
+                onCheckedChange={(checked) =>
+                  updatePreferences({ show_onboard_fraud_chart: checked })
                 }
                 disabled={isUpdating}
               />
