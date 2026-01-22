@@ -13,7 +13,7 @@ import { FraudSummary } from '@/components/controls/FraudSummary';
 import { StationAutocomplete } from '@/components/controls/StationAutocomplete';
 import { ControlDetailDialog } from '@/components/controls/ControlDetailDialog';
 import { ExportDialog } from '@/components/controls/ExportDialog';
-import { FraudRateChart } from '@/components/charts/FraudRateChart';
+import { TrainFraudChart } from '@/components/charts/TrainFraudChart';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -53,6 +53,7 @@ import {
   ChevronRight,
   X,
   ArrowUpDown,
+  RefreshCw,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -110,7 +111,7 @@ const INITIAL_FORM_STATE: FormState = {
 export default function OnboardControl() {
   const { user, loading: authLoading, profile } = useAuth();
   const { preferences } = useUserPreferences();
-  const { controls, isLoading, createControl, updateControl, deleteControl, isCreating, isUpdating } =
+  const { controls, isLoading, isFetching, refetch, createControl, updateControl, deleteControl, isCreating, isUpdating } =
     useOnboardControls();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -523,6 +524,15 @@ export default function OnboardControl() {
             </p>
           </div>
           <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => refetch()}
+              disabled={isFetching}
+            >
+              <RefreshCw className={cn("h-4 w-4 mr-2", isFetching && "animate-spin")} />
+              {isFetching ? 'Sync...' : 'Synchroniser'}
+            </Button>
             {isEditMode && (
               <Button variant="outline" size="sm" onClick={handleCancelEdit}>
                 <X className="h-4 w-4 mr-2" />
@@ -536,9 +546,13 @@ export default function OnboardControl() {
           </div>
         </div>
 
-        {/* Fraud Rate Chart - toggleable from settings */}
-        {preferences?.show_onboard_fraud_chart && controls.length > 0 && (
-          <FraudRateChart controls={controls as Control[]} title="Évolution du taux de fraude (14 jours)" />
+        {/* Fraud Rate Chart by Train Number - toggleable from settings */}
+        {preferences?.show_onboard_fraud_chart && (
+          <TrainFraudChart 
+            controls={controls as Control[]} 
+            trainNumber={formState.trainNumber}
+            title="Évolution du taux de fraude"
+          />
         )}
 
         {/* Fraud Summary - Sticky Banner */}
