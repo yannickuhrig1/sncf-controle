@@ -13,11 +13,13 @@ export function useControls() {
   const controlsQuery = useQuery({
     queryKey: ['controls'],
     queryFn: async () => {
+      // Fetch all controls without row limit (Supabase default is 1000)
       const { data, error } = await supabase
         .from('controls')
         .select('*')
         .order('control_date', { ascending: false })
-        .order('control_time', { ascending: false });
+        .order('control_time', { ascending: false })
+        .limit(10000); // Explicitly set high limit to avoid missing records
 
       if (error) throw error;
       return data as Control[];

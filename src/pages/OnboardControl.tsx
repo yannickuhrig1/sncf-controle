@@ -660,7 +660,118 @@ export default function OnboardControl() {
               </CardContent>
             </Card>
 
-            {/* Card 2: Tarifs à bord */}
+            {/* Card 1b: STT 50€ and PV 100€ */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Ticket className="h-4 w-4" />
+                  Suppléments rapides
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg">
+                    <CounterInput
+                      label="STT 50€"
+                      sublabel="Tarif contrôle"
+                      value={formState.stt50Count}
+                      onChange={(v) => setFormState((p) => ({ ...p, stt50Count: v }))}
+                      showTotal={{ unitPrice: 50, label: 'Total' }}
+                    />
+                  </div>
+                  <div className="p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
+                    <CounterInput
+                      label="PV 100€"
+                      sublabel="Procès-verbal"
+                      value={formState.stt100Count}
+                      onChange={(v) => setFormState((p) => ({ ...p, stt100Count: v }))}
+                      showTotal={{ unitPrice: 100, label: 'Total' }}
+                      variant="danger"
+                    />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Card 2: Tarifs contrôle */}
+            <Card className="bg-card-amber text-card-amber-foreground border-card-amber">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <FileText className="h-4 w-4" />
+                  Tarif contrôle
+                </CardTitle>
+                <CardDescription className="text-card-amber-foreground/70">Infractions régularisées sur place</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <TarifTypeToggle types={TARIF_TYPES} value={controleTarifType} onChange={setControleTarifType} />
+
+                <div className="flex gap-2">
+                  <Input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    placeholder="Montant (€)"
+                    value={controleTarifMontant}
+                    onChange={(e) => setControleTarifMontant(e.target.value)}
+                    className="flex-1"
+                    onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addTarifControle())}
+                  />
+                  <Button type="button" onClick={addTarifControle} disabled={!controleTarifMontant}>
+                    <Plus className="h-4 w-4 mr-1" />
+                    Ajouter
+                  </Button>
+                </div>
+
+                {formState.tarifsControle.length > 0 && (
+                  <div className="space-y-2">
+                    {formState.tarifsControle.map((t) => (
+                      <TarifListItem key={t.id} item={t} onRemove={removeTarifControle} />
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Card 3: PV */}
+            <Card className="bg-card-rose text-card-rose-foreground border-card-rose">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <AlertTriangle className="h-4 w-4" />
+                  Procès-verbaux (PV)
+                </CardTitle>
+                <CardDescription className="text-card-rose-foreground/70">Infractions verbalisées</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <TarifTypeToggle types={TARIF_TYPES} value={pvTarifType} onChange={setPvTarifType} />
+
+                <div className="flex gap-2">
+                  <Input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    placeholder="Montant (€)"
+                    value={pvTarifMontant}
+                    onChange={(e) => setPvTarifMontant(e.target.value)}
+                    className="flex-1"
+                    onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addPv())}
+                  />
+                  <Button type="button" onClick={addPv} disabled={!pvTarifMontant} variant="destructive">
+                    <Plus className="h-4 w-4 mr-1" />
+                    Ajouter
+                  </Button>
+                </div>
+
+                {formState.pvList.length > 0 && (
+                  <div className="space-y-2">
+                    {formState.pvList.map((t) => (
+                      <TarifListItem key={t.id} item={t} onRemove={removePv} />
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Card 4: Tarifs à bord (moved here, just above RI) */}
             <Card className="bg-card-mint text-card-mint-foreground border-card-mint">
               <CardHeader className="pb-3">
                 <CardTitle className="text-base flex items-center gap-2">
@@ -713,107 +824,6 @@ export default function OnboardControl() {
                   <div className="space-y-2">
                     {formState.tarifsBord.map((t) => (
                       <TarifListItem key={t.id} item={t} onRemove={removeTarifBord} />
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Card 3: Tarifs contrôle */}
-            <Card className="bg-card-amber text-card-amber-foreground border-card-amber">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <FileText className="h-4 w-4" />
-                  Tarif contrôle
-                </CardTitle>
-                <CardDescription className="text-card-amber-foreground/70">Infractions régularisées sur place</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <TarifTypeToggle types={TARIF_TYPES} value={controleTarifType} onChange={setControleTarifType} />
-
-                <div className="flex gap-2">
-                  <Input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    placeholder="Montant (€)"
-                    value={controleTarifMontant}
-                    onChange={(e) => setControleTarifMontant(e.target.value)}
-                    className="flex-1"
-                    onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addTarifControle())}
-                  />
-                  <Button type="button" onClick={addTarifControle} disabled={!controleTarifMontant}>
-                    <Plus className="h-4 w-4 mr-1" />
-                    Ajouter
-                  </Button>
-                </div>
-
-                {/* STT 50 Counter */}
-                <div className="p-3 bg-muted/50 rounded-lg">
-                  <CounterInput
-                    label="STT 50%"
-                    sublabel="Supplément Train Tarif réduit"
-                    value={formState.stt50Count}
-                    onChange={(v) => setFormState((p) => ({ ...p, stt50Count: v }))}
-                    showTotal={{ unitPrice: 50, label: 'Total' }}
-                  />
-                </div>
-
-                {formState.tarifsControle.length > 0 && (
-                  <div className="space-y-2">
-                    {formState.tarifsControle.map((t) => (
-                      <TarifListItem key={t.id} item={t} onRemove={removeTarifControle} />
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Card 4: PV */}
-            <Card className="bg-card-rose text-card-rose-foreground border-card-rose">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <AlertTriangle className="h-4 w-4" />
-                  Procès-verbaux (PV)
-                </CardTitle>
-                <CardDescription className="text-card-rose-foreground/70">Infractions verbalisées</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <TarifTypeToggle types={TARIF_TYPES} value={pvTarifType} onChange={setPvTarifType} />
-
-                <div className="flex gap-2">
-                  <Input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    placeholder="Montant (€)"
-                    value={pvTarifMontant}
-                    onChange={(e) => setPvTarifMontant(e.target.value)}
-                    className="flex-1"
-                    onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addPv())}
-                  />
-                  <Button type="button" onClick={addPv} disabled={!pvTarifMontant} variant="destructive">
-                    <Plus className="h-4 w-4 mr-1" />
-                    Ajouter
-                  </Button>
-                </div>
-
-                {/* STT 100 Counter */}
-                <div className="p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
-                  <CounterInput
-                    label="STT 100%"
-                    sublabel="Supplément Train Tarif plein"
-                    value={formState.stt100Count}
-                    onChange={(v) => setFormState((p) => ({ ...p, stt100Count: v }))}
-                    showTotal={{ unitPrice: 100, label: 'Total' }}
-                    variant="danger"
-                  />
-                </div>
-
-                {formState.pvList.length > 0 && (
-                  <div className="space-y-2">
-                    {formState.pvList.map((t) => (
-                      <TarifListItem key={t.id} item={t} onRemove={removePv} />
                     ))}
                   </div>
                 )}
