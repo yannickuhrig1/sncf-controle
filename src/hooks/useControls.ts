@@ -94,15 +94,24 @@ export function useControls() {
     },
   });
 
+  const refetch = async () => {
+    await Promise.all([
+      controlsQuery.refetch(),
+      todayControlsQuery.refetch(),
+    ]);
+  };
+
   return {
     controls: controlsQuery.data ?? [],
     todayControls: todayControlsQuery.data ?? [],
     isLoading: controlsQuery.isLoading,
+    isFetching: controlsQuery.isFetching || todayControlsQuery.isFetching,
     createControl: createControlMutation.mutateAsync,
     updateControl: updateControlMutation.mutateAsync,
     deleteControl: deleteControlMutation.mutateAsync,
     isCreating: createControlMutation.isPending,
     isUpdating: updateControlMutation.isPending,
     isDeleting: deleteControlMutation.isPending,
+    refetch,
   };
 }

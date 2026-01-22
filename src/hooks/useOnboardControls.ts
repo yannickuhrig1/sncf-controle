@@ -33,7 +33,7 @@ export function useOnboardControls() {
   const queryClient = useQueryClient();
 
   // Fetch all onboard controls (location_type = 'train')
-  const { data: controls = [], isLoading } = useQuery({
+  const controlsQuery = useQuery({
     queryKey: ['onboard-controls', profile?.id],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -48,6 +48,10 @@ export function useOnboardControls() {
     },
     enabled: !!profile,
   });
+
+  const controls = controlsQuery.data ?? [];
+  const isLoading = controlsQuery.isLoading;
+  const isFetching = controlsQuery.isFetching;
 
   // Create control
   const createMutation = useMutation({
@@ -97,9 +101,13 @@ export function useOnboardControls() {
     },
   });
 
+  const refetch = () => controlsQuery.refetch();
+
   return {
     controls,
     isLoading,
+    isFetching,
+    refetch,
     createControl: createMutation.mutateAsync,
     updateControl: updateMutation.mutateAsync,
     deleteControl: deleteMutation.mutateAsync,
