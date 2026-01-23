@@ -1,12 +1,17 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { useControls } from '@/hooks/useControls';
+import { useLastSync } from '@/hooks/useLastSync';
+import { useOfflineSync } from '@/hooks/useOfflineSync';
+import { LastSyncIndicator } from '@/components/controls/LastSyncIndicator';
+import { OfflineIndicator } from '@/components/controls/OfflineIndicator';
 import { calculateStats, formatFraudRate, getFraudRateBgColor, getFraudRateColor } from '@/lib/stats';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 import {
   startOfWeek,
   startOfMonth,
@@ -36,8 +41,17 @@ const PERIOD_LABELS: Record<PeriodFilter, string> = {
 
 export default function Dashboard() {
   const { user, profile, loading: authLoading } = useAuth();
-  const { controls, isLoading: controlsLoading } = useControls();
+  const { controls, isLoading: controlsLoading, isFetching, refetch } = useControls();
   const [period, setPeriod] = useState<PeriodFilter>('today');
+  const { formattedLastSync, updateLastSync } = useLastSync();
+  const { isOnline, pendingCount, isSyncing } = useOfflineSync();
+
+  // Handle sync
+  const handleSync = useCallback(async () => {
+    await refetch();
+    updateLastSync();
+    toast.success('Données synchronisées');
+  }, [refetch, updateLastSync]);
 
   // Filter controls based on selected period
   const filteredControls = useMemo(() => {
@@ -88,14 +102,28 @@ export default function Dashboard() {
     <AppLayout>
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex flex-col gap-2">
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <LayoutDashboard className="h-6 w-6 text-primary" />
-            Tableau de bord
-          </h1>
-          <p className="text-muted-foreground">
-            Bonjour {profile?.first_name} ! Voici le résumé de vos contrôles.
-          </p>
+        <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-1">
+            <h1 className="text-2xl font-bold flex items-center gap-2">
+              <LayoutDashboard className="h-6 w-6 text-primary" />
+              Tableau de bord
+            </h1>
+            <p className="text-muted-foreground">
+              Bonjour {profile?.first_name} ! Voici le résumé de vos contrôles.
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <OfflineIndicator 
+              isOnline={isOnline} 
+              pendingCount={pendingCount} 
+              isSyncing={isSyncing}
+            />
+            <LastSyncIndicator
+              lastSync={formattedLastSync}
+              isFetching={isFetching}
+              onSync={handleSync}
+            />
+          </div>
         </div>
 
         {/* Quick Actions */}

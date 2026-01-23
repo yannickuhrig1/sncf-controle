@@ -1,11 +1,15 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useControls } from '@/hooks/useControls';
+import { useLastSync } from '@/hooks/useLastSync';
+import { useOfflineSync } from '@/hooks/useOfflineSync';
 import { supabase } from '@/integrations/supabase/client';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { TarifSection } from '@/components/controls/TarifSection';
 import { FraudSummary } from '@/components/controls/FraudSummary';
+import { LastSyncIndicator } from '@/components/controls/LastSyncIndicator';
+import { OfflineIndicator } from '@/components/controls/OfflineIndicator';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -13,6 +17,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
+import { toast as sonnerToast } from 'sonner';
 import { Loader2, Building2, ArrowLeft, Save, ArrowRight, X } from 'lucide-react';
 
 // Liste des gares principales
@@ -41,10 +46,12 @@ const GARES_PRINCIPALES = [
 
 export default function StationControl() {
   const { user, loading: authLoading } = useAuth();
-  const { controls, createControl, updateControl, isCreating, isUpdating } = useControls();
+  const { controls, createControl, updateControl, isCreating, isUpdating, isFetching, refetch } = useControls();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { toast } = useToast();
+  const { formattedLastSync, updateLastSync } = useLastSync();
+  const { isOnline, pendingCount, isSyncing } = useOfflineSync();
 
   // Edit mode
   const editId = searchParams.get('edit');
@@ -200,6 +207,13 @@ export default function StationControl() {
     setNotes('');
   };
 
+  // Handle sync - must be before early returns
+  const handleSync = useCallback(async () => {
+    await refetch();
+    updateLastSync();
+    sonnerToast.success('Données synchronisées');
+  }, [refetch, updateLastSync]);
+
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -332,20 +346,35 @@ export default function StationControl() {
     { id: 'pv-autre', label: 'Autre motif', ...pvAutre, onCountChange: (v: number) => setPvAutre(p => ({ ...p, count: v })), onAmountChange: (v: number) => setPvAutre(p => ({ ...p, amount: v })) },
   ];
 
+
   return (
     <AppLayout>
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => isEditMode ? handleCancelEdit() : navigate(-1)}>
-            {isEditMode ? <X className="h-5 w-5" /> : <ArrowLeft className="h-5 w-5" />}
-          </Button>
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <Button variant="ghost" size="icon" onClick={() => isEditMode ? handleCancelEdit() : navigate(-1)}>
+              {isEditMode ? <X className="h-5 w-5" /> : <ArrowLeft className="h-5 w-5" />}
+            </Button>
+            <div className="flex items-center gap-2">
+              <Building2 className="h-5 w-5 text-primary" />
+              <h1 className="text-xl font-bold">
+                {isEditMode ? 'Modifier le contrôle' : 'Contrôle en gare'}
+              </h1>
+              {isEditMode && <Badge variant="secondary">Mode édition</Badge>}
+            </div>
+          </div>
           <div className="flex items-center gap-2">
-            <Building2 className="h-5 w-5 text-primary" />
-            <h1 className="text-xl font-bold">
-              {isEditMode ? 'Modifier le contrôle' : 'Contrôle en gare'}
-            </h1>
-            {isEditMode && <Badge variant="secondary">Mode édition</Badge>}
+            <OfflineIndicator 
+              isOnline={isOnline} 
+              pendingCount={pendingCount} 
+              isSyncing={isSyncing}
+            />
+            <LastSyncIndicator
+              lastSync={formattedLastSync}
+              isFetching={isFetching}
+              onSync={handleSync}
+            />
           </div>
         </div>
 

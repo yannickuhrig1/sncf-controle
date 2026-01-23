@@ -3,6 +3,7 @@ import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useControls } from '@/hooks/useControls';
 import { useLastSync } from '@/hooks/useLastSync';
+import { useOfflineSync } from '@/hooks/useOfflineSync';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -13,6 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { ControlDetailDialog } from '@/components/controls/ControlDetailDialog';
 import { ExportDialog } from '@/components/controls/ExportDialog';
 import { LastSyncIndicator } from '@/components/controls/LastSyncIndicator';
+import { OfflineIndicator } from '@/components/controls/OfflineIndicator';
 import { 
   Loader2, 
   History, 
@@ -133,6 +135,7 @@ export default function HistoryPage() {
   } = useControls();
   const navigate = useNavigate();
   const { formattedLastSync, updateLastSync } = useLastSync();
+  const { isOnline, pendingCount, isSyncing } = useOfflineSync();
   
   const [selectedControl, setSelectedControl] = useState<Control | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
@@ -302,6 +305,11 @@ export default function HistoryPage() {
             )}
           </div>
           <div className="flex items-center gap-2">
+            <OfflineIndicator 
+              isOnline={isOnline} 
+              pendingCount={pendingCount} 
+              isSyncing={isSyncing}
+            />
             <LastSyncIndicator
               lastSync={formattedLastSync}
               isFetching={isFetching}

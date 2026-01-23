@@ -5,6 +5,7 @@ import { useUserPreferences } from '@/hooks/useUserPreferences';
 import { useOnboardControls, type OnboardControl as OnboardControlType } from '@/hooks/useOnboardControls';
 import { useFormPersistence } from '@/hooks/useFormPersistence';
 import { useLastSync } from '@/hooks/useLastSync';
+import { useOfflineSync } from '@/hooks/useOfflineSync';
 import { supabase } from '@/integrations/supabase/client';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { TarifTypeToggle } from '@/components/controls/TarifTypeToggle';
@@ -16,6 +17,7 @@ import { ControlDetailDialog } from '@/components/controls/ControlDetailDialog';
 import { ExportDialog } from '@/components/controls/ExportDialog';
 import { TrainFraudChart } from '@/components/charts/TrainFraudChart';
 import { LastSyncIndicator } from '@/components/controls/LastSyncIndicator';
+import { OfflineIndicator } from '@/components/controls/OfflineIndicator';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -119,6 +121,7 @@ export default function OnboardControl() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { toast } = useToast();
   const { formattedLastSync, updateLastSync } = useLastSync();
+  const { isOnline, pendingCount, isSyncing } = useOfflineSync();
 
   // Edit mode
   const editId = searchParams.get('edit');
@@ -526,7 +529,12 @@ export default function OnboardControl() {
               }
             </p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 items-center">
+            <OfflineIndicator 
+              isOnline={isOnline} 
+              pendingCount={pendingCount} 
+              isSyncing={isSyncing}
+            />
             <LastSyncIndicator
               lastSync={formattedLastSync}
               isFetching={isFetching}
