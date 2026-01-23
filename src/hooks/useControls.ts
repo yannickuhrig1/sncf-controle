@@ -1,10 +1,12 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import type { Database } from '@/integrations/supabase/types';
 
 type Control = Database['public']['Tables']['controls']['Row'];
 type ControlInsert = Database['public']['Tables']['controls']['Insert'];
+
+const PAGE_SIZE = 50;
 
 export function useControls() {
   const { profile } = useAuth();
@@ -24,6 +26,32 @@ export function useControls() {
       if (error) throw error;
       return data as Control[];
     },
+    enabled: !!profile,
+  });
+
+  // Infinite query for paginated loading
+  const infiniteControlsQuery = useInfiniteQuery({
+    queryKey: ['controls', 'infinite'],
+    queryFn: async ({ pageParam = 0 }) => {
+      const from = pageParam * PAGE_SIZE;
+      const to = from + PAGE_SIZE - 1;
+      
+      const { data, error, count } = await supabase
+        .from('controls')
+        .select('*', { count: 'exact' })
+        .order('control_date', { ascending: false })
+        .order('control_time', { ascending: false })
+        .range(from, to);
+
+      if (error) throw error;
+      return {
+        data: data as Control[],
+        nextPage: data.length === PAGE_SIZE ? pageParam + 1 : undefined,
+        totalCount: count ?? 0,
+      };
+    },
+    getNextPageParam: (lastPage) => lastPage.nextPage,
+    initialPageParam: 0,
     enabled: !!profile,
   });
 
@@ -100,8 +128,12 @@ export function useControls() {
     await Promise.all([
       controlsQuery.refetch(),
       todayControlsQuery.refetch(),
+      infiniteControlsQuery.refetch(),
     ]);
   };
+
+  // Flatten infinite query pages
+  const infiniteControls = infiniteControlsQuery.data?.pages.flatMap(page => page.data) ?? [];
 
   return {
     controls: controlsQuery.data ?? [],
@@ -115,5 +147,12 @@ export function useControls() {
     isUpdating: updateControlMutation.isPending,
     isDeleting: deleteControlMutation.isPending,
     refetch,
+    // Infinite pagination
+    infiniteControls,
+    fetchNextPage: infiniteControlsQuery.fetchNextPage,
+    hasNextPage: infiniteControlsQuery.hasNextPage,
+    isFetchingNextPage: infiniteControlsQuery.isFetchingNextPage,
+    isLoadingInfinite: infiniteControlsQuery.isLoading,
+    totalCount: infiniteControlsQuery.data?.pages[0]?.totalCount ?? 0,
   };
 }

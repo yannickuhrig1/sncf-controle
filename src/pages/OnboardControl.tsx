@@ -4,6 +4,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useUserPreferences } from '@/hooks/useUserPreferences';
 import { useOnboardControls, type OnboardControl as OnboardControlType } from '@/hooks/useOnboardControls';
 import { useFormPersistence } from '@/hooks/useFormPersistence';
+import { useLastSync } from '@/hooks/useLastSync';
 import { supabase } from '@/integrations/supabase/client';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { TarifTypeToggle } from '@/components/controls/TarifTypeToggle';
@@ -14,6 +15,7 @@ import { StationAutocomplete } from '@/components/controls/StationAutocomplete';
 import { ControlDetailDialog } from '@/components/controls/ControlDetailDialog';
 import { ExportDialog } from '@/components/controls/ExportDialog';
 import { TrainFraudChart } from '@/components/charts/TrainFraudChart';
+import { LastSyncIndicator } from '@/components/controls/LastSyncIndicator';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -116,6 +118,7 @@ export default function OnboardControl() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { toast } = useToast();
+  const { formattedLastSync, updateLastSync } = useLastSync();
 
   // Edit mode
   const editId = searchParams.get('edit');
@@ -524,15 +527,15 @@ export default function OnboardControl() {
             </p>
           </div>
           <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => refetch()}
-              disabled={isFetching}
-            >
-              <RefreshCw className={cn("h-4 w-4 mr-2", isFetching && "animate-spin")} />
-              {isFetching ? 'Sync...' : 'Synchroniser'}
-            </Button>
+            <LastSyncIndicator
+              lastSync={formattedLastSync}
+              isFetching={isFetching}
+              onSync={async () => {
+                await refetch();
+                updateLastSync();
+                sonnerToast.success('Données synchronisées');
+              }}
+            />
             {isEditMode && (
               <Button variant="outline" size="sm" onClick={handleCancelEdit}>
                 <X className="h-4 w-4 mr-2" />
