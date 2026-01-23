@@ -1,7 +1,8 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useControls } from '@/hooks/useControls';
+import { useLastSync } from '@/hooks/useLastSync';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -11,6 +12,7 @@ import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ControlDetailDialog } from '@/components/controls/ControlDetailDialog';
 import { ExportDialog } from '@/components/controls/ExportDialog';
+import { LastSyncIndicator } from '@/components/controls/LastSyncIndicator';
 import { 
   Loader2, 
   History, 
@@ -99,7 +101,7 @@ function ControlRow({ control, onClick }: ControlRowProps) {
               </div>
             </div>
             <div className={`text-center ${
-              fraudRate > 10 ? 'text-red-600' : fraudRate > 5 ? 'text-orange-600' : 'text-green-600'
+              fraudRate > 10 ? 'text-destructive' : fraudRate > 5 ? 'text-warning' : 'text-primary'
             }`}>
               <div className="flex items-center gap-1 text-sm font-semibold">
                 <AlertTriangle className="h-3 w-3" />
@@ -116,8 +118,21 @@ function ControlRow({ control, onClick }: ControlRowProps) {
 
 export default function HistoryPage() {
   const { user, loading: authLoading } = useAuth();
-  const { controls, isLoading, deleteControl } = useControls();
+  const { 
+    controls, 
+    isLoading, 
+    isFetching,
+    deleteControl, 
+    refetch,
+    infiniteControls,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoadingInfinite,
+    totalCount,
+  } = useControls();
   const navigate = useNavigate();
+  const { formattedLastSync, updateLastSync } = useLastSync();
   
   const [selectedControl, setSelectedControl] = useState<Control | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
@@ -125,16 +140,47 @@ export default function HistoryPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [locationFilter, setLocationFilter] = useState<LocationType | 'all'>('all');
   const [sortOption, setSortOption] = useState<SortOption>('date');
+  
+  // Infinite scroll observer
+  const loadMoreRef = useRef<HTMLDivElement>(null);
+
+  // Handle sync
+  const handleSync = useCallback(async () => {
+    await refetch();
+    updateLastSync();
+    toast.success('Données synchronisées');
+  }, [refetch, updateLastSync]);
+
+  // Infinite scroll effect
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage) {
+          fetchNextPage();
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    if (loadMoreRef.current) {
+      observer.observe(loadMoreRef.current);
+    }
+
+    return () => observer.disconnect();
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   // Helper to calculate fraud rate
-  const getFraudRate = (control: Control) => {
+  const getFraudRate = useCallback((control: Control) => {
     const fraudCount = control.tarifs_controle + control.pv;
     return control.nb_passagers > 0 ? (fraudCount / control.nb_passagers) * 100 : 0;
-  };
+  }, []);
+
+  // Use infinite controls for display, fall back to regular controls for filtering
+  const displayControls = infiniteControls.length > 0 ? infiniteControls : controls;
 
   // Filter and sort controls
   const filteredControls = useMemo(() => {
-    let result = controls.filter(control => {
+    let result = displayControls.filter(control => {
       // Location type filter
       if (locationFilter !== 'all' && control.location_type !== locationFilter) {
         return false;
@@ -177,8 +223,29 @@ export default function HistoryPage() {
     }
 
     return result;
-  }, [controls, searchQuery, locationFilter, sortOption]);
+  }, [displayControls, searchQuery, locationFilter, sortOption, getFraudRate]);
 
+  // Group filtered controls by date
+  const groupedControls = useMemo(() => {
+    return filteredControls.reduce((groups, control) => {
+      const date = control.control_date;
+      if (!groups[date]) {
+        groups[date] = [];
+      }
+      groups[date].push(control);
+      return groups;
+    }, {} as Record<string, Control[]>);
+  }, [filteredControls]);
+
+  const sortedDates = useMemo(() => {
+    return Object.keys(groupedControls).sort((a, b) => 
+      new Date(b).getTime() - new Date(a).getTime()
+    );
+  }, [groupedControls]);
+
+  const hasActiveFilters = searchQuery.trim() !== '' || locationFilter !== 'all' || sortOption !== 'date';
+
+  // Early returns AFTER all hooks
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -214,26 +281,6 @@ export default function HistoryPage() {
     }
   };
 
-  // Group filtered controls by date
-  const groupedControls = useMemo(() => {
-    return filteredControls.reduce((groups, control) => {
-      const date = control.control_date;
-      if (!groups[date]) {
-        groups[date] = [];
-      }
-      groups[date].push(control);
-      return groups;
-    }, {} as Record<string, Control[]>);
-  }, [filteredControls]);
-
-  const sortedDates = useMemo(() => {
-    return Object.keys(groupedControls).sort((a, b) => 
-      new Date(b).getTime() - new Date(a).getTime()
-    );
-  }, [groupedControls]);
-
-  const hasActiveFilters = searchQuery.trim() !== '' || locationFilter !== 'all' || sortOption !== 'date';
-
   const clearFilters = () => {
     setSearchQuery('');
     setLocationFilter('all');
@@ -248,17 +295,29 @@ export default function HistoryPage() {
           <div className="flex items-center gap-3">
             <History className="h-6 w-6 text-primary" />
             <h1 className="text-2xl font-bold">Historique</h1>
+            {totalCount > 0 && (
+              <Badge variant="secondary" className="text-xs">
+                {totalCount}
+              </Badge>
+            )}
           </div>
-          {controls.length > 0 && (
-            <Button variant="outline" size="sm" onClick={() => setExportOpen(true)}>
-              <Download className="h-4 w-4 mr-2" />
-              Exporter
-            </Button>
-          )}
+          <div className="flex items-center gap-2">
+            <LastSyncIndicator
+              lastSync={formattedLastSync}
+              isFetching={isFetching}
+              onSync={handleSync}
+            />
+            {controls.length > 0 && (
+              <Button variant="outline" size="sm" onClick={() => setExportOpen(true)}>
+                <Download className="h-4 w-4 mr-2" />
+                Exporter
+              </Button>
+            )}
+          </div>
         </div>
 
         {/* Filters */}
-        {controls.length > 0 && (
+        {displayControls.length > 0 && (
           <div className="space-y-3">
             {/* Search */}
             <div className="relative">
@@ -335,17 +394,17 @@ export default function HistoryPage() {
             {/* Results count */}
             {hasActiveFilters && (
               <p className="text-sm text-muted-foreground">
-                {filteredControls.length} résultat{filteredControls.length !== 1 ? 's' : ''} sur {controls.length} contrôle{controls.length !== 1 ? 's' : ''}
+                {filteredControls.length} résultat{filteredControls.length !== 1 ? 's' : ''} sur {displayControls.length} contrôle{displayControls.length !== 1 ? 's' : ''}
               </p>
             )}
           </div>
         )}
 
-        {isLoading ? (
+        {isLoading || isLoadingInfinite ? (
           <div className="flex justify-center py-12">
             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
           </div>
-        ) : controls.length === 0 ? (
+        ) : displayControls.length === 0 ? (
           <div className="text-center py-12">
             <History className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
             <h2 className="text-lg font-semibold mb-2">Aucun contrôle</h2>
@@ -389,6 +448,19 @@ export default function HistoryPage() {
                 </div>
               </div>
             ))}
+            
+            {/* Infinite scroll loader */}
+            <div ref={loadMoreRef} className="py-4 flex justify-center">
+              {isFetchingNextPage ? (
+                <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+              ) : hasNextPage ? (
+                <Button variant="ghost" size="sm" onClick={() => fetchNextPage()}>
+                  Charger plus
+                </Button>
+              ) : filteredControls.length > 10 ? (
+                <p className="text-xs text-muted-foreground">Tous les contrôles sont chargés</p>
+              ) : null}
+            </div>
           </div>
         )}
       </div>
