@@ -1,73 +1,100 @@
-# Welcome to your Lovable project
+# SNCF Contrôles
 
-## Project info
+Application de gestion et suivi des contrôles ferroviaires pour les agents SNCF.
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+## 🚆 Fonctionnalités
 
-## How can I edit this code?
+### Contrôles
+- **Contrôle à bord** : Saisie des contrôles effectués dans les trains (passagers, tarifs, PV)
+- **Contrôle en gare/quai** : Saisie des contrôles en gare ou sur quai
+- **Mode hors-ligne** : Synchronisation automatique des données à la reconnexion
 
-There are several ways of editing your application.
+### Statistiques
+- Tableau de bord avec indicateurs clés (taux de fraude, voyageurs, PV)
+- Filtrage par période (jour, semaine, mois, année)
+- Graphiques de répartition par type de contrôle
+- Historique complet avec pagination infinie
 
-**Use Lovable**
+### Exports
+- **PDF** : Rapport détaillé avec statistiques et tableau des contrôles
+- **HTML** : Rapport web interactif
+- **Email** : Génération de contenu mail formaté
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+### Gestion d'équipe
+- Rôles : Agent, Manager, Admin
+- Gestion des équipes et des membres
+- Suivi des performances par équipe
 
-Changes made via Lovable will be committed automatically to this repo.
+## 🛠 Technologies
 
-**Use your preferred IDE**
+- **Frontend** : React 18, TypeScript, Vite
+- **UI** : Tailwind CSS, shadcn/ui, Framer Motion
+- **Backend** : Supabase (Auth, Database, Edge Functions)
+- **State** : TanStack Query
+- **Charts** : Recharts
+- **PDF** : jsPDF + jspdf-autotable
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+## 📦 Installation
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
+```bash
+# Cloner le repository
 git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
 cd <YOUR_PROJECT_NAME>
 
-# Step 3: Install the necessary dependencies.
-npm i
+# Installer les dépendances
+npm install
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# Lancer le serveur de développement
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+## 🔧 Configuration
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+### Variables d'environnement
 
-**Use GitHub Codespaces**
+Créer un fichier `.env` à la racine :
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+```env
+VITE_SUPABASE_URL=your_supabase_url
+VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+```
 
-## What technologies are used for this project?
+## 📱 PWA
 
-This project is built with:
+L'application est installable en tant que PWA avec :
+- Support offline
+- Synchronisation en arrière-plan
+- Notifications push (optionnel)
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+## 🔐 Rôles et permissions
 
-## How can I deploy this project?
+| Rôle | Permissions |
+|------|-------------|
+| Agent | Créer/voir ses contrôles |
+| Manager | Voir contrôles équipe, gérer membres |
+| Admin | Accès complet, gestion utilisateurs |
 
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
+## 📊 Structure des données
 
-## Can I connect a custom domain to my Lovable project?
+### Contrôle
+- Informations de base (date, heure, lieu)
+- Compteurs voyageurs (total, en règle)
+- Tarifs contrôle (STT 50€, STT 100€, RNV)
+- PV (absence titre, invalide, refus)
+- Tarifs bord (ventes exceptionnelles)
+- Relevés d'identité (RI positive/négative)
 
-Yes, you can!
+## 🚀 Déploiement
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+L'application peut être déployée via :
+- **Lovable** : Publish directement depuis l'interface
+- **Netlify** : Configuration incluse (`netlify.toml`)
+- **Vercel** : Configuration incluse (`vercel.json`)
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+## 📄 Licence
+
+Propriétaire - SNCF
+
+---
+
+Développé avec [Lovable](https://lovable.dev)
