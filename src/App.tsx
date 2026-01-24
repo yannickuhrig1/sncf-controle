@@ -17,6 +17,7 @@ import AdminPage from "./pages/Admin";
 import ManagerPage from "./pages/Manager";
 import StatisticsPage from "./pages/Statistics";
 import SettingsPage from "./pages/Settings";
+import InstallPage from "./pages/Install";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -38,6 +39,7 @@ const AnimatedRoutes = () => {
         <Route path="/settings" element={<PageTransition><SettingsPage /></PageTransition>} />
         <Route path="/manager" element={<PageTransition><ManagerPage /></PageTransition>} />
         <Route path="/admin" element={<PageTransition><AdminPage /></PageTransition>} />
+        <Route path="/install" element={<PageTransition><InstallPage /></PageTransition>} />
         <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
       </Routes>
     </AnimatePresence>
