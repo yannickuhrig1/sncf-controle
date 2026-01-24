@@ -210,8 +210,8 @@ export function exportToPDF({ controls, title, dateRange, includeStats }: Export
 
     const tarifsData = [
       ['Type', 'Nombre', 'Montant (€)'],
-      ['STT 50%', stats.stt50.toString(), stats.totalAmounts.stt50.toFixed(2)],
-      ['STT 100%', stats.stt100.toString(), stats.totalAmounts.stt100.toFixed(2)],
+      ['STT 50€', stats.stt50.toString(), stats.totalAmounts.stt50.toFixed(2)],
+      ['STT 100€', stats.stt100.toString(), stats.totalAmounts.stt100.toFixed(2)],
       ['RNV', stats.rnv.toString(), stats.totalAmounts.rnv.toFixed(2)],
       ['Titre tiers', stats.tarifsControleDetails.titreTiers.toString(), stats.totalAmounts.titreTiers.toFixed(2)],
       ['Date naissance', stats.tarifsControleDetails.docNaissance.toString(), stats.totalAmounts.docNaissance.toFixed(2)],
@@ -266,8 +266,8 @@ export function exportToPDF({ controls, title, dateRange, includeStats }: Export
 
     const tarifsBordData = [
       ['Type', 'Nombre'],
-      ['STT 50%', stats.tarifsBord.stt50.toString()],
-      ['STT 100%', stats.tarifsBord.stt100.toString()],
+      ['STT 50€', stats.tarifsBord.stt50.toString()],
+      ['STT 100€', stats.tarifsBord.stt100.toString()],
       ['RNV', stats.tarifsBord.rnv.toString()],
       ['Titre tiers', stats.tarifsBord.titreTiers.toString()],
       ['Date naissance', stats.tarifsBord.docNaissance.toString()],
@@ -512,8 +512,8 @@ export function exportToHTML({ controls, title, dateRange, includeStats }: Expor
           <h3 style="color: #22c55e; margin-bottom: 12px;">Tarifs Contrôle (régularisations)</h3>
           <table class="detail-table">
             <tr><th>Type</th><th>Nombre</th><th>Montant</th></tr>
-            <tr><td>STT 50%</td><td>${stats.stt50}</td><td>${stats.totalAmounts.stt50.toFixed(2)} €</td></tr>
-            <tr><td>STT 100%</td><td>${stats.stt100}</td><td>${stats.totalAmounts.stt100.toFixed(2)} €</td></tr>
+            <tr><td>STT 50€</td><td>${stats.stt50}</td><td>${stats.totalAmounts.stt50.toFixed(2)} €</td></tr>
+            <tr><td>STT 100€</td><td>${stats.stt100}</td><td>${stats.totalAmounts.stt100.toFixed(2)} €</td></tr>
             <tr><td>RNV</td><td>${stats.rnv}</td><td>${stats.totalAmounts.rnv.toFixed(2)} €</td></tr>
             <tr><td>Titre tiers</td><td>${stats.tarifsControleDetails.titreTiers}</td><td>${stats.totalAmounts.titreTiers.toFixed(2)} €</td></tr>
             <tr><td>Date naissance</td><td>${stats.tarifsControleDetails.docNaissance}</td><td>${stats.totalAmounts.docNaissance.toFixed(2)} €</td></tr>
@@ -536,8 +536,8 @@ export function exportToHTML({ controls, title, dateRange, includeStats }: Expor
           <h3 style="color: #3b82f6; margin-bottom: 12px;">Tarifs à bord (ventes)</h3>
           <table class="detail-table">
             <tr><th>Type</th><th>Nombre</th></tr>
-            <tr><td>STT 50%</td><td>${stats.tarifsBord.stt50}</td></tr>
-            <tr><td>STT 100%</td><td>${stats.tarifsBord.stt100}</td></tr>
+            <tr><td>STT 50€</td><td>${stats.tarifsBord.stt50}</td></tr>
+            <tr><td>STT 100€</td><td>${stats.tarifsBord.stt100}</td></tr>
             <tr><td>RNV</td><td>${stats.tarifsBord.rnv}</td></tr>
             <tr><td>Titre tiers</td><td>${stats.tarifsBord.titreTiers}</td></tr>
             <tr><td>Date naissance</td><td>${stats.tarifsBord.docNaissance}</td></tr>
@@ -571,8 +571,8 @@ export function exportToHTML({ controls, title, dateRange, includeStats }: Expor
               <th>Trajet</th>
               <th>Voy.</th>
               <th>OK</th>
-              <th>STT 50%</th>
-              <th>STT 100%</th>
+              <th>STT 50€</th>
+              <th>STT 100€</th>
               <th>RNV</th>
               <th>PV</th>
               <th>RI +/-</th>
@@ -660,8 +660,8 @@ export function generateEmailContent({ controls, title, dateRange, includeStats 
     body += `   🚉 Quais: ${stats.byLocationType.quai.length}\n\n`;
     
     body += `💶 TARIFS CONTRÔLE (régularisations)\n`;
-    body += `   STT 50%: ${stats.stt50} (${stats.totalAmounts.stt50.toFixed(2)} €)\n`;
-    body += `   STT 100%: ${stats.stt100} (${stats.totalAmounts.stt100.toFixed(2)} €)\n`;
+    body += `   STT 50€: ${stats.stt50} (${stats.totalAmounts.stt50.toFixed(2)} €)\n`;
+    body += `   STT 100€: ${stats.stt100} (${stats.totalAmounts.stt100.toFixed(2)} €)\n`;
     body += `   RNV: ${stats.rnv} (${stats.totalAmounts.rnv.toFixed(2)} €)\n`;
     body += `   Titre tiers: ${stats.tarifsControleDetails.titreTiers} (${stats.totalAmounts.titreTiers.toFixed(2)} €)\n`;
     body += `   Date naissance: ${stats.tarifsControleDetails.docNaissance} (${stats.totalAmounts.docNaissance.toFixed(2)} €)\n`;
@@ -678,8 +678,8 @@ export function generateEmailContent({ controls, title, dateRange, includeStats 
     body += `   TOTAL: ${stats.pv}\n\n`;
     
     body += `🎫 TARIFS À BORD (ventes)\n`;
-    body += `   STT 50%: ${stats.tarifsBord.stt50}\n`;
-    body += `   STT 100%: ${stats.tarifsBord.stt100}\n`;
+    body += `   STT 50€: ${stats.tarifsBord.stt50}\n`;
+    body += `   STT 100€: ${stats.tarifsBord.stt100}\n`;
     body += `   RNV: ${stats.tarifsBord.rnv}\n`;
     body += `   Titre tiers: ${stats.tarifsBord.titreTiers}\n`;
     body += `   Date naissance: ${stats.tarifsBord.docNaissance}\n`;
@@ -718,7 +718,7 @@ export function generateEmailContent({ controls, title, dateRange, includeStats 
     body += `   📊 Taux de fraude: ${details.fraudRateFormatted}\n\n`;
     
     body += `   💶 Tarifs contrôle:\n`;
-    body += `      STT 50%: ${details.stt50} | STT 100%: ${details.stt100} | RNV: ${details.rnv}\n`;
+    body += `      STT 50€: ${details.stt50} | STT 100€: ${details.stt100} | RNV: ${details.rnv}\n`;
     body += `      Titre tiers: ${details.titreTiers} | Date naiss.: ${details.docNaissance} | Autre: ${details.autreTarif}\n`;
     
     body += `\n   ⚠️ PV: ${details.pv}\n`;
