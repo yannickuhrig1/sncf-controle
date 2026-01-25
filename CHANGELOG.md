@@ -5,6 +5,19 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/),
 et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.0] - 2026-01-25
+
+### Ajouté
+- **Notifications Push** : Alertes sur l'appareil pour les mises à jour et rappels
+- **Sauvegarde offline** : Les contrôles créés hors-ligne sont sauvegardés localement
+- **Synchronisation automatique** : Sync avec Supabase dès le retour de la connexion
+- **Bouton "Installer l'app"** : Accès rapide depuis le profil et le menu burger
+- **PWA complète** : Manifest, icônes, service worker pour expérience native
+
+### Modifié
+- Profil utilisateur enrichi avec paramètres notifications et installation
+- Navigation burger avec lien d'installation
+
 ## [1.4.0] - 2026-01-24
 
 ### Ajouté
