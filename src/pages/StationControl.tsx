@@ -4,6 +4,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useControls } from '@/hooks/useControls';
 import { useLastSync } from '@/hooks/useLastSync';
 import { useOfflineSync } from '@/hooks/useOfflineSync';
+import { useOfflineControls } from '@/hooks/useOfflineControls';
 import { supabase } from '@/integrations/supabase/client';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { TarifSection } from '@/components/controls/TarifSection';
@@ -52,6 +53,7 @@ export default function StationControl() {
   const { toast } = useToast();
   const { formattedLastSync, updateLastSync } = useLastSync();
   const { isOnline, pendingCount, isSyncing } = useOfflineSync();
+  const { offlineCount, addOfflineControl, syncOfflineControls, isSyncing: isOfflineSyncing } = useOfflineControls();
 
   // Edit mode
   const editId = searchParams.get('edit');
@@ -304,6 +306,13 @@ export default function StationControl() {
         setIsEditMode(false);
         setSearchParams({});
       } else {
+        // Check if offline - save locally
+        if (!isOnline) {
+          addOfflineControl(controlData as any);
+          navigate('/');
+          return;
+        }
+        
         await createControl(controlData as any);
         toast({
           title: 'Contrôle enregistré',
@@ -313,6 +322,51 @@ export default function StationControl() {
 
       navigate('/');
     } catch (error: any) {
+      // If network error and offline, save locally
+      if (!isOnline) {
+        const locationName = platformNumber 
+          ? `${stationName} - Quai ${platformNumber}` 
+          : stationName;
+          
+        addOfflineControl({
+          location_type: 'gare' as const,
+          location: locationName,
+          train_number: null,
+          origin: origin.trim() || null,
+          destination: destination.trim() || null,
+          platform_number: platformNumber.trim() || null,
+          nb_passagers: nbPassagers,
+          nb_en_regle: nbEnRegle,
+          tarif_bord_stt_50: tarifBordStt50.count,
+          tarif_bord_stt_50_amount: tarifBordStt50.amount,
+          tarif_bord_stt_100: tarifBordStt100.count,
+          tarif_bord_stt_100_amount: tarifBordStt100.amount,
+          tarif_bord_rnv: tarifBordRnv.count,
+          tarif_bord_rnv_amount: tarifBordRnv.amount,
+          stt_50: stt50.count,
+          stt_50_amount: stt50.amount,
+          stt_100: stt100.count,
+          stt_100_amount: stt100.amount,
+          rnv: rnv.count,
+          rnv_amount: rnv.amount,
+          tarifs_controle: fraudStats.tarifsControleCount,
+          pv: fraudStats.pvCount,
+          pv_absence_titre: pvAbsenceTitre.count,
+          pv_absence_titre_amount: pvAbsenceTitre.amount,
+          pv_titre_invalide: pvTitreInvalide.count,
+          pv_titre_invalide_amount: pvTitreInvalide.amount,
+          pv_refus_controle: pvRefusControle.count,
+          pv_refus_controle_amount: pvRefusControle.amount,
+          pv_autre: pvAutre.count,
+          pv_autre_amount: pvAutre.amount,
+          ri_positive: riPositive,
+          ri_negative: riNegative,
+          notes: notes.trim() || null,
+        } as any);
+        navigate('/');
+        return;
+      }
+      
       toast({
         variant: 'destructive',
         title: 'Erreur',
@@ -367,13 +421,17 @@ export default function StationControl() {
           <div className="flex items-center gap-2">
             <OfflineIndicator 
               isOnline={isOnline} 
-              pendingCount={pendingCount} 
-              isSyncing={isSyncing}
+              pendingCount={pendingCount}
+              offlineControlsCount={offlineCount}
+              isSyncing={isSyncing || isOfflineSyncing}
             />
             <LastSyncIndicator
               lastSync={formattedLastSync}
               isFetching={isFetching}
-              onSync={handleSync}
+              onSync={async () => {
+                await handleSync();
+                await syncOfflineControls();
+              }}
             />
           </div>
         </div>
