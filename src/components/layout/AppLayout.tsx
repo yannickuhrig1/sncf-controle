@@ -1,6 +1,6 @@
 import { ReactNode, useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Train, Building2, History, User, BarChart3, Settings, Shield, Menu, UserCheck, Wifi, WifiOff } from 'lucide-react';
+import { LayoutDashboard, Train, Building2, History, User, BarChart3, Settings, Shield, Menu, UserCheck, Wifi, WifiOff, Download } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
@@ -8,7 +8,7 @@ import { useUserPreferences, PageId, DEFAULT_VISIBLE_PAGES, DEFAULT_BOTTOM_BAR_P
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-
+import { InstallAppButton } from '@/components/InstallAppButton';
 interface AppLayoutProps {
   children: ReactNode;
 }
@@ -279,6 +279,9 @@ export function AppLayout({ children }: AppLayoutProps) {
                   <nav className="flex flex-col gap-1 p-2">
                     {renderBurgerLinks()}
                   </nav>
+                  <div className="p-4 border-t mt-auto">
+                    <InstallAppButton variant="outline" className="w-full" />
+                  </div>
                 </SheetContent>
               </Sheet>
             )}

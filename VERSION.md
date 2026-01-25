@@ -1,12 +1,43 @@
 # Notes de Version
 
-## Version 1.4.0 (Janvier 2026)
+## Version 1.5.0 (Janvier 2026)
 
 ### 🎯 Points clés
 
-Cette version améliore significativement l'expérience utilisateur avec le support hors-ligne et une meilleure organisation des données.
+Cette version transforme l'application en **PWA complète** avec notifications push, sauvegarde offline et synchronisation automatique.
 
 ### ✨ Nouveautés
+
+#### Notifications Push
+Recevez des alertes directement sur votre appareil :
+- Activez depuis la page Profil
+- Notifications pour les mises à jour importantes
+- Fonctionne même avec l'app en arrière-plan
+
+#### Sauvegarde Offline Complète
+Les contrôles sont maintenant sauvegardés localement :
+- Créez des contrôles même sans connexion
+- File d'attente automatique des actions
+- Synchronisation transparente au retour en ligne
+- Indicateur visuel du nombre d'actions en attente
+
+#### Bouton "Installer l'app"
+Accès rapide à l'installation PWA :
+- Disponible dans le menu burger
+- Section dédiée dans la page Profil
+- Instructions adaptées iOS/Android
+
+### 🔧 Améliorations
+
+- Page Profil enrichie avec paramètres notifications
+- Menu burger avec lien d'installation
+- Documentation mise à jour
+
+---
+
+## Version 1.4.0 (Janvier 2026)
+
+### 🎯 Points clés
 
 #### Mode Hors-ligne
 L'application fonctionne désormais sans connexion internet :
