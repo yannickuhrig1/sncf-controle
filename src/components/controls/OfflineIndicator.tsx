@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils';
 interface OfflineIndicatorProps {
   isOnline: boolean;
   pendingCount: number;
+  offlineControlsCount?: number;
   isSyncing?: boolean;
   compact?: boolean;
 }
@@ -12,10 +13,13 @@ interface OfflineIndicatorProps {
 export function OfflineIndicator({ 
   isOnline, 
   pendingCount, 
+  offlineControlsCount = 0,
   isSyncing = false,
   compact = false 
 }: OfflineIndicatorProps) {
-  if (isOnline && pendingCount === 0 && !isSyncing) {
+  const totalPending = pendingCount + offlineControlsCount;
+
+  if (isOnline && totalPending === 0 && !isSyncing) {
     return null;
   }
 
@@ -33,20 +37,25 @@ export function OfflineIndicator({
       <Badge variant="outline" className="gap-1.5 border-warning text-warning">
         <WifiOff className="h-3 w-3" />
         {!compact && <span>Hors-ligne</span>}
-        {pendingCount > 0 && (
-          <span className="ml-1 px-1.5 py-0.5 rounded-full bg-warning text-warning-foreground text-xs">
-            {pendingCount}
+        {totalPending > 0 && (
+          <span className="ml-1 px-1.5 py-0.5 rounded-full bg-warning text-warning-foreground text-xs font-semibold">
+            {totalPending}
           </span>
         )}
       </Badge>
     );
   }
 
-  if (pendingCount > 0) {
+  if (totalPending > 0) {
     return (
       <Badge variant="outline" className="gap-1.5 border-primary text-primary">
         <CloudOff className="h-3 w-3" />
-        {!compact && <span>{pendingCount} en attente</span>}
+        {!compact && <span>{totalPending} en attente</span>}
+        {compact && (
+          <span className="px-1.5 py-0.5 rounded-full bg-primary text-primary-foreground text-xs font-semibold">
+            {totalPending}
+          </span>
+        )}
       </Badge>
     );
   }

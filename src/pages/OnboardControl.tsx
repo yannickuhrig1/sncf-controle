@@ -6,6 +6,7 @@ import { useOnboardControls, type OnboardControl as OnboardControlType } from '@
 import { useFormPersistence } from '@/hooks/useFormPersistence';
 import { useLastSync } from '@/hooks/useLastSync';
 import { useOfflineSync } from '@/hooks/useOfflineSync';
+import { useOfflineControls } from '@/hooks/useOfflineControls';
 import { supabase } from '@/integrations/supabase/client';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { TarifTypeToggle } from '@/components/controls/TarifTypeToggle';
@@ -122,6 +123,7 @@ export default function OnboardControl() {
   const { toast } = useToast();
   const { formattedLastSync, updateLastSync } = useLastSync();
   const { isOnline, pendingCount, isSyncing } = useOfflineSync();
+  const { offlineCount, addOfflineControl, syncOfflineControls, isSyncing: isOfflineSyncing } = useOfflineControls();
 
   // Edit mode
   const editId = searchParams.get('edit');
@@ -444,6 +446,15 @@ export default function OnboardControl() {
         setIsEditMode(false);
         setSearchParams({});
       } else {
+        // Check if offline - save locally
+        if (!isOnline) {
+          addOfflineControl(controlData as any);
+          triggerHaptic('success');
+          clearDraft();
+          setFormState(INITIAL_FORM_STATE);
+          return;
+        }
+        
         await createControl(controlData as any);
         toast({
           title: 'Contrôle enregistré',
@@ -455,6 +466,37 @@ export default function OnboardControl() {
       clearDraft();
       setFormState(INITIAL_FORM_STATE);
     } catch (error: any) {
+      // If network error and offline, save locally
+      if (!isOnline) {
+        const locationName =
+          formState.origin && formState.destination
+            ? `${formState.origin} → ${formState.destination}`
+            : formState.trainNumber;
+            
+        addOfflineControl({
+          location: locationName,
+          train_number: formState.trainNumber.trim(),
+          origin: formState.origin.trim() || null,
+          destination: formState.destination.trim() || null,
+          control_date: formState.controlDate,
+          control_time: formState.controlTime,
+          nb_passagers: formState.passengers,
+          nb_en_regle: formState.passengers - fraudStats.fraudCount,
+          tarifs_controle: fraudStats.tarifsControleCount,
+          pv: fraudStats.pvCount,
+          stt_50: formState.stt50Count,
+          stt_100: formState.stt100Count,
+          rnv: formState.tarifsControle.filter((t) => t.type === 'rnv').length,
+          ri_positive: formState.riPositif,
+          ri_negative: formState.riNegatif,
+          notes: formState.commentaire.trim() || null,
+        } as any);
+        triggerHaptic('success');
+        clearDraft();
+        setFormState(INITIAL_FORM_STATE);
+        return;
+      }
+      
       toast({
         variant: 'destructive',
         title: 'Erreur',
@@ -532,14 +574,16 @@ export default function OnboardControl() {
           <div className="flex gap-2 items-center">
             <OfflineIndicator 
               isOnline={isOnline} 
-              pendingCount={pendingCount} 
-              isSyncing={isSyncing}
+              pendingCount={pendingCount}
+              offlineControlsCount={offlineCount}
+              isSyncing={isSyncing || isOfflineSyncing}
             />
             <LastSyncIndicator
               lastSync={formattedLastSync}
               isFetching={isFetching}
               onSync={async () => {
                 await refetch();
+                await syncOfflineControls();
                 updateLastSync();
                 sonnerToast.success('Données synchronisées');
               }}
