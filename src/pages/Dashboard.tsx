@@ -9,6 +9,7 @@ import { useLastSync } from '@/hooks/useLastSync';
 import { useOfflineSync } from '@/hooks/useOfflineSync';
 import { LastSyncIndicator } from '@/components/controls/LastSyncIndicator';
 import { OfflineIndicator } from '@/components/controls/OfflineIndicator';
+import { PendingControlsPanel } from '@/components/controls/PendingControlsPanel';
 import { calculateStats, formatFraudRate, getFraudRateBgColor, getFraudRateColor } from '@/lib/stats';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -125,6 +126,9 @@ export default function Dashboard() {
             />
           </div>
         </div>
+
+        {/* Pending Controls Panel */}
+        <PendingControlsPanel />
 
         {/* Quick Actions */}
         <div className="grid grid-cols-2 gap-4">
