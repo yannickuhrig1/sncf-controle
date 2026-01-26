@@ -80,14 +80,53 @@ export function useUserPreferences() {
           .single();
 
         if (insertError) throw insertError;
+        
+        // Apply theme for new preferences
+        applyTheme(newPrefs as UserPreferences);
         return newPrefs as UserPreferences;
       }
 
+      // Apply theme when preferences are loaded
+      applyTheme(data as UserPreferences);
       return data as UserPreferences;
     },
     enabled: !!user,
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
+
+  // Helper function to apply theme
+  const applyTheme = (prefs: UserPreferences) => {
+    const root = document.documentElement;
+    
+    // Apply dark/light mode
+    if (prefs.theme === 'dark') {
+      root.classList.add('dark');
+    } else if (prefs.theme === 'light') {
+      root.classList.remove('dark');
+    } else {
+      if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        root.classList.add('dark');
+      } else {
+        root.classList.remove('dark');
+      }
+    }
+
+    // Apply theme variant
+    root.classList.remove('theme-colore');
+    if (prefs.theme_variant === 'colore') {
+      root.classList.add('theme-colore');
+    }
+
+    // Cache preferences for initial load
+    try {
+      localStorage.setItem('user_preferences_cache', JSON.stringify({
+        theme: prefs.theme,
+        theme_variant: prefs.theme_variant,
+      }));
+    } catch {
+      // Silently fail if localStorage is not available
+    }
+  };
 
   const updatePreferences = useMutation({
     mutationFn: async (
@@ -125,26 +164,7 @@ export function useUserPreferences() {
     },
     onSuccess: (data) => {
       queryClient.setQueryData(['user-preferences', user?.id], data);
-
-      // Apply theme immediately
-      const root = document.documentElement;
-      if (data.theme === 'dark') {
-        root.classList.add('dark');
-      } else if (data.theme === 'light') {
-        root.classList.remove('dark');
-      } else {
-        if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-          root.classList.add('dark');
-        } else {
-          root.classList.remove('dark');
-        }
-      }
-
-      // Apply theme variant
-      root.classList.remove('theme-colore');
-      if (data.theme_variant === 'colore') {
-        root.classList.add('theme-colore');
-      }
+      applyTheme(data);
     },
     onError: (error, _updates, context) => {
       if (context?.previous) {

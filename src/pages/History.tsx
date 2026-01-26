@@ -15,6 +15,8 @@ import { ControlDetailDialog } from '@/components/controls/ControlDetailDialog';
 import { ExportDialog } from '@/components/controls/ExportDialog';
 import { LastSyncIndicator } from '@/components/controls/LastSyncIndicator';
 import { OfflineIndicator } from '@/components/controls/OfflineIndicator';
+import { HistoryTableView } from '@/components/history/HistoryTableView';
+import { getFraudRateColor } from '@/lib/stats';
 import { 
   Loader2, 
   History, 
@@ -31,6 +33,8 @@ import {
   X,
   Filter,
   ArrowUpDown,
+  List,
+  TableIcon,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -40,6 +44,7 @@ import type { Database } from '@/integrations/supabase/types';
 type Control = Database['public']['Tables']['controls']['Row'];
 type LocationType = Database['public']['Enums']['location_type'];
 type SortOption = 'date' | 'fraud_desc' | 'fraud_asc' | 'passengers_desc' | 'passengers_asc';
+type ViewMode = 'list' | 'table';
 
 const locationIcons: Record<LocationType, React.ComponentType<{ className?: string }>> = {
   train: Train,
@@ -102,9 +107,7 @@ function ControlRow({ control, onClick }: ControlRowProps) {
                 {control.nb_passagers}
               </div>
             </div>
-            <div className={`text-center ${
-              fraudRate > 10 ? 'text-destructive' : fraudRate > 5 ? 'text-warning' : 'text-primary'
-            }`}>
+            <div className={`text-center ${getFraudRateColor(fraudRate)}`}>
               <div className="flex items-center gap-1 text-sm font-semibold">
                 <AlertTriangle className="h-3 w-3" />
                 {fraudRate.toFixed(1)}%
@@ -143,6 +146,7 @@ export default function HistoryPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [locationFilter, setLocationFilter] = useState<LocationType | 'all'>('all');
   const [sortOption, setSortOption] = useState<SortOption>('date');
+  const [viewMode, setViewMode] = useState<ViewMode>('list');
   
   // Infinite scroll observer
   const loadMoreRef = useRef<HTMLDivElement>(null);
@@ -305,6 +309,21 @@ export default function HistoryPage() {
             )}
           </div>
           <div className="flex items-center gap-2">
+            {/* View mode toggle */}
+            <ToggleGroup 
+              type="single" 
+              value={viewMode} 
+              onValueChange={(v) => v && setViewMode(v as ViewMode)}
+              className="border rounded-md"
+            >
+              <ToggleGroupItem value="list" aria-label="Vue liste" size="sm" className="px-2">
+                <List className="h-4 w-4" />
+              </ToggleGroupItem>
+              <ToggleGroupItem value="table" aria-label="Vue tableau" size="sm" className="px-2">
+                <TableIcon className="h-4 w-4" />
+              </ToggleGroupItem>
+            </ToggleGroup>
+            
             <OfflineIndicator 
               isOnline={isOnline} 
               pendingCount={pendingCount} 
@@ -434,7 +453,29 @@ export default function HistoryPage() {
               Effacer les filtres
             </Button>
           </div>
+        ) : viewMode === 'table' ? (
+          /* Table View */
+          <div className="space-y-4">
+            <HistoryTableView 
+              controls={filteredControls} 
+              onControlClick={handleControlClick}
+            />
+            
+            {/* Infinite scroll loader */}
+            <div ref={loadMoreRef} className="py-4 flex justify-center">
+              {isFetchingNextPage ? (
+                <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+              ) : hasNextPage ? (
+                <Button variant="ghost" size="sm" onClick={() => fetchNextPage()}>
+                  Charger plus
+                </Button>
+              ) : filteredControls.length > 10 ? (
+                <p className="text-xs text-muted-foreground">Tous les contrôles sont chargés</p>
+              ) : null}
+            </div>
+          </div>
         ) : (
+          /* List View */
           <div className="space-y-6">
             {sortedDates.map((date) => (
               <div key={date} className="space-y-2">
