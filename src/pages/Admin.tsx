@@ -59,11 +59,13 @@ import {
   Settings,
   Database,
   Download,
+  Palette,
 } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import type { Database as DbType } from '@/integrations/supabase/types';
 import { useUserPreferences } from '@/hooks/useUserPreferences';
+import { FraudThresholdsSettings } from '@/components/admin/FraudThresholdsSettings';
 
 type Profile = DbType['public']['Tables']['profiles']['Row'];
 type Team = DbType['public']['Tables']['teams']['Row'];
@@ -298,7 +300,7 @@ export default function AdminPage() {
 
         {/* Tabs */}
         <Tabs defaultValue="users" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="users" className="flex items-center gap-2">
               <Users className="h-4 w-4" />
               Utilisateurs
@@ -306,6 +308,10 @@ export default function AdminPage() {
             <TabsTrigger value="teams" className="flex items-center gap-2">
               <Building2 className="h-4 w-4" />
               Équipes
+            </TabsTrigger>
+            <TabsTrigger value="display" className="flex items-center gap-2">
+              <Palette className="h-4 w-4" />
+              Affichage
             </TabsTrigger>
             <TabsTrigger value="data" className="flex items-center gap-2">
               <Database className="h-4 w-4" />
@@ -498,6 +504,11 @@ export default function AdminPage() {
                 )}
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* Display Settings Tab */}
+          <TabsContent value="display" className="space-y-4">
+            <FraudThresholdsSettings />
           </TabsContent>
 
           {/* Data & Storage Tab */}

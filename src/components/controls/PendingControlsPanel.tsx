@@ -1,7 +1,9 @@
+import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useOfflineControls, OfflineControl } from '@/hooks/useOfflineControls';
+import { EditOfflineControlDialog } from './EditOfflineControlDialog';
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { 
@@ -10,7 +12,8 @@ import {
   Trash2, 
   Train, 
   Building2,
-  Clock
+  Clock,
+  Pencil
 } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 
@@ -21,9 +24,13 @@ export function PendingControlsPanel() {
     isOnline, 
     isSyncing, 
     syncOfflineControls, 
+    updateOfflineControl,
     removeOfflineControl,
     clearOfflineControls 
   } = useOfflineControls();
+
+  const [editingControl, setEditingControl] = useState<OfflineControl | null>(null);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
 
   if (offlineCount === 0) {
     return null;
@@ -44,7 +51,17 @@ export function PendingControlsPanel() {
     return data.location;
   };
 
+  const handleEdit = (control: OfflineControl) => {
+    setEditingControl(control);
+    setEditDialogOpen(true);
+  };
+
+  const handleSaveEdit = (id: string, data: OfflineControl['data']) => {
+    updateOfflineControl(id, data);
+  };
+
   return (
+    <>
     <Card className="border-amber-500/50 bg-amber-500/5">
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
@@ -138,37 +155,56 @@ export function PendingControlsPanel() {
               </div>
             </div>
             
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  className="h-8 w-8 flex-shrink-0 text-muted-foreground hover:text-destructive"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Supprimer ce contrôle ?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Ce contrôle en attente sera définitivement supprimé et ne sera pas synchronisé avec le serveur.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Annuler</AlertDialogCancel>
-                  <AlertDialogAction 
-                    onClick={() => removeOfflineControl(control.id)}
-                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            <div className="flex items-center gap-1">
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="h-8 w-8 flex-shrink-0 text-muted-foreground hover:text-primary"
+                onClick={() => handleEdit(control)}
+              >
+                <Pencil className="h-4 w-4" />
+              </Button>
+              
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-8 w-8 flex-shrink-0 text-muted-foreground hover:text-destructive"
                   >
-                    Supprimer
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Supprimer ce contrôle ?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Ce contrôle en attente sera définitivement supprimé et ne sera pas synchronisé avec le serveur.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Annuler</AlertDialogCancel>
+                    <AlertDialogAction 
+                      onClick={() => removeOfflineControl(control.id)}
+                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    >
+                      Supprimer
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
           </div>
         ))}
       </CardContent>
     </Card>
+    
+    <EditOfflineControlDialog
+      control={editingControl}
+      open={editDialogOpen}
+      onOpenChange={setEditDialogOpen}
+      onSave={handleSaveEdit}
+    />
+    </>
   );
 }

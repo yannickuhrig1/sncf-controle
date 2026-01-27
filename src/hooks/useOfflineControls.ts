@@ -64,6 +64,14 @@ export function useOfflineControls() {
     return newControl;
   }, [offlineControls, saveOfflineControls]);
 
+  // Update a control in offline queue
+  const updateOfflineControl = useCallback((id: string, data: Omit<ControlInsert, 'agent_id' | 'team_id'>) => {
+    const updated = offlineControls.map(c => 
+      c.id === id ? { ...c, data } : c
+    );
+    saveOfflineControls(updated);
+  }, [offlineControls, saveOfflineControls]);
+
   // Remove a control from offline queue
   const removeOfflineControl = useCallback((id: string) => {
     const updated = offlineControls.filter(c => c.id !== id);
@@ -167,6 +175,7 @@ export function useOfflineControls() {
     isOnline,
     isSyncing,
     addOfflineControl,
+    updateOfflineControl,
     removeOfflineControl,
     syncOfflineControls,
     clearOfflineControls,

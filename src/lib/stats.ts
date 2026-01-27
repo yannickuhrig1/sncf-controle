@@ -64,14 +64,25 @@ export function formatFraudRate(rate: number): string {
   return `${rate.toFixed(2)}%`;
 }
 
+// Default thresholds - can be overridden by admin settings
+let fraudThresholds = { low: 5, medium: 10 };
+
+export function setFraudThresholds(thresholds: { low: number; medium: number }) {
+  fraudThresholds = thresholds;
+}
+
+export function getFraudThresholds() {
+  return fraudThresholds;
+}
+
 export function getFraudRateColor(rate: number): string {
-  if (rate < 5) return 'text-green-600';
-  if (rate < 10) return 'text-yellow-600';
+  if (rate < fraudThresholds.low) return 'text-green-600';
+  if (rate < fraudThresholds.medium) return 'text-yellow-600';
   return 'text-red-600';
 }
 
 export function getFraudRateBgColor(rate: number): string {
-  if (rate < 5) return 'bg-green-100 dark:bg-green-900/30';
-  if (rate < 10) return 'bg-yellow-100 dark:bg-yellow-900/30';
+  if (rate < fraudThresholds.low) return 'bg-green-100 dark:bg-green-900/30';
+  if (rate < fraudThresholds.medium) return 'bg-yellow-100 dark:bg-yellow-900/30';
   return 'bg-red-100 dark:bg-red-900/30';
 }

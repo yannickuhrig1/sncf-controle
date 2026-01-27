@@ -17,7 +17,9 @@ import { ExportDialog } from '@/components/controls/ExportDialog';
 import { LastSyncIndicator } from '@/components/controls/LastSyncIndicator';
 import { OfflineIndicator } from '@/components/controls/OfflineIndicator';
 import { HistoryTableView } from '@/components/history/HistoryTableView';
+import { DateRangeFilter } from '@/components/history/DateRangeFilter';
 import { getFraudRateColor } from '@/lib/stats';
+import { exportTableToPDF } from '@/lib/exportUtils';
 import { 
   Loader2, 
   History, 
@@ -36,6 +38,7 @@ import {
   ArrowUpDown,
   List,
   TableIcon,
+  FileText,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -147,6 +150,8 @@ export default function HistoryPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [locationFilter, setLocationFilter] = useState<LocationType | 'all'>('all');
   const [sortOption, setSortOption] = useState<SortOption>('date');
+  const [startDate, setStartDate] = useState<Date | undefined>(undefined);
+  const [endDate, setEndDate] = useState<Date | undefined>(undefined);
   
   // Get view mode from preferences, default to 'list'
   const viewMode: HistoryViewMode = preferences?.history_view_mode ?? 'list';
@@ -202,6 +207,21 @@ export default function HistoryPage() {
         return false;
       }
       
+      // Date range filter
+      if (startDate || endDate) {
+        const controlDate = new Date(control.control_date);
+        if (startDate && controlDate < startDate) {
+          return false;
+        }
+        if (endDate) {
+          const endOfDay = new Date(endDate);
+          endOfDay.setHours(23, 59, 59, 999);
+          if (controlDate > endOfDay) {
+            return false;
+          }
+        }
+      }
+      
       // Search filter
       if (searchQuery.trim()) {
         const query = searchQuery.toLowerCase().trim();
@@ -239,7 +259,7 @@ export default function HistoryPage() {
     }
 
     return result;
-  }, [displayControls, searchQuery, locationFilter, sortOption, getFraudRate]);
+  }, [displayControls, searchQuery, locationFilter, sortOption, startDate, endDate, getFraudRate]);
 
   // Group filtered controls by date
   const groupedControls = useMemo(() => {
@@ -259,7 +279,41 @@ export default function HistoryPage() {
     );
   }, [groupedControls]);
 
-  const hasActiveFilters = searchQuery.trim() !== '' || locationFilter !== 'all' || sortOption !== 'date';
+  const hasActiveFilters = searchQuery.trim() !== '' || locationFilter !== 'all' || sortOption !== 'date' || startDate !== undefined || endDate !== undefined;
+
+  const clearFilters = () => {
+    setSearchQuery('');
+    setLocationFilter('all');
+    setSortOption('date');
+    setStartDate(undefined);
+    setEndDate(undefined);
+  };
+
+  const handleExportTablePDF = () => {
+    if (filteredControls.length === 0) {
+      toast.error('Aucune donnée à exporter');
+      return;
+    }
+    
+    const dateRange = startDate && endDate 
+      ? `${format(startDate, 'dd/MM/yyyy', { locale: fr })} - ${format(endDate, 'dd/MM/yyyy', { locale: fr })}`
+      : startDate 
+        ? `Depuis ${format(startDate, 'dd/MM/yyyy', { locale: fr })}`
+        : endDate
+          ? `Jusqu'au ${format(endDate, 'dd/MM/yyyy', { locale: fr })}`
+          : 'Toutes les dates';
+    
+    try {
+      exportTableToPDF({
+        controls: filteredControls,
+        title: 'Export Tableau Historique',
+        dateRange,
+      });
+      toast.success('PDF exporté');
+    } catch (error) {
+      toast.error('Erreur lors de l\'export');
+    }
+  };
 
   // Early returns AFTER all hooks
   if (authLoading) {
@@ -297,11 +351,6 @@ export default function HistoryPage() {
     }
   };
 
-  const clearFilters = () => {
-    setSearchQuery('');
-    setLocationFilter('all');
-    setSortOption('date');
-  };
 
   return (
     <AppLayout>
@@ -403,6 +452,15 @@ export default function HistoryPage() {
               </ToggleGroup>
             </div>
 
+            {/* Date range filter */}
+            <DateRangeFilter
+              startDate={startDate}
+              endDate={endDate}
+              onStartDateChange={setStartDate}
+              onEndDateChange={setEndDate}
+              onClear={() => { setStartDate(undefined); setEndDate(undefined); }}
+            />
+
             {/* Sort options */}
             <div className="flex items-center gap-2">
               <ArrowUpDown className="h-4 w-4 text-muted-foreground shrink-0" />
@@ -419,6 +477,18 @@ export default function HistoryPage() {
                 </SelectContent>
               </Select>
               
+              {/* Export PDF button for table view */}
+              {viewMode === 'table' && filteredControls.length > 0 && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleExportTablePDF}
+                  className="ml-2"
+                >
+                  <FileText className="h-4 w-4 mr-2" />
+                  PDF
+                </Button>
+              )}
               {hasActiveFilters && (
                 <Button variant="ghost" size="sm" onClick={clearFilters} className="ml-auto text-muted-foreground">
                   <X className="h-3.5 w-3.5 mr-1" />
