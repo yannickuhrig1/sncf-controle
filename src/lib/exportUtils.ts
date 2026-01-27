@@ -388,6 +388,125 @@ export function exportToPDF({ controls, title, dateRange, includeStats }: Export
   }
 }
 
+// Export table view to PDF (simplified version for table export)
+export interface TableExportOptions {
+  controls: Control[];
+  title: string;
+  dateRange: string;
+}
+
+export function exportTableToPDF({ controls, title, dateRange }: TableExportOptions) {
+  if (!controls || controls.length === 0) {
+    throw new Error('Aucun contrôle à exporter');
+  }
+
+  const doc = new jsPDF({ orientation: 'landscape' });
+  let pageNumber = 1;
+  
+  const addFooter = () => {
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const pageWidth = doc.internal.pageSize.getWidth();
+    doc.setFontSize(8);
+    doc.setTextColor(150, 150, 150);
+    doc.text(
+      `SNCF Contrôles - Page ${pageNumber}`,
+      pageWidth / 2,
+      pageHeight - 10,
+      { align: 'center' }
+    );
+  };
+  
+  // Header
+  doc.setFontSize(16);
+  doc.setTextColor(0, 0, 139);
+  doc.text('SNCF Contrôles - Tableau', 14, 15);
+  
+  doc.setFontSize(10);
+  doc.setTextColor(100, 100, 100);
+  doc.text(title, 14, 22);
+  doc.text(`Période: ${dateRange}`, 14, 28);
+  doc.text(`Généré le: ${format(new Date(), 'dd/MM/yyyy à HH:mm', { locale: fr })}`, 14, 34);
+  doc.text(`Total: ${controls.length} contrôle(s)`, 14, 40);
+
+  // Build table data
+  const tableData = controls.map(control => {
+    const fraudCount = control.tarifs_controle + control.pv;
+    const fraudRate = control.nb_passagers > 0 
+      ? ((fraudCount / control.nb_passagers) * 100).toFixed(1) + '%'
+      : '0.0%';
+    
+    const locationInfo = control.location_type === 'train' 
+      ? `Train ${control.train_number || '-'}`
+      : control.location_type === 'gare' 
+        ? 'Gare'
+        : 'Quai';
+    
+    const trajet = control.origin && control.destination 
+      ? `${control.origin} → ${control.destination}`
+      : control.location;
+
+    return [
+      format(new Date(control.control_date), 'dd/MM/yy', { locale: fr }),
+      control.control_time.slice(0, 5),
+      locationInfo,
+      trajet,
+      control.nb_passagers.toString(),
+      control.nb_en_regle.toString(),
+      control.tarifs_controle.toString(),
+      control.pv.toString(),
+      control.stt_50.toString(),
+      control.stt_100.toString(),
+      control.rnv.toString(),
+      control.ri_positive.toString(),
+      control.ri_negative.toString(),
+      fraudRate,
+    ];
+  });
+
+  doc.autoTable({
+    startY: 46,
+    head: [['Date', 'Heure', 'Type', 'Lieu/Trajet', 'Voy.', 'OK', 'T.C.', 'PV', 'STT50', 'STT100', 'RNV', 'RI+', 'RI-', 'Fraude']],
+    body: tableData,
+    theme: 'striped',
+    headStyles: { fillColor: [0, 0, 139], fontSize: 8 },
+    bodyStyles: { fontSize: 7 },
+    alternateRowStyles: { fillColor: [245, 245, 245] },
+    columnStyles: {
+      0: { cellWidth: 18 },
+      1: { cellWidth: 14 },
+      2: { cellWidth: 20 },
+      3: { cellWidth: 50 },
+      4: { cellWidth: 14 },
+      5: { cellWidth: 12 },
+      6: { cellWidth: 12 },
+      7: { cellWidth: 12 },
+      8: { cellWidth: 14 },
+      9: { cellWidth: 16 },
+      10: { cellWidth: 12 },
+      11: { cellWidth: 12 },
+      12: { cellWidth: 12 },
+      13: { cellWidth: 16 },
+    },
+    margin: { left: 14, right: 14 },
+    didDrawPage: function() {
+      addFooter();
+      pageNumber++;
+    }
+  });
+
+  const filename = `tableau-controles-${format(new Date(), 'yyyy-MM-dd-HHmm')}.pdf`;
+  
+  try {
+    doc.save(filename);
+  } catch (error) {
+    console.error('PDF save error:', error);
+    const pdfBlob = doc.output('blob');
+    const url = URL.createObjectURL(pdfBlob);
+    window.open(url, '_blank');
+    setTimeout(() => URL.revokeObjectURL(url), 10000);
+  }
+}
+
 export function exportToHTML({ controls, title, dateRange, includeStats }: ExportOptions): string {
   const stats = calculateExtendedStats(controls);
   
