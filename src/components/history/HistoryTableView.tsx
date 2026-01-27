@@ -1,3 +1,4 @@
+import { useState, useMemo } from 'react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { 
@@ -11,11 +12,14 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { getFraudRateColor } from '@/lib/stats';
-import { Train, Building2, TrainTrack, Eye } from 'lucide-react';
+import { Train, Building2, TrainTrack, Eye, ArrowUp, ArrowDown, ArrowUpDown } from 'lucide-react';
 import type { Database } from '@/integrations/supabase/types';
 
 type Control = Database['public']['Tables']['controls']['Row'];
 type LocationType = Database['public']['Enums']['location_type'];
+
+type SortKey = 'date' | 'time' | 'type' | 'location' | 'train' | 'passengers' | 'enRegle' | 'tarifsC' | 'pv' | 'stt50' | 'stt100' | 'rnv' | 'riPlus' | 'riMinus' | 'fraud';
+type SortDirection = 'asc' | 'desc' | null;
 
 interface HistoryTableViewProps {
   controls: Control[];
@@ -34,11 +38,116 @@ const locationLabels: Record<LocationType, string> = {
   quai: 'Quai',
 };
 
+const locationOrder: Record<LocationType, number> = {
+  train: 1,
+  gare: 2,
+  quai: 3,
+};
+
 export function HistoryTableView({ controls, onControlClick }: HistoryTableViewProps) {
+  const [sortKey, setSortKey] = useState<SortKey | null>(null);
+  const [sortDirection, setSortDirection] = useState<SortDirection>(null);
+
   const getFraudRate = (control: Control) => {
     const fraudCount = control.tarifs_controle + control.pv;
     return control.nb_passagers > 0 ? (fraudCount / control.nb_passagers) * 100 : 0;
   };
+
+  const handleSort = (key: SortKey) => {
+    if (sortKey === key) {
+      if (sortDirection === 'asc') {
+        setSortDirection('desc');
+      } else if (sortDirection === 'desc') {
+        setSortKey(null);
+        setSortDirection(null);
+      } else {
+        setSortDirection('asc');
+      }
+    } else {
+      setSortKey(key);
+      setSortDirection('asc');
+    }
+  };
+
+  const SortIcon = ({ columnKey }: { columnKey: SortKey }) => {
+    if (sortKey !== columnKey) {
+      return <ArrowUpDown className="h-3 w-3 ml-1 opacity-50" />;
+    }
+    if (sortDirection === 'asc') {
+      return <ArrowUp className="h-3 w-3 ml-1" />;
+    }
+    return <ArrowDown className="h-3 w-3 ml-1" />;
+  };
+
+  const sortedControls = useMemo(() => {
+    if (!sortKey || !sortDirection) return controls;
+
+    return [...controls].sort((a, b) => {
+      let comparison = 0;
+
+      switch (sortKey) {
+        case 'date':
+          comparison = new Date(a.control_date).getTime() - new Date(b.control_date).getTime();
+          break;
+        case 'time':
+          comparison = a.control_time.localeCompare(b.control_time);
+          break;
+        case 'type':
+          comparison = locationOrder[a.location_type] - locationOrder[b.location_type];
+          break;
+        case 'location':
+          comparison = a.location.localeCompare(b.location);
+          break;
+        case 'train':
+          comparison = (a.train_number || '').localeCompare(b.train_number || '');
+          break;
+        case 'passengers':
+          comparison = a.nb_passagers - b.nb_passagers;
+          break;
+        case 'enRegle':
+          comparison = a.nb_en_regle - b.nb_en_regle;
+          break;
+        case 'tarifsC':
+          comparison = a.tarifs_controle - b.tarifs_controle;
+          break;
+        case 'pv':
+          comparison = a.pv - b.pv;
+          break;
+        case 'stt50':
+          comparison = a.stt_50 - b.stt_50;
+          break;
+        case 'stt100':
+          comparison = a.stt_100 - b.stt_100;
+          break;
+        case 'rnv':
+          comparison = a.rnv - b.rnv;
+          break;
+        case 'riPlus':
+          comparison = a.ri_positive - b.ri_positive;
+          break;
+        case 'riMinus':
+          comparison = a.ri_negative - b.ri_negative;
+          break;
+        case 'fraud':
+          comparison = getFraudRate(a) - getFraudRate(b);
+          break;
+      }
+
+      return sortDirection === 'asc' ? comparison : -comparison;
+    });
+  }, [controls, sortKey, sortDirection]);
+
+  const SortableHeader = ({ columnKey, children, className }: { columnKey: SortKey; children: React.ReactNode; className?: string }) => (
+    <TableHead 
+      className={`cursor-pointer hover:bg-muted/70 transition-colors select-none ${className || ''}`}
+      onClick={() => handleSort(columnKey)}
+    >
+      <div className="flex items-center">
+        {children}
+        <SortIcon columnKey={columnKey} />
+      </div>
+    </TableHead>
+  );
 
   return (
     <div className="rounded-lg border overflow-hidden">
@@ -46,27 +155,27 @@ export function HistoryTableView({ controls, onControlClick }: HistoryTableViewP
         <Table>
           <TableHeader>
             <TableRow className="bg-muted/50">
-              <TableHead className="w-[100px]">Date</TableHead>
-              <TableHead className="w-[70px]">Heure</TableHead>
-              <TableHead className="w-[80px]">Type</TableHead>
-              <TableHead>Lieu</TableHead>
-              <TableHead className="w-[80px]">Train</TableHead>
+              <SortableHeader columnKey="date" className="w-[100px]">Date</SortableHeader>
+              <SortableHeader columnKey="time" className="w-[70px]">Heure</SortableHeader>
+              <SortableHeader columnKey="type" className="w-[80px]">Type</SortableHeader>
+              <SortableHeader columnKey="location">Lieu</SortableHeader>
+              <SortableHeader columnKey="train" className="w-[80px]">Train</SortableHeader>
               <TableHead>Trajet</TableHead>
-              <TableHead className="w-[80px] text-center">Voyageurs</TableHead>
-              <TableHead className="w-[80px] text-center">En règle</TableHead>
-              <TableHead className="w-[80px] text-center">Tarifs C.</TableHead>
-              <TableHead className="w-[60px] text-center">PV</TableHead>
-              <TableHead className="w-[70px] text-center">STT 50</TableHead>
-              <TableHead className="w-[70px] text-center">STT 100</TableHead>
-              <TableHead className="w-[60px] text-center">RNV</TableHead>
-              <TableHead className="w-[60px] text-center">RI+</TableHead>
-              <TableHead className="w-[60px] text-center">RI-</TableHead>
-              <TableHead className="w-[80px] text-center">Fraude</TableHead>
+              <SortableHeader columnKey="passengers" className="w-[80px] text-center">Voyageurs</SortableHeader>
+              <SortableHeader columnKey="enRegle" className="w-[80px] text-center">En règle</SortableHeader>
+              <SortableHeader columnKey="tarifsC" className="w-[80px] text-center">Tarifs C.</SortableHeader>
+              <SortableHeader columnKey="pv" className="w-[60px] text-center">PV</SortableHeader>
+              <SortableHeader columnKey="stt50" className="w-[70px] text-center">STT 50</SortableHeader>
+              <SortableHeader columnKey="stt100" className="w-[70px] text-center">STT 100</SortableHeader>
+              <SortableHeader columnKey="rnv" className="w-[60px] text-center">RNV</SortableHeader>
+              <SortableHeader columnKey="riPlus" className="w-[60px] text-center">RI+</SortableHeader>
+              <SortableHeader columnKey="riMinus" className="w-[60px] text-center">RI-</SortableHeader>
+              <SortableHeader columnKey="fraud" className="w-[80px] text-center">Fraude</SortableHeader>
               <TableHead className="w-[60px]"></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {controls.map((control, index) => {
+            {sortedControls.map((control, index) => {
               const Icon = locationIcons[control.location_type];
               const fraudRate = getFraudRate(control);
               const isEven = index % 2 === 0;
