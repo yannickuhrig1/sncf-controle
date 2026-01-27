@@ -7,6 +7,8 @@ export type NavigationStyle = 'bottom' | 'burger';
 
 export type PageId = 'dashboard' | 'onboard' | 'station' | 'statistics' | 'history' | 'settings' | 'admin' | 'profile' | 'manager';
 
+export type HistoryViewMode = 'list' | 'table';
+
 export interface UserPreferences {
   id: string;
   user_id: string;
@@ -27,6 +29,7 @@ export interface UserPreferences {
   data_auto_save: boolean;
   data_keep_history_days: number;
   show_onboard_fraud_chart: boolean;
+  history_view_mode: HistoryViewMode;
   created_at: string;
   updated_at: string;
 }
@@ -52,6 +55,7 @@ export const DEFAULT_PREFERENCES: Omit<UserPreferences, 'id' | 'user_id' | 'crea
   data_auto_save: true,
   data_keep_history_days: 90,
   show_onboard_fraud_chart: true,
+  history_view_mode: 'list',
 };
 
 export function useUserPreferences() {
@@ -188,6 +192,7 @@ export function useUserPreferences() {
     show_burger_menu: preferences.show_burger_menu ?? false,
     theme_variant: preferences.theme_variant ?? 'sncf',
     show_onboard_fraud_chart: preferences.show_onboard_fraud_chart ?? true,
+    history_view_mode: (preferences as any).history_view_mode ?? 'list',
   } as UserPreferences : null;
 
   return {

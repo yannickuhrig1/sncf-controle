@@ -288,6 +288,7 @@ export type Database = {
           default_page: string
           display_compact_mode: boolean
           display_show_totals: boolean
+          history_view_mode: string
           id: string
           navigation_style: string
           notifications_email: boolean
@@ -311,6 +312,7 @@ export type Database = {
           default_page?: string
           display_compact_mode?: boolean
           display_show_totals?: boolean
+          history_view_mode?: string
           id?: string
           navigation_style?: string
           notifications_email?: boolean
@@ -334,6 +336,7 @@ export type Database = {
           default_page?: string
           display_compact_mode?: boolean
           display_show_totals?: boolean
+          history_view_mode?: string
           id?: string
           navigation_style?: string
           notifications_email?: boolean

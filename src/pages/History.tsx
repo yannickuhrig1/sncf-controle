@@ -4,6 +4,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useControls } from '@/hooks/useControls';
 import { useLastSync } from '@/hooks/useLastSync';
 import { useOfflineSync } from '@/hooks/useOfflineSync';
+import { useUserPreferences, type HistoryViewMode } from '@/hooks/useUserPreferences';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -44,7 +45,6 @@ import type { Database } from '@/integrations/supabase/types';
 type Control = Database['public']['Tables']['controls']['Row'];
 type LocationType = Database['public']['Enums']['location_type'];
 type SortOption = 'date' | 'fraud_desc' | 'fraud_asc' | 'passengers_desc' | 'passengers_asc';
-type ViewMode = 'list' | 'table';
 
 const locationIcons: Record<LocationType, React.ComponentType<{ className?: string }>> = {
   train: Train,
@@ -139,6 +139,7 @@ export default function HistoryPage() {
   const navigate = useNavigate();
   const { formattedLastSync, updateLastSync } = useLastSync();
   const { isOnline, pendingCount, isSyncing } = useOfflineSync();
+  const { preferences, updatePreferences } = useUserPreferences();
   
   const [selectedControl, setSelectedControl] = useState<Control | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
@@ -146,7 +147,15 @@ export default function HistoryPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [locationFilter, setLocationFilter] = useState<LocationType | 'all'>('all');
   const [sortOption, setSortOption] = useState<SortOption>('date');
-  const [viewMode, setViewMode] = useState<ViewMode>('list');
+  
+  // Get view mode from preferences, default to 'list'
+  const viewMode: HistoryViewMode = preferences?.history_view_mode ?? 'list';
+  
+  const handleViewModeChange = (newMode: string | undefined) => {
+    if (newMode && (newMode === 'list' || newMode === 'table')) {
+      updatePreferences({ history_view_mode: newMode });
+    }
+  };
   
   // Infinite scroll observer
   const loadMoreRef = useRef<HTMLDivElement>(null);
@@ -313,7 +322,7 @@ export default function HistoryPage() {
             <ToggleGroup 
               type="single" 
               value={viewMode} 
-              onValueChange={(v) => v && setViewMode(v as ViewMode)}
+              onValueChange={handleViewModeChange}
               className="border rounded-md"
             >
               <ToggleGroupItem value="list" aria-label="Vue liste" size="sm" className="px-2">
