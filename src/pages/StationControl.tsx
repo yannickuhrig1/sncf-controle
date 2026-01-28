@@ -5,6 +5,7 @@ import { useControls } from '@/hooks/useControls';
 import { useLastSync } from '@/hooks/useLastSync';
 import { useOfflineSync } from '@/hooks/useOfflineSync';
 import { useOfflineControls } from '@/hooks/useOfflineControls';
+import { useParisTime } from '@/hooks/useParisTime';
 import { supabase } from '@/integrations/supabase/client';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { TarifSection } from '@/components/controls/TarifSection';
@@ -19,7 +20,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { toast as sonnerToast } from 'sonner';
-import { Loader2, Building2, ArrowLeft, Save, ArrowRight, X } from 'lucide-react';
+import { Loader2, Building2, ArrowLeft, Save, ArrowRight, X, Clock, Calendar } from 'lucide-react';
 
 // Liste des gares principales
 const GARES_PRINCIPALES = [
@@ -54,6 +55,9 @@ export default function StationControl() {
   const { formattedLastSync, updateLastSync } = useLastSync();
   const { isOnline, pendingCount, isSyncing } = useOfflineSync();
   const { offlineCount, addOfflineControl, syncOfflineControls, isSyncing: isOfflineSyncing } = useOfflineControls();
+  
+  // Paris timezone auto-refresh
+  const { date: parisDate, time: parisTime } = useParisTime(60000);
 
   // Edit mode
   const editId = searchParams.get('edit');
@@ -64,6 +68,18 @@ export default function StationControl() {
   const [platformNumber, setPlatformNumber] = useState('');
   const [origin, setOrigin] = useState('');
   const [destination, setDestination] = useState('');
+  
+  // Control date/time - initialized with Paris time
+  const [controlDate, setControlDate] = useState(parisDate);
+  const [controlTime, setControlTime] = useState(parisTime);
+  
+  // Auto-update date/time when not in edit mode and form is fresh
+  useEffect(() => {
+    if (!isEditMode && stationName === '' && nbPassagers === 0) {
+      setControlDate(parisDate);
+      setControlTime(parisTime);
+    }
+  }, [parisDate, parisTime, isEditMode, stationName]);
   
   // Passengers
   const [nbPassagers, setNbPassagers] = useState(0);
@@ -252,6 +268,8 @@ export default function StationControl() {
         origin: origin.trim() || null,
         destination: destination.trim() || null,
         platform_number: platformNumber.trim() || null,
+        control_date: controlDate,
+        control_time: controlTime,
         nb_passagers: nbPassagers,
         nb_en_regle: nbEnRegle,
         // Tarifs bord
@@ -476,6 +494,32 @@ export default function StationControl() {
                   value={platformNumber}
                   onChange={(e) => setPlatformNumber(e.target.value)}
                 />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="controlDate" className="flex items-center gap-1">
+                    <Calendar className="h-3 w-3" />
+                    Date
+                  </Label>
+                  <Input
+                    id="controlDate"
+                    type="date"
+                    value={controlDate}
+                    onChange={(e) => setControlDate(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="controlTime" className="flex items-center gap-1">
+                    <Clock className="h-3 w-3" />
+                    Heure (Paris)
+                  </Label>
+                  <Input
+                    id="controlTime"
+                    type="time"
+                    value={controlTime}
+                    onChange={(e) => setControlTime(e.target.value)}
+                  />
+                </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
