@@ -7,6 +7,7 @@ import { useFormPersistence } from '@/hooks/useFormPersistence';
 import { useLastSync } from '@/hooks/useLastSync';
 import { useOfflineSync } from '@/hooks/useOfflineSync';
 import { useOfflineControls } from '@/hooks/useOfflineControls';
+import { useParisTime } from '@/hooks/useParisTime';
 import { supabase } from '@/integrations/supabase/client';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { TarifTypeToggle } from '@/components/controls/TarifTypeToggle';
@@ -124,14 +125,47 @@ export default function OnboardControl() {
   const { formattedLastSync, updateLastSync } = useLastSync();
   const { isOnline, pendingCount, isSyncing } = useOfflineSync();
   const { offlineCount, addOfflineControl, syncOfflineControls, isSyncing: isOfflineSyncing } = useOfflineControls();
+  
+  // Paris timezone auto-refresh
+  const { date: parisDate, time: parisTime } = useParisTime(60000);
 
   // Edit mode
   const editId = searchParams.get('edit');
   const [isEditMode, setIsEditMode] = useState(false);
 
+  // Initial form state using Paris time
+  const getInitialFormState = useCallback((): FormState => ({
+    trainNumber: '',
+    origin: '',
+    destination: '',
+    controlDate: parisDate,
+    controlTime: parisTime,
+    passengers: 0,
+    tarifsBord: [],
+    tarifMode: 'bord',
+    tarifsControle: [],
+    stt50Count: 0,
+    pvList: [],
+    stt100Count: 0,
+    riPositif: 0,
+    riNegatif: 0,
+    commentaire: '',
+  }), [parisDate, parisTime]);
+
   // Form state
-  const [formState, setFormState] = useState<FormState>(INITIAL_FORM_STATE);
+  const [formState, setFormState] = useState<FormState>(getInitialFormState);
   const { clearDraft } = useFormPersistence('onboard-control', formState, setFormState, INITIAL_FORM_STATE);
+  
+  // Auto-update date/time when not in edit mode and form is fresh
+  useEffect(() => {
+    if (!isEditMode && formState.trainNumber === '' && formState.passengers === 0) {
+      setFormState(prev => ({
+        ...prev,
+        controlDate: parisDate,
+        controlTime: parisTime,
+      }));
+    }
+  }, [parisDate, parisTime, isEditMode, formState.trainNumber, formState.passengers]);
 
   // Tarif input states
   const [bordTarifMontant, setBordTarifMontant] = useState('');

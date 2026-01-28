@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/dialog';
 import { AlertTriangle, CheckCircle, Users, FileText, Ticket, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { getFraudRateColor, getFraudRateBgColor, getFraudThresholds } from '@/lib/stats';
 
 export interface OperationDetail {
   id: string;
@@ -58,15 +59,18 @@ export function FraudSummary({
     }
   }, [isEditingPassengers]);
 
+  // Use dynamic thresholds from admin settings
   const getRateColor = (rate: number) => {
-    if (rate < 5) return 'text-green-600 dark:text-green-400';
-    if (rate < 10) return 'text-yellow-600 dark:text-yellow-400';
+    const thresholds = getFraudThresholds();
+    if (rate < thresholds.low) return 'text-green-600 dark:text-green-400';
+    if (rate < thresholds.medium) return 'text-yellow-600 dark:text-yellow-400';
     return 'text-red-600 dark:text-red-400';
   };
 
   const getRateBgColor = (rate: number) => {
-    if (rate < 5) return 'bg-green-100 dark:bg-green-900/30';
-    if (rate < 10) return 'bg-yellow-100 dark:bg-yellow-900/30';
+    const thresholds = getFraudThresholds();
+    if (rate < thresholds.low) return 'bg-green-100 dark:bg-green-900/30';
+    if (rate < thresholds.medium) return 'bg-yellow-100 dark:bg-yellow-900/30';
     return 'bg-red-100 dark:bg-red-900/30';
   };
 

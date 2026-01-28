@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
+import { useFraudThresholds } from "@/hooks/useFraudThresholds";
 import { AnimatePresence } from "framer-motion";
 import { PageTransition } from "@/components/layout/PageTransition";
 import Dashboard from "./pages/Dashboard";
@@ -19,6 +20,12 @@ import StatisticsPage from "./pages/Statistics";
 import SettingsPage from "./pages/Settings";
 import InstallPage from "./pages/Install";
 import NotFound from "./pages/NotFound";
+
+// Component to initialize global fraud thresholds from admin settings
+function FraudThresholdsInitializer() {
+  useFraudThresholds();
+  return null;
+}
 
 const queryClient = new QueryClient();
 
@@ -49,6 +56,7 @@ const AnimatedRoutes = () => {
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
+      <FraudThresholdsInitializer />
       <TooltipProvider>
         <Toaster />
         <Sonner />

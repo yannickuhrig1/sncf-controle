@@ -560,8 +560,15 @@ export default function AdminPage() {
                       <SelectItem value="90">90 jours</SelectItem>
                       <SelectItem value="180">6 mois</SelectItem>
                       <SelectItem value="365">1 an</SelectItem>
+                      <SelectItem value="730">2 ans</SelectItem>
+                      <SelectItem value="1095">3 ans</SelectItem>
+                      <SelectItem value="1825">5 ans</SelectItem>
+                      <SelectItem value="3650">10 ans</SelectItem>
                     </SelectContent>
                   </Select>
+                  <p className="text-xs text-muted-foreground">
+                    Durée de conservation des données de contrôle
+                  </p>
                 </div>
 
                 <Separator />
