@@ -4,12 +4,43 @@ import { toast } from 'sonner';
 
 const OFFLINE_QUEUE_KEY = 'offline_control_queue';
 const LAST_SYNC_KEY = 'last_sync_timestamp';
+const SW_SYNC_TAG = 'offline-controls-sync';
 
 export interface OfflinePendingAction {
   id: string;
   type: 'create' | 'update' | 'delete';
   data: any;
   timestamp: number;
+}
+
+// Register background sync if available
+async function registerBackgroundSync() {
+  if ('serviceWorker' in navigator && 'SyncManager' in window) {
+    try {
+      const registration = await navigator.serviceWorker.ready;
+      await (registration as any).sync.register(SW_SYNC_TAG);
+      console.log('Background sync registered');
+      return true;
+    } catch (error) {
+      console.warn('Background sync registration failed:', error);
+      return false;
+    }
+  }
+  return false;
+}
+
+// Request persistent storage for offline data
+async function requestPersistentStorage() {
+  if (navigator.storage && navigator.storage.persist) {
+    try {
+      const isPersisted = await navigator.storage.persist();
+      console.log(`Persistent storage ${isPersisted ? 'granted' : 'denied'}`);
+      return isPersisted;
+    } catch (error) {
+      console.warn('Persistent storage request failed:', error);
+    }
+  }
+  return false;
 }
 
 export function useOfflineSync() {
@@ -28,6 +59,9 @@ export function useOfflineSync() {
     } catch (e) {
       console.error('Failed to load offline queue:', e);
     }
+    
+    // Request persistent storage on mount
+    requestPersistentStorage();
   }, []);
 
   // Save pending actions to localStorage
@@ -35,6 +69,11 @@ export function useOfflineSync() {
     try {
       localStorage.setItem(OFFLINE_QUEUE_KEY, JSON.stringify(actions));
       setPendingActions(actions);
+      
+      // Try to register background sync when there are pending actions
+      if (actions.length > 0) {
+        registerBackgroundSync();
+      }
     } catch (e) {
       console.error('Failed to save offline queue:', e);
     }
@@ -114,6 +153,35 @@ export function useOfflineSync() {
     };
   }, [pendingActions.length, queryClient]);
 
+  // Listen for Service Worker sync completion messages
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      if (event.data && event.data.type === 'SYNC_COMPLETED') {
+        toast.success('Synchronisation terminée', {
+          description: `${event.data.syncedCount} contrôle(s) synchronisé(s)`,
+        });
+        queryClient.invalidateQueries({ queryKey: ['controls'] });
+        
+        // Clear synced items from queue
+        if (event.data.syncedIds) {
+          const syncedIds = new Set(event.data.syncedIds);
+          const remaining = pendingActions.filter(a => !syncedIds.has(a.id));
+          savePendingActions(remaining);
+        }
+      }
+    };
+
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.addEventListener('message', handleMessage);
+    }
+
+    return () => {
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.removeEventListener('message', handleMessage);
+      }
+    };
+  }, [pendingActions, savePendingActions, queryClient]);
+
   return {
     isOnline,
     pendingActions,
@@ -125,5 +193,6 @@ export function useOfflineSync() {
     clearQueue,
     getLastSyncTimestamp,
     updateLastSyncTimestamp,
+    registerBackgroundSync,
   };
 }
