@@ -2,24 +2,19 @@ import { useState, useMemo, useCallback } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button, buttonVariants } from '@/components/ui/button';
+import { buttonVariants } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
-import { useControls } from '@/hooks/useControls';
+import { useControlsWithFilter, ViewMode } from '@/hooks/useControlsWithFilter';
 import { useLastSync } from '@/hooks/useLastSync';
 import { useOfflineSync } from '@/hooks/useOfflineSync';
 import { LastSyncIndicator } from '@/components/controls/LastSyncIndicator';
 import { OfflineIndicator } from '@/components/controls/OfflineIndicator';
 import { PendingControlsPanel } from '@/components/controls/PendingControlsPanel';
+import { DashboardDatePicker } from '@/components/dashboard/DashboardDatePicker';
+import { ViewModeToggle } from '@/components/dashboard/ViewModeToggle';
 import { calculateStats, formatFraudRate, getFraudRateBgColor, getFraudRateColor } from '@/lib/stats';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
-import {
-  startOfWeek,
-  startOfMonth,
-  startOfYear,
-  isAfter,
-  parseISO,
-} from 'date-fns';
 import {
   AlertTriangle,
   Building2,
@@ -30,20 +25,16 @@ import {
   Users,
 } from 'lucide-react';
 
-type PeriodFilter = 'today' | 'week' | 'month' | 'year' | 'all';
-
-const PERIOD_LABELS: Record<PeriodFilter, string> = {
-  today: "Aujourd'hui",
-  week: 'Semaine',
-  month: 'Mois',
-  year: 'Année',
-  all: 'Tout',
-};
-
 export default function Dashboard() {
   const { user, profile, loading: authLoading } = useAuth();
-  const { controls, isLoading: controlsLoading, isFetching, refetch } = useControls();
-  const [period, setPeriod] = useState<PeriodFilter>('today');
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [viewMode, setViewMode] = useState<ViewMode>('my-data');
+  
+  const { controls, isLoading: controlsLoading, isFetching, refetch } = useControlsWithFilter({
+    date: selectedDate,
+    viewMode,
+  });
+  
   const { formattedLastSync, updateLastSync } = useLastSync();
   const { isOnline, pendingCount, isSyncing } = useOfflineSync();
 
@@ -54,36 +45,7 @@ export default function Dashboard() {
     toast.success('Données synchronisées');
   }, [refetch, updateLastSync]);
 
-  // Filter controls based on selected period
-  const filteredControls = useMemo(() => {
-    if (!controls.length) return [];
-    
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    
-    return controls.filter((control) => {
-      const controlDate = parseISO(control.control_date);
-      
-      switch (period) {
-        case 'today':
-          return control.control_date === today.toISOString().split('T')[0];
-        case 'week':
-          return isAfter(controlDate, startOfWeek(today, { weekStartsOn: 1 })) || 
-                 controlDate.getTime() === startOfWeek(today, { weekStartsOn: 1 }).getTime();
-        case 'month':
-          return isAfter(controlDate, startOfMonth(today)) || 
-                 controlDate.getTime() === startOfMonth(today).getTime();
-        case 'year':
-          return isAfter(controlDate, startOfYear(today)) || 
-                 controlDate.getTime() === startOfYear(today).getTime();
-        case 'all':
-        default:
-          return true;
-      }
-    });
-  }, [controls, period]);
-
-  const stats = useMemo(() => calculateStats(filteredControls), [filteredControls]);
+  const stats = useMemo(() => calculateStats(controls), [controls]);
 
   if (authLoading) {
     return (
@@ -103,26 +65,40 @@ export default function Dashboard() {
     <AppLayout>
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <div className="flex flex-col gap-1">
-            <h1 className="text-2xl font-bold flex items-center gap-2">
-              <LayoutDashboard className="h-6 w-6 text-primary" />
-              Tableau de bord
-            </h1>
-            <p className="text-muted-foreground">
-              Bonjour {profile?.first_name} ! Voici le résumé de vos contrôles.
-            </p>
+        <div className="flex flex-col gap-4">
+          <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-1">
+              <h1 className="text-2xl font-bold flex items-center gap-2">
+                <LayoutDashboard className="h-6 w-6 text-primary" />
+                Tableau de bord
+              </h1>
+              <p className="text-muted-foreground">
+                Bonjour {profile?.first_name} !
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <OfflineIndicator 
+                isOnline={isOnline} 
+                pendingCount={pendingCount} 
+                isSyncing={isSyncing}
+              />
+              <LastSyncIndicator
+                lastSync={formattedLastSync}
+                isFetching={isFetching}
+                onSync={handleSync}
+              />
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <OfflineIndicator 
-              isOnline={isOnline} 
-              pendingCount={pendingCount} 
-              isSyncing={isSyncing}
+
+          {/* Date picker and view mode toggle */}
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <DashboardDatePicker 
+              date={selectedDate} 
+              onDateChange={setSelectedDate}
             />
-            <LastSyncIndicator
-              lastSync={formattedLastSync}
-              isFetching={isFetching}
-              onSync={handleSync}
+            <ViewModeToggle 
+              viewMode={viewMode} 
+              onViewModeChange={setViewMode}
             />
           </div>
         </div>
@@ -155,23 +131,11 @@ export default function Dashboard() {
           </Link>
         </div>
 
-        {/* Period Filter */}
-        <div className="flex flex-wrap gap-2">
-          {(Object.keys(PERIOD_LABELS) as PeriodFilter[]).map((p) => (
-            <Button
-              key={p}
-              variant={period === p ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setPeriod(p)}
-            >
-              {PERIOD_LABELS[p]}
-            </Button>
-          ))}
-        </div>
-
         {/* Stats */}
         <div className="space-y-3">
-          <h2 className="text-lg font-semibold">{PERIOD_LABELS[period]}</h2>
+          <h2 className="text-lg font-semibold">
+            {viewMode === 'my-data' ? 'Mes contrôles' : 'Tous les contrôles'}
+          </h2>
           
           {isLoading ? (
             <div className="flex justify-center py-8">

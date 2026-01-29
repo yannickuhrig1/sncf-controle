@@ -18,8 +18,10 @@ import { LastSyncIndicator } from '@/components/controls/LastSyncIndicator';
 import { OfflineIndicator } from '@/components/controls/OfflineIndicator';
 import { HistoryTableView } from '@/components/history/HistoryTableView';
 import { DateRangeFilter } from '@/components/history/DateRangeFilter';
+import { ViewModeToggle } from '@/components/dashboard/ViewModeToggle';
 import { getFraudRateColor } from '@/lib/stats';
 import { exportTableToPDF } from '@/lib/exportUtils';
+import type { ViewMode } from '@/hooks/useControlsWithFilter';
 import { 
   Loader2, 
   History, 
@@ -125,7 +127,7 @@ function ControlRow({ control, onClick }: ControlRowProps) {
 }
 
 export default function HistoryPage() {
-  const { user, loading: authLoading } = useAuth();
+  const { user, profile, loading: authLoading } = useAuth();
   const { 
     controls, 
     isLoading, 
@@ -152,6 +154,7 @@ export default function HistoryPage() {
   const [sortOption, setSortOption] = useState<SortOption>('date');
   const [startDate, setStartDate] = useState<Date | undefined>(undefined);
   const [endDate, setEndDate] = useState<Date | undefined>(undefined);
+  const [dataViewMode, setDataViewMode] = useState<ViewMode>('my-data');
   
   // Get view mode from preferences, default to 'list'
   const viewMode: HistoryViewMode = preferences?.history_view_mode ?? 'list';
@@ -197,7 +200,16 @@ export default function HistoryPage() {
   }, []);
 
   // Use infinite controls for display, fall back to regular controls for filtering
-  const displayControls = infiniteControls.length > 0 ? infiniteControls : controls;
+  const displayControls = useMemo(() => {
+    const sourceControls = infiniteControls.length > 0 ? infiniteControls : controls;
+    
+    // Filter by agent if viewing "my data" only
+    if (dataViewMode === 'my-data' && profile) {
+      return sourceControls.filter(c => c.agent_id === profile.id);
+    }
+    
+    return sourceControls;
+  }, [infiniteControls, controls, dataViewMode, profile]);
 
   // Filter and sort controls
   const filteredControls = useMemo(() => {
@@ -356,49 +368,57 @@ export default function HistoryPage() {
     <AppLayout>
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <History className="h-6 w-6 text-primary" />
-            <h1 className="text-2xl font-bold">Historique</h1>
-            {totalCount > 0 && (
-              <Badge variant="secondary" className="text-xs">
-                {totalCount}
-              </Badge>
-            )}
+        <div className="flex flex-col gap-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <History className="h-6 w-6 text-primary" />
+              <h1 className="text-2xl font-bold">Historique</h1>
+              {totalCount > 0 && (
+                <Badge variant="secondary" className="text-xs">
+                  {totalCount}
+                </Badge>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              {/* View mode toggle */}
+              <ToggleGroup 
+                type="single" 
+                value={viewMode} 
+                onValueChange={handleViewModeChange}
+                className="border rounded-md"
+              >
+                <ToggleGroupItem value="list" aria-label="Vue liste" size="sm" className="px-2">
+                  <List className="h-4 w-4" />
+                </ToggleGroupItem>
+                <ToggleGroupItem value="table" aria-label="Vue tableau" size="sm" className="px-2">
+                  <TableIcon className="h-4 w-4" />
+                </ToggleGroupItem>
+              </ToggleGroup>
+              
+              <OfflineIndicator 
+                isOnline={isOnline} 
+                pendingCount={pendingCount} 
+                isSyncing={isSyncing}
+              />
+              <LastSyncIndicator
+                lastSync={formattedLastSync}
+                isFetching={isFetching}
+                onSync={handleSync}
+              />
+              {controls.length > 0 && (
+                <Button variant="outline" size="sm" onClick={() => setExportOpen(true)}>
+                  <Download className="h-4 w-4 mr-2" />
+                  Exporter
+                </Button>
+              )}
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            {/* View mode toggle */}
-            <ToggleGroup 
-              type="single" 
-              value={viewMode} 
-              onValueChange={handleViewModeChange}
-              className="border rounded-md"
-            >
-              <ToggleGroupItem value="list" aria-label="Vue liste" size="sm" className="px-2">
-                <List className="h-4 w-4" />
-              </ToggleGroupItem>
-              <ToggleGroupItem value="table" aria-label="Vue tableau" size="sm" className="px-2">
-                <TableIcon className="h-4 w-4" />
-              </ToggleGroupItem>
-            </ToggleGroup>
-            
-            <OfflineIndicator 
-              isOnline={isOnline} 
-              pendingCount={pendingCount} 
-              isSyncing={isSyncing}
-            />
-            <LastSyncIndicator
-              lastSync={formattedLastSync}
-              isFetching={isFetching}
-              onSync={handleSync}
-            />
-            {controls.length > 0 && (
-              <Button variant="outline" size="sm" onClick={() => setExportOpen(true)}>
-                <Download className="h-4 w-4 mr-2" />
-                Exporter
-              </Button>
-            )}
-          </div>
+
+          {/* Data view mode toggle */}
+          <ViewModeToggle 
+            viewMode={dataViewMode} 
+            onViewModeChange={setDataViewMode}
+          />
         </div>
 
         {/* Filters */}
