@@ -4,13 +4,14 @@ import { AppLayout } from '@/components/layout/AppLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { buttonVariants } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
-import { useControlsWithFilter, ViewMode } from '@/hooks/useControlsWithFilter';
+import { useControlsWithFilter, ViewMode, Period } from '@/hooks/useControlsWithFilter';
 import { useLastSync } from '@/hooks/useLastSync';
 import { useOfflineSync } from '@/hooks/useOfflineSync';
 import { LastSyncIndicator } from '@/components/controls/LastSyncIndicator';
 import { OfflineIndicator } from '@/components/controls/OfflineIndicator';
 import { PendingControlsPanel } from '@/components/controls/PendingControlsPanel';
 import { DashboardDatePicker } from '@/components/dashboard/DashboardDatePicker';
+import { PeriodSelector } from '@/components/dashboard/PeriodSelector';
 import { ViewModeToggle } from '@/components/dashboard/ViewModeToggle';
 import { calculateStats, formatFraudRate, getFraudRateBgColor, getFraudRateColor } from '@/lib/stats';
 import { cn } from '@/lib/utils';
@@ -29,10 +30,12 @@ export default function Dashboard() {
   const { user, profile, loading: authLoading } = useAuth();
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [viewMode, setViewMode] = useState<ViewMode>('my-data');
+  const [period, setPeriod] = useState<Period>('day');
   
   const { controls, isLoading: controlsLoading, isFetching, refetch } = useControlsWithFilter({
     date: selectedDate,
     viewMode,
+    period,
   });
   
   const { formattedLastSync, updateLastSync } = useLastSync();
@@ -90,16 +93,24 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* Date picker and view mode toggle */}
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <DashboardDatePicker 
-              date={selectedDate} 
-              onDateChange={setSelectedDate}
-            />
-            <ViewModeToggle 
-              viewMode={viewMode} 
-              onViewModeChange={setViewMode}
-            />
+          {/* Date picker, period selector and view mode toggle */}
+          <div className="flex flex-col gap-3">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <DashboardDatePicker 
+                date={selectedDate} 
+                onDateChange={setSelectedDate}
+              />
+              <ViewModeToggle 
+                viewMode={viewMode} 
+                onViewModeChange={setViewMode}
+              />
+            </div>
+            <div className="flex justify-center">
+              <PeriodSelector
+                selectedPeriod={period}
+                onPeriodChange={setPeriod}
+              />
+            </div>
           </div>
         </div>
 
