@@ -1,18 +1,11 @@
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import type { Database } from '@/integrations/supabase/types';
 import { calculateStats, formatFraudRate } from './stats';
 
 type Control = Database['public']['Tables']['controls']['Row'];
-
-// Extend jsPDF types for autoTable
-declare module 'jspdf' {
-  interface jsPDF {
-    autoTable: (options: unknown) => jsPDF;
-  }
-}
 
 export interface ExportOptions {
   controls: Control[];
@@ -131,7 +124,7 @@ function calculateExtendedStats(controls: Control[]) {
     pvBreakdown,
     tarifsBord,
     tarifsControleDetails,
-    totalTarifsBord: Object.values(tarifsBord).reduce((a, b) => a + b, 0),
+    totalTarifsBord: tarifsBord.stt50 + tarifsBord.stt100 + tarifsBord.rnv + tarifsBord.titreTiers + tarifsBord.docNaissance + tarifsBord.autre,
   };
 }
 
@@ -191,7 +184,7 @@ export function exportToPDF({ controls, title, dateRange, includeStats }: Export
       ['Contrôles par type', '', `Train: ${stats.byLocationType.train.length} | Gare: ${stats.byLocationType.gare.length} | Quai: ${stats.byLocationType.quai.length}`],
     ];
 
-    doc.autoTable({
+    autoTable(doc, {
       startY: yPosition,
       head: [mainStatsData[0]],
       body: mainStatsData.slice(1),
@@ -219,7 +212,7 @@ export function exportToPDF({ controls, title, dateRange, includeStats }: Export
       ['TOTAL', stats.tarifsControle.toString(), (stats.totalAmounts.stt50 + stats.totalAmounts.stt100 + stats.totalAmounts.rnv + stats.totalAmounts.titreTiers + stats.totalAmounts.docNaissance + stats.totalAmounts.autre).toFixed(2)],
     ];
 
-    doc.autoTable({
+    autoTable(doc, {
       startY: yPosition,
       head: [tarifsData[0]],
       body: tarifsData.slice(1),
@@ -243,7 +236,7 @@ export function exportToPDF({ controls, title, dateRange, includeStats }: Export
       ['TOTAL', stats.pv.toString(), (stats.totalAmounts.pvAbsenceTitre + stats.totalAmounts.pvTitreInvalide + stats.totalAmounts.pvRefusControle + stats.totalAmounts.pvAutre).toFixed(2)],
     ];
 
-    doc.autoTable({
+    autoTable(doc, {
       startY: yPosition + 6,
       head: [pvData[0]],
       body: pvData.slice(1),
@@ -275,7 +268,7 @@ export function exportToPDF({ controls, title, dateRange, includeStats }: Export
       ['TOTAL', stats.totalTarifsBord.toString()],
     ];
 
-    doc.autoTable({
+    autoTable(doc, {
       startY: yPosition,
       head: [tarifsBordData[0]],
       body: tarifsBordData.slice(1),
@@ -297,7 +290,7 @@ export function exportToPDF({ controls, title, dateRange, includeStats }: Export
       ['TOTAL', (stats.riPositive + stats.riNegative).toString()],
     ];
 
-    doc.autoTable({
+    autoTable(doc, {
       startY: yPosition + 6,
       head: [riData[0]],
       body: riData.slice(1),
@@ -345,7 +338,7 @@ export function exportToPDF({ controls, title, dateRange, includeStats }: Export
     ];
   });
 
-  doc.autoTable({
+  autoTable(doc, {
     startY: yPosition,
     head: [['Date', 'Heure', 'Type/N°', 'Lieu/Trajet', 'Voy.', 'OK', 'STT', 'RNV', 'PV', 'RI', 'Fraude']],
     body: tableData,
@@ -479,7 +472,7 @@ export function exportTableToPDF({ controls, title, dateRange }: TableExportOpti
       ];
     });
 
-    doc.autoTable({
+    autoTable(doc, {
       startY: 46,
       head: [['Date', 'Heure', 'Type', 'Lieu/Trajet', 'Voy.', 'OK', 'Bord', 'T.C.', 'Tiers', 'Naiss.', 'PV', 'STT50', 'STT100', 'RNV', 'RI+', 'RI-', 'Fraude']],
       body: tableData,
