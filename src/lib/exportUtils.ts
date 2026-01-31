@@ -343,24 +343,24 @@ export function exportToPDF({ controls, title, dateRange, includeStats }: Export
     head: [['Date', 'Heure', 'Type/N°', 'Lieu/Trajet', 'Voy.', 'OK', 'STT', 'RNV', 'PV', 'RI', 'Fraude']],
     body: tableData,
     theme: 'striped',
-    headStyles: { fillColor: [0, 0, 139], fontSize: 7 },
-    bodyStyles: { fontSize: 6 },
+    headStyles: { fillColor: [0, 0, 139], fontSize: 6, cellPadding: 1.5, halign: 'center' },
+    bodyStyles: { fontSize: 5.5, cellPadding: 1.5 },
     columnStyles: {
-      0: { cellWidth: 18 },
-      1: { cellWidth: 12 },
-      2: { cellWidth: 22 },
-      3: { cellWidth: 35 },
-      4: { cellWidth: 12 },
-      5: { cellWidth: 10 },
-      6: { cellWidth: 14 },
-      7: { cellWidth: 10 },
-      8: { cellWidth: 10 },
-      9: { cellWidth: 14 },
-      10: { cellWidth: 15 },
+      0: { cellWidth: 14, halign: 'center' },  // Date
+      1: { cellWidth: 10, halign: 'center' },  // Heure
+      2: { cellWidth: 20 },                     // Type/N°
+      3: { cellWidth: 32 },                     // Lieu/Trajet
+      4: { cellWidth: 10, halign: 'center' },  // Voy.
+      5: { cellWidth: 8, halign: 'center' },   // OK
+      6: { cellWidth: 12, halign: 'center' },  // STT
+      7: { cellWidth: 8, halign: 'center' },   // RNV
+      8: { cellWidth: 8, halign: 'center' },   // PV
+      9: { cellWidth: 12, halign: 'center' },  // RI
+      10: { cellWidth: 12, halign: 'center' }, // Fraude
     },
-    margin: { left: 14, right: 14 },
+    margin: { left: 10, right: 10 },
+    tableWidth: 'auto',
     didDrawPage: function() {
-      // Footer on each page - use closure variable for page number
       addFooter();
       pageNumber++;
     }
@@ -474,40 +474,40 @@ export function exportTableToPDF({ controls, title, dateRange }: TableExportOpti
 
     autoTable(doc, {
       startY: 46,
-      head: [['Date', 'Heure', 'Type', 'Lieu/Trajet', 'Voy.', 'OK', 'Bord', 'T.C.', 'Tiers', 'Naiss.', 'PV', 'STT50', 'STT100', 'RNV', 'RI+', 'RI-', 'Fraude']],
+      head: [['Date', 'Heure', 'Type', 'Trajet', 'V.', 'OK', 'B.', 'TC', 'Ti', 'Na', 'PV', 'S50', 'S100', 'RNV', 'R+', 'R-', '%']],
       body: tableData,
       theme: 'striped',
       headStyles: { 
         fillColor: [0, 0, 139], 
-        fontSize: 7,
-        cellPadding: 2,
+        fontSize: 6,
+        cellPadding: 1.5,
         halign: 'center'
       },
       bodyStyles: { 
-        fontSize: 6,
-        cellPadding: 2,
+        fontSize: 5.5,
+        cellPadding: 1.5,
       },
       alternateRowStyles: { fillColor: [245, 245, 245] },
       columnStyles: {
-        0: { cellWidth: 15 },
-        1: { cellWidth: 12 },
-        2: { cellWidth: 18 },
-        3: { cellWidth: 42 },
-        4: { cellWidth: 12, halign: 'center' },
-        5: { cellWidth: 10, halign: 'center' },
-        6: { cellWidth: 12, halign: 'center' },
-        7: { cellWidth: 12, halign: 'center' },
-        8: { cellWidth: 12, halign: 'center' },
-        9: { cellWidth: 14, halign: 'center' },
-        10: { cellWidth: 10, halign: 'center' },
-        11: { cellWidth: 14, halign: 'center' },
-        12: { cellWidth: 16, halign: 'center' },
-        13: { cellWidth: 12, halign: 'center' },
-        14: { cellWidth: 10, halign: 'center' },
-        15: { cellWidth: 10, halign: 'center' },
-        16: { cellWidth: 16, halign: 'center' },
+        0: { cellWidth: 13 },                   // Date
+        1: { cellWidth: 10 },                   // Heure
+        2: { cellWidth: 15 },                   // Type
+        3: { cellWidth: 38 },                   // Trajet
+        4: { cellWidth: 8, halign: 'center' },  // Voy.
+        5: { cellWidth: 8, halign: 'center' },  // OK
+        6: { cellWidth: 8, halign: 'center' },  // Bord
+        7: { cellWidth: 8, halign: 'center' },  // T.C.
+        8: { cellWidth: 8, halign: 'center' },  // Tiers
+        9: { cellWidth: 8, halign: 'center' },  // Naiss.
+        10: { cellWidth: 8, halign: 'center' }, // PV
+        11: { cellWidth: 10, halign: 'center' },// STT50
+        12: { cellWidth: 12, halign: 'center' },// STT100
+        13: { cellWidth: 10, halign: 'center' },// RNV
+        14: { cellWidth: 8, halign: 'center' }, // RI+
+        15: { cellWidth: 8, halign: 'center' }, // RI-
+        16: { cellWidth: 12, halign: 'center' },// Fraude
       },
-      margin: { left: 10, right: 10 },
+      margin: { left: 8, right: 8 },
       tableWidth: 'auto',
       didDrawPage: function() {
         addPageFooter();
