@@ -131,7 +131,7 @@ function calculateExtendedStats(controls: Control[]) {
   };
 }
 
-export function exportToPDF({ controls, title, dateRange, includeStats, orientation = 'auto' }: ExportOptions) {
+export function exportToPDF({ controls, title, dateRange, includeStats, orientation = 'auto' }: ExportOptions): jsPDF {
   // Validate inputs early
   if (!controls || controls.length === 0) {
     throw new Error('Aucun contrôle à exporter');
@@ -374,14 +374,23 @@ export function exportToPDF({ controls, title, dateRange, includeStats, orientat
     }
   });
 
-  // Generate filename with safe date
-  const filename = `controles-${format(new Date(), 'yyyy-MM-dd-HHmm')}.pdf`;
-  
+  return doc;
+}
+
+// Generate PDF and return blob URL for preview
+export function generatePDFPreview(options: ExportOptions): string {
+  const doc = exportToPDF(options);
+  const pdfBlob = doc.output('blob');
+  return URL.createObjectURL(pdfBlob);
+}
+
+// Download PDF from jsPDF document
+export function downloadPDF(doc: jsPDF, filename?: string) {
+  const finalFilename = filename || `controles-${format(new Date(), 'yyyy-MM-dd-HHmm')}.pdf`;
   try {
-    doc.save(filename);
+    doc.save(finalFilename);
   } catch (error) {
     console.error('PDF save error:', error);
-    // Fallback: try to open in new window
     const pdfBlob = doc.output('blob');
     const url = URL.createObjectURL(pdfBlob);
     window.open(url, '_blank');
