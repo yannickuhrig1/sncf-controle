@@ -30,6 +30,7 @@ import {
   Download,
   BarChart3,
   Monitor,
+  Eye,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { 
@@ -38,12 +39,14 @@ import {
   downloadHTML, 
   generateEmailContent, 
   openMailClient,
+  downloadPDF,
   type ExportOptions,
 } from '@/lib/exportUtils';
 import { calculateStats, formatFraudRate } from '@/lib/stats';
 import type { Database } from '@/integrations/supabase/types';
 import { toast } from 'sonner';
 import { useUserPreferences, type PdfOrientation } from '@/hooks/useUserPreferences';
+import { PdfPreviewDialog } from './PdfPreviewDialog';
 
 type Control = Database['public']['Tables']['controls']['Row'];
 
@@ -68,6 +71,9 @@ export function ExportDialog({ controls, open, onOpenChange }: ExportDialogProps
   const [pdfOrientation, setPdfOrientation] = useState<PdfOrientation>(
     preferences?.pdf_orientation || 'auto'
   );
+  const [showPreview, setShowPreview] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [pdfDoc, setPdfDoc] = useState<ReturnType<typeof exportToPDF> | null>(null);
   
   // Filter controls based on date selection
   const filteredControls = useMemo(() => {
@@ -125,24 +131,68 @@ export function ExportDialog({ controls, open, onOpenChange }: ExportDialogProps
 
   const stats = useMemo(() => calculateStats(filteredControls), [filteredControls]);
 
+  const getExportOptions = (): ExportOptions => ({
+    controls: filteredControls,
+    title: `Export des contrôles (${filteredControls.length} trains)`,
+    dateRange: getDateRangeString(),
+    includeStats,
+    orientation: pdfOrientation,
+  });
+
+  const handlePreview = () => {
+    if (filteredControls.length === 0) {
+      toast.error('Aucun contrôle à exporter pour cette période');
+      return;
+    }
+
+    try {
+      const doc = exportToPDF(getExportOptions());
+      const blob = doc.output('blob');
+      const url = URL.createObjectURL(blob);
+      
+      // Cleanup previous URL
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl);
+      }
+      
+      setPdfDoc(doc);
+      setPreviewUrl(url);
+      setShowPreview(true);
+    } catch (error) {
+      toast.error("Erreur lors de la génération du PDF");
+      console.error('Preview error:', error);
+    }
+  };
+
+  const handleDownloadFromPreview = () => {
+    if (pdfDoc) {
+      downloadPDF(pdfDoc, `controles-${format(new Date(), 'yyyy-MM-dd-HHmm')}.pdf`);
+      toast.success('PDF téléchargé avec succès');
+    }
+  };
+
+  const handleClosePreview = (isOpen: boolean) => {
+    if (!isOpen && previewUrl) {
+      URL.revokeObjectURL(previewUrl);
+      setPreviewUrl(null);
+      setPdfDoc(null);
+    }
+    setShowPreview(isOpen);
+  };
+
   const handleExport = () => {
     if (filteredControls.length === 0) {
       toast.error('Aucun contrôle à exporter pour cette période');
       return;
     }
 
-    const options: ExportOptions = {
-      controls: filteredControls,
-      title: `Export des contrôles (${filteredControls.length} trains)`,
-      dateRange: getDateRangeString(),
-      includeStats,
-      orientation: pdfOrientation,
-    };
+    const options = getExportOptions();
 
     try {
       switch (exportFormat) {
         case 'pdf':
-          exportToPDF(options);
+          const doc = exportToPDF(options);
+          downloadPDF(doc, `controles-${format(new Date(), 'yyyy-MM-dd-HHmm')}.pdf`);
           toast.success('PDF généré avec succès');
           break;
         case 'html':
@@ -345,16 +395,35 @@ export function ExportDialog({ controls, open, onOpenChange }: ExportDialogProps
           </div>
         </div>
         
-        <DialogFooter>
+        <DialogFooter className="flex-col sm:flex-row gap-2">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Annuler
           </Button>
+          {exportFormat === 'pdf' && (
+            <Button 
+              variant="secondary" 
+              onClick={handlePreview} 
+              disabled={filteredControls.length === 0}
+            >
+              <Eye className="h-4 w-4 mr-2" />
+              Prévisualiser
+            </Button>
+          )}
           <Button onClick={handleExport} disabled={filteredControls.length === 0}>
             <Download className="h-4 w-4 mr-2" />
             Exporter
           </Button>
         </DialogFooter>
       </DialogContent>
+
+      {/* PDF Preview Dialog */}
+      <PdfPreviewDialog
+        open={showPreview}
+        onOpenChange={handleClosePreview}
+        pdfUrl={previewUrl}
+        onDownload={handleDownloadFromPreview}
+        title={`Prévisualisation - ${getDateRangeString()}`}
+      />
     </Dialog>
   );
 }
