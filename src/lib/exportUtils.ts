@@ -7,11 +7,14 @@ import { calculateStats, formatFraudRate } from './stats';
 
 type Control = Database['public']['Tables']['controls']['Row'];
 
+export type PdfOrientationType = 'portrait' | 'landscape' | 'auto';
+
 export interface ExportOptions {
   controls: Control[];
   title: string;
   dateRange: string;
   includeStats: boolean;
+  orientation?: PdfOrientationType;
 }
 
 function getControlDetails(control: Control) {
@@ -128,13 +131,18 @@ function calculateExtendedStats(controls: Control[]) {
   };
 }
 
-export function exportToPDF({ controls, title, dateRange, includeStats }: ExportOptions) {
+export function exportToPDF({ controls, title, dateRange, includeStats, orientation = 'auto' }: ExportOptions) {
   // Validate inputs early
   if (!controls || controls.length === 0) {
     throw new Error('Aucun contrôle à exporter');
   }
 
-  const doc = new jsPDF();
+  // Determine orientation: auto uses landscape if many controls or includeStats
+  const useOrientation = orientation === 'auto' 
+    ? (controls.length > 10 || includeStats ? 'landscape' : 'portrait')
+    : orientation;
+
+  const doc = new jsPDF({ orientation: useOrientation === 'landscape' ? 'landscape' : 'portrait' });
   const stats = calculateExtendedStats(controls);
   let pageNumber = 1;
   

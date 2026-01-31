@@ -32,6 +32,7 @@ import {
   Eye,
   PanelBottom,
   Check,
+  FileText,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -372,6 +373,50 @@ export default function Settings() {
                 }
                 disabled={isUpdating}
               />
+            </div>
+
+            <Separator />
+
+            {/* PDF Orientation */}
+            <div className="space-y-2">
+              <Label className="flex items-center gap-2">
+                <FileText className="h-4 w-4" />
+                Orientation des exports PDF
+              </Label>
+              <p className="text-xs text-muted-foreground">
+                Définit l'orientation par défaut pour les exports PDF
+              </p>
+              <Select
+                value={preferences?.pdf_orientation || 'auto'}
+                onValueChange={(value: 'portrait' | 'landscape' | 'auto') =>
+                  updatePreferences({ pdf_orientation: value })
+                }
+                disabled={isUpdating}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="auto">
+                    <div className="flex items-center gap-2">
+                      <Monitor className="h-4 w-4" />
+                      Automatique
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="portrait">
+                    <div className="flex items-center gap-2">
+                      <div className="h-4 w-3 border border-foreground/50 rounded-sm" />
+                      Portrait
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="landscape">
+                    <div className="flex items-center gap-2">
+                      <div className="h-3 w-4 border border-foreground/50 rounded-sm" />
+                      Paysage
+                    </div>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </CardContent>
         </Card>

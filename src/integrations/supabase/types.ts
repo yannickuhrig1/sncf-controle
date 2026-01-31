@@ -322,6 +322,7 @@ export type Database = {
           notifications_fraud_alerts: boolean
           notifications_new_controls: boolean
           notifications_push: boolean
+          pdf_orientation: string
           show_bottom_bar: boolean | null
           show_burger_menu: boolean | null
           show_onboard_fraud_chart: boolean
@@ -346,6 +347,7 @@ export type Database = {
           notifications_fraud_alerts?: boolean
           notifications_new_controls?: boolean
           notifications_push?: boolean
+          pdf_orientation?: string
           show_bottom_bar?: boolean | null
           show_burger_menu?: boolean | null
           show_onboard_fraud_chart?: boolean
@@ -370,6 +372,7 @@ export type Database = {
           notifications_fraud_alerts?: boolean
           notifications_new_controls?: boolean
           notifications_push?: boolean
+          pdf_orientation?: string
           show_bottom_bar?: boolean | null
           show_burger_menu?: boolean | null
           show_onboard_fraud_chart?: boolean

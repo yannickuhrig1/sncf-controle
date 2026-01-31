@@ -9,6 +9,8 @@ export type PageId = 'dashboard' | 'onboard' | 'station' | 'statistics' | 'histo
 
 export type HistoryViewMode = 'list' | 'table';
 
+export type PdfOrientation = 'portrait' | 'landscape' | 'auto';
+
 export interface UserPreferences {
   id: string;
   user_id: string;
@@ -30,6 +32,7 @@ export interface UserPreferences {
   data_keep_history_days: number;
   show_onboard_fraud_chart: boolean;
   history_view_mode: HistoryViewMode;
+  pdf_orientation: PdfOrientation;
   created_at: string;
   updated_at: string;
 }
@@ -56,6 +59,7 @@ export const DEFAULT_PREFERENCES: Omit<UserPreferences, 'id' | 'user_id' | 'crea
   data_keep_history_days: 90,
   show_onboard_fraud_chart: true,
   history_view_mode: 'list',
+  pdf_orientation: 'auto',
 };
 
 export function useUserPreferences() {
@@ -193,6 +197,7 @@ export function useUserPreferences() {
     theme_variant: preferences.theme_variant ?? 'sncf',
     show_onboard_fraud_chart: preferences.show_onboard_fraud_chart ?? true,
     history_view_mode: (preferences as any).history_view_mode ?? 'list',
+    pdf_orientation: (preferences as any).pdf_orientation ?? 'auto',
   } as UserPreferences : null;
 
   return {
