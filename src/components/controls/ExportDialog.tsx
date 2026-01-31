@@ -15,6 +15,13 @@ import { Switch } from '@/components/ui/switch';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { 
   FileText, 
   FileCode, 
@@ -22,6 +29,7 @@ import {
   Calendar as CalendarIcon,
   Download,
   BarChart3,
+  Monitor,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { 
@@ -35,6 +43,7 @@ import {
 import { calculateStats, formatFraudRate } from '@/lib/stats';
 import type { Database } from '@/integrations/supabase/types';
 import { toast } from 'sonner';
+import { useUserPreferences, type PdfOrientation } from '@/hooks/useUserPreferences';
 
 type Control = Database['public']['Tables']['controls']['Row'];
 
@@ -48,6 +57,7 @@ interface ExportDialogProps {
 }
 
 export function ExportDialog({ controls, open, onOpenChange }: ExportDialogProps) {
+  const { preferences } = useUserPreferences();
   const [dateFilter, setDateFilter] = useState<DateFilterType>('today');
   const [customDateRange, setCustomDateRange] = useState<{ from: Date | undefined; to: Date | undefined }>({
     from: undefined,
@@ -55,6 +65,9 @@ export function ExportDialog({ controls, open, onOpenChange }: ExportDialogProps
   });
   const [exportFormat, setExportFormat] = useState<ExportFormat>('pdf');
   const [includeStats, setIncludeStats] = useState(true);
+  const [pdfOrientation, setPdfOrientation] = useState<PdfOrientation>(
+    preferences?.pdf_orientation || 'auto'
+  );
   
   // Filter controls based on date selection
   const filteredControls = useMemo(() => {
@@ -123,6 +136,7 @@ export function ExportDialog({ controls, open, onOpenChange }: ExportDialogProps
       title: `Export des contrôles (${filteredControls.length} trains)`,
       dateRange: getDateRangeString(),
       includeStats,
+      orientation: pdfOrientation,
     };
 
     try {
@@ -279,6 +293,41 @@ export function ExportDialog({ controls, open, onOpenChange }: ExportDialogProps
               </Button>
             </div>
           </div>
+
+          {/* PDF Orientation - only show for PDF */}
+          {exportFormat === 'pdf' && (
+            <div className="space-y-2">
+              <Label>Orientation du PDF</Label>
+              <Select
+                value={pdfOrientation}
+                onValueChange={(value: PdfOrientation) => setPdfOrientation(value)}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="auto">
+                    <div className="flex items-center gap-2">
+                      <Monitor className="h-4 w-4" />
+                      Automatique
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="portrait">
+                    <div className="flex items-center gap-2">
+                      <div className="h-4 w-3 border border-foreground/50 rounded-sm" />
+                      Portrait
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="landscape">
+                    <div className="flex items-center gap-2">
+                      <div className="h-3 w-4 border border-foreground/50 rounded-sm" />
+                      Paysage
+                    </div>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
           
           {/* Options */}
           <div className="flex items-center justify-between">
