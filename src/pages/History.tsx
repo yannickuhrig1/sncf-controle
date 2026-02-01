@@ -363,7 +363,15 @@ export default function HistoryPage() {
     }
   };
 
-
+  const handleDuplicate = (control: Control) => {
+    // Navigate to the appropriate page with duplicate parameter
+    if (control.location_type === 'train') {
+      navigate(`/onboard?duplicate=${control.id}`);
+    } else {
+      navigate(`/station?duplicate=${control.id}`);
+    }
+    toast.success('Contrôle dupliqué - Modifiez les données puis enregistrez');
+  };
   return (
     <AppLayout>
       <div className="space-y-6">
@@ -620,6 +628,7 @@ export default function HistoryPage() {
         onOpenChange={setDetailOpen}
         onEdit={handleEdit}
         onDelete={handleDelete}
+        onDuplicate={handleDuplicate}
       />
       
       {/* Export Dialog */}

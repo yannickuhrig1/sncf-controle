@@ -129,9 +129,11 @@ export default function OnboardControl() {
   // Paris timezone auto-refresh
   const { date: parisDate, time: parisTime } = useParisTime(60000);
 
-  // Edit mode
+  // Edit/Duplicate mode
   const editId = searchParams.get('edit');
+  const duplicateId = searchParams.get('duplicate');
   const [isEditMode, setIsEditMode] = useState(false);
+  const [isDuplicateMode, setIsDuplicateMode] = useState(false);
 
   // Initial form state using Paris time
   const getInitialFormState = useCallback((): FormState => ({
@@ -183,39 +185,56 @@ export default function OnboardControl() {
   const [selectedControl, setSelectedControl] = useState<Control | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
 
-  // Load control for editing - fetch directly if needed
+  // Load control for editing or duplicating
   useEffect(() => {
-    const loadControlForEdit = async () => {
-      if (!editId || isLoading) return;
+    const loadControl = async (controlId: string, forDuplicate: boolean) => {
+      if (isLoading) return;
       
-      // First check in already loaded controls
-      const controlToEdit = controls.find(c => c.id === editId);
-      
-      if (controlToEdit) {
-        setIsEditMode(true);
+      // Helper to set form data from control
+      const setFormFromControl = (data: any) => {
         setFormState({
-          trainNumber: controlToEdit.train_number || '',
-          origin: controlToEdit.origin || '',
-          destination: controlToEdit.destination || '',
-          controlDate: controlToEdit.control_date,
-          controlTime: controlToEdit.control_time,
-          passengers: controlToEdit.nb_passagers,
+          trainNumber: data.train_number || '',
+          origin: data.origin || '',
+          destination: data.destination || '',
+          controlDate: forDuplicate ? parisDate : data.control_date,
+          controlTime: forDuplicate ? parisTime : data.control_time,
+          passengers: data.nb_passagers,
           tarifsBord: [],
           tarifMode: 'bord',
           tarifsControle: [],
-          stt50Count: controlToEdit.stt_50 || 0,
+          stt50Count: data.stt_50 || 0,
           pvList: [],
-          stt100Count: controlToEdit.stt_100 || 0,
-          riPositif: controlToEdit.ri_positive || 0,
-          riNegatif: controlToEdit.ri_negative || 0,
-          commentaire: controlToEdit.notes || '',
+          stt100Count: data.stt_100 || 0,
+          riPositif: data.ri_positive || 0,
+          riNegatif: data.ri_negative || 0,
+          commentaire: data.notes || '',
         });
+      };
+      
+      // First check in already loaded controls
+      const controlToLoad = controls.find(c => c.id === controlId);
+      
+      if (controlToLoad) {
+        // If it's not a train control, redirect to station
+        if (controlToLoad.location_type !== 'train') {
+          const param = forDuplicate ? 'duplicate' : 'edit';
+          navigate(`/station?${param}=${controlId}`, { replace: true });
+          return;
+        }
+        
+        if (forDuplicate) {
+          setIsDuplicateMode(true);
+          setSearchParams({});
+        } else {
+          setIsEditMode(true);
+        }
+        setFormFromControl(controlToLoad);
       } else if (profile) {
-        // Control not in local data - fetch directly from DB to check location_type
+        // Control not in local data - fetch directly from DB
         const { data, error } = await supabase
           .from('controls')
           .select('*')
-          .eq('id', editId)
+          .eq('id', controlId)
           .single();
         
         if (error || !data) {
@@ -230,34 +249,27 @@ export default function OnboardControl() {
         
         // If it's not a train control, redirect to station
         if (data.location_type !== 'train') {
-          navigate(`/station?edit=${editId}`, { replace: true });
+          const param = forDuplicate ? 'duplicate' : 'edit';
+          navigate(`/station?${param}=${controlId}`, { replace: true });
           return;
         }
         
-        // It's a train control, load it
-        setIsEditMode(true);
-        setFormState({
-          trainNumber: data.train_number || '',
-          origin: data.origin || '',
-          destination: data.destination || '',
-          controlDate: data.control_date,
-          controlTime: data.control_time,
-          passengers: data.nb_passagers,
-          tarifsBord: [],
-          tarifMode: 'bord',
-          tarifsControle: [],
-          stt50Count: data.stt_50 || 0,
-          pvList: [],
-          stt100Count: data.stt_100 || 0,
-          riPositif: data.ri_positive || 0,
-          riNegatif: data.ri_negative || 0,
-          commentaire: data.notes || '',
-        });
+        if (forDuplicate) {
+          setIsDuplicateMode(true);
+          setSearchParams({});
+        } else {
+          setIsEditMode(true);
+        }
+        setFormFromControl(data);
       }
     };
     
-    loadControlForEdit();
-  }, [editId, controls, isLoading, profile, navigate, setSearchParams, toast]);
+    if (editId) {
+      loadControl(editId, false);
+    } else if (duplicateId) {
+      loadControl(duplicateId, true);
+    }
+  }, [editId, duplicateId, controls, isLoading, profile, navigate, setSearchParams, toast, parisDate, parisTime]);
 
   // Cancel edit mode
   const handleCancelEdit = () => {
