@@ -17,7 +17,7 @@ import { FraudSummary } from '@/components/controls/FraudSummary';
 import { StationAutocomplete } from '@/components/controls/StationAutocomplete';
 import { ControlDetailDialog } from '@/components/controls/ControlDetailDialog';
 import { ExportDialog } from '@/components/controls/ExportDialog';
-import { TrainFraudChart } from '@/components/charts/TrainFraudChart';
+import { TrainFraudCompact } from '@/components/charts/TrainFraudCompact';
 import { SubmitProgress } from '@/components/controls/SubmitProgress';
 import { LastSyncIndicator } from '@/components/controls/LastSyncIndicator';
 import { OfflineIndicator } from '@/components/controls/OfflineIndicator';
@@ -648,12 +648,11 @@ export default function OnboardControl() {
           </div>
         </div>
 
-        {/* Fraud Rate Chart by Train Number - toggleable from settings */}
+        {/* Compact Fraud Stats for Train - toggleable from settings */}
         {preferences?.show_onboard_fraud_chart && (
-          <TrainFraudChart 
+          <TrainFraudCompact 
             controls={controls as Control[]} 
             trainNumber={formState.trainNumber}
-            title="Évolution du taux de fraude"
           />
         )}
 
