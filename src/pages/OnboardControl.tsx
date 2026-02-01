@@ -641,6 +641,28 @@ export default function OnboardControl() {
                 Annuler
               </Button>
             )}
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="outline" size="sm" className="text-destructive hover:text-destructive">
+                  <RotateCcw className="h-4 w-4 mr-2" />
+                  Réinitialiser
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Réinitialiser le formulaire ?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Toutes les données saisies seront perdues. Cette action est irréversible.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Annuler</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleReset} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                    Réinitialiser
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
             <Button variant="outline" size="sm" onClick={() => setExportOpen(true)}>
               <Download className="h-4 w-4 mr-2" />
               Exporter
@@ -1004,28 +1026,6 @@ export default function OnboardControl() {
                 {/* Progress overlay */}
                 <SubmitProgress isSubmitting={isCreating || isUpdating} />
 
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button variant="outline" size="lg" className="w-full text-destructive hover:text-destructive">
-                      <RotateCcw className="mr-2 h-4 w-4" />
-                      Réinitialiser
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Réinitialiser le formulaire ?</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        Toutes les données saisies seront perdues. Cette action est irréversible.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Annuler</AlertDialogCancel>
-                      <AlertDialogAction onClick={handleReset} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                        Réinitialiser
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
               </div>
             </div>
           </div>
