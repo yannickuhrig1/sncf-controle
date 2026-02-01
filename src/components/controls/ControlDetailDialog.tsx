@@ -230,32 +230,32 @@ export function ControlDetailDialog({
                     Détail des infractions ({fraudCount})
                   </h4>
                   <div className="flex flex-wrap gap-2">
-                    {(control.stt_50 > 0 || control.stt_100 > 0) && (
+                    {((control.stt_50 ?? 0) > 0 || (control.stt_100 ?? 0) > 0) && (
                       <Badge variant="outline" className="bg-background">
-                        STT: {control.stt_50 + control.stt_100}
+                        STT: {(control.stt_50 ?? 0) + (control.stt_100 ?? 0)}
                       </Badge>
                     )}
-                    {control.rnv > 0 && (
+                    {(control.rnv ?? 0) > 0 && (
                       <Badge variant="outline" className="bg-background">
                         RNV: {control.rnv}
                       </Badge>
                     )}
-                    {(control.titre_tiers || 0) > 0 && (
+                    {(control.titre_tiers ?? 0) > 0 && (
                       <Badge variant="outline" className="bg-background">
                         Titre tiers: {control.titre_tiers}
                       </Badge>
                     )}
-                    {(control.doc_naissance || 0) > 0 && (
+                    {(control.doc_naissance ?? 0) > 0 && (
                       <Badge variant="outline" className="bg-background">
-                        Doc. naissance: {control.doc_naissance}
+                        Date naiss.: {control.doc_naissance}
                       </Badge>
                     )}
-                    {(control.autre_tarif || 0) > 0 && (
+                    {(control.autre_tarif ?? 0) > 0 && (
                       <Badge variant="outline" className="bg-background">
                         Autre: {control.autre_tarif}
                       </Badge>
                     )}
-                    {control.pv > 0 && (
+                    {(control.pv ?? 0) > 0 && (
                       <Badge variant="destructive">
                         PV: {control.pv}
                       </Badge>
