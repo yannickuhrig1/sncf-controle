@@ -18,6 +18,7 @@ import { StationAutocomplete } from '@/components/controls/StationAutocomplete';
 import { ControlDetailDialog } from '@/components/controls/ControlDetailDialog';
 import { ExportDialog } from '@/components/controls/ExportDialog';
 import { TrainFraudChart } from '@/components/charts/TrainFraudChart';
+import { SubmitProgress } from '@/components/controls/SubmitProgress';
 import { LastSyncIndicator } from '@/components/controls/LastSyncIndicator';
 import { OfflineIndicator } from '@/components/controls/OfflineIndicator';
 import { Button } from '@/components/ui/button';
@@ -1000,6 +1001,9 @@ export default function OnboardControl() {
                     </>
                   )}
                 </Button>
+                
+                {/* Progress overlay */}
+                <SubmitProgress isSubmitting={isCreating || isUpdating} />
 
                 <AlertDialog>
                   <AlertDialogTrigger asChild>

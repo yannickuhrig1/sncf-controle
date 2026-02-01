@@ -10,6 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { TarifSection } from '@/components/controls/TarifSection';
 import { FraudSummary } from '@/components/controls/FraudSummary';
+import { SubmitProgress } from '@/components/controls/SubmitProgress';
 import { LastSyncIndicator } from '@/components/controls/LastSyncIndicator';
 import { OfflineIndicator } from '@/components/controls/OfflineIndicator';
 import { Button } from '@/components/ui/button';
@@ -668,19 +669,22 @@ export default function StationControl() {
           </Card>
 
           {/* Submit */}
-          <Button type="submit" className="w-full" size="lg" disabled={isCreating}>
-            {isCreating ? (
+          <Button type="submit" className="w-full" size="lg" disabled={isCreating || isUpdating}>
+            {(isCreating || isUpdating) ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Enregistrement...
+                {isEditMode ? 'Mise à jour...' : 'Enregistrement...'}
               </>
             ) : (
               <>
                 <Save className="mr-2 h-4 w-4" />
-                Enregistrer le contrôle
+                {isEditMode ? 'Mettre à jour' : 'Enregistrer le contrôle'}
               </>
             )}
           </Button>
+          
+          {/* Progress overlay */}
+          <SubmitProgress isSubmitting={isCreating || isUpdating} />
         </form>
       </div>
     </AppLayout>
