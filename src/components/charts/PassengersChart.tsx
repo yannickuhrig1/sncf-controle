@@ -105,14 +105,14 @@ export function PassengersChart({ controls, title = "Voyageurs par jour" }: Pass
                 dataKey="inRule" 
                 name="En règle" 
                 stackId="a"
-                fill="hsl(var(--chart-2))" 
+                fill="hsl(142 76% 36%)" 
                 radius={[0, 0, 0, 0]}
               />
               <Bar 
                 dataKey="fraud" 
                 name="Fraude" 
                 stackId="a"
-                fill="hsl(var(--chart-1))" 
+                fill="hsl(0 84% 60%)" 
                 radius={[4, 4, 0, 0]}
               />
             </BarChart>
