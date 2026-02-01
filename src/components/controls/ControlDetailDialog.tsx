@@ -28,6 +28,7 @@ import {
   CreditCard,
   UserCheck,
   IdCard,
+  Copy,
 } from 'lucide-react';
 import type { Database } from '@/integrations/supabase/types';
 import {
@@ -40,6 +41,11 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 type Control = Database['public']['Tables']['controls']['Row'];
 type LocationType = Database['public']['Enums']['location_type'];
@@ -62,6 +68,7 @@ interface ControlDetailDialogProps {
   onOpenChange: (open: boolean) => void;
   onEdit?: (control: Control) => void;
   onDelete?: (control: Control) => void;
+  onDuplicate?: (control: Control) => void;
 }
 
 interface DetailRowProps {
@@ -93,6 +100,7 @@ export function ControlDetailDialog({
   onOpenChange,
   onEdit,
   onDelete,
+  onDuplicate,
 }: ControlDetailDialogProps) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   
@@ -347,30 +355,51 @@ export function ControlDetailDialog({
             </div>
           </ScrollArea>
           
-          <DialogFooter className="p-6 pt-4 flex-row gap-2 border-t">
-            {onEdit && (
-              <Button 
-                variant="outline" 
-                className="flex-1"
-                onClick={() => {
-                  onEdit(control);
-                  onOpenChange(false);
-                }}
-              >
-                <Edit className="h-4 w-4 mr-2" />
-                Modifier
-              </Button>
-            )}
-            {onDelete && (
-              <Button 
-                variant="destructive" 
-                className="flex-1"
-                onClick={() => setShowDeleteConfirm(true)}
-              >
-                <Trash2 className="h-4 w-4 mr-2" />
-                Supprimer
-              </Button>
-            )}
+          <DialogFooter className="p-6 pt-4 gap-2 border-t">
+            <div className="flex flex-wrap gap-2 w-full">
+              {onDuplicate && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button 
+                      variant="secondary" 
+                      size="icon"
+                      onClick={() => {
+                        onDuplicate(control);
+                        onOpenChange(false);
+                      }}
+                    >
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Dupliquer ce contrôle</p>
+                  </TooltipContent>
+                </Tooltip>
+              )}
+              {onEdit && (
+                <Button 
+                  variant="outline" 
+                  className="flex-1"
+                  onClick={() => {
+                    onEdit(control);
+                    onOpenChange(false);
+                  }}
+                >
+                  <Edit className="h-4 w-4 mr-2" />
+                  Modifier
+                </Button>
+              )}
+              {onDelete && (
+                <Button 
+                  variant="destructive" 
+                  className="flex-1"
+                  onClick={() => setShowDeleteConfirm(true)}
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Supprimer
+                </Button>
+              )}
+            </div>
           </DialogFooter>
         </DialogContent>
       </Dialog>

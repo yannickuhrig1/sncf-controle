@@ -59,9 +59,11 @@ export default function StationControl() {
   // Paris timezone auto-refresh
   const { date: parisDate, time: parisTime } = useParisTime(60000);
 
-  // Edit mode
+  // Edit/Duplicate mode
   const editId = searchParams.get('edit');
+  const duplicateId = searchParams.get('duplicate');
   const [isEditMode, setIsEditMode] = useState(false);
+  const [isDuplicateMode, setIsDuplicateMode] = useState(false);
 
   // Station info
   const [stationName, setStationName] = useState('');
@@ -123,29 +125,34 @@ export default function StationControl() {
     return { fraudCount, fraudRate, tarifsControleCount, pvCount };
   }, [nbPassagers, stt50, stt100, rnv, titreTiers, docNaissance, autreTarif, pvAbsenceTitre, pvTitreInvalide, pvRefusControle, pvAutre]);
 
-  // Load control for editing - fetch directly if needed
+  // Load control for editing or duplicating
   useEffect(() => {
-    const loadControlForEdit = async () => {
-      if (!editId) return;
-      
+    const loadControl = async (controlId: string, forDuplicate: boolean) => {
       // First check in already loaded controls
-      const controlToEdit = controls.find(c => c.id === editId);
+      const controlToLoad = controls.find(c => c.id === controlId);
       
-      if (controlToEdit) {
+      if (controlToLoad) {
         // Check if it's a train control - redirect to onboard
-        if (controlToEdit.location_type === 'train') {
-          navigate(`/onboard?edit=${editId}`, { replace: true });
+        if (controlToLoad.location_type === 'train') {
+          const param = forDuplicate ? 'duplicate' : 'edit';
+          navigate(`/onboard?${param}=${controlId}`, { replace: true });
           return;
         }
         
-        setIsEditMode(true);
-        loadControlData(controlToEdit);
+        if (forDuplicate) {
+          setIsDuplicateMode(true);
+          // Clear the duplicate param from URL after loading
+          setSearchParams({});
+        } else {
+          setIsEditMode(true);
+        }
+        loadControlData(controlToLoad);
       } else if (user) {
         // Control not in local data - fetch directly from DB
         const { data, error } = await supabase
           .from('controls')
           .select('*')
-          .eq('id', editId)
+          .eq('id', controlId)
           .single();
         
         if (error || !data) {
@@ -160,17 +167,27 @@ export default function StationControl() {
         
         // If it's a train control, redirect to onboard
         if (data.location_type === 'train') {
-          navigate(`/onboard?edit=${editId}`, { replace: true });
+          const param = forDuplicate ? 'duplicate' : 'edit';
+          navigate(`/onboard?${param}=${controlId}`, { replace: true });
           return;
         }
         
-        setIsEditMode(true);
+        if (forDuplicate) {
+          setIsDuplicateMode(true);
+          setSearchParams({});
+        } else {
+          setIsEditMode(true);
+        }
         loadControlData(data);
       }
     };
     
-    loadControlForEdit();
-  }, [editId, controls, user, navigate, setSearchParams, toast]);
+    if (editId) {
+      loadControl(editId, false);
+    } else if (duplicateId) {
+      loadControl(duplicateId, true);
+    }
+  }, [editId, duplicateId, controls, user, navigate, setSearchParams, toast]);
   
   // Helper to load control data into form
   const loadControlData = (data: any) => {
