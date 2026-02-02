@@ -1061,9 +1061,13 @@ export default function OnboardControl() {
             )}
           </div>
 
-          {/* Filters - Only show when expanded */}
-          {historyExpanded && (
-          <div className="space-y-3">
+          {/* Filters - Only show when expanded with animation */}
+          <div 
+            className={cn(
+              "space-y-3 overflow-hidden transition-all duration-300 ease-out",
+              historyExpanded ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0"
+            )}
+          >
             {/* Search */}
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -1116,115 +1120,119 @@ export default function OnboardControl() {
               </p>
             )}
           </div>
-          )}
 
-          {/* Controls list - Only show when expanded */}
-          {historyExpanded && (
-            isLoading ? (
-              <div className="flex justify-center py-12">
-                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-              </div>
-            ) : controls.length === 0 ? (
-              <div className="text-center py-12">
-                <Train className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                <h3 className="text-lg font-semibold mb-2">Aucun contrôle</h3>
-                <p className="text-muted-foreground">
-                  Vous n'avez pas encore enregistré de contrôles à bord.
-                </p>
-              </div>
-            ) : filteredControls.length === 0 ? (
-              <div className="text-center py-12">
-                <Search className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                <h3 className="text-lg font-semibold mb-2">Aucun résultat</h3>
-                <p className="text-muted-foreground mb-4">
-                  Aucun contrôle ne correspond à vos critères de recherche.
-                </p>
-                <Button variant="outline" onClick={clearFilters}>
-                  Effacer les filtres
-                </Button>
-              </div>
-            ) : (
-              <div className="space-y-6">
-                {sortedDates.map((date) => (
-                  <div key={date} className="space-y-2">
-                    <h3 className="text-sm font-medium text-muted-foreground sticky top-0 bg-background py-2 flex items-center gap-2">
-                      <Calendar className="h-4 w-4" />
-                      {format(new Date(date), 'EEEE d MMMM yyyy', { locale: fr })}
-                      <Badge variant="secondary" className="ml-auto">
-                        {groupedControls[date].length} contrôle{groupedControls[date].length > 1 ? 's' : ''}
-                      </Badge>
-                    </h3>
-                    <div className="space-y-2">
-                      {groupedControls[date].map((control) => {
-                        const fraudCount = control.tarifs_controle + control.pv;
-                        const fraudRate = control.nb_passagers > 0 
-                          ? ((fraudCount / control.nb_passagers) * 100)
-                          : 0;
-                        return (
-                          <Card 
-                            key={control.id}
-                            className="cursor-pointer hover:bg-muted/50 transition-colors"
-                            onClick={() => handleControlClick(control)}
-                          >
-                            <CardContent className="p-4">
-                              <div className="flex items-center gap-3">
-                                {/* Icon */}
-                                <div className="p-2 rounded-lg bg-primary/10 shrink-0">
-                                  <Train className="h-4 w-4 text-primary" />
+          {/* Controls list - Only show when expanded with animation */}
+          <div 
+            className={cn(
+              "overflow-hidden transition-all duration-300 ease-out",
+              historyExpanded ? "max-h-[2000px] opacity-100" : "max-h-0 opacity-0"
+            )}
+          >
+          {isLoading ? (
+            <div className="flex justify-center py-12">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            </div>
+          ) : controls.length === 0 ? (
+            <div className="text-center py-12">
+              <Train className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+              <h3 className="text-lg font-semibold mb-2">Aucun contrôle</h3>
+              <p className="text-muted-foreground">
+                Vous n'avez pas encore enregistré de contrôles à bord.
+              </p>
+            </div>
+          ) : filteredControls.length === 0 ? (
+            <div className="text-center py-12">
+              <Search className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+              <h3 className="text-lg font-semibold mb-2">Aucun résultat</h3>
+              <p className="text-muted-foreground mb-4">
+                Aucun contrôle ne correspond à vos critères de recherche.
+              </p>
+              <Button variant="outline" onClick={clearFilters}>
+                Effacer les filtres
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-6">
+              {sortedDates.map((date) => (
+                <div key={date} className="space-y-2">
+                  <h3 className="text-sm font-medium text-muted-foreground sticky top-0 bg-background py-2 flex items-center gap-2">
+                    <Calendar className="h-4 w-4" />
+                    {format(new Date(date), 'EEEE d MMMM yyyy', { locale: fr })}
+                    <Badge variant="secondary" className="ml-auto">
+                      {groupedControls[date].length} contrôle{groupedControls[date].length > 1 ? 's' : ''}
+                    </Badge>
+                  </h3>
+                  <div className="space-y-2">
+                    {groupedControls[date].map((control) => {
+                      const fraudCount = control.tarifs_controle + control.pv;
+                      const fraudRate = control.nb_passagers > 0 
+                        ? ((fraudCount / control.nb_passagers) * 100)
+                        : 0;
+                      return (
+                        <Card 
+                          key={control.id}
+                          className="cursor-pointer hover:bg-muted/50 transition-colors"
+                          onClick={() => handleControlClick(control)}
+                        >
+                          <CardContent className="p-4">
+                            <div className="flex items-center gap-3">
+                              {/* Icon */}
+                              <div className="p-2 rounded-lg bg-primary/10 shrink-0">
+                                <Train className="h-4 w-4 text-primary" />
+                              </div>
+                              
+                              {/* Main info */}
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2">
+                                  <span className="font-medium truncate">
+                                    {control.origin && control.destination 
+                                      ? `${control.origin} → ${control.destination}`
+                                      : control.location}
+                                  </span>
+                                  {control.train_number && (
+                                    <Badge variant="outline" className="text-xs shrink-0">
+                                      N° {control.train_number}
+                                    </Badge>
+                                  )}
                                 </div>
-                                
-                                {/* Main info */}
-                                <div className="flex-1 min-w-0">
-                                  <div className="flex items-center gap-2">
-                                    <span className="font-medium truncate">
-                                      {control.origin && control.destination 
-                                        ? `${control.origin} → ${control.destination}`
-                                        : control.location}
-                                    </span>
-                                    {control.train_number && (
-                                      <Badge variant="outline" className="text-xs shrink-0">
-                                        N° {control.train_number}
-                                      </Badge>
-                                    )}
-                                  </div>
-                                  <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1">
-                                    <span className="flex items-center gap-1">
-                                      <Clock className="h-3 w-3" />
-                                      {control.control_time.slice(0, 5)}
-                                    </span>
-                                  </div>
-                                </div>
-                                
-                                {/* Stats */}
-                                <div className="flex items-center gap-4 shrink-0">
-                                  <div className="text-center hidden sm:block">
-                                    <div className="flex items-center gap-1 text-sm font-medium">
-                                      <Users className="h-3 w-3" />
-                                      {control.nb_passagers}
-                                    </div>
-                                  </div>
-                                  <div className={cn(
-                                    'text-center',
-                                    fraudRate > 10 ? 'text-red-600' : fraudRate > 5 ? 'text-orange-600' : 'text-green-600'
-                                  )}>
-                                    <div className="flex items-center gap-1 text-sm font-semibold">
-                                      <AlertTriangle className="h-3 w-3" />
-                                      {fraudRate.toFixed(1)}%
-                                    </div>
-                                  </div>
-                                  <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                                <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1">
+                                  <span className="flex items-center gap-1">
+                                    <Clock className="h-3 w-3" />
+                                    {control.control_time.slice(0, 5)}
+                                  </span>
                                 </div>
                               </div>
-                            </CardContent>
-                          </Card>
-                        );
-                      })}
-                    </div>
+                              
+                              {/* Stats */}
+                              <div className="flex items-center gap-4 shrink-0">
+                                <div className="text-center hidden sm:block">
+                                  <div className="flex items-center gap-1 text-sm font-medium">
+                                    <Users className="h-3 w-3" />
+                                    {control.nb_passagers}
+                                  </div>
+                                </div>
+                                <div className={cn(
+                                  'text-center',
+                                  fraudRate > 10 ? 'text-red-600' : fraudRate > 5 ? 'text-orange-600' : 'text-green-600'
+                                )}>
+                                  <div className="flex items-center gap-1 text-sm font-semibold">
+                                    <AlertTriangle className="h-3 w-3" />
+                                    {fraudRate.toFixed(1)}%
+                                  </div>
+                                </div>
+                                <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
                   </div>
-                ))}
-              </div>
-            )
+                </div>
+              ))}
+            </div>
           )}
+          </div>
         </div>
       </div>
       
