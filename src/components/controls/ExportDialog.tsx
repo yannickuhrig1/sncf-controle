@@ -57,8 +57,27 @@ import { PdfPreviewDialog } from './PdfPreviewDialog';
 
 type Control = Database['public']['Tables']['controls']['Row'];
 
-type DateFilterType = 'today' | 'week' | 'month' | 'year' | 'custom';
+type DateFilterType = 'today' | 'week' | 'month' | 'specific_month' | 'year' | 'custom';
 type ExportFormat = 'pdf' | 'html' | 'email';
+
+const MONTHS = [
+  { value: 0, label: 'Janvier' },
+  { value: 1, label: 'Février' },
+  { value: 2, label: 'Mars' },
+  { value: 3, label: 'Avril' },
+  { value: 4, label: 'Mai' },
+  { value: 5, label: 'Juin' },
+  { value: 6, label: 'Juillet' },
+  { value: 7, label: 'Août' },
+  { value: 8, label: 'Septembre' },
+  { value: 9, label: 'Octobre' },
+  { value: 10, label: 'Novembre' },
+  { value: 11, label: 'Décembre' },
+];
+
+// Generate years from 2020 to current year + 1
+const currentYear = new Date().getFullYear();
+const YEARS = Array.from({ length: currentYear - 2019 }, (_, i) => 2020 + i).reverse();
 
 interface ExportDialogProps {
   controls: Control[];
@@ -73,6 +92,8 @@ export function ExportDialog({ controls, open, onOpenChange }: ExportDialogProps
     from: undefined,
     to: undefined,
   });
+  const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth());
+  const [selectedMonthYear, setSelectedMonthYear] = useState<number>(new Date().getFullYear());
   const [exportFormat, setExportFormat] = useState<ExportFormat>('pdf');
   const [includeStats, setIncludeStats] = useState(true);
   const [pdfOrientation, setPdfOrientation] = useState<PdfOrientation>(
@@ -111,6 +132,15 @@ export function ExportDialog({ controls, open, onOpenChange }: ExportDialogProps
           return date >= monthStart && date <= monthEnd;
         });
       }
+      case 'specific_month': {
+        const targetDate = new Date(selectedMonthYear, selectedMonth, 1);
+        const monthStart = startOfMonth(targetDate);
+        const monthEnd = endOfMonth(targetDate);
+        return controls.filter(c => {
+          const date = new Date(c.control_date);
+          return date >= monthStart && date <= monthEnd;
+        });
+      }
       case 'year': {
         const yearStart = startOfYear(now);
         const yearEnd = endOfYear(now);
@@ -131,7 +161,7 @@ export function ExportDialog({ controls, open, onOpenChange }: ExportDialogProps
       default:
         return controls;
     }
-  }, [controls, dateFilter, customDateRange]);
+  }, [controls, dateFilter, customDateRange, selectedMonth, selectedMonthYear]);
 
   // Get date range string
   const getDateRangeString = () => {
@@ -145,6 +175,9 @@ export function ExportDialog({ controls, open, onOpenChange }: ExportDialogProps
         return `${format(weekStart, 'dd MMM', { locale: fr })} - ${format(weekEnd, 'dd MMM yyyy', { locale: fr })}`;
       case 'month':
         return format(now, 'MMMM yyyy', { locale: fr });
+      case 'specific_month':
+        const targetDate = new Date(selectedMonthYear, selectedMonth, 1);
+        return format(targetDate, 'MMMM yyyy', { locale: fr });
       case 'year':
         return format(now, 'yyyy', { locale: fr });
       case 'custom':
@@ -268,7 +301,11 @@ export function ExportDialog({ controls, open, onOpenChange }: ExportDialogProps
               </div>
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="month" id="month" />
-                <Label htmlFor="month" className="font-normal cursor-pointer">Ce mois</Label>
+                <Label htmlFor="month" className="font-normal cursor-pointer">Mois en cours</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="specific_month" id="specific_month" />
+                <Label htmlFor="specific_month" className="font-normal cursor-pointer">Mois</Label>
               </div>
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="year" id="year" />
@@ -279,6 +316,42 @@ export function ExportDialog({ controls, open, onOpenChange }: ExportDialogProps
                 <Label htmlFor="custom" className="font-normal cursor-pointer">Période personnalisée</Label>
               </div>
             </RadioGroup>
+            
+            {/* Month/Year selectors for specific_month */}
+            {dateFilter === 'specific_month' && (
+              <div className="flex gap-2 pl-6">
+                <Select
+                  value={String(selectedMonth)}
+                  onValueChange={(v) => setSelectedMonth(parseInt(v, 10))}
+                >
+                  <SelectTrigger className="w-[130px] h-9">
+                    <SelectValue placeholder="Mois" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {MONTHS.map((month) => (
+                      <SelectItem key={month.value} value={String(month.value)}>
+                        {month.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select
+                  value={String(selectedMonthYear)}
+                  onValueChange={(v) => setSelectedMonthYear(parseInt(v, 10))}
+                >
+                  <SelectTrigger className="w-[100px] h-9">
+                    <SelectValue placeholder="Année" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {YEARS.map((year) => (
+                      <SelectItem key={year} value={String(year)}>
+                        {year}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             
             {dateFilter === 'custom' && (
               <Popover>
@@ -338,7 +411,7 @@ export function ExportDialog({ controls, open, onOpenChange }: ExportDialogProps
               <span className="text-muted-foreground">Taux de fraude</span>
               <span className={cn(
                 "font-medium",
-                stats.fraudRate > 10 ? 'text-red-600' : stats.fraudRate > 5 ? 'text-orange-600' : 'text-green-600'
+                stats.fraudRate > 10 ? 'text-destructive' : stats.fraudRate > 5 ? 'text-warning' : 'text-success'
               )}>
                 {formatFraudRate(stats.fraudRate)}
               </span>
