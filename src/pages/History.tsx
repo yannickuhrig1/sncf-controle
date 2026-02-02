@@ -18,6 +18,7 @@ import { LastSyncIndicator } from '@/components/controls/LastSyncIndicator';
 import { OfflineIndicator } from '@/components/controls/OfflineIndicator';
 import { HistoryTableView } from '@/components/history/HistoryTableView';
 import { DateRangeFilter } from '@/components/history/DateRangeFilter';
+import { MonthYearFilter, getDateRangeFromMonthYear } from '@/components/history/MonthYearFilter';
 import { ViewModeToggle } from '@/components/dashboard/ViewModeToggle';
 import { getFraudRateColor } from '@/lib/stats';
 import { exportTableToPDF } from '@/lib/exportUtils';
@@ -154,6 +155,8 @@ export default function HistoryPage() {
   const [sortOption, setSortOption] = useState<SortOption>('date');
   const [startDate, setStartDate] = useState<Date | undefined>(undefined);
   const [endDate, setEndDate] = useState<Date | undefined>(undefined);
+  const [selectedMonth, setSelectedMonth] = useState<number | undefined>(undefined);
+  const [selectedYear, setSelectedYear] = useState<number | undefined>(undefined);
   const [dataViewMode, setDataViewMode] = useState<ViewMode>('my-data');
   
   // Get view mode from preferences, default to 'list'
@@ -213,20 +216,25 @@ export default function HistoryPage() {
 
   // Filter and sort controls
   const filteredControls = useMemo(() => {
+    // Get effective date range from month/year filter if set
+    const monthYearRange = getDateRangeFromMonthYear(selectedMonth, selectedYear);
+    const effectiveStartDate = startDate ?? monthYearRange.startDate;
+    const effectiveEndDate = endDate ?? monthYearRange.endDate;
+
     let result = displayControls.filter(control => {
       // Location type filter
       if (locationFilter !== 'all' && control.location_type !== locationFilter) {
         return false;
       }
       
-      // Date range filter
-      if (startDate || endDate) {
+      // Date range filter (from DateRangeFilter or MonthYearFilter)
+      if (effectiveStartDate || effectiveEndDate) {
         const controlDate = new Date(control.control_date);
-        if (startDate && controlDate < startDate) {
+        if (effectiveStartDate && controlDate < effectiveStartDate) {
           return false;
         }
-        if (endDate) {
-          const endOfDay = new Date(endDate);
+        if (effectiveEndDate) {
+          const endOfDay = new Date(effectiveEndDate);
           endOfDay.setHours(23, 59, 59, 999);
           if (controlDate > endOfDay) {
             return false;
@@ -271,7 +279,7 @@ export default function HistoryPage() {
     }
 
     return result;
-  }, [displayControls, searchQuery, locationFilter, sortOption, startDate, endDate, getFraudRate]);
+  }, [displayControls, searchQuery, locationFilter, sortOption, startDate, endDate, selectedMonth, selectedYear, getFraudRate]);
 
   // Group filtered controls by date
   const groupedControls = useMemo(() => {
@@ -291,7 +299,7 @@ export default function HistoryPage() {
     );
   }, [groupedControls]);
 
-  const hasActiveFilters = searchQuery.trim() !== '' || locationFilter !== 'all' || sortOption !== 'date' || startDate !== undefined || endDate !== undefined;
+  const hasActiveFilters = searchQuery.trim() !== '' || locationFilter !== 'all' || sortOption !== 'date' || startDate !== undefined || endDate !== undefined || selectedMonth !== undefined || selectedYear !== undefined;
 
   const clearFilters = () => {
     setSearchQuery('');
@@ -299,6 +307,8 @@ export default function HistoryPage() {
     setSortOption('date');
     setStartDate(undefined);
     setEndDate(undefined);
+    setSelectedMonth(undefined);
+    setSelectedYear(undefined);
   };
 
   const handleExportTablePDF = () => {
@@ -484,9 +494,46 @@ export default function HistoryPage() {
             <DateRangeFilter
               startDate={startDate}
               endDate={endDate}
-              onStartDateChange={setStartDate}
-              onEndDateChange={setEndDate}
+              onStartDateChange={(date) => {
+                setStartDate(date);
+                // Clear month/year filter when using custom dates
+                if (date) {
+                  setSelectedMonth(undefined);
+                  setSelectedYear(undefined);
+                }
+              }}
+              onEndDateChange={(date) => {
+                setEndDate(date);
+                // Clear month/year filter when using custom dates
+                if (date) {
+                  setSelectedMonth(undefined);
+                  setSelectedYear(undefined);
+                }
+              }}
               onClear={() => { setStartDate(undefined); setEndDate(undefined); }}
+            />
+
+            {/* Month/Year filter */}
+            <MonthYearFilter
+              selectedMonth={selectedMonth}
+              selectedYear={selectedYear}
+              onMonthChange={(month) => {
+                setSelectedMonth(month);
+                // Clear custom date range when using month/year filter
+                if (month !== undefined) {
+                  setStartDate(undefined);
+                  setEndDate(undefined);
+                }
+              }}
+              onYearChange={(year) => {
+                setSelectedYear(year);
+                // Clear custom date range when using month/year filter
+                if (year !== undefined) {
+                  setStartDate(undefined);
+                  setEndDate(undefined);
+                }
+              }}
+              onClear={() => { setSelectedMonth(undefined); setSelectedYear(undefined); }}
             />
 
             {/* Sort options */}
