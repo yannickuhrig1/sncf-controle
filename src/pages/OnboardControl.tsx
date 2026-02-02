@@ -58,6 +58,7 @@ import {
   Clock,
   Users,
   ChevronRight,
+  ChevronDown,
   X,
   ArrowUpDown,
   RefreshCw,
@@ -181,6 +182,7 @@ export default function OnboardControl() {
   const [searchQuery, setSearchQuery] = useState('');
   const [sortOption, setSortOption] = useState<SortOption>('date');
   const [exportOpen, setExportOpen] = useState(false);
+  const [historyExpanded, setHistoryExpanded] = useState(false);
 
   // Dialog states
   const [selectedControl, setSelectedControl] = useState<Control | null>(null);
@@ -1034,11 +1036,24 @@ export default function OnboardControl() {
         {/* History Section */}
         <div className="mt-8 space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <h2 className="text-lg font-semibold flex items-center gap-2">
+            <button
+              onClick={() => setHistoryExpanded(!historyExpanded)}
+              className="text-lg font-semibold flex items-center gap-2 hover:text-primary transition-colors text-left"
+            >
+              {historyExpanded ? (
+                <ChevronDown className="h-5 w-5 text-primary" />
+              ) : (
+                <ChevronRight className="h-5 w-5 text-primary" />
+              )}
               <Calendar className="h-5 w-5 text-primary" />
               Historique des contrôles
-            </h2>
-            {filteredControls.length > 0 && (
+              {controls.length > 0 && (
+                <Badge variant="secondary" className="ml-2">
+                  {controls.length}
+                </Badge>
+              )}
+            </button>
+            {historyExpanded && filteredControls.length > 0 && (
               <Button variant="outline" size="sm" onClick={() => setExportOpen(true)}>
                 <Download className="h-4 w-4 mr-2" />
                 Exporter
@@ -1046,7 +1061,8 @@ export default function OnboardControl() {
             )}
           </div>
 
-          {/* Filters */}
+          {/* Filters - Only show when expanded */}
+          {historyExpanded && (
           <div className="space-y-3">
             {/* Search */}
             <div className="relative">
@@ -1100,111 +1116,114 @@ export default function OnboardControl() {
               </p>
             )}
           </div>
+          )}
 
-          {/* Controls list */}
-          {isLoading ? (
-            <div className="flex justify-center py-12">
-              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-            </div>
-          ) : controls.length === 0 ? (
-            <div className="text-center py-12">
-              <Train className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-              <h3 className="text-lg font-semibold mb-2">Aucun contrôle</h3>
-              <p className="text-muted-foreground">
-                Vous n'avez pas encore enregistré de contrôles à bord.
-              </p>
-            </div>
-          ) : filteredControls.length === 0 ? (
-            <div className="text-center py-12">
-              <Search className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-              <h3 className="text-lg font-semibold mb-2">Aucun résultat</h3>
-              <p className="text-muted-foreground mb-4">
-                Aucun contrôle ne correspond à vos critères de recherche.
-              </p>
-              <Button variant="outline" onClick={clearFilters}>
-                Effacer les filtres
-              </Button>
-            </div>
-          ) : (
-            <div className="space-y-6">
-              {sortedDates.map((date) => (
-                <div key={date} className="space-y-2">
-                  <h3 className="text-sm font-medium text-muted-foreground sticky top-0 bg-background py-2 flex items-center gap-2">
-                    <Calendar className="h-4 w-4" />
-                    {format(new Date(date), 'EEEE d MMMM yyyy', { locale: fr })}
-                    <Badge variant="secondary" className="ml-auto">
-                      {groupedControls[date].length} contrôle{groupedControls[date].length > 1 ? 's' : ''}
-                    </Badge>
-                  </h3>
-                  <div className="space-y-2">
-                    {groupedControls[date].map((control) => {
-                      const fraudCount = control.tarifs_controle + control.pv;
-                      const fraudRate = control.nb_passagers > 0 
-                        ? ((fraudCount / control.nb_passagers) * 100)
-                        : 0;
-                      return (
-                        <Card 
-                          key={control.id}
-                          className="cursor-pointer hover:bg-muted/50 transition-colors"
-                          onClick={() => handleControlClick(control)}
-                        >
-                          <CardContent className="p-4">
-                            <div className="flex items-center gap-3">
-                              {/* Icon */}
-                              <div className="p-2 rounded-lg bg-primary/10 shrink-0">
-                                <Train className="h-4 w-4 text-primary" />
-                              </div>
-                              
-                              {/* Main info */}
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2">
-                                  <span className="font-medium truncate">
-                                    {control.origin && control.destination 
-                                      ? `${control.origin} → ${control.destination}`
-                                      : control.location}
-                                  </span>
-                                  {control.train_number && (
-                                    <Badge variant="outline" className="text-xs shrink-0">
-                                      N° {control.train_number}
-                                    </Badge>
-                                  )}
+          {/* Controls list - Only show when expanded */}
+          {historyExpanded && (
+            isLoading ? (
+              <div className="flex justify-center py-12">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : controls.length === 0 ? (
+              <div className="text-center py-12">
+                <Train className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                <h3 className="text-lg font-semibold mb-2">Aucun contrôle</h3>
+                <p className="text-muted-foreground">
+                  Vous n'avez pas encore enregistré de contrôles à bord.
+                </p>
+              </div>
+            ) : filteredControls.length === 0 ? (
+              <div className="text-center py-12">
+                <Search className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                <h3 className="text-lg font-semibold mb-2">Aucun résultat</h3>
+                <p className="text-muted-foreground mb-4">
+                  Aucun contrôle ne correspond à vos critères de recherche.
+                </p>
+                <Button variant="outline" onClick={clearFilters}>
+                  Effacer les filtres
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-6">
+                {sortedDates.map((date) => (
+                  <div key={date} className="space-y-2">
+                    <h3 className="text-sm font-medium text-muted-foreground sticky top-0 bg-background py-2 flex items-center gap-2">
+                      <Calendar className="h-4 w-4" />
+                      {format(new Date(date), 'EEEE d MMMM yyyy', { locale: fr })}
+                      <Badge variant="secondary" className="ml-auto">
+                        {groupedControls[date].length} contrôle{groupedControls[date].length > 1 ? 's' : ''}
+                      </Badge>
+                    </h3>
+                    <div className="space-y-2">
+                      {groupedControls[date].map((control) => {
+                        const fraudCount = control.tarifs_controle + control.pv;
+                        const fraudRate = control.nb_passagers > 0 
+                          ? ((fraudCount / control.nb_passagers) * 100)
+                          : 0;
+                        return (
+                          <Card 
+                            key={control.id}
+                            className="cursor-pointer hover:bg-muted/50 transition-colors"
+                            onClick={() => handleControlClick(control)}
+                          >
+                            <CardContent className="p-4">
+                              <div className="flex items-center gap-3">
+                                {/* Icon */}
+                                <div className="p-2 rounded-lg bg-primary/10 shrink-0">
+                                  <Train className="h-4 w-4 text-primary" />
                                 </div>
-                                <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1">
-                                  <span className="flex items-center gap-1">
-                                    <Clock className="h-3 w-3" />
-                                    {control.control_time.slice(0, 5)}
-                                  </span>
-                                </div>
-                              </div>
-                              
-                              {/* Stats */}
-                              <div className="flex items-center gap-4 shrink-0">
-                                <div className="text-center hidden sm:block">
-                                  <div className="flex items-center gap-1 text-sm font-medium">
-                                    <Users className="h-3 w-3" />
-                                    {control.nb_passagers}
+                                
+                                {/* Main info */}
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-2">
+                                    <span className="font-medium truncate">
+                                      {control.origin && control.destination 
+                                        ? `${control.origin} → ${control.destination}`
+                                        : control.location}
+                                    </span>
+                                    {control.train_number && (
+                                      <Badge variant="outline" className="text-xs shrink-0">
+                                        N° {control.train_number}
+                                      </Badge>
+                                    )}
+                                  </div>
+                                  <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1">
+                                    <span className="flex items-center gap-1">
+                                      <Clock className="h-3 w-3" />
+                                      {control.control_time.slice(0, 5)}
+                                    </span>
                                   </div>
                                 </div>
-                                <div className={cn(
-                                  'text-center',
-                                  fraudRate > 10 ? 'text-red-600' : fraudRate > 5 ? 'text-orange-600' : 'text-green-600'
-                                )}>
-                                  <div className="flex items-center gap-1 text-sm font-semibold">
-                                    <AlertTriangle className="h-3 w-3" />
-                                    {fraudRate.toFixed(1)}%
+                                
+                                {/* Stats */}
+                                <div className="flex items-center gap-4 shrink-0">
+                                  <div className="text-center hidden sm:block">
+                                    <div className="flex items-center gap-1 text-sm font-medium">
+                                      <Users className="h-3 w-3" />
+                                      {control.nb_passagers}
+                                    </div>
                                   </div>
+                                  <div className={cn(
+                                    'text-center',
+                                    fraudRate > 10 ? 'text-red-600' : fraudRate > 5 ? 'text-orange-600' : 'text-green-600'
+                                  )}>
+                                    <div className="flex items-center gap-1 text-sm font-semibold">
+                                      <AlertTriangle className="h-3 w-3" />
+                                      {fraudRate.toFixed(1)}%
+                                    </div>
+                                  </div>
+                                  <ChevronRight className="h-4 w-4 text-muted-foreground" />
                                 </div>
-                                <ChevronRight className="h-4 w-4 text-muted-foreground" />
                               </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      );
-                    })}
+                            </CardContent>
+                          </Card>
+                        );
+                      })}
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )
           )}
         </div>
       </div>

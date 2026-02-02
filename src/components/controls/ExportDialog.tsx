@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { format, startOfWeek, endOfWeek, startOfDay, endOfDay, subDays } from 'date-fns';
+import { format, startOfWeek, endOfWeek, startOfDay, endOfDay, startOfMonth, endOfMonth, startOfYear, endOfYear } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { 
   Dialog, 
@@ -22,6 +22,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { 
   FileText, 
   FileCode, 
@@ -31,6 +37,7 @@ import {
   BarChart3,
   Monitor,
   Eye,
+  HelpCircle,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { 
@@ -50,7 +57,7 @@ import { PdfPreviewDialog } from './PdfPreviewDialog';
 
 type Control = Database['public']['Tables']['controls']['Row'];
 
-type DateFilterType = 'today' | 'week' | 'custom';
+type DateFilterType = 'today' | 'week' | 'month' | 'year' | 'custom';
 type ExportFormat = 'pdf' | 'html' | 'email';
 
 interface ExportDialogProps {
@@ -96,6 +103,22 @@ export function ExportDialog({ controls, open, onOpenChange }: ExportDialogProps
           return date >= weekStart && date <= weekEnd;
         });
       }
+      case 'month': {
+        const monthStart = startOfMonth(now);
+        const monthEnd = endOfMonth(now);
+        return controls.filter(c => {
+          const date = new Date(c.control_date);
+          return date >= monthStart && date <= monthEnd;
+        });
+      }
+      case 'year': {
+        const yearStart = startOfYear(now);
+        const yearEnd = endOfYear(now);
+        return controls.filter(c => {
+          const date = new Date(c.control_date);
+          return date >= yearStart && date <= yearEnd;
+        });
+      }
       case 'custom': {
         if (!customDateRange.from) return [];
         const start = startOfDay(customDateRange.from);
@@ -120,6 +143,10 @@ export function ExportDialog({ controls, open, onOpenChange }: ExportDialogProps
         const weekStart = startOfWeek(now, { weekStartsOn: 1 });
         const weekEnd = endOfWeek(now, { weekStartsOn: 1 });
         return `${format(weekStart, 'dd MMM', { locale: fr })} - ${format(weekEnd, 'dd MMM yyyy', { locale: fr })}`;
+      case 'month':
+        return format(now, 'MMMM yyyy', { locale: fr });
+      case 'year':
+        return format(now, 'yyyy', { locale: fr });
       case 'custom':
         if (!customDateRange.from) return 'Sélectionnez une période';
         if (!customDateRange.to) return format(customDateRange.from, 'dd MMMM yyyy', { locale: fr });
@@ -240,6 +267,14 @@ export function ExportDialog({ controls, open, onOpenChange }: ExportDialogProps
                 <Label htmlFor="week" className="font-normal cursor-pointer">Cette semaine</Label>
               </div>
               <div className="flex items-center space-x-2">
+                <RadioGroupItem value="month" id="month" />
+                <Label htmlFor="month" className="font-normal cursor-pointer">Ce mois</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="year" id="year" />
+                <Label htmlFor="year" className="font-normal cursor-pointer">Cette année</Label>
+              </div>
+              <div className="flex items-center space-x-2">
                 <RadioGroupItem value="custom" id="custom" />
                 <Label htmlFor="custom" className="font-normal cursor-pointer">Période personnalisée</Label>
               </div>
@@ -316,21 +351,21 @@ export function ExportDialog({ controls, open, onOpenChange }: ExportDialogProps
             <div className="grid grid-cols-3 gap-2">
               <Button
                 type="button"
-                variant={exportFormat === 'pdf' ? 'default' : 'outline'}
-                className="flex flex-col h-auto py-3"
-                onClick={() => setExportFormat('pdf')}
-              >
-                <FileText className="h-5 w-5 mb-1" />
-                <span className="text-xs">PDF</span>
-              </Button>
-              <Button
-                type="button"
                 variant={exportFormat === 'html' ? 'default' : 'outline'}
                 className="flex flex-col h-auto py-3"
                 onClick={() => setExportFormat('html')}
               >
                 <FileCode className="h-5 w-5 mb-1" />
                 <span className="text-xs">HTML</span>
+              </Button>
+              <Button
+                type="button"
+                variant={exportFormat === 'pdf' ? 'default' : 'outline'}
+                className="flex flex-col h-auto py-3"
+                onClick={() => setExportFormat('pdf')}
+              >
+                <FileText className="h-5 w-5 mb-1" />
+                <span className="text-xs">PDF</span>
               </Button>
               <Button
                 type="button"
@@ -386,6 +421,20 @@ export function ExportDialog({ controls, open, onOpenChange }: ExportDialogProps
               <Label htmlFor="include-stats" className="font-normal cursor-pointer">
                 Inclure les statistiques
               </Label>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="max-w-xs">
+                    <p className="text-sm">
+                      Ajoute un résumé avec : nombre total de contrôles, voyageurs contrôlés, 
+                      taux de fraude global, répartition des infractions (STT, RNV, PV), 
+                      et montants totaux.
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             </div>
             <Switch
               id="include-stats"
