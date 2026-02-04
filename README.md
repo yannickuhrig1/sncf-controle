@@ -31,7 +31,7 @@ Application de gestion et suivi des contrôles ferroviaires pour les agents SNCF
 - Calcul du taux de fraude expliqué
 - Types de tarification (STT, RNV, Titre tiers, D. naissance, RI+/RI-)
 - Questions fréquentes sur l'utilisation de l'application
-- Contacts utiles (support, urgences)
+- **Contacts complets** : Numéros publics SNCF (3635, objets trouvés, accessibilité) et contacts internes (sûreté, urgences, support app)
 - **Contrôle admin** : Possibilité de masquer la page pour tous les utilisateurs
 
 ### Gestion d'équipe
