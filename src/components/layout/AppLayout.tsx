@@ -1,10 +1,12 @@
 import { ReactNode, useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Train, Building2, History, User, BarChart3, Settings, Shield, Menu, UserCheck, Wifi, WifiOff, Download } from 'lucide-react';
+import { LayoutDashboard, Train, Building2, History, User, BarChart3, Settings, Shield, Menu, UserCheck, Wifi, WifiOff, Download, Info } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useQuery } from '@tanstack/react-query';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserPreferences, PageId, DEFAULT_VISIBLE_PAGES, DEFAULT_BOTTOM_BAR_PAGES } from '@/hooks/useUserPreferences';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -28,6 +30,7 @@ const allNavItems: NavItem[] = [
   { href: '/station', icon: Building2, label: 'En gare', pageId: 'station' },
   { href: '/statistics', icon: BarChart3, label: 'Stats', pageId: 'statistics' },
   { href: '/history', icon: History, label: 'Historique', pageId: 'history' },
+  { href: '/infos', icon: Info, label: 'Infos', pageId: 'infos' },
   { href: '/manager', icon: UserCheck, label: 'Manager', pageId: 'manager', managerOnly: true },
   { href: '/settings', icon: Settings, label: 'Paramètres', pageId: 'settings' },
   { href: '/admin', icon: Shield, label: 'Admin', pageId: 'admin', adminOnly: true },
@@ -66,6 +69,21 @@ export function AppLayout({ children }: AppLayoutProps) {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  // Check if infos page is hidden by admin
+  const { data: adminSettings = [] } = useQuery({
+    queryKey: ['admin-settings'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('admin_settings' as any)
+        .select('*');
+      if (error) return [];
+      return (data || []) as unknown as Array<{ key: string; value: any }>;
+    },
+    staleTime: 1000 * 60 * 10, // 10 minutes
+  });
+
+  const hideInfosPage = adminSettings.find(s => s.key === 'hide_infos_page')?.value === true;
+
   const isUserAdmin = isAdmin();
   const isUserManager = isManager();
   const showBottomBar = preferences?.show_bottom_bar ?? true;
@@ -78,6 +96,7 @@ export function AppLayout({ children }: AppLayoutProps) {
     const allowedItems = allNavItems.filter(item => {
       if (item.adminOnly && !isUserAdmin) return false;
       if (item.managerOnly && !isUserManager && !isUserAdmin) return false;
+      if (item.pageId === 'infos' && hideInfosPage) return false;
       return visiblePages.includes(item.pageId);
     });
 
@@ -93,6 +112,7 @@ export function AppLayout({ children }: AppLayoutProps) {
     const allowedItems = allNavItems.filter(item => {
       if (item.adminOnly && !isUserAdmin) return false;
       if (item.managerOnly && !isUserManager && !isUserAdmin) return false;
+      if (item.pageId === 'infos' && hideInfosPage) return false;
       return bottomBarPages.includes(item.pageId);
     });
 

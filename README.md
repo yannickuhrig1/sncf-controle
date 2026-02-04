@@ -8,22 +8,42 @@ Application de gestion et suivi des contrôles ferroviaires pour les agents SNCF
 - **Contrôle à bord** : Saisie des contrôles effectués dans les trains (passagers, tarifs, PV)
 - **Contrôle en gare/quai** : Saisie des contrôles en gare ou sur quai
 - **Mode hors-ligne** : Synchronisation automatique des données à la reconnexion
+- **Historique dépliable** : Animation fluide avec framer-motion pour afficher/masquer l'historique
 
-### Statistiques
+### Statistiques & Calculs
 - Tableau de bord avec indicateurs clés (taux de fraude, voyageurs, PV)
+- **Calcul du taux de fraude** : `(tarifsControle + PV + RI négatifs) / passagers × 100`
+  - Les tarifs à bord ne comptent pas dans le taux de fraude
+  - Les RI positifs ne comptent pas comme fraude (voyageur en règle)
+  - Les RI négatifs sont comptabilisés comme fraude
 - Filtrage par période (jour, semaine, mois, année)
 - Graphiques de répartition par type de contrôle
 - Historique complet avec pagination infinie
 
 ### Exports
-- **PDF** : Rapport détaillé avec statistiques et tableau des contrôles
-- **HTML** : Rapport web interactif
-- **Email** : Génération de contenu mail formaté
+- **HTML** : Rapport web interactif (format prioritaire)
+- **PDF** : Rapport détaillé avec statistiques et tableau des contrôles (Portrait, Paysage, Auto)
+- Filtrage par période : Aujourd'hui, Ce mois, Mois spécifique, Cette année, Tout
+- Option d'inclusion des statistiques avec infobulle explicative
+
+### Infos Utiles
+- **Page dédiée** (`/infos`) avec guides, FAQ et informations de référence
+- Calcul du taux de fraude expliqué
+- Types de tarification (STT, RNV, Titre tiers, D. naissance, RI+/RI-)
+- Questions fréquentes sur l'utilisation de l'application
+- Contacts utiles (support, urgences)
+- **Contrôle admin** : Possibilité de masquer la page pour tous les utilisateurs
 
 ### Gestion d'équipe
 - Rôles : Agent, Manager, Admin
 - Gestion des équipes et des membres
 - Suivi des performances par équipe
+
+### Administration
+- Gestion des utilisateurs et équipes
+- **Seuils de fraude configurables** : Définition des seuils vert/jaune/rouge
+- **Visibilité page Infos** : Toggle pour masquer/afficher la page Infos utiles
+- Durée de rétention des données (jusqu'à 10 ans)
 
 ## 🛠 Technologies
 
@@ -72,7 +92,7 @@ L'application est installable en tant que PWA avec :
 |------|-------------|
 | Agent | Créer/voir ses contrôles |
 | Manager | Voir contrôles équipe, gérer membres |
-| Admin | Accès complet, gestion utilisateurs |
+| Admin | Accès complet, gestion utilisateurs, configuration seuils |
 
 ## 📊 Structure des données
 
@@ -83,6 +103,19 @@ L'application est installable en tant que PWA avec :
 - PV (absence titre, invalide, refus)
 - Tarifs bord (ventes exceptionnelles)
 - Relevés d'identité (RI positive/négative)
+
+### Calcul de la fraude
+```
+Taux de fraude = (tarifsControle + PV + RI négatifs) / totalPassagers × 100
+```
+
+| Élément | Compte dans la fraude |
+|---------|----------------------|
+| Tarifs contrôle | ✅ Oui |
+| PV | ✅ Oui |
+| RI négatifs | ✅ Oui |
+| Tarifs à bord | ❌ Non |
+| RI positifs | ❌ Non |
 
 ## 🚀 Déploiement
 
