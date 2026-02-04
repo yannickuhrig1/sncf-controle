@@ -12,7 +12,7 @@ et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   - Explication du calcul du taux de fraude
   - Référence des types de tarification (STT, RNV, Titre tiers, etc.)
   - FAQ avec questions fréquentes
-  - Contacts utiles (support, urgences)
+  - **Contacts complets** : Numéros publics SNCF (3635, objets trouvés, accessibilité) + contacts internes (sûreté 0 800 40 50 40, urgences 112/15/17, support app)
 - **Toggle admin pour page Infos** : Les administrateurs peuvent masquer la page Infos pour tous les utilisateurs depuis Admin > Affichage
 - **RI négatifs dans le taux de fraude** : Les relevés d'identité négatifs sont maintenant comptabilisés dans le calcul du taux de fraude
   - Nouvelle formule : `(tarifsControle + PV + RI négatifs) / passagers × 100`

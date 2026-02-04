@@ -252,35 +252,124 @@ export default function InfosUtilesPage() {
               <Phone className="h-5 w-5 text-primary" />
               Contacts utiles
             </CardTitle>
+            <CardDescription>
+              Numéros publics SNCF et contacts internes
+            </CardDescription>
           </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg">
-                <Phone className="h-5 w-5 text-muted-foreground" />
-                <div>
-                  <p className="font-medium text-sm">Support technique</p>
-                  <p className="text-xs text-muted-foreground">01 XX XX XX XX</p>
+          <CardContent className="space-y-6">
+            {/* Public SNCF Numbers */}
+            <div>
+              <h4 className="font-semibold text-sm mb-3 flex items-center gap-2">
+                <Badge variant="outline">Numéros publics SNCF</Badge>
+              </h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg">
+                  <Phone className="h-5 w-5 text-primary" />
+                  <div>
+                    <p className="font-medium text-sm">SNCF Voyageurs</p>
+                    <a href="tel:3635" className="text-sm text-primary hover:underline">3635</a>
+                    <p className="text-xs text-muted-foreground">Service clients (0,40€/min)</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg">
+                  <Phone className="h-5 w-5 text-primary" />
+                  <div>
+                    <p className="font-medium text-sm">Objets trouvés</p>
+                    <a href="tel:0155317949" className="text-sm text-primary hover:underline">01 55 31 79 49</a>
+                    <p className="text-xs text-muted-foreground">Du lundi au vendredi 9h-17h</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg">
+                  <Phone className="h-5 w-5 text-primary" />
+                  <div>
+                    <p className="font-medium text-sm">Accessibilité</p>
+                    <a href="tel:0890640650" className="text-sm text-primary hover:underline">0890 640 650</a>
+                    <p className="text-xs text-muted-foreground">Accès Plus (0,12€/min)</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg">
+                  <ExternalLink className="h-5 w-5 text-primary" />
+                  <div>
+                    <p className="font-medium text-sm">Site SNCF</p>
+                    <a 
+                      href="https://www.sncf-voyageurs.com" 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-sm text-primary hover:underline"
+                    >
+                      sncf-voyageurs.com
+                    </a>
+                    <p className="text-xs text-muted-foreground">Informations voyageurs</p>
+                  </div>
                 </div>
               </div>
-              <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg">
-                <Mail className="h-5 w-5 text-muted-foreground" />
-                <div>
-                  <p className="font-medium text-sm">Email support</p>
-                  <p className="text-xs text-muted-foreground">support@example.com</p>
+            </div>
+
+            {/* Internal Contacts */}
+            <div>
+              <h4 className="font-semibold text-sm mb-3 flex items-center gap-2">
+                <Badge variant="secondary">Contacts internes</Badge>
+              </h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg">
+                  <Users className="h-5 w-5 text-muted-foreground" />
+                  <div>
+                    <p className="font-medium text-sm">Chef d'équipe</p>
+                    <p className="text-sm text-muted-foreground">Voir page Manager</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg">
+                  <Shield className="h-5 w-5 text-muted-foreground" />
+                  <div>
+                    <p className="font-medium text-sm">Sûreté ferroviaire</p>
+                    <a href="tel:0800405040" className="text-sm text-primary hover:underline">0 800 40 50 40</a>
+                    <p className="text-xs text-muted-foreground">N° vert 24h/24</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg">
+                  <AlertTriangle className="h-5 w-5 text-destructive" />
+                  <div>
+                    <p className="font-medium text-sm">Urgences</p>
+                    <div className="flex gap-2 text-sm">
+                      <a href="tel:112" className="text-primary hover:underline font-medium">112</a>
+                      <span className="text-muted-foreground">|</span>
+                      <a href="tel:15" className="text-primary hover:underline">15 (SAMU)</a>
+                      <span className="text-muted-foreground">|</span>
+                      <a href="tel:17" className="text-primary hover:underline">17 (Police)</a>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg">
+                  <Mail className="h-5 w-5 text-muted-foreground" />
+                  <div>
+                    <p className="font-medium text-sm">Support application</p>
+                    <a href="mailto:controle-app@sncf.fr" className="text-sm text-primary hover:underline">
+                      controle-app@sncf.fr
+                    </a>
+                  </div>
                 </div>
               </div>
-              <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg">
-                <Shield className="h-5 w-5 text-muted-foreground" />
-                <div>
-                  <p className="font-medium text-sm">Sécurité/Incidents</p>
-                  <p className="text-xs text-muted-foreground">Urgences : 112</p>
+            </div>
+
+            {/* Documentation */}
+            <div>
+              <h4 className="font-semibold text-sm mb-3 flex items-center gap-2">
+                <Badge variant="outline">Ressources</Badge>
+              </h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg">
+                  <BookOpen className="h-5 w-5 text-muted-foreground" />
+                  <div>
+                    <p className="font-medium text-sm">Documentation interne</p>
+                    <p className="text-xs text-muted-foreground">Intranet SNCF &gt; Espace contrôle</p>
+                  </div>
                 </div>
-              </div>
-              <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg">
-                <BookOpen className="h-5 w-5 text-muted-foreground" />
-                <div>
-                  <p className="font-medium text-sm">Documentation</p>
-                  <p className="text-xs text-muted-foreground">Intranet SNCF</p>
+                <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg">
+                  <FileText className="h-5 w-5 text-muted-foreground" />
+                  <div>
+                    <p className="font-medium text-sm">Guide tarifaire</p>
+                    <p className="text-xs text-muted-foreground">Disponible sur l'intranet</p>
+                  </div>
                 </div>
               </div>
             </div>
