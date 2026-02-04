@@ -5,6 +5,36 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/),
 et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.0] - 2026-02-04
+
+### Ajouté
+- **Page Infos utiles** (`/infos`) : Nouvelle page de référence pour les contrôleurs
+  - Explication du calcul du taux de fraude
+  - Référence des types de tarification (STT, RNV, Titre tiers, etc.)
+  - FAQ avec questions fréquentes
+  - Contacts utiles (support, urgences)
+- **Toggle admin pour page Infos** : Les administrateurs peuvent masquer la page Infos pour tous les utilisateurs depuis Admin > Affichage
+- **RI négatifs dans le taux de fraude** : Les relevés d'identité négatifs sont maintenant comptabilisés dans le calcul du taux de fraude
+  - Nouvelle formule : `(tarifsControle + PV + RI négatifs) / passagers × 100`
+  - Les RI positifs ne comptent pas (voyageur en règle)
+- **Animation framer-motion** : L'historique des contrôles sur la page Onboard utilise maintenant framer-motion pour un déploiement fluide
+- **Filtres d'export améliorés** :
+  - Nouveau filtre "Mois" avec sélecteur de mois spécifique
+  - Nouveau filtre "Année" 
+  - Réorganisation : HTML avant PDF
+  - Infobulle explicative sur l'option "Inclure les statistiques"
+- **Filtre mois/année sur Historique** : Nouveau composant MonthYearFilter sur la page Historique principale
+
+### Modifié
+- Navigation mise à jour pour inclure la page Infos dans la barre basse et le menu burger
+- Labels du dialogue d'export clarifiés ("Mois en cours" au lieu de "Ce mois")
+- Couleurs des taux de fraude utilisent les tokens sémantiques (text-success, text-warning, text-destructive)
+- Historique sur Onboard masqué par défaut, clic sur "Historique des contrôles" pour déplier
+
+### Corrigé
+- Transition de l'historique plus fluide avec AnimatePresence
+- Cohérence des couleurs dans les exports
+
 ## [1.5.0] - 2026-01-25
 
 ### Ajouté

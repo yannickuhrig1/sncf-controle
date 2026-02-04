@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 
 export type NavigationStyle = 'bottom' | 'burger';
 
-export type PageId = 'dashboard' | 'onboard' | 'station' | 'statistics' | 'history' | 'settings' | 'admin' | 'profile' | 'manager';
+export type PageId = 'dashboard' | 'onboard' | 'station' | 'statistics' | 'history' | 'settings' | 'admin' | 'profile' | 'manager' | 'infos';
 
 export type HistoryViewMode = 'list' | 'table';
 
@@ -37,8 +37,8 @@ export interface UserPreferences {
   updated_at: string;
 }
 
-export const DEFAULT_VISIBLE_PAGES: PageId[] = ['dashboard', 'onboard', 'station', 'statistics', 'history', 'profile', 'settings'];
-export const DEFAULT_BOTTOM_BAR_PAGES: PageId[] = ['dashboard', 'onboard', 'station', 'statistics', 'history'];
+export const DEFAULT_VISIBLE_PAGES: PageId[] = ['dashboard', 'onboard', 'station', 'statistics', 'history', 'infos', 'profile', 'settings'];
+export const DEFAULT_BOTTOM_BAR_PAGES: PageId[] = ['dashboard', 'onboard', 'station', 'history', 'infos'];
 
 export const DEFAULT_PREFERENCES: Omit<UserPreferences, 'id' | 'user_id' | 'created_at' | 'updated_at'> = {
   theme: 'system',
