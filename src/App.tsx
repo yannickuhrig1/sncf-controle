@@ -19,6 +19,7 @@ import ManagerPage from "./pages/Manager";
 import StatisticsPage from "./pages/Statistics";
 import SettingsPage from "./pages/Settings";
 import InstallPage from "./pages/Install";
+import InfosUtilesPage from "./pages/InfosUtiles";
 import NotFound from "./pages/NotFound";
 
 // Component to initialize global fraud thresholds from admin settings
@@ -47,6 +48,7 @@ const AnimatedRoutes = () => {
         <Route path="/manager" element={<PageTransition><ManagerPage /></PageTransition>} />
         <Route path="/admin" element={<PageTransition><AdminPage /></PageTransition>} />
         <Route path="/install" element={<PageTransition><InstallPage /></PageTransition>} />
+        <Route path="/infos" element={<PageTransition><InfosUtilesPage /></PageTransition>} />
         <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
       </Routes>
     </AnimatePresence>

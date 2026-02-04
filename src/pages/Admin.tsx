@@ -60,8 +60,11 @@ import {
   Database,
   Download,
   Palette,
+  Info,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import type { Database as DbType } from '@/integrations/supabase/types';
 import { useUserPreferences } from '@/hooks/useUserPreferences';
@@ -99,6 +102,9 @@ export default function AdminPage() {
   const [editingUser, setEditingUser] = useState<Profile | null>(null);
   const [selectedRole, setSelectedRole] = useState<AppRole>('agent');
   const [selectedTeamId, setSelectedTeamId] = useState<string>('');
+  
+  // Infos page visibility state
+  const [hideInfosPage, setHideInfosPage] = useState(false);
 
   // Fetch all profiles (admin only)
   const { data: profiles = [], isLoading: profilesLoading } = useQuery({
@@ -126,6 +132,58 @@ export default function AdminPage() {
       return data as Team[];
     },
     enabled: !!profile && isAdmin(),
+  });
+
+  // Fetch hide_infos_page setting
+  const { data: adminSettings = [] } = useQuery({
+    queryKey: ['admin-settings'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('admin_settings' as any)
+        .select('*');
+      if (error) throw error;
+      return (data || []) as unknown as Array<{ id: string; key: string; value: any; description: string }>;
+    },
+    enabled: !!profile && isAdmin(),
+  });
+
+  // Load hide_infos_page setting on mount
+  useEffect(() => {
+    const setting = adminSettings.find(s => s.key === 'hide_infos_page');
+    if (setting) {
+      setHideInfosPage(setting.value === true);
+    }
+  }, [adminSettings]);
+
+  // Toggle infos page visibility
+  const toggleInfosPageVisibility = useMutation({
+    mutationFn: async (hide: boolean) => {
+      // Check if setting exists
+      const existing = adminSettings.find(s => s.key === 'hide_infos_page');
+      if (existing) {
+        const { error } = await supabase
+          .from('admin_settings' as any)
+          .update({ value: hide })
+          .eq('key', 'hide_infos_page');
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from('admin_settings' as any)
+          .insert({
+            key: 'hide_infos_page',
+            value: hide,
+            description: 'Masquer la page Infos utiles pour tous les utilisateurs',
+          });
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-settings'] });
+      toast.success(hideInfosPage ? 'Page Infos utiles masquée' : 'Page Infos utiles visible');
+    },
+    onError: (error) => {
+      toast.error('Erreur: ' + error.message);
+    },
   });
 
   // Create team mutation
@@ -509,6 +567,47 @@ export default function AdminPage() {
           {/* Display Settings Tab */}
           <TabsContent value="display" className="space-y-4">
             <FraudThresholdsSettings />
+            
+            {/* Infos Page Visibility Toggle */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Info className="h-5 w-5" />
+                  Page Infos utiles
+                </CardTitle>
+                <CardDescription>
+                  Gérez la visibilité de la page d'informations
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label className="flex items-center gap-2">
+                      {hideInfosPage ? (
+                        <EyeOff className="h-4 w-4 text-muted-foreground" />
+                      ) : (
+                        <Eye className="h-4 w-4 text-primary" />
+                      )}
+                      {hideInfosPage ? 'Page masquée' : 'Page visible'}
+                    </Label>
+                    <p className="text-xs text-muted-foreground">
+                      {hideInfosPage 
+                        ? 'La page Infos utiles est masquée pour tous les utilisateurs'
+                        : 'La page Infos utiles est accessible à tous les utilisateurs'
+                      }
+                    </p>
+                  </div>
+                  <Switch
+                    checked={!hideInfosPage}
+                    onCheckedChange={(checked) => {
+                      setHideInfosPage(!checked);
+                      toggleInfosPageVisibility.mutate(!checked);
+                    }}
+                    disabled={toggleInfosPageVisibility.isPending}
+                  />
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
 
           {/* Data & Storage Tab */}

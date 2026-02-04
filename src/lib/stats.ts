@@ -46,8 +46,9 @@ export function calculateStats(controls: Control[]): ControlStats {
     }
   );
 
-  // Fraud calculation: fraudCount = tarifsControle + pv
-  const fraudCount = stats.tarifsControle + stats.pv;
+  // Fraud calculation: fraudCount = tarifsControle + pv + riNegative
+  // Note: ri_positive is NOT counted as fraud (passenger was compliant)
+  const fraudCount = stats.tarifsControle + stats.pv + stats.riNegative;
   // Fraud rate = (fraudCount / totalPassengers) * 100
   const fraudRate = stats.totalPassengers > 0 
     ? (fraudCount / stats.totalPassengers) * 100 

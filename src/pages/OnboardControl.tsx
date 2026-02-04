@@ -1,5 +1,6 @@
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { Navigate, useNavigate, useSearchParams } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserPreferences } from '@/hooks/useUserPreferences';
 import { useOnboardControls, type OnboardControl as OnboardControlType } from '@/hooks/useOnboardControls';
@@ -1061,73 +1062,72 @@ export default function OnboardControl() {
             )}
           </div>
 
-          {/* Filters - Only show when expanded with animation */}
-          <div 
-            className={cn(
-              "space-y-3 overflow-hidden transition-all duration-300 ease-out",
-              historyExpanded ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0"
-            )}
-          >
-            {/* Search */}
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Rechercher par train, trajet..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9 pr-9"
-              />
-              {searchQuery && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
-                  onClick={() => setSearchQuery('')}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              )}
-            </div>
+          {/* Filters and Controls - Animated with framer-motion */}
+          <AnimatePresence>
+            {historyExpanded && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+                className="overflow-hidden"
+              >
+                <div className="space-y-3 pb-4">
+                  {/* Search */}
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Rechercher par train, trajet..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="pl-9 pr-9"
+                    />
+                    {searchQuery && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
+                        onClick={() => setSearchQuery('')}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
 
-            {/* Sort options */}
-            <div className="flex items-center gap-2">
-              <ArrowUpDown className="h-4 w-4 text-muted-foreground shrink-0" />
-              <Select value={sortOption} onValueChange={(v) => setSortOption(v as SortOption)}>
-                <SelectTrigger className="w-[200px] h-8">
-                  <SelectValue placeholder="Trier par..." />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="date">Date (récent)</SelectItem>
-                  <SelectItem value="fraud_desc">Fraude ↓ (élevée)</SelectItem>
-                  <SelectItem value="fraud_asc">Fraude ↑ (faible)</SelectItem>
-                  <SelectItem value="passengers_desc">Voyageurs ↓</SelectItem>
-                  <SelectItem value="passengers_asc">Voyageurs ↑</SelectItem>
-                </SelectContent>
-              </Select>
-              
-              {hasActiveFilters && (
-                <Button variant="ghost" size="sm" onClick={clearFilters} className="ml-auto text-muted-foreground">
-                  <X className="h-3.5 w-3.5 mr-1" />
-                  Effacer
-                </Button>
-              )}
-            </div>
-            
-            {/* Results count */}
-            {hasActiveFilters && (
-              <p className="text-sm text-muted-foreground">
-                {filteredControls.length} résultat{filteredControls.length !== 1 ? 's' : ''} sur {controls.length} contrôle{controls.length !== 1 ? 's' : ''}
-              </p>
-            )}
-          </div>
+                  {/* Sort options */}
+                  <div className="flex items-center gap-2">
+                    <ArrowUpDown className="h-4 w-4 text-muted-foreground shrink-0" />
+                    <Select value={sortOption} onValueChange={(v) => setSortOption(v as SortOption)}>
+                      <SelectTrigger className="w-[200px] h-8">
+                        <SelectValue placeholder="Trier par..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="date">Date (récent)</SelectItem>
+                        <SelectItem value="fraud_desc">Fraude ↓ (élevée)</SelectItem>
+                        <SelectItem value="fraud_asc">Fraude ↑ (faible)</SelectItem>
+                        <SelectItem value="passengers_desc">Voyageurs ↓</SelectItem>
+                        <SelectItem value="passengers_asc">Voyageurs ↑</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    
+                    {hasActiveFilters && (
+                      <Button variant="ghost" size="sm" onClick={clearFilters} className="ml-auto text-muted-foreground">
+                        <X className="h-3.5 w-3.5 mr-1" />
+                        Effacer
+                      </Button>
+                    )}
+                  </div>
+                  
+                  {/* Results count */}
+                  {hasActiveFilters && (
+                    <p className="text-sm text-muted-foreground">
+                      {filteredControls.length} résultat{filteredControls.length !== 1 ? 's' : ''} sur {controls.length} contrôle{controls.length !== 1 ? 's' : ''}
+                    </p>
+                  )}
+                </div>
 
-          {/* Controls list - Only show when expanded with animation */}
-          <div 
-            className={cn(
-              "overflow-hidden transition-all duration-300 ease-out",
-              historyExpanded ? "max-h-[2000px] opacity-100" : "max-h-0 opacity-0"
-            )}
-          >
+                {/* Controls list */}
+                <div>
           {isLoading ? (
             <div className="flex justify-center py-12">
               <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -1213,7 +1213,7 @@ export default function OnboardControl() {
                                 </div>
                                 <div className={cn(
                                   'text-center',
-                                  fraudRate > 10 ? 'text-red-600' : fraudRate > 5 ? 'text-orange-600' : 'text-green-600'
+                                  fraudRate > 10 ? 'text-destructive' : fraudRate > 5 ? 'text-warning' : 'text-success'
                                 )}>
                                   <div className="flex items-center gap-1 text-sm font-semibold">
                                     <AlertTriangle className="h-3 w-3" />
@@ -1232,10 +1232,12 @@ export default function OnboardControl() {
               ))}
             </div>
           )}
-          </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </div>
-      
       {/* Detail Dialog */}
       <ControlDetailDialog
         control={selectedControl}
