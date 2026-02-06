@@ -148,7 +148,7 @@ export default function InfosUtilesPage() {
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
                 <div className="bg-muted/30 p-3 rounded-lg">
                   <span className="font-medium">STT 50€</span>
-                  <p className="text-xs text-muted-foreground mt-1">Sans Titre de Transport - Tarif réduit</p>
+                  <p className="text-xs text-muted-foreground mt-1">Supplément Train Tarif</p>
                 </div>
                 <div className="bg-muted/30 p-3 rounded-lg">
                   <span className="font-medium">STT 100€</span>

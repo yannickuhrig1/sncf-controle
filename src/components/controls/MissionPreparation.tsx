@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,9 +8,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
-import { format } from 'date-fns';
+import { format, parseISO, isValid } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { CalendarIcon, Plus, Trash2, Train, ChevronDown, ChevronUp, ArrowDownToLine, ArrowUpFromLine } from 'lucide-react';
+import { CalendarIcon, Plus, Trash2, Train, ChevronDown, ChevronUp, ArrowDownToLine, ArrowUpFromLine, Save } from 'lucide-react';
+import { StationAutocomplete } from './StationAutocomplete';
 
 export interface PreparedTrain {
   id: string;
@@ -21,7 +22,7 @@ export interface PreparedTrain {
 }
 
 export interface MissionData {
-  date: Date;
+  date: string; // ISO string for storage
   departures: PreparedTrain[]; // Embarquement
   arrivals: PreparedTrain[];   // Débarquement
 }
@@ -31,18 +32,78 @@ interface MissionPreparationProps {
   stationName: string;
 }
 
+const STORAGE_KEY = 'mission_preparation_data';
+
+function loadMissionData(): MissionData | null {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      const data = JSON.parse(saved) as MissionData;
+      // Validate date
+      if (data.date && isValid(parseISO(data.date))) {
+        return data;
+      }
+    }
+  } catch (e) {
+    console.warn('Failed to load mission data:', e);
+  }
+  return null;
+}
+
+function saveMissionData(data: MissionData): void {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  } catch (e) {
+    console.warn('Failed to save mission data:', e);
+  }
+}
+
 export function MissionPreparation({ onSelectTrain, stationName }: MissionPreparationProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [activeTab, setActiveTab] = useState<'arrivals' | 'departures'>('arrivals');
   const [missionDate, setMissionDate] = useState<Date>(new Date());
   const [arrivals, setArrivals] = useState<PreparedTrain[]>([]);
   const [departures, setDepartures] = useState<PreparedTrain[]>([]);
+  const [isSaved, setIsSaved] = useState(false);
   
   // Form states for adding new train
   const [newTrainNumber, setNewTrainNumber] = useState('');
   const [newOrigin, setNewOrigin] = useState('');
   const [newDestination, setNewDestination] = useState('');
   const [newTime, setNewTime] = useState('');
+
+  // Load saved data on mount
+  useEffect(() => {
+    const savedData = loadMissionData();
+    if (savedData) {
+      const parsedDate = parseISO(savedData.date);
+      if (isValid(parsedDate)) {
+        setMissionDate(parsedDate);
+      }
+      setArrivals(savedData.arrivals || []);
+      setDepartures(savedData.departures || []);
+      setIsSaved(true);
+      // Auto-expand if there's saved data
+      if ((savedData.arrivals?.length || 0) > 0 || (savedData.departures?.length || 0) > 0) {
+        setIsExpanded(true);
+      }
+    }
+  }, []);
+
+  // Auto-save when data changes
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      const data: MissionData = {
+        date: missionDate.toISOString(),
+        arrivals,
+        departures,
+      };
+      saveMissionData(data);
+      setIsSaved(true);
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
+  }, [missionDate, arrivals, departures]);
 
   const generateId = () => Math.random().toString(36).substring(2, 9);
 
@@ -63,6 +124,8 @@ export function MissionPreparation({ onSelectTrain, stationName }: MissionPrepar
       setDepartures(prev => [...prev, newTrain]);
     }
 
+    setIsSaved(false);
+    
     // Reset form
     setNewTrainNumber('');
     setNewOrigin('');
@@ -71,6 +134,7 @@ export function MissionPreparation({ onSelectTrain, stationName }: MissionPrepar
   }, [activeTab, newTrainNumber, newOrigin, newDestination, newTime]);
 
   const handleRemoveTrain = (id: string, type: 'arrivals' | 'departures') => {
+    setIsSaved(false);
     if (type === 'arrivals') {
       setArrivals(prev => prev.filter(t => t.id !== id));
     } else {
@@ -82,7 +146,16 @@ export function MissionPreparation({ onSelectTrain, stationName }: MissionPrepar
     onSelectTrain(train, activeTab === 'arrivals' ? 'arrival' : 'departure');
   };
 
+  const handleClearAll = () => {
+    setArrivals([]);
+    setDepartures([]);
+    setMissionDate(new Date());
+    localStorage.removeItem(STORAGE_KEY);
+    setIsSaved(false);
+  };
+
   const currentTrains = activeTab === 'arrivals' ? arrivals : departures;
+  const totalTrains = arrivals.length + departures.length;
 
   return (
     <Card className="mb-4">
@@ -94,6 +167,14 @@ export function MissionPreparation({ onSelectTrain, stationName }: MissionPrepar
           <CardTitle className="text-base flex items-center gap-2">
             <Train className="h-4 w-4 text-primary" />
             Préparation de mission
+            {totalTrains > 0 && (
+              <span className="bg-primary/10 text-primary text-xs px-1.5 py-0.5 rounded-full">
+                {totalTrains}
+              </span>
+            )}
+            {isSaved && totalTrains > 0 && (
+              <Save className="h-3 w-3 text-muted-foreground" />
+            )}
           </CardTitle>
           <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
             {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
@@ -185,19 +266,19 @@ export function MissionPreparation({ onSelectTrain, stationName }: MissionPrepar
                     </div>
                     <div className="space-y-1">
                       <Label className="text-xs">Origine</Label>
-                      <Input
-                        placeholder="Ex: Marseille"
+                      <StationAutocomplete
                         value={newOrigin}
-                        onChange={(e) => setNewOrigin(e.target.value)}
+                        onChange={setNewOrigin}
+                        placeholder="Ex: Marseille"
                         className="h-9"
                       />
                     </div>
                     <div className="space-y-1">
                       <Label className="text-xs">Destination</Label>
-                      <Input
-                        placeholder={stationName || "Gare actuelle"}
+                      <StationAutocomplete
                         value={newDestination}
-                        onChange={(e) => setNewDestination(e.target.value)}
+                        onChange={setNewDestination}
+                        placeholder={stationName || "Gare actuelle"}
                         className="h-9"
                       />
                     </div>
@@ -236,19 +317,19 @@ export function MissionPreparation({ onSelectTrain, stationName }: MissionPrepar
                     </div>
                     <div className="space-y-1">
                       <Label className="text-xs">Origine</Label>
-                      <Input
-                        placeholder={stationName || "Gare actuelle"}
+                      <StationAutocomplete
                         value={newOrigin}
-                        onChange={(e) => setNewOrigin(e.target.value)}
+                        onChange={setNewOrigin}
+                        placeholder={stationName || "Gare actuelle"}
                         className="h-9"
                       />
                     </div>
                     <div className="space-y-1">
                       <Label className="text-xs">Destination</Label>
-                      <Input
-                        placeholder="Ex: Lyon"
+                      <StationAutocomplete
                         value={newDestination}
-                        onChange={(e) => setNewDestination(e.target.value)}
+                        onChange={setNewDestination}
+                        placeholder="Ex: Lyon"
                         className="h-9"
                       />
                     </div>
@@ -317,6 +398,19 @@ export function MissionPreparation({ onSelectTrain, stationName }: MissionPrepar
                 <p className="text-sm text-muted-foreground text-center py-4">
                   Aucun train préparé. Ajoutez des trains pour préparer votre mission.
                 </p>
+              )}
+
+              {/* Clear all button */}
+              {totalTrains > 0 && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleClearAll}
+                  className="w-full text-destructive hover:text-destructive"
+                >
+                  <Trash2 className="h-4 w-4 mr-1" />
+                  Effacer toute la mission
+                </Button>
               )}
             </CardContent>
           </motion.div>
