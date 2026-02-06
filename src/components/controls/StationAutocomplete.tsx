@@ -180,6 +180,7 @@ interface StationAutocompleteProps {
   placeholder?: string;
   id?: string;
   className?: string;
+  disabled?: boolean;
 }
 
 export function StationAutocomplete({
@@ -188,6 +189,7 @@ export function StationAutocomplete({
   placeholder = 'Rechercher une gare...',
   id,
   className,
+  disabled = false,
 }: StationAutocompleteProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [inputValue, setInputValue] = useState(value);
@@ -200,6 +202,11 @@ export function StationAutocomplete({
   useEffect(() => {
     setInputValue(value);
   }, [value]);
+
+  // Close dropdown when disabled
+  useEffect(() => {
+    if (disabled) setIsOpen(false);
+  }, [disabled]);
 
   // Filter stations based on input
   const filteredStations = inputValue.trim()
@@ -222,6 +229,8 @@ export function StationAutocomplete({
   // Handle keyboard navigation
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
+      if (disabled) return;
+
       if (!isOpen) {
         if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
           setIsOpen(true);
@@ -259,7 +268,7 @@ export function StationAutocomplete({
           break;
       }
     },
-    [isOpen, filteredStations, highlightedIndex, onChange]
+    [disabled, isOpen, filteredStations, highlightedIndex, onChange]
   );
 
   // Scroll highlighted item into view
@@ -271,6 +280,7 @@ export function StationAutocomplete({
   }, [highlightedIndex]);
 
   const handleSelect = (station: string) => {
+    if (disabled) return;
     setInputValue(station);
     onChange(station);
     setIsOpen(false);
@@ -278,6 +288,7 @@ export function StationAutocomplete({
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (disabled) return;
     const newValue = e.target.value;
     setInputValue(newValue);
     onChange(newValue);
@@ -286,7 +297,7 @@ export function StationAutocomplete({
   };
 
   return (
-    <div ref={containerRef} className={cn('relative', className)}>
+    <div ref={containerRef} className={cn('relative', disabled && 'opacity-70', className)}>
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
         <Input
@@ -295,11 +306,12 @@ export function StationAutocomplete({
           type="text"
           value={inputValue}
           onChange={handleInputChange}
-          onFocus={() => setIsOpen(true)}
+          onFocus={() => !disabled && setIsOpen(true)}
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
           className="pl-10"
           autoComplete="off"
+          disabled={disabled}
         />
       </div>
 

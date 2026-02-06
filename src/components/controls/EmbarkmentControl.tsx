@@ -156,6 +156,9 @@ export function EmbarkmentControl({ stationName, onStationChange }: EmbarkmentCo
   const [expandedTrainId, setExpandedTrainId] = useState<string | null>(null);
   const [showFullscreenCounter, setShowFullscreenCounter] = useState(false);
   const [showMissionHistory, setShowMissionHistory] = useState(false);
+  const [historyTab, setHistoryTab] = useState<'active' | 'completed'>('completed');
+
+  const isReadOnly = !!currentMission?.is_completed;
   
   // Form for adding new train
   const [newTrainNumber, setNewTrainNumber] = useState('');
@@ -216,6 +219,7 @@ export function EmbarkmentControl({ stationName, onStationChange }: EmbarkmentCo
   const generateId = () => Math.random().toString(36).substring(2, 9);
 
   const handleAddTrain = useCallback(() => {
+    if (isReadOnly) return;
     if (!newTrainNumber.trim()) return;
 
     const newTrain: EmbarkmentTrain = {
@@ -242,9 +246,10 @@ export function EmbarkmentControl({ stationName, onStationChange }: EmbarkmentCo
     setNewDestination('');
     setNewDepartureTime('');
     setNewPlatform('');
-  }, [newTrainNumber, newOrigin, newDestination, newDepartureTime, newPlatform, stationName]);
+  }, [isReadOnly, newTrainNumber, newOrigin, newDestination, newDepartureTime, newPlatform, stationName]);
 
   const handleRemoveTrain = (id: string) => {
+    if (isReadOnly) return;
     setTrains(prev => prev.filter(t => t.id !== id));
     if (expandedTrainId === id) {
       setExpandedTrainId(null);
@@ -252,6 +257,7 @@ export function EmbarkmentControl({ stationName, onStationChange }: EmbarkmentCo
   };
 
   const handleUpdateTrain = (id: string, updates: Partial<EmbarkmentTrain>) => {
+    if (isReadOnly) return;
     setTrains(prev => prev.map(t => t.id === id ? { ...t, ...updates } : t));
   };
 
@@ -335,6 +341,7 @@ export function EmbarkmentControl({ stationName, onStationChange }: EmbarkmentCo
   };
 
   const globalColor = getThresholdColor(fraudStats.globalFraudRate);
+  const historyMissions = missions.filter(m => (historyTab === 'completed' ? m.is_completed : !m.is_completed));
 
   return (
     <div className="space-y-4">
@@ -373,9 +380,21 @@ export function EmbarkmentControl({ stationName, onStationChange }: EmbarkmentCo
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
+          {isReadOnly && (
+            <div className="flex items-start gap-3 rounded-md border p-3 bg-muted/20">
+              <Archive className="h-4 w-4 mt-0.5 text-muted-foreground" />
+              <div>
+                <p className="text-sm font-medium">Mission terminée (archivée)</p>
+                <p className="text-xs text-muted-foreground">
+                  Consultation et export uniquement (modifications désactivées).
+                </p>
+              </div>
+            </div>
+          )}
+
           {/* Mission history */}
           <AnimatePresence>
-            {showMissionHistory && missions.length > 0 && (
+            {showMissionHistory && (
               <motion.div
                 initial={{ height: 0, opacity: 0 }}
                 animate={{ height: 'auto', opacity: 1 }}
@@ -383,25 +402,58 @@ export function EmbarkmentControl({ stationName, onStationChange }: EmbarkmentCo
                 className="overflow-hidden"
               >
                 <div className="border rounded-md p-3 space-y-2 mb-4 bg-muted/30">
-                  <Label className="text-xs text-muted-foreground">Missions précédentes</Label>
+                  <div className="flex items-center justify-between gap-2">
+                    <Label className="text-xs text-muted-foreground">Historique missions</Label>
+                    <div className="flex items-center gap-1">
+                      <Button
+                        type="button"
+                        variant={historyTab === 'active' ? 'secondary' : 'ghost'}
+                        size="sm"
+                        className="h-7 px-2 text-xs"
+                        onClick={() => setHistoryTab('active')}
+                      >
+                        En cours
+                      </Button>
+                      <Button
+                        type="button"
+                        variant={historyTab === 'completed' ? 'secondary' : 'ghost'}
+                        size="sm"
+                        className="h-7 px-2 text-xs"
+                        onClick={() => setHistoryTab('completed')}
+                      >
+                        Terminées
+                      </Button>
+                    </div>
+                  </div>
+
                   {isMissionsLoading ? (
                     <div className="flex justify-center py-2">
                       <Loader2 className="h-4 w-4 animate-spin" />
                     </div>
+                  ) : historyMissions.length === 0 ? (
+                    <p className="text-xs text-muted-foreground py-2">
+                      {historyTab === 'completed'
+                        ? 'Aucune mission terminée pour le moment.'
+                        : 'Aucune mission en cours trouvée.'}
+                    </p>
                   ) : (
-                    <div className="space-y-1 max-h-32 overflow-y-auto">
-                      {missions.slice(0, 10).map(m => (
+                    <div className="space-y-1 max-h-40 overflow-y-auto">
+                      {historyMissions.slice(0, 20).map((m) => (
                         <Button
                           key={m.id}
+                          type="button"
                           variant="ghost"
                           size="sm"
                           className="w-full justify-start text-xs h-7"
                           onClick={() => handleLoadMission(m.id)}
                         >
                           {format(parseISO(m.mission_date), 'dd/MM/yyyy', { locale: fr })} - {m.station_name}
-                          <Badge variant="secondary" className="ml-auto text-xs">
-                            {m.trains.length} train{m.trains.length > 1 ? 's' : ''}
-                          </Badge>
+                          <span className="ml-auto flex items-center gap-2">
+                            {m.is_completed && <Archive className="h-3 w-3 text-muted-foreground" />}
+                            <Badge variant="secondary" className="text-xs">
+                              {m.trains.length} train{m.trains.length > 1 ? 's' : ''}
+                            </Badge>
+                          </span>
                         </Button>
                       ))}
                     </div>
@@ -418,7 +470,9 @@ export function EmbarkmentControl({ stationName, onStationChange }: EmbarkmentCo
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
+                    type="button"
                     variant="outline"
+                    disabled={isReadOnly}
                     className={cn(
                       "w-full justify-start text-left font-normal",
                       !missionDate && "text-muted-foreground"
@@ -443,6 +497,7 @@ export function EmbarkmentControl({ stationName, onStationChange }: EmbarkmentCo
             <div className="space-y-2">
               <Label>Gare</Label>
               <Input
+                disabled={isReadOnly}
                 list="gares-embark"
                 placeholder="Gare de contrôle"
                 value={stationName}
@@ -465,6 +520,7 @@ export function EmbarkmentControl({ stationName, onStationChange }: EmbarkmentCo
             <div className="flex items-center justify-between mb-3">
               <span className="text-sm font-medium text-muted-foreground">Statistiques globales</span>
               <Button
+                type="button"
                 variant="outline"
                 size="sm"
                 onClick={() => setShowFullscreenCounter(true)}
@@ -509,6 +565,7 @@ export function EmbarkmentControl({ stationName, onStationChange }: EmbarkmentCo
             <div className="space-y-1">
               <Label className="text-xs">N° Train *</Label>
               <Input
+                disabled={isReadOnly}
                 placeholder="6231"
                 value={newTrainNumber}
                 onChange={(e) => setNewTrainNumber(e.target.value)}
@@ -518,6 +575,7 @@ export function EmbarkmentControl({ stationName, onStationChange }: EmbarkmentCo
             <div className="space-y-1">
               <Label className="text-xs">Heure départ</Label>
               <Input
+                disabled={isReadOnly}
                 type="time"
                 value={newDepartureTime}
                 onChange={(e) => setNewDepartureTime(e.target.value)}
@@ -527,6 +585,7 @@ export function EmbarkmentControl({ stationName, onStationChange }: EmbarkmentCo
             <div className="space-y-1">
               <Label className="text-xs">Quai</Label>
               <Input
+                disabled={isReadOnly}
                 placeholder="1A"
                 value={newPlatform}
                 onChange={(e) => setNewPlatform(e.target.value)}
@@ -542,6 +601,7 @@ export function EmbarkmentControl({ stationName, onStationChange }: EmbarkmentCo
                 onChange={setNewOrigin}
                 placeholder={stationName || "Gare départ"}
                 className="h-9"
+                disabled={isReadOnly}
               />
             </div>
             <div className="space-y-1">
@@ -551,14 +611,16 @@ export function EmbarkmentControl({ stationName, onStationChange }: EmbarkmentCo
                 onChange={setNewDestination}
                 placeholder="Destination"
                 className="h-9"
+                disabled={isReadOnly}
               />
             </div>
           </div>
           <Button 
+            type="button"
             onClick={handleAddTrain} 
             size="sm" 
             className="w-full"
-            disabled={!newTrainNumber.trim()}
+            disabled={isReadOnly || !newTrainNumber.trim()}
           >
             <Plus className="h-4 w-4 mr-1" />
             Ajouter ce train
@@ -755,6 +817,7 @@ export function EmbarkmentControl({ stationName, onStationChange }: EmbarkmentCo
         </CardHeader>
         <CardContent>
           <Textarea
+            disabled={isReadOnly}
             placeholder="Observations générales pour l'ensemble de la mission..."
             value={globalComment}
             onChange={(e) => setGlobalComment(e.target.value)}
@@ -796,7 +859,7 @@ export function EmbarkmentControl({ stationName, onStationChange }: EmbarkmentCo
               size="sm" 
               className="flex-1 text-success hover:text-success"
               onClick={handleCompleteMission}
-              disabled={isSaving}
+              disabled={isSaving || isReadOnly}
             >
               <CheckCircle2 className="h-4 w-4 mr-1" />
               Terminer
@@ -806,6 +869,7 @@ export function EmbarkmentControl({ stationName, onStationChange }: EmbarkmentCo
           {/* Save and Clear row */}
           <div className="flex gap-2">
             <Button
+              type="button"
               variant="outline"
               size="sm"
               onClick={handleClearAll}
@@ -815,10 +879,11 @@ export function EmbarkmentControl({ stationName, onStationChange }: EmbarkmentCo
               Effacer
             </Button>
             <Button 
+              type="button"
               size="sm" 
               className="flex-1"
               onClick={handleSaveToServer}
-              disabled={isSaving}
+              disabled={isSaving || isReadOnly}
             >
               {isSaving ? (
                 <Loader2 className="h-4 w-4 mr-1 animate-spin" />
@@ -844,6 +909,7 @@ export function EmbarkmentControl({ stationName, onStationChange }: EmbarkmentCo
         trains={trains}
         onUpdateTrain={handleUpdateTrain}
         globalStats={fraudStats}
+        readOnly={isReadOnly}
       />
     </div>
   );
