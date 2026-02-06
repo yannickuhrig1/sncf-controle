@@ -157,8 +157,12 @@ const STATIONS = [
   'Paris Gare de Lyon',
   'Paris Nord',
   
-  // Autres grandes villes (connexions)
+  // Luxembourg (gares principales)
   'Luxembourg',
+  'Bettembourg',
+  'Howald',
+  
+  // Autres grandes villes (connexions)
   'Dijon-Ville',
   'Besançon Viotte',
   'Lyon Part-Dieu',

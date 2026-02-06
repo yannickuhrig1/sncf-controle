@@ -413,7 +413,7 @@ export default function StationControl() {
   };
 
   const tarifsBordItems = [
-    { id: 'stt50', label: 'STT 50% - Supplément Train Tarif réduit', ...tarifBordStt50, onCountChange: (v: number) => setTarifBordStt50(p => ({ ...p, count: v })), onAmountChange: (v: number) => setTarifBordStt50(p => ({ ...p, amount: v })) },
+    { id: 'stt50', label: 'STT 50€ - Supplément Train Tarif', ...tarifBordStt50, onCountChange: (v: number) => setTarifBordStt50(p => ({ ...p, count: v })), onAmountChange: (v: number) => setTarifBordStt50(p => ({ ...p, amount: v })) },
     { id: 'stt100', label: 'STT 100% - Supplément Train Tarif plein', ...tarifBordStt100, onCountChange: (v: number) => setTarifBordStt100(p => ({ ...p, count: v })), onAmountChange: (v: number) => setTarifBordStt100(p => ({ ...p, amount: v })) },
     { id: 'rnv', label: 'RNV - Régularisation Non Valide', ...tarifBordRnv, onCountChange: (v: number) => setTarifBordRnv(p => ({ ...p, count: v })), onAmountChange: (v: number) => setTarifBordRnv(p => ({ ...p, amount: v })) },
     { id: 'titreTiers', label: 'Titre tiers - Vente pour compte tiers', ...tarifBordTitreTiers, onCountChange: (v: number) => setTarifBordTitreTiers(p => ({ ...p, count: v })), onAmountChange: (v: number) => setTarifBordTitreTiers(p => ({ ...p, amount: v })) },
