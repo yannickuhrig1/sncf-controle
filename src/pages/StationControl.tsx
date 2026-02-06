@@ -10,6 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { TarifSection } from '@/components/controls/TarifSection';
 import { MissionPreparation, PreparedTrain } from '@/components/controls/MissionPreparation';
+import { EmbarkmentControl } from '@/components/controls/EmbarkmentControl';
 import { FraudSummary } from '@/components/controls/FraudSummary';
 import { SubmitProgress } from '@/components/controls/SubmitProgress';
 import { LastSyncIndicator } from '@/components/controls/LastSyncIndicator';
@@ -22,7 +23,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { toast as sonnerToast } from 'sonner';
-import { Loader2, Building2, ArrowLeft, Save, ArrowRight, X, Clock, Calendar } from 'lucide-react';
+import { Loader2, Building2, ArrowLeft, Save, ArrowRight, X, Clock, Calendar, ArrowDownToLine, ArrowUpFromLine } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 // Liste des gares principales
 const GARES_PRINCIPALES = [
@@ -48,6 +50,8 @@ const GARES_PRINCIPALES = [
   'Dijon Ville',
 ];
 
+type ControlMode = 'disembarkment' | 'embarkment';
+
 export default function StationControl() {
   const { user, loading: authLoading } = useAuth();
   const { controls, createControl, updateControl, isCreating, isUpdating, isFetching, refetch } = useControls();
@@ -60,6 +64,9 @@ export default function StationControl() {
   
   // Paris timezone auto-refresh
   const { date: parisDate, time: parisTime } = useParisTime(60000);
+
+  // Control mode selection
+  const [controlMode, setControlMode] = useState<ControlMode>('disembarkment');
 
   // Edit/Duplicate mode
   const editId = searchParams.get('edit');
@@ -422,7 +429,7 @@ export default function StationControl() {
   ];
 
   const tarifsControleItems = [
-    { id: 'ctrl-stt50', label: 'STT 50%', ...stt50, onCountChange: (v: number) => setStt50(p => ({ ...p, count: v })), onAmountChange: (v: number) => setStt50(p => ({ ...p, amount: v })) },
+    { id: 'ctrl-stt50', label: 'STT 50€', ...stt50, onCountChange: (v: number) => setStt50(p => ({ ...p, count: v })), onAmountChange: (v: number) => setStt50(p => ({ ...p, amount: v })) },
     { id: 'ctrl-stt100', label: 'STT 100%', ...stt100, onCountChange: (v: number) => setStt100(p => ({ ...p, count: v })), onAmountChange: (v: number) => setStt100(p => ({ ...p, amount: v })) },
     { id: 'ctrl-rnv', label: 'RNV', ...rnv, onCountChange: (v: number) => setRnv(p => ({ ...p, count: v })), onAmountChange: (v: number) => setRnv(p => ({ ...p, amount: v })) },
     { id: 'ctrl-titreTiers', label: 'Titre tiers', ...titreTiers, onCountChange: (v: number) => setTitreTiers(p => ({ ...p, count: v })), onAmountChange: (v: number) => setTitreTiers(p => ({ ...p, amount: v })) },
@@ -473,235 +480,276 @@ export default function StationControl() {
           </div>
         </div>
 
-        {/* Fraud Summary - Sticky */}
-        <div className="sticky top-16 z-30">
-          <FraudSummary
-            passengers={nbPassagers}
-            fraudCount={fraudStats.fraudCount}
-            fraudRate={fraudStats.fraudRate}
-          />
-        </div>
-        {/* Mission Preparation - Before form */}
+        {/* Mode Selection - Only show when not in edit mode */}
         {!isEditMode && (
-          <MissionPreparation
-            stationName={stationName}
-            onSelectTrain={(train: PreparedTrain, type: 'arrival' | 'departure') => {
-              // Pre-fill form with selected train data
-              setOrigin(train.origin || '');
-              setDestination(train.destination || (type === 'arrival' ? stationName : ''));
-              // For arrival time, set the control time to arrival time
-              if (train.time) {
-                setControlTime(train.time);
-              }
-            }}
-          />
+          <div className="grid grid-cols-2 gap-3">
+            <Button
+              variant={controlMode === 'disembarkment' ? 'default' : 'outline'}
+              onClick={() => setControlMode('disembarkment')}
+              className={cn(
+                "h-auto py-4 flex flex-col gap-2",
+                controlMode === 'disembarkment' && "ring-2 ring-primary ring-offset-2"
+              )}
+            >
+              <ArrowDownToLine className="h-6 w-6" />
+              <span className="font-semibold">Débarquement</span>
+              <span className="text-xs opacity-80">Contrôle complet</span>
+            </Button>
+            <Button
+              variant={controlMode === 'embarkment' ? 'default' : 'outline'}
+              onClick={() => setControlMode('embarkment')}
+              className={cn(
+                "h-auto py-4 flex flex-col gap-2",
+                controlMode === 'embarkment' && "ring-2 ring-primary ring-offset-2"
+              )}
+            >
+              <ArrowUpFromLine className="h-6 w-6" />
+              <span className="font-semibold">Embarquement</span>
+              <span className="text-xs opacity-80">Refoulement & stats</span>
+            </Button>
+          </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Station Info */}
-          <Card className="bg-card-cyan text-card-cyan-foreground border-card-cyan">
-            <CardHeader>
-              <CardTitle className="text-base">Informations gare</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="stationName">Gare *</Label>
-                <Input
-                  id="stationName"
-                  list="gares"
-                  placeholder="Sélectionner ou saisir une gare"
-                  value={stationName}
-                  onChange={(e) => setStationName(e.target.value)}
-                  required
-                />
-                <datalist id="gares">
-                  {GARES_PRINCIPALES.map((gare) => (
-                    <option key={gare} value={gare} />
-                  ))}
-                </datalist>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="platformNumber">Numéro de quai</Label>
-                <Input
-                  id="platformNumber"
-                  placeholder="1A"
-                  value={platformNumber}
-                  onChange={(e) => setPlatformNumber(e.target.value)}
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="controlDate" className="flex items-center gap-1">
-                    <Calendar className="h-3 w-3" />
-                    Date
-                  </Label>
-                  <Input
-                    id="controlDate"
-                    type="date"
-                    value={controlDate}
-                    onChange={(e) => setControlDate(e.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="controlTime" className="flex items-center gap-1">
-                    <Clock className="h-3 w-3" />
-                    Heure (Paris)
-                  </Label>
-                  <Input
-                    id="controlTime"
-                    type="time"
-                    value={controlTime}
-                    onChange={(e) => setControlTime(e.target.value)}
-                  />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="origin">Origine du flux</Label>
-                  <Input
-                    id="origin"
-                    placeholder="Paris"
-                    value={origin}
-                    onChange={(e) => setOrigin(e.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="destination">Destination</Label>
-                  <div className="flex items-center gap-2">
-                    <ArrowRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+        {/* Content based on mode */}
+        {controlMode === 'embarkment' && !isEditMode ? (
+          <EmbarkmentControl 
+            stationName={stationName}
+            onStationChange={setStationName}
+          />
+        ) : (
+          <>
+            {/* Fraud Summary - Sticky */}
+            <div className="sticky top-16 z-30">
+              <FraudSummary
+                passengers={nbPassagers}
+                fraudCount={fraudStats.fraudCount}
+                fraudRate={fraudStats.fraudRate}
+              />
+            </div>
+            
+            {/* Mission Preparation - Before form */}
+            {!isEditMode && (
+              <MissionPreparation
+                stationName={stationName}
+                onSelectTrain={(train: PreparedTrain, type: 'arrival' | 'departure') => {
+                  // Pre-fill form with selected train data
+                  setOrigin(train.origin || '');
+                  setDestination(train.destination || (type === 'arrival' ? stationName : ''));
+                  // For arrival time, set the control time to arrival time
+                  if (train.time) {
+                    setControlTime(train.time);
+                  }
+                }}
+              />
+            )}
+
+            <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Station Info */}
+              <Card className="bg-card-cyan text-card-cyan-foreground border-card-cyan">
+                <CardHeader>
+                  <CardTitle className="text-base">Informations gare</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="stationName">Gare *</Label>
                     <Input
-                      id="destination"
-                      placeholder="Lyon"
-                      value={destination}
-                      onChange={(e) => setDestination(e.target.value)}
+                      id="stationName"
+                      list="gares"
+                      placeholder="Sélectionner ou saisir une gare"
+                      value={stationName}
+                      onChange={(e) => setStationName(e.target.value)}
+                      required
+                    />
+                    <datalist id="gares">
+                      {GARES_PRINCIPALES.map((gare) => (
+                        <option key={gare} value={gare} />
+                      ))}
+                    </datalist>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="platformNumber">Numéro de quai</Label>
+                    <Input
+                      id="platformNumber"
+                      placeholder="1A"
+                      value={platformNumber}
+                      onChange={(e) => setPlatformNumber(e.target.value)}
                     />
                   </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="controlDate" className="flex items-center gap-1">
+                        <Calendar className="h-3 w-3" />
+                        Date
+                      </Label>
+                      <Input
+                        id="controlDate"
+                        type="date"
+                        value={controlDate}
+                        onChange={(e) => setControlDate(e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="controlTime" className="flex items-center gap-1">
+                        <Clock className="h-3 w-3" />
+                        Heure (Paris)
+                      </Label>
+                      <Input
+                        id="controlTime"
+                        type="time"
+                        value={controlTime}
+                        onChange={(e) => setControlTime(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="origin">Origine du flux</Label>
+                      <Input
+                        id="origin"
+                        placeholder="Paris"
+                        value={origin}
+                        onChange={(e) => setOrigin(e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="destination">Destination</Label>
+                      <div className="flex items-center gap-2">
+                        <ArrowRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                        <Input
+                          id="destination"
+                          placeholder="Lyon"
+                          value={destination}
+                          onChange={(e) => setDestination(e.target.value)}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
 
-          {/* Passengers */}
-          <Card className="bg-card-mint text-card-mint-foreground border-card-mint">
-            <CardHeader>
-              <CardTitle className="text-base">Voyageurs</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="nbPassagers">Nombre contrôlés</Label>
-                  <Input
-                    id="nbPassagers"
-                    type="number"
-                    min="0"
-                    value={nbPassagers}
-                    onChange={(e) => setNbPassagers(parseInt(e.target.value) || 0)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="nbEnRegle">En règle</Label>
-                  <Input
-                    id="nbEnRegle"
-                    type="number"
-                    min="0"
-                    value={nbEnRegle}
-                    onChange={(e) => setNbEnRegle(parseInt(e.target.value) || 0)}
-                  />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+              {/* Passengers */}
+              <Card className="bg-card-mint text-card-mint-foreground border-card-mint">
+                <CardHeader>
+                  <CardTitle className="text-base">Voyageurs</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="nbPassagers">Nombre contrôlés</Label>
+                      <Input
+                        id="nbPassagers"
+                        type="number"
+                        min="0"
+                        value={nbPassagers}
+                        onChange={(e) => setNbPassagers(parseInt(e.target.value) || 0)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="nbEnRegle">En règle</Label>
+                      <Input
+                        id="nbEnRegle"
+                        type="number"
+                        min="0"
+                        value={nbEnRegle}
+                        onChange={(e) => setNbEnRegle(parseInt(e.target.value) || 0)}
+                      />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
 
-          {/* Tarifs à bord */}
-          <TarifSection
-            title="Tarifs à bord"
-            description="Ventes réalisées"
-            items={tarifsBordItems}
-            variant="mint"
-          />
-
-          {/* Tarifs contrôle */}
-          <TarifSection
-            title="Tarifs contrôle"
-            description="Infractions régularisées sur place"
-            items={tarifsControleItems}
-            variant="amber"
-          />
-
-          {/* PV */}
-          <TarifSection
-            title="Procès-Verbaux (PV)"
-            description="Infractions verbalisées"
-            items={pvItems}
-            variant="rose"
-          />
-
-          {/* RI */}
-          <Card className="bg-card-violet text-card-violet-foreground border-card-violet">
-            <CardHeader>
-              <CardTitle className="text-base">Relevés d'Identité (RI)</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="riPositive" className="text-green-600">RI Positive</Label>
-                  <p className="text-xs text-muted-foreground">Identité vérifiée</p>
-                  <Input
-                    id="riPositive"
-                    type="number"
-                    min="0"
-                    value={riPositive}
-                    onChange={(e) => setRiPositive(parseInt(e.target.value) || 0)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="riNegative" className="text-red-600">RI Négative</Label>
-                  <p className="text-xs text-muted-foreground">Identité non vérifiable</p>
-                  <Input
-                    id="riNegative"
-                    type="number"
-                    min="0"
-                    value={riNegative}
-                    onChange={(e) => setRiNegative(parseInt(e.target.value) || 0)}
-                  />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Notes */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Commentaire</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Textarea
-                placeholder="Remarques, observations..."
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                rows={3}
+              {/* Tarifs à bord */}
+              <TarifSection
+                title="Tarifs à bord"
+                description="Ventes réalisées"
+                items={tarifsBordItems}
+                variant="mint"
               />
-            </CardContent>
-          </Card>
 
-          {/* Submit */}
-          <Button type="submit" className="w-full" size="lg" disabled={isCreating || isUpdating}>
-            {(isCreating || isUpdating) ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                {isEditMode ? 'Mise à jour...' : 'Enregistrement...'}
-              </>
-            ) : (
-              <>
-                <Save className="mr-2 h-4 w-4" />
-                {isEditMode ? 'Mettre à jour' : 'Enregistrer le contrôle'}
-              </>
-            )}
-          </Button>
-          
-          {/* Progress overlay */}
-          <SubmitProgress isSubmitting={isCreating || isUpdating} />
-        </form>
+              {/* Tarifs contrôle */}
+              <TarifSection
+                title="Tarifs contrôle"
+                description="Infractions régularisées sur place"
+                items={tarifsControleItems}
+                variant="amber"
+              />
+
+              {/* PV */}
+              <TarifSection
+                title="Procès-Verbaux (PV)"
+                description="Infractions verbalisées"
+                items={pvItems}
+                variant="rose"
+              />
+
+              {/* RI */}
+              <Card className="bg-card-violet text-card-violet-foreground border-card-violet">
+                <CardHeader>
+                  <CardTitle className="text-base">Relevés d'Identité (RI)</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="riPositive" className="text-success">RI Positive</Label>
+                      <p className="text-xs text-muted-foreground">Identité vérifiée</p>
+                      <Input
+                        id="riPositive"
+                        type="number"
+                        min="0"
+                        value={riPositive}
+                        onChange={(e) => setRiPositive(parseInt(e.target.value) || 0)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="riNegative" className="text-destructive">RI Négative</Label>
+                      <p className="text-xs text-muted-foreground">Identité non vérifiable</p>
+                      <Input
+                        id="riNegative"
+                        type="number"
+                        min="0"
+                        value={riNegative}
+                        onChange={(e) => setRiNegative(parseInt(e.target.value) || 0)}
+                      />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Notes */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">Commentaire</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <Textarea
+                    placeholder="Remarques, observations..."
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    rows={3}
+                  />
+                </CardContent>
+              </Card>
+
+              {/* Submit */}
+              <Button type="submit" className="w-full" size="lg" disabled={isCreating || isUpdating}>
+                {(isCreating || isUpdating) ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    {isEditMode ? 'Mise à jour...' : 'Enregistrement...'}
+                  </>
+                ) : (
+                  <>
+                    <Save className="mr-2 h-4 w-4" />
+                    {isEditMode ? 'Mettre à jour' : 'Enregistrer le contrôle'}
+                  </>
+                )}
+              </Button>
+              
+              {/* Progress overlay */}
+              <SubmitProgress isSubmitting={isCreating || isUpdating} />
+            </form>
+          </>
+        )}
       </div>
     </AppLayout>
   );
