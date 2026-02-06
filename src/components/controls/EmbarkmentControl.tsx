@@ -9,6 +9,12 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
 import { format, parseISO, isValid } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -28,13 +34,18 @@ import {
   Cloud,
   CloudOff,
   Loader2,
-  History
+  History,
+  Download,
+  FileText,
+  CheckCircle2,
+  Archive
 } from 'lucide-react';
 import { StationAutocomplete } from './StationAutocomplete';
 import { useFraudThresholds } from '@/hooks/useFraudThresholds';
 import { getFraudThresholds } from '@/lib/stats';
 import { useEmbarkmentMissions } from '@/hooks/useEmbarkmentMissions';
 import { FullscreenCounterDialog } from './FullscreenCounterDialog';
+import { downloadEmbarkmentPDF, downloadEmbarkmentHTML, openEmbarkmentHTMLPreview } from '@/lib/embarkmentExportUtils';
 
 export interface EmbarkmentTrain {
   id: string;
@@ -134,6 +145,7 @@ export function EmbarkmentControl({ stationName, onStationChange }: EmbarkmentCo
     isSaving, 
     saveMission, 
     loadMission,
+    completeMission,
     clearCurrentMission,
     isLoading: isMissionsLoading 
   } = useEmbarkmentMissions();
@@ -259,6 +271,56 @@ export function EmbarkmentControl({ stationName, onStationChange }: EmbarkmentCo
       globalComment,
     };
     await saveMission(data);
+  };
+
+  const handleCompleteMission = async () => {
+    if (!currentMission) {
+      // Save first, then complete
+      const data: EmbarkmentMissionData = {
+        date: missionDate.toISOString(),
+        stationName,
+        trains,
+        globalComment,
+      };
+      const saved = await saveMission(data);
+      if (saved) {
+        await completeMission(saved.id);
+        handleClearAll();
+      }
+    } else {
+      await completeMission(currentMission.id);
+      handleClearAll();
+    }
+  };
+
+  const handleExportPDF = () => {
+    const data: EmbarkmentMissionData = {
+      date: missionDate.toISOString(),
+      stationName,
+      trains,
+      globalComment,
+    };
+    downloadEmbarkmentPDF(data, currentMission?.is_completed || false);
+  };
+
+  const handleExportHTML = () => {
+    const data: EmbarkmentMissionData = {
+      date: missionDate.toISOString(),
+      stationName,
+      trains,
+      globalComment,
+    };
+    downloadEmbarkmentHTML(data, currentMission?.is_completed || false);
+  };
+
+  const handlePreviewHTML = () => {
+    const data: EmbarkmentMissionData = {
+      date: missionDate.toISOString(),
+      stationName,
+      trains,
+      globalComment,
+    };
+    openEmbarkmentHTMLPreview(data, currentMission?.is_completed || false);
   };
 
   const handleLoadMission = async (missionId: string) => {
@@ -703,29 +765,69 @@ export function EmbarkmentControl({ stationName, onStationChange }: EmbarkmentCo
 
       {/* Actions */}
       {trains.length > 0 && (
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleClearAll}
-            className="flex-1 text-destructive hover:text-destructive"
-          >
-            <Trash2 className="h-4 w-4 mr-1" />
-            Effacer
-          </Button>
-          <Button 
-            size="sm" 
-            className="flex-1"
-            onClick={handleSaveToServer}
-            disabled={isSaving}
-          >
-            {isSaving ? (
-              <Loader2 className="h-4 w-4 mr-1 animate-spin" />
-            ) : (
-              <Save className="h-4 w-4 mr-1" />
-            )}
-            {currentMission ? 'Mettre à jour' : 'Sauvegarder'}
-          </Button>
+        <div className="space-y-2">
+          {/* Export and Complete row */}
+          <div className="flex gap-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="flex-1">
+                  <Download className="h-4 w-4 mr-1" />
+                  Exporter
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start">
+                <DropdownMenuItem onClick={handlePreviewHTML}>
+                  <FileText className="h-4 w-4 mr-2" />
+                  Aperçu HTML
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleExportHTML}>
+                  <Download className="h-4 w-4 mr-2" />
+                  Télécharger HTML
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleExportPDF}>
+                  <FileText className="h-4 w-4 mr-2" />
+                  Télécharger PDF
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            
+            <Button 
+              variant="outline"
+              size="sm" 
+              className="flex-1 text-success hover:text-success"
+              onClick={handleCompleteMission}
+              disabled={isSaving}
+            >
+              <CheckCircle2 className="h-4 w-4 mr-1" />
+              Terminer
+            </Button>
+          </div>
+
+          {/* Save and Clear row */}
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleClearAll}
+              className="flex-1 text-destructive hover:text-destructive"
+            >
+              <Trash2 className="h-4 w-4 mr-1" />
+              Effacer
+            </Button>
+            <Button 
+              size="sm" 
+              className="flex-1"
+              onClick={handleSaveToServer}
+              disabled={isSaving}
+            >
+              {isSaving ? (
+                <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+              ) : (
+                <Save className="h-4 w-4 mr-1" />
+              )}
+              {currentMission ? 'Mettre à jour' : 'Sauvegarder'}
+            </Button>
+          </div>
         </div>
       )}
 
