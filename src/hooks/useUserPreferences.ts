@@ -193,7 +193,7 @@ export function useUserPreferences() {
       ? preferences.bottom_bar_pages
       : DEFAULT_BOTTOM_BAR_PAGES,
     show_bottom_bar: preferences.show_bottom_bar ?? true,
-    show_burger_menu: preferences.show_burger_menu ?? false,
+    show_burger_menu: preferences.show_burger_menu ?? true,
     theme_variant: preferences.theme_variant ?? 'sncf',
     show_onboard_fraud_chart: preferences.show_onboard_fraud_chart ?? true,
     history_view_mode: (preferences as any).history_view_mode ?? 'list',
