@@ -221,6 +221,60 @@ export type Database = {
           },
         ]
       }
+      embarkment_missions: {
+        Row: {
+          agent_id: string
+          created_at: string
+          global_comment: string | null
+          id: string
+          is_completed: boolean
+          mission_date: string
+          station_name: string
+          team_id: string | null
+          trains: Json
+          updated_at: string
+        }
+        Insert: {
+          agent_id: string
+          created_at?: string
+          global_comment?: string | null
+          id?: string
+          is_completed?: boolean
+          mission_date?: string
+          station_name: string
+          team_id?: string | null
+          trains?: Json
+          updated_at?: string
+        }
+        Update: {
+          agent_id?: string
+          created_at?: string
+          global_comment?: string | null
+          id?: string
+          is_completed?: boolean
+          mission_date?: string
+          station_name?: string
+          team_id?: string | null
+          trains?: Json
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "embarkment_missions_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "embarkment_missions_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
