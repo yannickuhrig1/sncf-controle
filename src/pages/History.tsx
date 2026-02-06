@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useControls } from '@/hooks/useControls';
+import { useEmbarkmentMissions } from '@/hooks/useEmbarkmentMissions';
 import { useLastSync } from '@/hooks/useLastSync';
 import { useOfflineSync } from '@/hooks/useOfflineSync';
 import { useUserPreferences, type HistoryViewMode } from '@/hooks/useUserPreferences';
@@ -11,12 +12,14 @@ import { Badge } from '@/components/ui/badge';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ControlDetailDialog } from '@/components/controls/ControlDetailDialog';
 import { ExportDialog } from '@/components/controls/ExportDialog';
 import { LastSyncIndicator } from '@/components/controls/LastSyncIndicator';
 import { OfflineIndicator } from '@/components/controls/OfflineIndicator';
 import { HistoryTableView } from '@/components/history/HistoryTableView';
+import { EmbarkmentHistoryView } from '@/components/history/EmbarkmentHistoryView';
 import { DateRangeFilter } from '@/components/history/DateRangeFilter';
 import { MonthYearFilter, getDateRangeFromMonthYear } from '@/components/history/MonthYearFilter';
 import { ViewModeToggle } from '@/components/dashboard/ViewModeToggle';
@@ -42,6 +45,8 @@ import {
   List,
   TableIcon,
   FileText,
+  ArrowDownToLine,
+  ArrowUpFromLine,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -51,6 +56,7 @@ import type { Database } from '@/integrations/supabase/types';
 type Control = Database['public']['Tables']['controls']['Row'];
 type LocationType = Database['public']['Enums']['location_type'];
 type SortOption = 'date' | 'fraud_desc' | 'fraud_asc' | 'passengers_desc' | 'passengers_asc';
+type HistoryTab = 'controls' | 'embarkment';
 
 const locationIcons: Record<LocationType, React.ComponentType<{ className?: string }>> = {
   train: Train,
@@ -142,11 +148,17 @@ export default function HistoryPage() {
     isLoadingInfinite,
     totalCount,
   } = useControls();
+  const { 
+    missions: embarkmentMissions, 
+    isLoading: isLoadingEmbarkment,
+    refreshMissions: refetchEmbarkment,
+  } = useEmbarkmentMissions();
   const navigate = useNavigate();
   const { formattedLastSync, updateLastSync } = useLastSync();
   const { isOnline, pendingCount, isSyncing } = useOfflineSync();
   const { preferences, updatePreferences } = useUserPreferences();
   
+  const [activeTab, setActiveTab] = useState<HistoryTab>('controls');
   const [selectedControl, setSelectedControl] = useState<Control | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
@@ -437,234 +449,275 @@ export default function HistoryPage() {
             viewMode={dataViewMode} 
             onViewModeChange={setDataViewMode}
           />
+          
+          {/* History tabs */}
+          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as HistoryTab)} className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="controls" className="gap-2">
+                <ArrowDownToLine className="h-4 w-4" />
+                Contrôles
+                {totalCount > 0 && <Badge variant="secondary" className="text-xs ml-1">{totalCount}</Badge>}
+              </TabsTrigger>
+              <TabsTrigger value="embarkment" className="gap-2">
+                <ArrowUpFromLine className="h-4 w-4" />
+                Embarquement
+                {embarkmentMissions.length > 0 && <Badge variant="secondary" className="text-xs ml-1">{embarkmentMissions.length}</Badge>}
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
         </div>
 
-        {/* Filters */}
-        {displayControls.length > 0 && (
-          <div className="space-y-3">
-            {/* Search */}
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Rechercher par train, lieu, trajet..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9 pr-9"
-              />
-              {searchQuery && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
-                  onClick={() => setSearchQuery('')}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              )}
-            </div>
-            
-            {/* Location type filter and sort */}
-            <div className="flex flex-wrap items-center gap-2">
-              <Filter className="h-4 w-4 text-muted-foreground shrink-0" />
-              <ToggleGroup 
-                type="single" 
-                value={locationFilter} 
-                onValueChange={(v) => v && setLocationFilter(v as LocationType | 'all')}
-                className="justify-start"
-              >
-                <ToggleGroupItem value="all" aria-label="Tous" size="sm">
-                  Tous
-                </ToggleGroupItem>
-                <ToggleGroupItem value="train" aria-label="Train" size="sm" className="gap-1">
-                  <Train className="h-3.5 w-3.5" />
-                  Train
-                </ToggleGroupItem>
-                <ToggleGroupItem value="gare" aria-label="Gare" size="sm" className="gap-1">
-                  <Building2 className="h-3.5 w-3.5" />
-                  Gare
-                </ToggleGroupItem>
-                <ToggleGroupItem value="quai" aria-label="Quai" size="sm" className="gap-1">
-                  <TrainTrack className="h-3.5 w-3.5" />
-                  Quai
-                </ToggleGroupItem>
-              </ToggleGroup>
-            </div>
+        {/* Controls tab content */}
+        {activeTab === 'controls' && (
+          <>
+            {/* Filters */}
+            {displayControls.length > 0 && (
+              <div className="space-y-3">
+                {/* Search */}
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Rechercher par train, lieu, trajet..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-9 pr-9"
+                  />
+                  {searchQuery && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
+                      onClick={() => setSearchQuery('')}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
+                
+                {/* Location type filter and sort */}
+                <div className="flex flex-wrap items-center gap-2">
+                  <Filter className="h-4 w-4 text-muted-foreground shrink-0" />
+                  <ToggleGroup 
+                    type="single" 
+                    value={locationFilter} 
+                    onValueChange={(v) => v && setLocationFilter(v as LocationType | 'all')}
+                    className="justify-start"
+                  >
+                    <ToggleGroupItem value="all" aria-label="Tous" size="sm">
+                      Tous
+                    </ToggleGroupItem>
+                    <ToggleGroupItem value="train" aria-label="Train" size="sm" className="gap-1">
+                      <Train className="h-3.5 w-3.5" />
+                      Train
+                    </ToggleGroupItem>
+                    <ToggleGroupItem value="gare" aria-label="Gare" size="sm" className="gap-1">
+                      <Building2 className="h-3.5 w-3.5" />
+                      Gare
+                    </ToggleGroupItem>
+                    <ToggleGroupItem value="quai" aria-label="Quai" size="sm" className="gap-1">
+                      <TrainTrack className="h-3.5 w-3.5" />
+                      Quai
+                    </ToggleGroupItem>
+                  </ToggleGroup>
+                </div>
 
-            {/* Date range filter */}
-            <DateRangeFilter
-              startDate={startDate}
-              endDate={endDate}
-              onStartDateChange={(date) => {
-                setStartDate(date);
-                // Clear month/year filter when using custom dates
-                if (date) {
-                  setSelectedMonth(undefined);
-                  setSelectedYear(undefined);
-                }
-              }}
-              onEndDateChange={(date) => {
-                setEndDate(date);
-                // Clear month/year filter when using custom dates
-                if (date) {
-                  setSelectedMonth(undefined);
-                  setSelectedYear(undefined);
-                }
-              }}
-              onClear={() => { setStartDate(undefined); setEndDate(undefined); }}
-            />
+                {/* Date range filter */}
+                <DateRangeFilter
+                  startDate={startDate}
+                  endDate={endDate}
+                  onStartDateChange={(date) => {
+                    setStartDate(date);
+                    if (date) {
+                      setSelectedMonth(undefined);
+                      setSelectedYear(undefined);
+                    }
+                  }}
+                  onEndDateChange={(date) => {
+                    setEndDate(date);
+                    if (date) {
+                      setSelectedMonth(undefined);
+                      setSelectedYear(undefined);
+                    }
+                  }}
+                  onClear={() => { setStartDate(undefined); setEndDate(undefined); }}
+                />
 
-            {/* Month/Year filter */}
-            <MonthYearFilter
-              selectedMonth={selectedMonth}
-              selectedYear={selectedYear}
-              onMonthChange={(month) => {
-                setSelectedMonth(month);
-                // Clear custom date range when using month/year filter
-                if (month !== undefined) {
-                  setStartDate(undefined);
-                  setEndDate(undefined);
-                }
-              }}
-              onYearChange={(year) => {
-                setSelectedYear(year);
-                // Clear custom date range when using month/year filter
-                if (year !== undefined) {
-                  setStartDate(undefined);
-                  setEndDate(undefined);
-                }
-              }}
-              onClear={() => { setSelectedMonth(undefined); setSelectedYear(undefined); }}
-            />
+                {/* Month/Year filter */}
+                <MonthYearFilter
+                  selectedMonth={selectedMonth}
+                  selectedYear={selectedYear}
+                  onMonthChange={(month) => {
+                    setSelectedMonth(month);
+                    if (month !== undefined) {
+                      setStartDate(undefined);
+                      setEndDate(undefined);
+                    }
+                  }}
+                  onYearChange={(year) => {
+                    setSelectedYear(year);
+                    if (year !== undefined) {
+                      setStartDate(undefined);
+                      setEndDate(undefined);
+                    }
+                  }}
+                  onClear={() => { setSelectedMonth(undefined); setSelectedYear(undefined); }}
+                />
 
-            {/* Sort options */}
-            <div className="flex items-center gap-2">
-              <ArrowUpDown className="h-4 w-4 text-muted-foreground shrink-0" />
-              <Select value={sortOption} onValueChange={(v) => setSortOption(v as SortOption)}>
-                <SelectTrigger className="w-[200px] h-8">
-                  <SelectValue placeholder="Trier par..." />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="date">Date (récent)</SelectItem>
-                  <SelectItem value="fraud_desc">Fraude ↓ (élevée)</SelectItem>
-                  <SelectItem value="fraud_asc">Fraude ↑ (faible)</SelectItem>
-                  <SelectItem value="passengers_desc">Voyageurs ↓</SelectItem>
-                  <SelectItem value="passengers_asc">Voyageurs ↑</SelectItem>
-                </SelectContent>
-              </Select>
-              
-              {/* Export PDF button for table view */}
-              {viewMode === 'table' && filteredControls.length > 0 && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleExportTablePDF}
-                  className="ml-2"
-                >
-                  <FileText className="h-4 w-4 mr-2" />
-                  PDF
-                </Button>
-              )}
-              {hasActiveFilters && (
-                <Button variant="ghost" size="sm" onClick={clearFilters} className="ml-auto text-muted-foreground">
-                  <X className="h-3.5 w-3.5 mr-1" />
-                  Effacer
-                </Button>
-              )}
-            </div>
-            
-            {/* Results count */}
-            {hasActiveFilters && (
-              <p className="text-sm text-muted-foreground">
-                {filteredControls.length} résultat{filteredControls.length !== 1 ? 's' : ''} sur {displayControls.length} contrôle{displayControls.length !== 1 ? 's' : ''}
-              </p>
+                {/* Sort options */}
+                <div className="flex items-center gap-2">
+                  <ArrowUpDown className="h-4 w-4 text-muted-foreground shrink-0" />
+                  <Select value={sortOption} onValueChange={(v) => setSortOption(v as SortOption)}>
+                    <SelectTrigger className="w-[200px] h-8">
+                      <SelectValue placeholder="Trier par..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="date">Date (récent)</SelectItem>
+                      <SelectItem value="fraud_desc">Fraude ↓ (élevée)</SelectItem>
+                      <SelectItem value="fraud_asc">Fraude ↑ (faible)</SelectItem>
+                      <SelectItem value="passengers_desc">Voyageurs ↓</SelectItem>
+                      <SelectItem value="passengers_asc">Voyageurs ↑</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  
+                  {viewMode === 'table' && filteredControls.length > 0 && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleExportTablePDF}
+                      className="ml-2"
+                    >
+                      <FileText className="h-4 w-4 mr-2" />
+                      PDF
+                    </Button>
+                  )}
+                  {hasActiveFilters && (
+                    <Button variant="ghost" size="sm" onClick={clearFilters} className="ml-auto text-muted-foreground">
+                      <X className="h-3.5 w-3.5 mr-1" />
+                      Effacer
+                    </Button>
+                  )}
+                </div>
+                
+                {hasActiveFilters && (
+                  <p className="text-sm text-muted-foreground">
+                    {filteredControls.length} résultat{filteredControls.length !== 1 ? 's' : ''} sur {displayControls.length} contrôle{displayControls.length !== 1 ? 's' : ''}
+                  </p>
+                )}
+              </div>
             )}
-          </div>
-        )}
 
-        {isLoading || isLoadingInfinite ? (
-          <div className="flex justify-center py-12">
-            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-          </div>
-        ) : displayControls.length === 0 ? (
-          <div className="text-center py-12">
-            <History className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-            <h2 className="text-lg font-semibold mb-2">Aucun contrôle</h2>
-            <p className="text-muted-foreground mb-4">
-              Vous n'avez pas encore enregistré de contrôles.
-            </p>
-            <Link to="/control/new" className={buttonVariants({})}>
-              Nouveau contrôle
-            </Link>
-          </div>
-        ) : filteredControls.length === 0 ? (
-          <div className="text-center py-12">
-            <Search className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-            <h2 className="text-lg font-semibold mb-2">Aucun résultat</h2>
-            <p className="text-muted-foreground mb-4">
-              Aucun contrôle ne correspond à vos critères de recherche.
-            </p>
-            <Button variant="outline" onClick={clearFilters}>
-              Effacer les filtres
-            </Button>
-          </div>
-        ) : viewMode === 'table' ? (
-          /* Table View */
-          <div className="space-y-4">
-            <HistoryTableView 
-              controls={filteredControls} 
-              onControlClick={handleControlClick}
-            />
-            
-            {/* Infinite scroll loader */}
-            <div ref={loadMoreRef} className="py-4 flex justify-center">
-              {isFetchingNextPage ? (
-                <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-              ) : hasNextPage ? (
-                <Button variant="ghost" size="sm" onClick={() => fetchNextPage()}>
-                  Charger plus
+            {isLoading || isLoadingInfinite ? (
+              <div className="flex justify-center py-12">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : displayControls.length === 0 ? (
+              <div className="text-center py-12">
+                <History className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                <h2 className="text-lg font-semibold mb-2">Aucun contrôle</h2>
+                <p className="text-muted-foreground mb-4">
+                  Vous n'avez pas encore enregistré de contrôles.
+                </p>
+                <Link to="/control/new" className={buttonVariants({})}>
+                  Nouveau contrôle
+                </Link>
+              </div>
+            ) : filteredControls.length === 0 ? (
+              <div className="text-center py-12">
+                <Search className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                <h2 className="text-lg font-semibold mb-2">Aucun résultat</h2>
+                <p className="text-muted-foreground mb-4">
+                  Aucun contrôle ne correspond à vos critères de recherche.
+                </p>
+                <Button variant="outline" onClick={clearFilters}>
+                  Effacer les filtres
                 </Button>
-              ) : filteredControls.length > 10 ? (
-                <p className="text-xs text-muted-foreground">Tous les contrôles sont chargés</p>
-              ) : null}
-            </div>
-          </div>
-        ) : (
-          /* List View */
-          <div className="space-y-6">
-            {sortedDates.map((date) => (
-              <div key={date} className="space-y-2">
-                <h2 className="text-sm font-medium text-muted-foreground sticky top-0 bg-background py-2 flex items-center gap-2">
-                  <Calendar className="h-4 w-4" />
-                  {format(new Date(date), 'EEEE d MMMM yyyy', { locale: fr })}
-                  <Badge variant="secondary" className="ml-auto">
-                    {groupedControls[date].length} contrôle{groupedControls[date].length > 1 ? 's' : ''}
-                  </Badge>
-                </h2>
-                <div className="space-y-2">
-                  {groupedControls[date].map((control) => (
-                    <ControlRow 
-                      key={control.id} 
-                      control={control} 
-                      onClick={() => handleControlClick(control)}
-                    />
-                  ))}
+              </div>
+            ) : viewMode === 'table' ? (
+              <div className="space-y-4">
+                <HistoryTableView 
+                  controls={filteredControls} 
+                  onControlClick={handleControlClick}
+                />
+                
+                <div ref={loadMoreRef} className="py-4 flex justify-center">
+                  {isFetchingNextPage ? (
+                    <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                  ) : hasNextPage ? (
+                    <Button variant="ghost" size="sm" onClick={() => fetchNextPage()}>
+                      Charger plus
+                    </Button>
+                  ) : filteredControls.length > 10 ? (
+                    <p className="text-xs text-muted-foreground">Tous les contrôles sont chargés</p>
+                  ) : null}
                 </div>
               </div>
-            ))}
-            
-            {/* Infinite scroll loader */}
-            <div ref={loadMoreRef} className="py-4 flex justify-center">
-              {isFetchingNextPage ? (
-                <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-              ) : hasNextPage ? (
-                <Button variant="ghost" size="sm" onClick={() => fetchNextPage()}>
-                  Charger plus
-                </Button>
-              ) : filteredControls.length > 10 ? (
-                <p className="text-xs text-muted-foreground">Tous les contrôles sont chargés</p>
-              ) : null}
-            </div>
-          </div>
+            ) : (
+              <div className="space-y-6">
+                {sortedDates.map((date) => (
+                  <div key={date} className="space-y-2">
+                    <h2 className="text-sm font-medium text-muted-foreground sticky top-0 bg-background py-2 flex items-center gap-2">
+                      <Calendar className="h-4 w-4" />
+                      {format(new Date(date), 'EEEE d MMMM yyyy', { locale: fr })}
+                      <Badge variant="secondary" className="ml-auto">
+                        {groupedControls[date].length} contrôle{groupedControls[date].length > 1 ? 's' : ''}
+                      </Badge>
+                    </h2>
+                    <div className="space-y-2">
+                      {groupedControls[date].map((control) => (
+                        <ControlRow 
+                          key={control.id} 
+                          control={control} 
+                          onClick={() => handleControlClick(control)}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                ))}
+                
+                <div ref={loadMoreRef} className="py-4 flex justify-center">
+                  {isFetchingNextPage ? (
+                    <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                  ) : hasNextPage ? (
+                    <Button variant="ghost" size="sm" onClick={() => fetchNextPage()}>
+                      Charger plus
+                    </Button>
+                  ) : filteredControls.length > 10 ? (
+                    <p className="text-xs text-muted-foreground">Tous les contrôles sont chargés</p>
+                  ) : null}
+                </div>
+              </div>
+            )}
+          </>
+        )}
+
+        {/* Embarkment tab content */}
+        {activeTab === 'embarkment' && (
+          <>
+            {isLoadingEmbarkment ? (
+              <div className="flex justify-center py-12">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : embarkmentMissions.length === 0 ? (
+              <div className="text-center py-12">
+                <ArrowUpFromLine className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                <h2 className="text-lg font-semibold mb-2">Aucune mission embarquement</h2>
+                <p className="text-muted-foreground mb-4">
+                  Vous n'avez pas encore enregistré de missions embarquement.
+                </p>
+                <Link to="/station" className={buttonVariants({})}>
+                  Nouvelle mission
+                </Link>
+              </div>
+            ) : (
+              <EmbarkmentHistoryView
+                missions={embarkmentMissions}
+                viewMode={viewMode}
+                onMissionClick={(mission) => {
+                  navigate(`/station?mission=${mission.id}`);
+                }}
+              />
+            )}
+          </>
         )}
       </div>
       
