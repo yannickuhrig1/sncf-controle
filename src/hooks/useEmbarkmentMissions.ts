@@ -91,6 +91,18 @@ export function useEmbarkmentMissions(): UseEmbarkmentMissionsReturn {
 
     setIsSaving(true);
     try {
+      // Get the correct profile ID that matches RLS expectations
+      const { data: currentProfileId, error: profileError } = await supabase.rpc('get_current_profile_id');
+      
+      if (profileError || !currentProfileId) {
+        console.error('Failed to get current profile ID:', profileError);
+        toast.error('Erreur d\'authentification');
+        return null;
+      }
+
+      // Get the user's team ID using the same RLS-compatible method
+      const { data: userTeamId } = await supabase.rpc('get_user_team_id');
+
       // Check if we have a current mission to update
       if (currentMission) {
         const { data: updated, error } = await supabase
@@ -117,12 +129,12 @@ export function useEmbarkmentMissions(): UseEmbarkmentMissionsReturn {
         toast.success('Mission mise à jour sur le serveur');
         return typedRow;
       } else {
-        // Create new mission
+        // Create new mission using RLS-compatible IDs
         const { data: created, error } = await supabase
           .from('embarkment_missions')
           .insert({
-            agent_id: profile.id,
-            team_id: profile.team_id || null,
+            agent_id: currentProfileId,
+            team_id: userTeamId || null,
             mission_date: data.date.split('T')[0],
             station_name: data.stationName,
             global_comment: data.globalComment || null,
@@ -150,7 +162,7 @@ export function useEmbarkmentMissions(): UseEmbarkmentMissionsReturn {
     } finally {
       setIsSaving(false);
     }
-  }, [profile?.id, profile?.team_id, currentMission, refreshMissions]);
+  }, [profile?.id, currentMission, refreshMissions]);
 
   const loadMission = useCallback(async (id: string): Promise<EmbarkmentMissionRow | null> => {
     setIsLoading(true);
