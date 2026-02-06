@@ -23,11 +23,18 @@ import {
   Shield,
   AlertTriangle,
   Footprints,
-  MessageSquare
+  MessageSquare,
+  Maximize2,
+  Cloud,
+  CloudOff,
+  Loader2,
+  History
 } from 'lucide-react';
 import { StationAutocomplete } from './StationAutocomplete';
 import { useFraudThresholds } from '@/hooks/useFraudThresholds';
 import { getFraudThresholds } from '@/lib/stats';
+import { useEmbarkmentMissions } from '@/hooks/useEmbarkmentMissions';
+import { FullscreenCounterDialog } from './FullscreenCounterDialog';
 
 export interface EmbarkmentTrain {
   id: string;
@@ -120,10 +127,23 @@ export function EmbarkmentControl({ stationName, onStationChange }: EmbarkmentCo
   // Sync thresholds from admin settings
   useFraudThresholds();
   
+  // Supabase sync
+  const { 
+    missions, 
+    currentMission, 
+    isSaving, 
+    saveMission, 
+    loadMission,
+    clearCurrentMission,
+    isLoading: isMissionsLoading 
+  } = useEmbarkmentMissions();
+  
   const [missionDate, setMissionDate] = useState<Date>(new Date());
   const [trains, setTrains] = useState<EmbarkmentTrain[]>([]);
   const [globalComment, setGlobalComment] = useState('');
   const [expandedTrainId, setExpandedTrainId] = useState<string | null>(null);
+  const [showFullscreenCounter, setShowFullscreenCounter] = useState(false);
+  const [showMissionHistory, setShowMissionHistory] = useState(false);
   
   // Form for adding new train
   const [newTrainNumber, setNewTrainNumber] = useState('');
@@ -227,7 +247,29 @@ export function EmbarkmentControl({ stationName, onStationChange }: EmbarkmentCo
     setTrains([]);
     setGlobalComment('');
     setMissionDate(new Date());
+    clearCurrentMission();
     localStorage.removeItem(STORAGE_KEY);
+  };
+
+  const handleSaveToServer = async () => {
+    const data: EmbarkmentMissionData = {
+      date: missionDate.toISOString(),
+      stationName,
+      trains,
+      globalComment,
+    };
+    await saveMission(data);
+  };
+
+  const handleLoadMission = async (missionId: string) => {
+    const mission = await loadMission(missionId);
+    if (mission) {
+      setMissionDate(parseISO(mission.mission_date));
+      setTrains(mission.trains);
+      setGlobalComment(mission.global_comment || '');
+      onStationChange(mission.station_name);
+      setShowMissionHistory(false);
+    }
   };
 
   const globalColor = getThresholdColor(fraudStats.globalFraudRate);
@@ -237,15 +279,76 @@ export function EmbarkmentControl({ stationName, onStationChange }: EmbarkmentCo
       {/* Mission Info */}
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-base flex items-center gap-2">
-            <Train className="h-4 w-4 text-primary" />
-            Mission Embarquement
-            {trains.length > 0 && (
-              <Badge variant="secondary">{trains.length} train{trains.length > 1 ? 's' : ''}</Badge>
-            )}
-          </CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Train className="h-4 w-4 text-primary" />
+              Mission Embarquement
+              {trains.length > 0 && (
+                <Badge variant="secondary">{trains.length} train{trains.length > 1 ? 's' : ''}</Badge>
+              )}
+            </CardTitle>
+            <div className="flex items-center gap-2">
+              {currentMission ? (
+                <Badge variant="outline" className="text-xs flex items-center gap-1">
+                  <Cloud className="h-3 w-3 text-success" />
+                  Synchronisée
+                </Badge>
+              ) : (
+                <Badge variant="outline" className="text-xs flex items-center gap-1 text-muted-foreground">
+                  <CloudOff className="h-3 w-3" />
+                  Local
+                </Badge>
+              )}
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => setShowMissionHistory(!showMissionHistory)}
+              >
+                <History className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
         </CardHeader>
         <CardContent className="space-y-4">
+          {/* Mission history */}
+          <AnimatePresence>
+            {showMissionHistory && missions.length > 0 && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                className="overflow-hidden"
+              >
+                <div className="border rounded-md p-3 space-y-2 mb-4 bg-muted/30">
+                  <Label className="text-xs text-muted-foreground">Missions précédentes</Label>
+                  {isMissionsLoading ? (
+                    <div className="flex justify-center py-2">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    </div>
+                  ) : (
+                    <div className="space-y-1 max-h-32 overflow-y-auto">
+                      {missions.slice(0, 10).map(m => (
+                        <Button
+                          key={m.id}
+                          variant="ghost"
+                          size="sm"
+                          className="w-full justify-start text-xs h-7"
+                          onClick={() => handleLoadMission(m.id)}
+                        >
+                          {format(parseISO(m.mission_date), 'dd/MM/yyyy', { locale: fr })} - {m.station_name}
+                          <Badge variant="secondary" className="ml-auto text-xs">
+                            {m.trains.length} train{m.trains.length > 1 ? 's' : ''}
+                          </Badge>
+                        </Button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
           {/* Date picker */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
@@ -293,10 +396,22 @@ export function EmbarkmentControl({ stationName, onStationChange }: EmbarkmentCo
         </CardContent>
       </Card>
 
-      {/* Global Stats */}
+      {/* Global Stats with Fullscreen button */}
       {trains.length > 0 && (
         <Card className="bg-muted/50">
           <CardContent className="py-4">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-sm font-medium text-muted-foreground">Statistiques globales</span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowFullscreenCounter(true)}
+                className="gap-1"
+              >
+                <Maximize2 className="h-4 w-4" />
+                Plein écran
+              </Button>
+            </div>
             <div className="grid grid-cols-3 gap-4 text-center">
               <div>
                 <p className="text-2xl font-bold">{fraudStats.totalControlled}</p>
@@ -596,11 +711,20 @@ export function EmbarkmentControl({ stationName, onStationChange }: EmbarkmentCo
             className="flex-1 text-destructive hover:text-destructive"
           >
             <Trash2 className="h-4 w-4 mr-1" />
-            Effacer la mission
+            Effacer
           </Button>
-          <Button size="sm" className="flex-1">
-            <Save className="h-4 w-4 mr-1" />
-            Sauvegarder
+          <Button 
+            size="sm" 
+            className="flex-1"
+            onClick={handleSaveToServer}
+            disabled={isSaving}
+          >
+            {isSaving ? (
+              <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+            ) : (
+              <Save className="h-4 w-4 mr-1" />
+            )}
+            {currentMission ? 'Mettre à jour' : 'Sauvegarder'}
           </Button>
         </div>
       )}
@@ -610,6 +734,15 @@ export function EmbarkmentControl({ stationName, onStationChange }: EmbarkmentCo
           Aucun train ajouté. Commencez par ajouter des trains pour votre mission d'embarquement.
         </p>
       )}
+
+      {/* Fullscreen Counter Dialog */}
+      <FullscreenCounterDialog
+        open={showFullscreenCounter}
+        onOpenChange={setShowFullscreenCounter}
+        trains={trains}
+        onUpdateTrain={handleUpdateTrain}
+        globalStats={fraudStats}
+      />
     </div>
   );
 }
