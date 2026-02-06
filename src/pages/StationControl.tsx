@@ -9,6 +9,7 @@ import { useParisTime } from '@/hooks/useParisTime';
 import { supabase } from '@/integrations/supabase/client';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { TarifSection } from '@/components/controls/TarifSection';
+import { MissionPreparation, PreparedTrain } from '@/components/controls/MissionPreparation';
 import { FraudSummary } from '@/components/controls/FraudSummary';
 import { SubmitProgress } from '@/components/controls/SubmitProgress';
 import { LastSyncIndicator } from '@/components/controls/LastSyncIndicator';
@@ -480,6 +481,21 @@ export default function StationControl() {
             fraudRate={fraudStats.fraudRate}
           />
         </div>
+        {/* Mission Preparation - Before form */}
+        {!isEditMode && (
+          <MissionPreparation
+            stationName={stationName}
+            onSelectTrain={(train: PreparedTrain, type: 'arrival' | 'departure') => {
+              // Pre-fill form with selected train data
+              setOrigin(train.origin || '');
+              setDestination(train.destination || (type === 'arrival' ? stationName : ''));
+              // For arrival time, set the control time to arrival time
+              if (train.time) {
+                setControlTime(train.time);
+              }
+            }}
+          />
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Station Info */}
