@@ -46,7 +46,7 @@ export const DEFAULT_PREFERENCES: Omit<UserPreferences, 'id' | 'user_id' | 'crea
   navigation_style: 'bottom',
   visible_pages: DEFAULT_VISIBLE_PAGES,
   show_bottom_bar: true,
-  show_burger_menu: false,
+  show_burger_menu: true,
   bottom_bar_pages: DEFAULT_BOTTOM_BAR_PAGES,
   notifications_push: true,
   notifications_email: false,
