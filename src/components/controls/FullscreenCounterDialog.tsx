@@ -31,6 +31,7 @@ interface FullscreenCounterDialogProps {
     totalRefused: number;
     globalFraudRate: number;
   };
+  readOnly?: boolean;
 }
 
 function getThresholdColor(rate: number): 'green' | 'yellow' | 'red' {
@@ -46,6 +47,7 @@ export function FullscreenCounterDialog({
   trains,
   onUpdateTrain,
   globalStats,
+  readOnly = false,
 }: FullscreenCounterDialogProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
 
@@ -74,6 +76,7 @@ export function FullscreenCounterDialog({
   };
 
   const handleIncrement = (field: 'controlled' | 'refused', amount: number) => {
+    if (readOnly) return;
     const newValue = Math.max(0, currentTrain[field] + amount);
     onUpdateTrain(currentTrain.id, { [field]: newValue });
   };
@@ -147,6 +150,7 @@ export function FullscreenCounterDialog({
                   size="lg"
                   className="h-16 w-16 text-xl"
                   onClick={() => handleIncrement('controlled', -10)}
+                  disabled={readOnly}
                 >
                   -10
                 </Button>
@@ -155,6 +159,7 @@ export function FullscreenCounterDialog({
                   size="lg"
                   className="h-16 w-16"
                   onClick={() => handleIncrement('controlled', -1)}
+                  disabled={readOnly}
                 >
                   <Minus className="h-6 w-6" />
                 </Button>
@@ -171,6 +176,7 @@ export function FullscreenCounterDialog({
                   size="lg"
                   className="h-16 w-16"
                   onClick={() => handleIncrement('controlled', 1)}
+                  disabled={readOnly}
                 >
                   <Plus className="h-6 w-6" />
                 </Button>
@@ -179,6 +185,7 @@ export function FullscreenCounterDialog({
                   size="lg"
                   className="h-16 w-16 text-xl"
                   onClick={() => handleIncrement('controlled', 10)}
+                  disabled={readOnly}
                 >
                   +10
                 </Button>
@@ -197,6 +204,7 @@ export function FullscreenCounterDialog({
                   size="lg"
                   className="h-16 w-16 text-xl border-destructive/50 text-destructive hover:bg-destructive/10"
                   onClick={() => handleIncrement('refused', -10)}
+                  disabled={readOnly}
                 >
                   -10
                 </Button>
@@ -205,6 +213,7 @@ export function FullscreenCounterDialog({
                   size="lg"
                   className="h-16 w-16 border-destructive/50 text-destructive hover:bg-destructive/10"
                   onClick={() => handleIncrement('refused', -1)}
+                  disabled={readOnly}
                 >
                   <Minus className="h-6 w-6" />
                 </Button>
@@ -221,6 +230,7 @@ export function FullscreenCounterDialog({
                   size="lg"
                   className="h-16 w-16 border-destructive/50 text-destructive hover:bg-destructive/10"
                   onClick={() => handleIncrement('refused', 1)}
+                  disabled={readOnly}
                 >
                   <Plus className="h-6 w-6" />
                 </Button>
@@ -229,6 +239,7 @@ export function FullscreenCounterDialog({
                   size="lg"
                   className="h-16 w-16 text-xl border-destructive/50 text-destructive hover:bg-destructive/10"
                   onClick={() => handleIncrement('refused', 10)}
+                  disabled={readOnly}
                 >
                   +10
                 </Button>

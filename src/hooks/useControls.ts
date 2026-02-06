@@ -73,14 +73,21 @@ export function useControls() {
 
   const createControlMutation = useMutation({
     mutationFn: async (control: Omit<ControlInsert, 'agent_id' | 'team_id'>) => {
-      if (!profile) throw new Error('Profile not found');
+      // Use RLS-compatible IDs (avoid relying on potentially stale/legacy profile.id)
+      const { data: currentProfileId, error: profileError } = await supabase.rpc('get_current_profile_id');
+
+      if (profileError || !currentProfileId) {
+        throw new Error("Erreur d'authentification (profil)");
+      }
+
+      const { data: userTeamId } = await supabase.rpc('get_user_team_id');
 
       const { data, error } = await supabase
         .from('controls')
         .insert({
           ...control,
-          agent_id: profile.id,
-          team_id: profile.team_id,
+          agent_id: currentProfileId,
+          team_id: userTeamId ?? null,
         })
         .select()
         .single();
