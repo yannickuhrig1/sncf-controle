@@ -4,6 +4,7 @@ import { fr } from 'date-fns/locale';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { 
   Table, 
   TableBody, 
@@ -18,9 +19,17 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { getFraudRateColor, getFraudRateBgColor } from '@/lib/stats';
 import { downloadEmbarkmentPDF, downloadEmbarkmentHTML, openEmbarkmentHTMLPreview } from '@/lib/embarkmentExportUtils';
 import type { EmbarkmentMissionData, EmbarkmentTrain } from '@/components/controls/EmbarkmentControl';
+import { DateRangeFilter } from '@/components/history/DateRangeFilter';
 import { 
   Train, 
   Building2, 
@@ -37,8 +46,15 @@ import {
   Clock,
   TrendingDown,
   UserX,
+  Search,
+  X,
+  LayoutGrid,
+  List,
+  TableIcon,
+  Filter,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 
 interface EmbarkmentMissionRow {
   id: string;
@@ -52,6 +68,8 @@ interface EmbarkmentMissionRow {
   created_at: string;
   updated_at: string;
 }
+
+export type EmbarkmentViewMode = 'list' | 'table' | 'grid';
 
 interface EmbarkmentHistoryViewProps {
   missions: EmbarkmentMissionRow[];
@@ -286,25 +304,240 @@ function MissionRow({ mission, onClick }: { mission: EmbarkmentMissionRow; onCli
   );
 }
 
+// Grid card component for grid view
+function MissionCard({ mission, onClick }: { mission: EmbarkmentMissionRow; onClick?: () => void }) {
+  const stats = getMissionStats(mission.trains);
+  
+  const handleExportPDF = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const missionData: EmbarkmentMissionData = {
+      date: mission.mission_date,
+      stationName: mission.station_name,
+      globalComment: mission.global_comment || '',
+      trains: mission.trains,
+    };
+    downloadEmbarkmentPDF(missionData, mission.is_completed);
+    toast.success('PDF exporté');
+  };
+  
+  const handleExportHTML = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const missionData: EmbarkmentMissionData = {
+      date: mission.mission_date,
+      stationName: mission.station_name,
+      globalComment: mission.global_comment || '',
+      trains: mission.trains,
+    };
+    downloadEmbarkmentHTML(missionData, mission.is_completed);
+    toast.success('HTML exporté');
+  };
+  
+  const handlePreviewHTML = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const missionData: EmbarkmentMissionData = {
+      date: mission.mission_date,
+      stationName: mission.station_name,
+      globalComment: mission.global_comment || '',
+      trains: mission.trains,
+    };
+    openEmbarkmentHTMLPreview(missionData, mission.is_completed);
+  };
+
+  return (
+    <Card 
+      className="cursor-pointer hover:bg-muted/50 hover:shadow-md transition-all group"
+      onClick={onClick}
+    >
+      <CardContent className="p-4">
+        {/* Header */}
+        <div className="flex items-start justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <div className="p-2 rounded-lg bg-primary/10 shrink-0">
+              <Building2 className="h-4 w-4 text-primary" />
+            </div>
+            <div>
+              <h3 className="font-medium line-clamp-1">{mission.station_name}</h3>
+              <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                <Calendar className="h-3 w-3" />
+                {format(new Date(mission.mission_date), 'dd/MM/yyyy', { locale: fr })}
+              </div>
+            </div>
+          </div>
+          <Badge variant={mission.is_completed ? 'default' : 'secondary'} className="text-xs shrink-0">
+            {mission.is_completed ? (
+              <><CheckCircle2 className="h-3 w-3 mr-1" /> Terminée</>
+            ) : (
+              <><Clock className="h-3 w-3 mr-1" /> En cours</>
+            )}
+          </Badge>
+        </div>
+        
+        {/* Stats grid */}
+        <div className="grid grid-cols-3 gap-2 mb-3">
+          <div className="text-center p-2 rounded-lg bg-muted/50">
+            <div className="flex items-center justify-center gap-1 text-xs text-muted-foreground mb-1">
+              <Train className="h-3 w-3" />
+              Trains
+            </div>
+            <div className="font-semibold">{stats.trainCount}</div>
+          </div>
+          <div className="text-center p-2 rounded-lg bg-muted/50">
+            <div className="flex items-center justify-center gap-1 text-xs text-muted-foreground mb-1">
+              <Users className="h-3 w-3" />
+              Contrôlés
+            </div>
+            <div className="font-semibold">{stats.totalControlled}</div>
+          </div>
+          <div className={`text-center p-2 rounded-lg ${getFraudRateBgColor(stats.fraudRate)}`}>
+            <div className="flex items-center justify-center gap-1 text-xs text-muted-foreground mb-1">
+              <AlertTriangle className="h-3 w-3" />
+              Fraude
+            </div>
+            <div className={`font-semibold ${getFraudRateColor(stats.fraudRate)}`}>
+              {stats.fraudRate.toFixed(1)}%
+            </div>
+          </div>
+        </div>
+        
+        {/* Actions */}
+        <div className="flex items-center justify-between pt-2 border-t">
+          <div className="flex gap-1">
+            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handlePreviewHTML}>
+              <Eye className="h-3.5 w-3.5" />
+            </Button>
+            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleExportHTML}>
+              <Globe className="h-3.5 w-3.5" />
+            </Button>
+            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleExportPDF}>
+              <FileText className="h-3.5 w-3.5" />
+            </Button>
+          </div>
+          <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:translate-x-1 transition-transform" />
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 export function EmbarkmentHistoryView({ missions, viewMode, onMissionClick, isLoading }: EmbarkmentHistoryViewProps) {
+  // Internal state for embarkment-specific filtering
+  const [internalViewMode, setInternalViewMode] = useState<EmbarkmentViewMode>('list');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [stationFilter, setStationFilter] = useState<string>('all');
+  const [startDate, setStartDate] = useState<Date | undefined>(undefined);
+  const [endDate, setEndDate] = useState<Date | undefined>(undefined);
+  const [statusFilter, setStatusFilter] = useState<'all' | 'completed' | 'active'>('all');
+
+  // Get unique stations for filter
+  const uniqueStations = useMemo(() => {
+    const stations = new Set(missions.map(m => m.station_name));
+    return Array.from(stations).sort();
+  }, [missions]);
+
+  // Filter missions
+  const filteredMissions = useMemo(() => {
+    return missions.filter(mission => {
+      // Station filter
+      if (stationFilter !== 'all' && mission.station_name !== stationFilter) {
+        return false;
+      }
+
+      // Status filter
+      if (statusFilter === 'completed' && !mission.is_completed) {
+        return false;
+      }
+      if (statusFilter === 'active' && mission.is_completed) {
+        return false;
+      }
+
+      // Date range filter
+      if (startDate || endDate) {
+        const missionDate = new Date(mission.mission_date);
+        if (startDate && missionDate < startDate) {
+          return false;
+        }
+        if (endDate) {
+          const endOfDay = new Date(endDate);
+          endOfDay.setHours(23, 59, 59, 999);
+          if (missionDate > endOfDay) {
+            return false;
+          }
+        }
+      }
+
+      // Search filter
+      if (searchQuery.trim()) {
+        const query = searchQuery.toLowerCase().trim();
+        const matchesStation = mission.station_name.toLowerCase().includes(query);
+        const matchesTrains = mission.trains.some(t => 
+          t.trainNumber.toLowerCase().includes(query) ||
+          t.destination?.toLowerCase().includes(query)
+        );
+        if (!matchesStation && !matchesTrains) {
+          return false;
+        }
+      }
+
+      return true;
+    });
+  }, [missions, stationFilter, statusFilter, startDate, endDate, searchQuery]);
+
   // Group missions by date
-  const groupedMissions = missions.reduce((groups, mission) => {
-    const date = mission.mission_date;
-    if (!groups[date]) {
-      groups[date] = [];
-    }
-    groups[date].push(mission);
-    return groups;
-  }, {} as Record<string, EmbarkmentMissionRow[]>);
+  const groupedMissions = useMemo(() => {
+    return filteredMissions.reduce((groups, mission) => {
+      const date = mission.mission_date;
+      if (!groups[date]) {
+        groups[date] = [];
+      }
+      groups[date].push(mission);
+      return groups;
+    }, {} as Record<string, EmbarkmentMissionRow[]>);
+  }, [filteredMissions]);
   
   const sortedDates = Object.keys(groupedMissions).sort((a, b) => 
     new Date(b).getTime() - new Date(a).getTime()
   );
 
-  if (viewMode === 'table') {
+  const hasActiveFilters = searchQuery.trim() !== '' || stationFilter !== 'all' || statusFilter !== 'all' || startDate !== undefined || endDate !== undefined;
+
+  const clearFilters = () => {
+    setSearchQuery('');
+    setStationFilter('all');
+    setStatusFilter('all');
+    setStartDate(undefined);
+    setEndDate(undefined);
+  };
+
+  // Determine effective view mode (use internal for grid, parent for list/table)
+  const effectiveViewMode = internalViewMode === 'grid' ? 'grid' : viewMode;
+
+  // Render table view
+  if (effectiveViewMode === 'table') {
     return (
-      <>
-        <GlobalStatsSummary missions={missions} />
+      <div className="space-y-4">
+        <GlobalStatsSummary missions={filteredMissions} />
+        
+        {/* Filters */}
+        <EmbarkmentFilters
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          stationFilter={stationFilter}
+          onStationFilterChange={setStationFilter}
+          stations={uniqueStations}
+          statusFilter={statusFilter}
+          onStatusFilterChange={setStatusFilter}
+          startDate={startDate}
+          endDate={endDate}
+          onStartDateChange={setStartDate}
+          onEndDateChange={setEndDate}
+          internalViewMode={internalViewMode}
+          onViewModeChange={setInternalViewMode}
+          hasActiveFilters={hasActiveFilters}
+          onClearFilters={clearFilters}
+          filteredCount={filteredMissions.length}
+          totalCount={missions.length}
+        />
+
         <div className="rounded-lg border overflow-hidden">
           <div className="overflow-x-auto">
             <Table>
@@ -321,7 +554,7 @@ export function EmbarkmentHistoryView({ missions, viewMode, onMissionClick, isLo
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {missions.map((mission, index) => {
+                {filteredMissions.map((mission, index) => {
                   const stats = getMissionStats(mission.trains);
                   const isEven = index % 2 === 0;
                   
@@ -406,36 +639,272 @@ export function EmbarkmentHistoryView({ missions, viewMode, onMissionClick, isLo
             </Table>
           </div>
         </div>
-      </>
+      </div>
     );
   }
 
-  // List view
-  return (
-    <>
-      <GlobalStatsSummary missions={missions} />
-      <div className="space-y-6">
-        {sortedDates.map((date) => (
-          <div key={date} className="space-y-2">
-            <h2 className="text-sm font-medium text-muted-foreground sticky top-0 bg-background py-2 flex items-center gap-2">
-              <Calendar className="h-4 w-4" />
-              {format(new Date(date), 'EEEE d MMMM yyyy', { locale: fr })}
-              <Badge variant="secondary" className="ml-auto">
-                {groupedMissions[date].length} mission{groupedMissions[date].length > 1 ? 's' : ''}
-              </Badge>
-            </h2>
-            <div className="space-y-2">
-              {groupedMissions[date].map((mission) => (
-                <MissionRow 
-                  key={mission.id} 
-                  mission={mission} 
-                  onClick={() => onMissionClick?.(mission)}
-                />
-              ))}
-            </div>
+  // Grid view
+  if (effectiveViewMode === 'grid') {
+    return (
+      <div className="space-y-4">
+        <GlobalStatsSummary missions={filteredMissions} />
+        
+        {/* Filters */}
+        <EmbarkmentFilters
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          stationFilter={stationFilter}
+          onStationFilterChange={setStationFilter}
+          stations={uniqueStations}
+          statusFilter={statusFilter}
+          onStatusFilterChange={setStatusFilter}
+          startDate={startDate}
+          endDate={endDate}
+          onStartDateChange={setStartDate}
+          onEndDateChange={setEndDate}
+          internalViewMode={internalViewMode}
+          onViewModeChange={setInternalViewMode}
+          hasActiveFilters={hasActiveFilters}
+          onClearFilters={clearFilters}
+          filteredCount={filteredMissions.length}
+          totalCount={missions.length}
+        />
+
+        {filteredMissions.length === 0 ? (
+          <div className="text-center py-12">
+            <Search className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+            <h2 className="text-lg font-semibold mb-2">Aucun résultat</h2>
+            <p className="text-muted-foreground mb-4">
+              Aucune mission ne correspond à vos critères.
+            </p>
+            <Button variant="outline" onClick={clearFilters}>
+              Effacer les filtres
+            </Button>
           </div>
-        ))}
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {filteredMissions.map((mission) => (
+              <MissionCard
+                key={mission.id}
+                mission={mission}
+                onClick={() => onMissionClick?.(mission)}
+              />
+            ))}
+          </div>
+        )}
       </div>
-    </>
+    );
+  }
+
+  // List view (default)
+  return (
+    <div className="space-y-4">
+      <GlobalStatsSummary missions={filteredMissions} />
+      
+      {/* Filters */}
+      <EmbarkmentFilters
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        stationFilter={stationFilter}
+        onStationFilterChange={setStationFilter}
+        stations={uniqueStations}
+        statusFilter={statusFilter}
+        onStatusFilterChange={setStatusFilter}
+        startDate={startDate}
+        endDate={endDate}
+        onStartDateChange={setStartDate}
+        onEndDateChange={setEndDate}
+        internalViewMode={internalViewMode}
+        onViewModeChange={setInternalViewMode}
+        hasActiveFilters={hasActiveFilters}
+        onClearFilters={clearFilters}
+        filteredCount={filteredMissions.length}
+        totalCount={missions.length}
+      />
+
+      {filteredMissions.length === 0 ? (
+        <div className="text-center py-12">
+          <Search className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+          <h2 className="text-lg font-semibold mb-2">Aucun résultat</h2>
+          <p className="text-muted-foreground mb-4">
+            Aucune mission ne correspond à vos critères.
+          </p>
+          <Button variant="outline" onClick={clearFilters}>
+            Effacer les filtres
+          </Button>
+        </div>
+      ) : (
+        <div className="space-y-6">
+          {sortedDates.map((date) => (
+            <div key={date} className="space-y-2">
+              <h2 className="text-sm font-medium text-muted-foreground sticky top-0 bg-background py-2 flex items-center gap-2">
+                <Calendar className="h-4 w-4" />
+                {format(new Date(date), 'EEEE d MMMM yyyy', { locale: fr })}
+                <Badge variant="secondary" className="ml-auto">
+                  {groupedMissions[date].length} mission{groupedMissions[date].length > 1 ? 's' : ''}
+                </Badge>
+              </h2>
+              <div className="space-y-2">
+                {groupedMissions[date].map((mission) => (
+                  <MissionRow 
+                    key={mission.id} 
+                    mission={mission} 
+                    onClick={() => onMissionClick?.(mission)}
+                  />
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Filters component for embarkment history
+interface EmbarkmentFiltersProps {
+  searchQuery: string;
+  onSearchChange: (query: string) => void;
+  stationFilter: string;
+  onStationFilterChange: (station: string) => void;
+  stations: string[];
+  statusFilter: 'all' | 'completed' | 'active';
+  onStatusFilterChange: (status: 'all' | 'completed' | 'active') => void;
+  startDate: Date | undefined;
+  endDate: Date | undefined;
+  onStartDateChange: (date: Date | undefined) => void;
+  onEndDateChange: (date: Date | undefined) => void;
+  internalViewMode: EmbarkmentViewMode;
+  onViewModeChange: (mode: EmbarkmentViewMode) => void;
+  hasActiveFilters: boolean;
+  onClearFilters: () => void;
+  filteredCount: number;
+  totalCount: number;
+}
+
+function EmbarkmentFilters({
+  searchQuery,
+  onSearchChange,
+  stationFilter,
+  onStationFilterChange,
+  stations,
+  statusFilter,
+  onStatusFilterChange,
+  startDate,
+  endDate,
+  onStartDateChange,
+  onEndDateChange,
+  internalViewMode,
+  onViewModeChange,
+  hasActiveFilters,
+  onClearFilters,
+  filteredCount,
+  totalCount,
+}: EmbarkmentFiltersProps) {
+  return (
+    <div className="space-y-3">
+      {/* Search and view mode toggle */}
+      <div className="flex items-center gap-2">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Rechercher gare, train, destination..."
+            value={searchQuery}
+            onChange={(e) => onSearchChange(e.target.value)}
+            className="pl-9 pr-9"
+          />
+          {searchQuery && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
+              onClick={() => onSearchChange('')}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
+        
+        {/* View mode toggle */}
+        <ToggleGroup 
+          type="single" 
+          value={internalViewMode} 
+          onValueChange={(v) => v && onViewModeChange(v as EmbarkmentViewMode)}
+          className="border rounded-md"
+        >
+          <ToggleGroupItem value="list" aria-label="Vue liste" size="sm" className="px-2">
+            <List className="h-4 w-4" />
+          </ToggleGroupItem>
+          <ToggleGroupItem value="grid" aria-label="Vue grille" size="sm" className="px-2">
+            <LayoutGrid className="h-4 w-4" />
+          </ToggleGroupItem>
+          <ToggleGroupItem value="table" aria-label="Vue tableau" size="sm" className="px-2">
+            <TableIcon className="h-4 w-4" />
+          </ToggleGroupItem>
+        </ToggleGroup>
+      </div>
+
+      {/* Station and status filters */}
+      <div className="flex flex-wrap items-center gap-2">
+        <Filter className="h-4 w-4 text-muted-foreground shrink-0" />
+        
+        {/* Station filter */}
+        <Select value={stationFilter} onValueChange={onStationFilterChange}>
+          <SelectTrigger className="w-[160px] h-8">
+            <SelectValue placeholder="Toutes les gares" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Toutes les gares</SelectItem>
+            {stations.map((station) => (
+              <SelectItem key={station} value={station}>
+                {station}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        
+        {/* Status filter */}
+        <ToggleGroup 
+          type="single" 
+          value={statusFilter} 
+          onValueChange={(v) => v && onStatusFilterChange(v as 'all' | 'completed' | 'active')}
+          className="justify-start"
+        >
+          <ToggleGroupItem value="all" aria-label="Toutes" size="sm">
+            Toutes
+          </ToggleGroupItem>
+          <ToggleGroupItem value="completed" aria-label="Terminées" size="sm" className="gap-1">
+            <CheckCircle2 className="h-3.5 w-3.5" />
+            Terminées
+          </ToggleGroupItem>
+          <ToggleGroupItem value="active" aria-label="En cours" size="sm" className="gap-1">
+            <Clock className="h-3.5 w-3.5" />
+            En cours
+          </ToggleGroupItem>
+        </ToggleGroup>
+      </div>
+
+      {/* Date range filter */}
+      <DateRangeFilter
+        startDate={startDate}
+        endDate={endDate}
+        onStartDateChange={onStartDateChange}
+        onEndDateChange={onEndDateChange}
+        onClear={() => { onStartDateChange(undefined); onEndDateChange(undefined); }}
+      />
+
+      {/* Active filters indicator */}
+      {hasActiveFilters && (
+        <div className="flex items-center justify-between">
+          <p className="text-sm text-muted-foreground">
+            {filteredCount} résultat{filteredCount !== 1 ? 's' : ''} sur {totalCount} mission{totalCount !== 1 ? 's' : ''}
+          </p>
+          <Button variant="ghost" size="sm" onClick={onClearFilters} className="text-muted-foreground">
+            <X className="h-3.5 w-3.5 mr-1" />
+            Effacer filtres
+          </Button>
+        </div>
+      )}
+    </div>
   );
 }
