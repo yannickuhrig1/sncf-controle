@@ -12,6 +12,7 @@ import { format, parseISO, isValid } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { CalendarIcon, Plus, Trash2, Train, ChevronDown, ChevronUp, ArrowDownToLine, ArrowUpFromLine, Save } from 'lucide-react';
 import { StationAutocomplete } from './StationAutocomplete';
+import { TrainTileSelector } from './TrainTileSelector';
 
 export interface PreparedTrain {
   id: string;
@@ -30,6 +31,8 @@ export interface MissionData {
 interface MissionPreparationProps {
   onSelectTrain: (train: PreparedTrain, type: 'arrival' | 'departure') => void;
   stationName: string;
+  selectedTrainId?: string;
+  showTiles?: boolean;
 }
 
 const STORAGE_KEY = 'mission_preparation_data';
@@ -58,7 +61,7 @@ function saveMissionData(data: MissionData): void {
   }
 }
 
-export function MissionPreparation({ onSelectTrain, stationName }: MissionPreparationProps) {
+export function MissionPreparation({ onSelectTrain, stationName, selectedTrainId, showTiles = false }: MissionPreparationProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [activeTab, setActiveTab] = useState<'arrivals' | 'departures'>('arrivals');
   const [missionDate, setMissionDate] = useState<Date>(new Date());
@@ -346,51 +349,66 @@ export function MissionPreparation({ onSelectTrain, stationName }: MissionPrepar
                 </TabsContent>
               </Tabs>
 
-              {/* Train list */}
+              {/* Train selection - tiles or list */}
               {currentTrains.length > 0 && (
                 <div className="space-y-2">
                   <Label className="text-sm font-medium">
-                    Trains préparés ({currentTrains.length})
+                    Trains préparés ({currentTrains.length}) – Cliquer pour sélectionner
                   </Label>
-                  <div className="space-y-2 max-h-48 overflow-y-auto">
-                    {currentTrains.map((train) => (
-                      <motion.div
-                        key={train.id}
-                        initial={{ opacity: 0, y: -10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -10 }}
-                        className="flex items-center justify-between p-2 bg-muted/50 rounded-lg"
-                      >
-                        <button
-                          onClick={() => handleSelectTrain(train)}
-                          className="flex-1 text-left hover:bg-muted rounded p-1 transition-colors"
+                  
+                  {showTiles ? (
+                    <TrainTileSelector
+                      trains={currentTrains}
+                      selectedId={selectedTrainId}
+                      onSelect={handleSelectTrain}
+                      onRemove={(id) => handleRemoveTrain(id, activeTab)}
+                    />
+                  ) : (
+                    <div className="space-y-2 max-h-48 overflow-y-auto">
+                      {currentTrains.map((train) => (
+                        <motion.div
+                          key={train.id}
+                          initial={{ opacity: 0, y: -10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -10 }}
+                          className={cn(
+                            "flex items-center justify-between p-2 rounded-lg transition-colors",
+                            selectedTrainId === train.id 
+                              ? "bg-primary/10 border-2 border-primary" 
+                              : "bg-muted/50 hover:bg-muted"
+                          )}
                         >
-                          <div className="flex items-center gap-2">
-                            <Train className="h-4 w-4 text-primary" />
-                            <span className="font-medium">{train.trainNumber}</span>
-                            {train.time && (
-                              <span className="text-xs text-muted-foreground">
-                                {train.time}
-                              </span>
-                            )}
-                          </div>
-                          <div className="text-xs text-muted-foreground mt-0.5">
-                            {train.origin && train.destination 
-                              ? `${train.origin} → ${train.destination}`
-                              : train.origin || train.destination || 'Trajet non défini'}
-                          </div>
-                        </button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleRemoveTrain(train.id, activeTab)}
-                          className="h-8 w-8 p-0 text-destructive hover:text-destructive"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </motion.div>
-                    ))}
-                  </div>
+                          <button
+                            onClick={() => handleSelectTrain(train)}
+                            className="flex-1 text-left p-1"
+                          >
+                            <div className="flex items-center gap-2">
+                              <Train className="h-4 w-4 text-primary" />
+                              <span className="font-medium">{train.trainNumber}</span>
+                              {train.time && (
+                                <span className="text-xs text-muted-foreground">
+                                  {train.time}
+                                </span>
+                              )}
+                            </div>
+                            <div className="text-xs text-muted-foreground mt-0.5">
+                              {train.origin && train.destination 
+                                ? `${train.origin} → ${train.destination}`
+                                : train.origin || train.destination || 'Trajet non défini'}
+                            </div>
+                          </button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleRemoveTrain(train.id, activeTab)}
+                            className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </motion.div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
 

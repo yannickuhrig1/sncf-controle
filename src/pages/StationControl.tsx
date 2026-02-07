@@ -79,6 +79,8 @@ export default function StationControl() {
   const [platformNumber, setPlatformNumber] = useState('');
   const [origin, setOrigin] = useState('');
   const [destination, setDestination] = useState('');
+  const [trainNumber, setTrainNumber] = useState('');
+  const [selectedTrainId, setSelectedTrainId] = useState<string | undefined>();
   
   // Control date/time - initialized with Paris time
   const [controlDate, setControlDate] = useState(parisDate);
@@ -239,6 +241,8 @@ export default function StationControl() {
     // Reset form
     setStationName('');
     setPlatformNumber('');
+    setTrainNumber('');
+    setSelectedTrainId(undefined);
     setOrigin('');
     setDestination('');
     setNbPassagers(0);
@@ -290,7 +294,7 @@ export default function StationControl() {
       const controlData = {
         location_type: 'gare' as const,
         location: locationName,
-        train_number: null,
+        train_number: trainNumber.trim() || null,
         origin: origin.trim() || null,
         destination: destination.trim() || null,
         platform_number: platformNumber.trim() || null,
@@ -527,12 +531,16 @@ export default function StationControl() {
               />
             </div>
             
-            {/* Mission Preparation - Before form */}
+            {/* Mission Preparation - Before form with tile selection */}
             {!isEditMode && (
               <MissionPreparation
                 stationName={stationName}
+                selectedTrainId={selectedTrainId}
+                showTiles={true}
                 onSelectTrain={(train: PreparedTrain, type: 'arrival' | 'departure') => {
                   // Pre-fill form with selected train data
+                  setSelectedTrainId(train.id);
+                  setTrainNumber(train.trainNumber || '');
                   setOrigin(train.origin || '');
                   setDestination(train.destination || (type === 'arrival' ? stationName : ''));
                   // For arrival time, set the control time to arrival time
@@ -547,24 +555,35 @@ export default function StationControl() {
               {/* Station Info */}
               <Card className="bg-card-cyan text-card-cyan-foreground border-card-cyan">
                 <CardHeader>
-                  <CardTitle className="text-base">Informations gare</CardTitle>
+                  <CardTitle className="text-base">Informations gare & train</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="stationName">Gare *</Label>
-                    <Input
-                      id="stationName"
-                      list="gares"
-                      placeholder="Sélectionner ou saisir une gare"
-                      value={stationName}
-                      onChange={(e) => setStationName(e.target.value)}
-                      required
-                    />
-                    <datalist id="gares">
-                      {GARES_PRINCIPALES.map((gare) => (
-                        <option key={gare} value={gare} />
-                      ))}
-                    </datalist>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="stationName">Gare *</Label>
+                      <Input
+                        id="stationName"
+                        list="gares"
+                        placeholder="Sélectionner ou saisir"
+                        value={stationName}
+                        onChange={(e) => setStationName(e.target.value)}
+                        required
+                      />
+                      <datalist id="gares">
+                        {GARES_PRINCIPALES.map((gare) => (
+                          <option key={gare} value={gare} />
+                        ))}
+                      </datalist>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="trainNumber">N° Train</Label>
+                      <Input
+                        id="trainNumber"
+                        placeholder="Ex: 6231"
+                        value={trainNumber}
+                        onChange={(e) => setTrainNumber(e.target.value)}
+                      />
+                    </div>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="platformNumber">Numéro de quai</Label>
