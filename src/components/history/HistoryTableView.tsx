@@ -18,7 +18,7 @@ import type { Database } from '@/integrations/supabase/types';
 type Control = Database['public']['Tables']['controls']['Row'];
 type LocationType = Database['public']['Enums']['location_type'];
 
-type SortKey = 'date' | 'time' | 'type' | 'location' | 'train' | 'passengers' | 'enRegle' | 'tarifsC' | 'pv' | 'stt50' | 'stt100' | 'rnv' | 'riPlus' | 'riMinus' | 'fraud';
+type SortKey = 'date' | 'time' | 'type' | 'location' | 'train' | 'passengers' | 'enRegle' | 'tarifsC' | 'pv' | 'stt50' | 'stt100' | 'rnv' | 'titreTiers' | 'docNaissance' | 'riPlus' | 'riMinus' | 'fraud';
 type SortDirection = 'asc' | 'desc' | null;
 
 interface HistoryTableViewProps {
@@ -122,6 +122,12 @@ export function HistoryTableView({ controls, onControlClick }: HistoryTableViewP
         case 'rnv':
           comparison = a.rnv - b.rnv;
           break;
+        case 'titreTiers':
+          comparison = (a.titre_tiers || 0) - (b.titre_tiers || 0);
+          break;
+        case 'docNaissance':
+          comparison = (a.doc_naissance || 0) - (b.doc_naissance || 0);
+          break;
         case 'riPlus':
           comparison = a.ri_positive - b.ri_positive;
           break;
@@ -168,6 +174,8 @@ export function HistoryTableView({ controls, onControlClick }: HistoryTableViewP
               <SortableHeader columnKey="stt50" className="w-[70px] text-center">STT 50</SortableHeader>
               <SortableHeader columnKey="stt100" className="w-[70px] text-center">STT 100</SortableHeader>
               <SortableHeader columnKey="rnv" className="w-[60px] text-center">RNV</SortableHeader>
+              <SortableHeader columnKey="titreTiers" className="w-[70px] text-center">T.Tiers</SortableHeader>
+              <SortableHeader columnKey="docNaissance" className="w-[70px] text-center">D.Naiss</SortableHeader>
               <SortableHeader columnKey="riPlus" className="w-[60px] text-center">RI+</SortableHeader>
               <SortableHeader columnKey="riMinus" className="w-[60px] text-center">RI-</SortableHeader>
               <SortableHeader columnKey="fraud" className="w-[80px] text-center">Fraude</SortableHeader>
@@ -240,6 +248,12 @@ export function HistoryTableView({ controls, onControlClick }: HistoryTableViewP
                   </TableCell>
                   <TableCell className="text-center text-sm">
                     {control.rnv > 0 ? control.rnv : '-'}
+                  </TableCell>
+                  <TableCell className="text-center text-sm">
+                    {(control.titre_tiers || 0) > 0 ? control.titre_tiers : '-'}
+                  </TableCell>
+                  <TableCell className="text-center text-sm">
+                    {(control.doc_naissance || 0) > 0 ? control.doc_naissance : '-'}
                   </TableCell>
                   <TableCell className="text-center text-sm">
                     {control.ri_positive > 0 ? control.ri_positive : '-'}

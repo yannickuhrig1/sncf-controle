@@ -122,7 +122,7 @@ function ControlRow({ control, onClick }: ControlRowProps) {
             <div className={`text-center ${getFraudRateColor(fraudRate)}`}>
               <div className="flex items-center gap-1 text-sm font-semibold">
                 <AlertTriangle className="h-3 w-3" />
-                {fraudRate.toFixed(1)}%
+                {fraudCount} ({fraudRate.toFixed(1)}%)
               </div>
             </div>
             <ChevronRight className="h-4 w-4 text-muted-foreground" />

@@ -8,19 +8,17 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, User, Mail, BadgeCheck, Shield, LogOut, Save, Bell, Smartphone } from 'lucide-react';
+import { Loader2, User, BadgeCheck, Shield, LogOut, Save, Smartphone } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
-import { usePushNotifications } from '@/hooks/usePushNotifications';
 import { InstallAppButton } from '@/components/InstallAppButton';
 
 export default function ProfilePage() {
   const { user, profile, loading: authLoading, signOut } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const pushNotifications = usePushNotifications();
+  
 
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
@@ -217,43 +215,15 @@ export default function ProfilePage() {
           </CardContent>
         </Card>
 
-        {/* Notifications & App */}
+        {/* Application */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Bell className="h-4 w-4" />
-              Notifications & Application
+              <Smartphone className="h-4 w-4" />
+              Application
             </CardTitle>
-            <CardDescription>
-              Gérez les notifications et installez l'application
-            </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label className="flex items-center gap-2">
-                  <Bell className="h-4 w-4" />
-                  Notifications push
-                </Label>
-                <p className="text-xs text-muted-foreground">
-                  {pushNotifications.isSupported 
-                    ? 'Recevez des alertes sur votre appareil'
-                    : 'Non supporté sur ce navigateur'}
-                </p>
-              </div>
-              <Switch
-                checked={pushNotifications.isSubscribed}
-                onCheckedChange={(checked) => {
-                  if (checked) {
-                    pushNotifications.subscribe();
-                  } else {
-                    pushNotifications.unsubscribe();
-                  }
-                }}
-                disabled={!pushNotifications.isSupported || pushNotifications.isLoading}
-              />
-            </div>
-
+          <CardContent>
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
                 <Label className="flex items-center gap-2">
