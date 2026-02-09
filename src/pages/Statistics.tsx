@@ -3,6 +3,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useControls } from '@/hooks/useControls';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { FraudRateChart } from '@/components/charts/FraudRateChart';
+import { FraudTrendChart } from '@/components/charts/FraudTrendChart';
 import { PassengersChart } from '@/components/charts/PassengersChart';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { calculateStats, formatFraudRate, getFraudRateColor } from '@/lib/stats';
@@ -159,6 +160,7 @@ export default function StatisticsPage() {
             </Card>
 
             {/* Charts */}
+            <FraudTrendChart controls={controls} />
             <FraudRateChart controls={controls} />
             <PassengersChart controls={controls} />
 

@@ -756,3 +756,202 @@ export function openEmbarkmentHTMLPreview(mission: EmbarkmentMissionData, isComp
   window.open(url, '_blank');
   setTimeout(() => URL.revokeObjectURL(url), 60000);
 }
+
+export interface GroupedMissionExport {
+  mission: EmbarkmentMissionData;
+  isCompleted: boolean;
+}
+
+export function downloadGroupedEmbarkmentPDF(missions: GroupedMissionExport[]) {
+  if (missions.length === 0) return;
+  
+  const jsPDFModule = jsPDF;
+  const doc = new jsPDFModule({ orientation: 'landscape' });
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
+  let pageNumber = 1;
+
+  const addFooter = (label: string) => {
+    doc.setFontSize(8);
+    doc.setTextColor(150, 150, 150);
+    doc.text(
+      `SNCF Contrôles - Export groupé - ${label} - Page ${pageNumber}`,
+      pageWidth / 2,
+      pageHeight - 8,
+      { align: 'center' }
+    );
+  };
+
+  // Cover page
+  doc.setFillColor(0, 0, 139);
+  doc.rect(0, 0, pageWidth, 40, 'F');
+  doc.setFontSize(22);
+  doc.setTextColor(255, 255, 255);
+  doc.text('🚂 SNCF Contrôles - Export Groupé', pageWidth / 2, 20, { align: 'center' });
+  doc.setFontSize(14);
+  doc.text(`${missions.length} mission(s) embarquement`, pageWidth / 2, 32, { align: 'center' });
+
+  doc.setFontSize(11);
+  doc.setTextColor(80, 80, 80);
+  doc.text(`Généré le ${format(new Date(), 'dd/MM/yyyy à HH:mm', { locale: fr })}`, pageWidth / 2, 52, { align: 'center' });
+
+  // Summary table
+  let yPos = 65;
+  const summaryData = missions.map(({ mission, isCompleted }) => {
+    const stats = calculateMissionStats(mission.trains);
+    return [
+      mission.stationName,
+      format(new Date(mission.date), 'dd/MM/yyyy', { locale: fr }),
+      stats.trainCount.toString(),
+      stats.totalControlled.toString(),
+      stats.totalRefused.toString(),
+      `${stats.globalFraudRate.toFixed(1)}%`,
+      isCompleted ? '✓ Terminée' : 'En cours',
+    ];
+  });
+
+  autoTable(doc, {
+    startY: yPos,
+    head: [['Gare', 'Date', 'Trains', 'Contrôlés', 'Refoulés', 'Fraude', 'Statut']],
+    body: summaryData,
+    theme: 'grid',
+    headStyles: { fillColor: [0, 0, 139], fontSize: 10 },
+    bodyStyles: { fontSize: 9 },
+    alternateRowStyles: { fillColor: [248, 250, 252] },
+    margin: { left: 20, right: 20 },
+    didParseCell: function(data) {
+      if (data.section === 'body' && data.column.index === 5) {
+        const m = missions[data.row.index];
+        if (m) {
+          const stats = calculateMissionStats(m.mission.trains);
+          const color = getThresholdColor(stats.globalFraudRate);
+          data.cell.styles.textColor = getColorRGB(color);
+          data.cell.styles.fontStyle = 'bold';
+        }
+      }
+    },
+  });
+
+  addFooter('Synthèse');
+  pageNumber++;
+
+  // Each mission on its own page(s)
+  missions.forEach(({ mission, isCompleted }) => {
+    doc.addPage();
+    const missionDoc = exportEmbarkmentToPDF({ mission, includeStats: true, isCompleted });
+    
+    // Instead of merging, we re-render inline
+    const stats = calculateMissionStats(mission.trains);
+    const missionDate = new Date(mission.date);
+
+    // Header
+    doc.setFillColor(0, 0, 139);
+    doc.rect(0, 0, pageWidth, 28, 'F');
+    doc.setFontSize(16);
+    doc.setTextColor(255, 255, 255);
+    doc.text(`🚂 ${mission.stationName}`, 14, 16);
+    
+    if (isCompleted) {
+      doc.setFillColor(34, 139, 34);
+      doc.roundedRect(pageWidth - 45, 8, 35, 10, 3, 3, 'F');
+      doc.setFontSize(9);
+      doc.text('✓ TERMINÉE', pageWidth - 27.5, 14.5, { align: 'center' });
+    }
+
+    doc.setFontSize(10);
+    doc.setTextColor(80, 80, 80);
+    doc.text(`Date: ${format(missionDate, 'EEEE dd MMMM yyyy', { locale: fr })}  |  ${stats.trainCount} train(s)`, 14, 38);
+
+    let y = 48;
+    // Stats cards
+    const cardW = 55, cardH = 22, gap = 8;
+    const globalColor = getThresholdColor(stats.globalFraudRate);
+    const colorRGB = getColorRGB(globalColor);
+
+    doc.setFillColor(248, 250, 252);
+    doc.roundedRect(14, y, cardW, cardH, 3, 3, 'F');
+    doc.setFontSize(16); doc.setTextColor(0, 0, 139);
+    doc.text(stats.trainCount.toString(), 14 + cardW/2, y+12, { align: 'center' });
+    doc.setFontSize(8); doc.setTextColor(100, 100, 100);
+    doc.text('Trains', 14 + cardW/2, y+18, { align: 'center' });
+
+    doc.setFillColor(248, 250, 252);
+    doc.roundedRect(14 + cardW + gap, y, cardW, cardH, 3, 3, 'F');
+    doc.setFontSize(16); doc.setTextColor(0, 0, 139);
+    doc.text(stats.totalControlled.toString(), 14 + cardW + gap + cardW/2, y+12, { align: 'center' });
+    doc.setFontSize(8); doc.setTextColor(100, 100, 100);
+    doc.text('Contrôlés', 14 + cardW + gap + cardW/2, y+18, { align: 'center' });
+
+    doc.setFillColor(254, 242, 242);
+    doc.roundedRect(14 + 2*(cardW+gap), y, cardW, cardH, 3, 3, 'F');
+    doc.setFontSize(16); doc.setTextColor(185, 28, 28);
+    doc.text(stats.totalRefused.toString(), 14 + 2*(cardW+gap) + cardW/2, y+12, { align: 'center' });
+    doc.setFontSize(8); doc.setTextColor(100, 100, 100);
+    doc.text('Refoulés', 14 + 2*(cardW+gap) + cardW/2, y+18, { align: 'center' });
+
+    const fraudBg = globalColor === 'green' ? [220,252,231] : globalColor === 'yellow' ? [254,249,195] : [254,226,226];
+    doc.setFillColor(fraudBg[0], fraudBg[1], fraudBg[2]);
+    doc.roundedRect(14 + 3*(cardW+gap), y, cardW, cardH, 3, 3, 'F');
+    doc.setFontSize(16); doc.setTextColor(colorRGB[0], colorRGB[1], colorRGB[2]);
+    doc.text(`${stats.globalFraudRate.toFixed(1)}%`, 14 + 3*(cardW+gap) + cardW/2, y+12, { align: 'center' });
+    doc.setFontSize(8); doc.setTextColor(100, 100, 100);
+    doc.text('Taux fraude', 14 + 3*(cardW+gap) + cardW/2, y+18, { align: 'center' });
+
+    y += cardH + 12;
+
+    // Trains table
+    const trainData = mission.trains.map(train => {
+      const rate = train.controlled > 0 ? (train.refused / train.controlled) * 100 : 0;
+      const incidents = [
+        train.policePresence ? '👮' : '',
+        train.trackCrossing ? '🚶' : '',
+        train.controlLineCrossing ? '⚠️' : '',
+      ].filter(Boolean).join(' ') || '-';
+      return [
+        train.trainNumber,
+        train.departureTime || '-',
+        train.platform || '-',
+        train.origin || mission.stationName,
+        train.destination || '-',
+        train.controlled.toString(),
+        train.refused.toString(),
+        `${rate.toFixed(1)}%`,
+        incidents,
+      ];
+    });
+
+    autoTable(doc, {
+      startY: y,
+      head: [['N° Train', 'Départ', 'Quai', 'Origine', 'Dest.', 'Ctrl.', 'Ref.', 'Fraude', 'Inc.']],
+      body: trainData,
+      theme: 'grid',
+      headStyles: { fillColor: [0, 0, 139], fontSize: 9 },
+      bodyStyles: { fontSize: 9 },
+      alternateRowStyles: { fillColor: [248, 250, 252] },
+      margin: { left: 14, right: 14 },
+      didParseCell: function(data) {
+        if (data.section === 'body' && data.column.index === 7) {
+          const train = mission.trains[data.row.index];
+          if (train) {
+            const rate = train.controlled > 0 ? (train.refused / train.controlled) * 100 : 0;
+            data.cell.styles.textColor = getColorRGB(getThresholdColor(rate));
+            data.cell.styles.fontStyle = 'bold';
+          }
+        }
+      },
+    });
+
+    addFooter(mission.stationName);
+    pageNumber++;
+  });
+
+  const filename = `export-embarquement-groupe-${format(new Date(), 'yyyy-MM-dd-HHmm')}.pdf`;
+  try {
+    doc.save(filename);
+  } catch {
+    const blob = doc.output('blob');
+    const url = URL.createObjectURL(blob);
+    window.open(url, '_blank');
+    setTimeout(() => URL.revokeObjectURL(url), 10000);
+  }
+}

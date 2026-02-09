@@ -27,7 +27,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { getFraudRateColor, getFraudRateBgColor } from '@/lib/stats';
-import { downloadEmbarkmentPDF, downloadEmbarkmentHTML, openEmbarkmentHTMLPreview } from '@/lib/embarkmentExportUtils';
+import { downloadEmbarkmentPDF, downloadEmbarkmentHTML, openEmbarkmentHTMLPreview, downloadGroupedEmbarkmentPDF } from '@/lib/embarkmentExportUtils';
 import type { EmbarkmentMissionData, EmbarkmentTrain } from '@/components/controls/EmbarkmentControl';
 import { DateRangeFilter } from '@/components/history/DateRangeFilter';
 import { 
@@ -508,6 +508,24 @@ export function EmbarkmentHistoryView({ missions, viewMode, onMissionClick, isLo
     setEndDate(undefined);
   };
 
+  const handleExportGroupedPDF = () => {
+    if (filteredMissions.length === 0) {
+      toast.error('Aucune mission à exporter');
+      return;
+    }
+    const groupedData = filteredMissions.map(mission => ({
+      mission: {
+        date: mission.mission_date,
+        stationName: mission.station_name,
+        globalComment: mission.global_comment || '',
+        trains: mission.trains,
+      },
+      isCompleted: mission.is_completed,
+    }));
+    downloadGroupedEmbarkmentPDF(groupedData);
+    toast.success(`PDF groupé exporté (${filteredMissions.length} missions)`);
+  };
+
   // Determine effective view mode (use internal for grid, parent for list/table)
   const effectiveViewMode = internalViewMode === 'grid' ? 'grid' : viewMode;
 
@@ -536,6 +554,7 @@ export function EmbarkmentHistoryView({ missions, viewMode, onMissionClick, isLo
           onClearFilters={clearFilters}
           filteredCount={filteredMissions.length}
           totalCount={missions.length}
+          onExportGroupedPDF={handleExportGroupedPDF}
         />
 
         <div className="rounded-lg border overflow-hidden">
@@ -668,6 +687,7 @@ export function EmbarkmentHistoryView({ missions, viewMode, onMissionClick, isLo
           onClearFilters={clearFilters}
           filteredCount={filteredMissions.length}
           totalCount={missions.length}
+          onExportGroupedPDF={handleExportGroupedPDF}
         />
 
         {filteredMissions.length === 0 ? (
@@ -720,6 +740,7 @@ export function EmbarkmentHistoryView({ missions, viewMode, onMissionClick, isLo
         onClearFilters={clearFilters}
         filteredCount={filteredMissions.length}
         totalCount={missions.length}
+        onExportGroupedPDF={handleExportGroupedPDF}
       />
 
       {filteredMissions.length === 0 ? (
@@ -780,6 +801,7 @@ interface EmbarkmentFiltersProps {
   onClearFilters: () => void;
   filteredCount: number;
   totalCount: number;
+  onExportGroupedPDF?: () => void;
 }
 
 function EmbarkmentFilters({
@@ -800,6 +822,7 @@ function EmbarkmentFilters({
   onClearFilters,
   filteredCount,
   totalCount,
+  onExportGroupedPDF,
 }: EmbarkmentFiltersProps) {
   return (
     <div className="space-y-3">
@@ -893,18 +916,34 @@ function EmbarkmentFilters({
         onClear={() => { onStartDateChange(undefined); onEndDateChange(undefined); }}
       />
 
-      {/* Active filters indicator */}
-      {hasActiveFilters && (
-        <div className="flex items-center justify-between">
-          <p className="text-sm text-muted-foreground">
-            {filteredCount} résultat{filteredCount !== 1 ? 's' : ''} sur {totalCount} mission{totalCount !== 1 ? 's' : ''}
-          </p>
-          <Button variant="ghost" size="sm" onClick={onClearFilters} className="text-muted-foreground">
-            <X className="h-3.5 w-3.5 mr-1" />
-            Effacer filtres
-          </Button>
+      {/* Actions and filter indicator */}
+      <div className="flex items-center justify-between">
+        <p className="text-sm text-muted-foreground">
+          {hasActiveFilters 
+            ? `${filteredCount} résultat${filteredCount !== 1 ? 's' : ''} sur ${totalCount} mission${totalCount !== 1 ? 's' : ''}`
+            : `${totalCount} mission${totalCount !== 1 ? 's' : ''}`
+          }
+        </p>
+        <div className="flex items-center gap-2">
+          {filteredCount > 0 && (
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => onExportGroupedPDF?.()}
+              className="text-xs"
+            >
+              <Download className="h-3.5 w-3.5 mr-1" />
+              PDF groupé ({filteredCount})
+            </Button>
+          )}
+          {hasActiveFilters && (
+            <Button variant="ghost" size="sm" onClick={onClearFilters} className="text-muted-foreground">
+              <X className="h-3.5 w-3.5 mr-1" />
+              Effacer filtres
+            </Button>
+          )}
         </div>
-      )}
+      </div>
     </div>
   );
 }

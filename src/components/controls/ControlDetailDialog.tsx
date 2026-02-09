@@ -224,51 +224,45 @@ export function ControlDetailDialog({
                     fraudRate > 10 ? 'text-red-600' : fraudRate > 5 ? 'text-orange-600' : 'text-green-600'
                   }`}>
                     <AlertTriangle className="h-4 w-4" />
-                    {fraudRate.toFixed(1)}%
+                    {fraudCount} ({fraudRate.toFixed(1)}%)
                   </div>
                   <p className="text-xs text-muted-foreground">Fraude</p>
                 </div>
               </div>
 
-              {/* Fraud details summary */}
+              {/* Fraud types summary badges */}
               {fraudCount > 0 && (
-                <div className="p-3 rounded-lg bg-orange-50 dark:bg-orange-950/30 border border-orange-200 dark:border-orange-800">
-                  <h4 className="font-medium text-sm text-orange-800 dark:text-orange-200 mb-2 flex items-center gap-2">
-                    <AlertTriangle className="h-4 w-4" />
-                    Détail des infractions ({fraudCount})
-                  </h4>
-                  <div className="flex flex-wrap gap-2">
-                    {((control.stt_50 ?? 0) > 0 || (control.stt_100 ?? 0) > 0) && (
-                      <Badge variant="outline" className="bg-background">
-                        STT: {(control.stt_50 ?? 0) + (control.stt_100 ?? 0)}
-                      </Badge>
-                    )}
-                    {(control.rnv ?? 0) > 0 && (
-                      <Badge variant="outline" className="bg-background">
-                        RNV: {control.rnv}
-                      </Badge>
-                    )}
-                    {(control.titre_tiers ?? 0) > 0 && (
-                      <Badge variant="outline" className="bg-background">
-                        Titre tiers: {control.titre_tiers}
-                      </Badge>
-                    )}
-                    {(control.doc_naissance ?? 0) > 0 && (
-                      <Badge variant="outline" className="bg-background">
-                        Date naiss.: {control.doc_naissance}
-                      </Badge>
-                    )}
-                    {(control.autre_tarif ?? 0) > 0 && (
-                      <Badge variant="outline" className="bg-background">
-                        Autre: {control.autre_tarif}
-                      </Badge>
-                    )}
-                    {(control.pv ?? 0) > 0 && (
-                      <Badge variant="destructive">
-                        PV: {control.pv}
-                      </Badge>
-                    )}
-                  </div>
+                <div className="flex flex-wrap gap-2">
+                  {((control.stt_50 ?? 0) > 0 || (control.stt_100 ?? 0) > 0) && (
+                    <Badge variant="outline" className="bg-background">
+                      STT: {(control.stt_50 ?? 0) + (control.stt_100 ?? 0)}
+                    </Badge>
+                  )}
+                  {(control.rnv ?? 0) > 0 && (
+                    <Badge variant="outline" className="bg-background">
+                      RNV: {control.rnv}
+                    </Badge>
+                  )}
+                  {(control.titre_tiers ?? 0) > 0 && (
+                    <Badge variant="outline" className="bg-background">
+                      Titre tiers: {control.titre_tiers}
+                    </Badge>
+                  )}
+                  {(control.doc_naissance ?? 0) > 0 && (
+                    <Badge variant="outline" className="bg-background">
+                      Date naiss.: {control.doc_naissance}
+                    </Badge>
+                  )}
+                  {(control.autre_tarif ?? 0) > 0 && (
+                    <Badge variant="outline" className="bg-background">
+                      Autre: {control.autre_tarif}
+                    </Badge>
+                  )}
+                  {(control.pv ?? 0) > 0 && (
+                    <Badge variant="destructive">
+                      PV: {control.pv}
+                    </Badge>
+                  )}
                 </div>
               )}
 
