@@ -152,22 +152,23 @@ export function TrainFraudChart({ controls, trainNumber, title }: TrainFraudChar
         <div className="h-[200px]">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={chartData} margin={{ top: 5, right: 10, left: -20, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--chart-grid))" />
               <XAxis 
                 dataKey="displayDate" 
-                tick={{ fontSize: 11 }}
-                className="fill-muted-foreground"
+                tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
+                stroke="hsl(var(--border))"
               />
               <YAxis 
-                tick={{ fontSize: 11 }}
-                className="fill-muted-foreground"
+                tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
                 tickFormatter={(value) => `${value}%`}
+                stroke="hsl(var(--border))"
               />
               <Tooltip
                 contentStyle={{
-                  backgroundColor: 'hsl(var(--card))',
-                  border: '1px solid hsl(var(--border))',
+                  backgroundColor: 'hsl(var(--chart-tooltip-bg))',
+                  border: '1px solid hsl(var(--chart-tooltip-border))',
                   borderRadius: '8px',
+                  boxShadow: '0 4px 12px hsl(0 0% 0% / 0.15)',
                 }}
                 labelStyle={{ color: 'hsl(var(--foreground))' }}
                 formatter={(value: number, _name: string, props: any) => [
@@ -180,9 +181,9 @@ export function TrainFraudChart({ controls, trainNumber, title }: TrainFraudChar
                 type="monotone"
                 dataKey="fraudRate"
                 name="Taux de fraude"
-                stroke="hsl(var(--primary))"
+                stroke="hsl(var(--chart-line-primary))"
                 strokeWidth={2}
-                dot={{ fill: 'hsl(var(--primary))', strokeWidth: 2 }}
+                dot={{ fill: 'hsl(var(--chart-line-primary))', strokeWidth: 2 }}
                 activeDot={{ r: 6 }}
               />
             </LineChart>

@@ -50,6 +50,26 @@
 
     --radius: 0.75rem;
 
+    /* Chart tokens (light) */
+    --chart-grid: 220 15% 90%;
+    --chart-tooltip-bg: 0 0% 100%;
+    --chart-tooltip-border: 220 15% 88%;
+    --chart-line-primary: 343 100% 38%;
+    --chart-line-secondary: 210 100% 35%;
+    --chart-bar-primary: 343 90% 42%;
+    --chart-bar-secondary: 210 90% 40%;
+    --chart-area-fill: 343 90% 42%;
+
+    /* Stat card tokens (light) */
+    --stat-green-bg: 142 65% 92%;
+    --stat-green-text: 142 76% 30%;
+    --stat-yellow-bg: 38 85% 90%;
+    --stat-yellow-text: 38 85% 35%;
+    --stat-red-bg: 0 75% 93%;
+    --stat-red-text: 0 80% 45%;
+    --stat-blue-bg: 210 70% 93%;
+    --stat-blue-text: 210 90% 32%;
+
     /* Section colors (neutral for SNCF theme) */
     --card-cyan: 0 0% 100%;
     --card-cyan-foreground: 220 20% 10%;
@@ -73,40 +93,60 @@
   }
 
   .dark {
-    /* SNCF dark theme */
-    --background: 222 30% 8%;
-    --foreground: 220 15% 90%;
+    /* SNCF dark theme - Enhanced */
+    --background: 222 30% 7%;
+    --foreground: 220 15% 92%;
 
-    --card: 222 25% 12%;
-    --card-foreground: 220 15% 90%;
+    --card: 222 25% 11%;
+    --card-foreground: 220 15% 92%;
 
-    --popover: 222 25% 12%;
-    --popover-foreground: 220 15% 90%;
+    --popover: 222 25% 11%;
+    --popover-foreground: 220 15% 92%;
 
-    --primary: 343 90% 50%;
+    --primary: 343 90% 55%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 222 20% 18%;
-    --secondary-foreground: 220 15% 85%;
+    --secondary: 222 20% 16%;
+    --secondary-foreground: 220 15% 88%;
 
-    --muted: 222 20% 16%;
-    --muted-foreground: 220 10% 55%;
+    --muted: 222 20% 14%;
+    --muted-foreground: 220 10% 58%;
 
-    --accent: 222 20% 18%;
-    --accent-foreground: 220 15% 90%;
+    --accent: 222 20% 16%;
+    --accent-foreground: 220 15% 92%;
 
-    --destructive: 0 70% 50%;
+    --destructive: 0 72% 52%;
     --destructive-foreground: 0 0% 100%;
 
-    --success: 142 70% 45%;
+    --success: 142 72% 48%;
     --success-foreground: 0 0% 100%;
 
-    --warning: 38 92% 50%;
+    --warning: 38 92% 55%;
     --warning-foreground: 0 0% 0%;
 
-    --border: 222 20% 20%;
-    --input: 222 20% 20%;
-    --ring: 343 90% 50%;
+    --border: 222 18% 18%;
+    --input: 222 18% 18%;
+    --ring: 343 90% 55%;
+
+    /* Chart-specific dark tokens */
+    --chart-grid: 222 15% 22%;
+    --chart-tooltip-bg: 222 28% 14%;
+    --chart-tooltip-border: 222 18% 24%;
+    --chart-line-primary: 343 90% 60%;
+    --chart-line-secondary: 210 80% 60%;
+    --chart-bar-primary: 343 80% 55%;
+    --chart-bar-secondary: 210 70% 55%;
+    --chart-area-fill: 343 80% 55%;
+
+    /* Stat card dark tokens */
+    --stat-green-bg: 142 60% 15%;
+    --stat-green-text: 142 72% 60%;
+    --stat-yellow-bg: 38 60% 15%;
+    --stat-yellow-text: 38 85% 65%;
+    --stat-red-bg: 0 60% 15%;
+    --stat-red-text: 0 72% 62%;
+    --stat-blue-bg: 210 60% 15%;
+    --stat-blue-text: 210 80% 65%;
 
     /* Section colors (neutral for SNCF dark) */
     --card-cyan: 222 25% 12%;
@@ -120,14 +160,14 @@
     --card-violet: 222 25% 12%;
     --card-violet-foreground: 220 15% 90%;
 
-    --sidebar-background: 222 28% 10%;
-    --sidebar-foreground: 220 15% 85%;
-    --sidebar-primary: 343 90% 50%;
+    --sidebar-background: 222 30% 8%;
+    --sidebar-foreground: 220 15% 88%;
+    --sidebar-primary: 343 90% 55%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 222 20% 16%;
-    --sidebar-accent-foreground: 220 15% 90%;
-    --sidebar-border: 222 20% 18%;
-    --sidebar-ring: 343 90% 50%;
+    --sidebar-accent: 222 20% 14%;
+    --sidebar-accent-foreground: 220 15% 92%;
+    --sidebar-border: 222 18% 16%;
+    --sidebar-ring: 343 90% 55%;
   }
 
   /* ===== COLORÉ THEME (Pastel sections) ===== */
@@ -165,6 +205,25 @@
     --border: 210 15% 88%;
     --input: 210 15% 90%;
     --ring: 180 45% 55%;
+
+    /* Chart tokens */
+    --chart-grid: 210 15% 88%;
+    --chart-tooltip-bg: 0 0% 100%;
+    --chart-tooltip-border: 210 15% 86%;
+    --chart-line-primary: 180 45% 45%;
+    --chart-line-secondary: 350 65% 55%;
+    --chart-bar-primary: 180 45% 45%;
+    --chart-bar-secondary: 350 60% 50%;
+    --chart-area-fill: 180 45% 45%;
+
+    --stat-green-bg: 150 50% 90%;
+    --stat-green-text: 150 50% 28%;
+    --stat-yellow-bg: 38 80% 90%;
+    --stat-yellow-text: 38 80% 32%;
+    --stat-red-bg: 0 70% 92%;
+    --stat-red-text: 0 70% 42%;
+    --stat-blue-bg: 180 45% 90%;
+    --stat-blue-text: 180 45% 30%;
 
     /* Section colors - Based on original LAFEA app screenshot */
     --card-cyan: 185 55% 88%;
@@ -222,6 +281,25 @@
     --border: 220 18% 22%;
     --input: 220 18% 22%;
     --ring: 180 50% 50%;
+
+    /* Chart tokens (dark coloré) */
+    --chart-grid: 220 15% 24%;
+    --chart-tooltip-bg: 220 22% 16%;
+    --chart-tooltip-border: 220 18% 26%;
+    --chart-line-primary: 180 55% 55%;
+    --chart-line-secondary: 350 50% 60%;
+    --chart-bar-primary: 180 50% 50%;
+    --chart-bar-secondary: 350 45% 55%;
+    --chart-area-fill: 180 50% 50%;
+
+    --stat-green-bg: 150 40% 16%;
+    --stat-green-text: 150 50% 60%;
+    --stat-yellow-bg: 38 50% 16%;
+    --stat-yellow-text: 38 80% 62%;
+    --stat-red-bg: 0 50% 16%;
+    --stat-red-text: 0 65% 60%;
+    --stat-blue-bg: 180 40% 16%;
+    --stat-blue-text: 180 55% 60%;
 
     /* Section colors - Dark pastel variants */
     --card-cyan: 185 40% 18%;
@@ -287,6 +365,53 @@
   box-shadow: 0 0 20px hsl(142 70% 45% / 0.15);
 }
 
+/* Chart dark mode enhancements */
+.dark .recharts-cartesian-grid line {
+  stroke: hsl(var(--chart-grid));
+}
+
+.dark .recharts-text {
+  fill: hsl(var(--muted-foreground));
+}
+
+.dark .recharts-tooltip-wrapper .recharts-default-tooltip {
+  background-color: hsl(var(--chart-tooltip-bg)) !important;
+  border-color: hsl(var(--chart-tooltip-border)) !important;
+  box-shadow: 0 8px 32px hsl(0 0% 0% / 0.4);
+}
+
+/* Stat card dark mode styles */
+.dark .stat-card-green {
+  background: hsl(var(--stat-green-bg));
+  border-color: hsl(142 50% 25%);
+}
+.dark .stat-card-green .stat-value { color: hsl(var(--stat-green-text)); }
+
+.dark .stat-card-yellow {
+  background: hsl(var(--stat-yellow-bg));
+  border-color: hsl(38 50% 25%);
+}
+.dark .stat-card-yellow .stat-value { color: hsl(var(--stat-yellow-text)); }
+
+.dark .stat-card-red {
+  background: hsl(var(--stat-red-bg));
+  border-color: hsl(0 50% 25%);
+}
+.dark .stat-card-red .stat-value { color: hsl(var(--stat-red-text)); }
+
+/* Enhanced dark mode card depth */
+.dark [data-slot="card"] {
+  box-shadow: 
+    0 1px 3px hsl(0 0% 0% / 0.3),
+    0 0 0 1px hsl(0 0% 100% / 0.03);
+}
+
+.dark [data-slot="card"]:hover {
+  box-shadow: 
+    0 4px 12px hsl(0 0% 0% / 0.4),
+    0 0 0 1px hsl(0 0% 100% / 0.05);
+}
+
 /* Glassmorphism utilities */
 .glass {
   background: hsl(var(--card) / 0.8);
@@ -317,15 +442,15 @@
 .dark .glass-card {
   background: linear-gradient(
     135deg,
-    hsl(222 25% 14% / 0.8) 0%,
-    hsl(222 25% 10% / 0.6) 100%
+    hsl(222 25% 13% / 0.85) 0%,
+    hsl(222 25% 9% / 0.65) 100%
   );
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 1px solid hsl(0 0% 100% / 0.08);
+  border: 1px solid hsl(0 0% 100% / 0.06);
   box-shadow: 
-    0 4px 24px -1px hsl(0 0% 0% / 0.2),
-    inset 0 1px 0 0 hsl(0 0% 100% / 0.05);
+    0 4px 24px -1px hsl(0 0% 0% / 0.25),
+    inset 0 1px 0 0 hsl(0 0% 100% / 0.04);
 }
 
 /* Frosted glass effect for nav/overlays */

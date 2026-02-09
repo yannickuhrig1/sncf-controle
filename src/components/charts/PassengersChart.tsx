@@ -82,21 +82,22 @@ export function PassengersChart({ controls, title = "Voyageurs par jour" }: Pass
         <div className="h-[250px]">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={chartData} margin={{ top: 5, right: 10, left: -20, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--chart-grid))" />
               <XAxis 
                 dataKey="displayDate" 
-                tick={{ fontSize: 12 }}
-                className="fill-muted-foreground"
+                tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }}
+                stroke="hsl(var(--border))"
               />
               <YAxis 
-                tick={{ fontSize: 12 }}
-                className="fill-muted-foreground"
+                tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }}
+                stroke="hsl(var(--border))"
               />
               <Tooltip
                 contentStyle={{
-                  backgroundColor: 'hsl(var(--card))',
-                  border: '1px solid hsl(var(--border))',
+                  backgroundColor: 'hsl(var(--chart-tooltip-bg))',
+                  border: '1px solid hsl(var(--chart-tooltip-border))',
                   borderRadius: '8px',
+                  boxShadow: '0 4px 12px hsl(0 0% 0% / 0.15)',
                 }}
                 labelStyle={{ color: 'hsl(var(--foreground))' }}
               />
@@ -105,14 +106,14 @@ export function PassengersChart({ controls, title = "Voyageurs par jour" }: Pass
                 dataKey="inRule" 
                 name="En règle" 
                 stackId="a"
-                fill="hsl(142 76% 36%)" 
+                fill="hsl(var(--success))" 
                 radius={[0, 0, 0, 0]}
               />
               <Bar 
                 dataKey="fraud" 
                 name="Fraude" 
                 stackId="a"
-                fill="hsl(0 84% 60%)" 
+                fill="hsl(var(--destructive))" 
                 radius={[4, 4, 0, 0]}
               />
             </BarChart>
