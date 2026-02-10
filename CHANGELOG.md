@@ -5,6 +5,27 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/),
 et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.7.0] - 2026-02-10
+
+### Ajouté
+- **Aperçu PDF dans l'historique** : Bouton "Aperçu" pour prévisualiser le rapport PDF directement dans un dialogue avant téléchargement
+- **Export PDF groupé embarquement** : Export de toutes les missions filtrées en un seul PDF depuis l'onglet Embarquement
+- **Graphique de tendance fraude** : Nouveau graphique d'évolution du taux de fraude par semaine/mois dans l'onglet Statistiques
+- **Vue grille embarquement** : Mode de visualisation en cartes pour les missions d'embarquement
+- **Filtres avancés embarquement** : Filtrage par gare, statut, plage de dates et recherche texte
+- **Statistiques globales embarquement** : Résumé avec totaux trains, voyageurs et taux de fraude moyen
+
+### Corrigé
+- **Bug critique : Titre tiers et Date de naissance non sauvegardés** : Les fraudes de type "Titre tiers" et "Date de naissance" n'étaient pas incluses dans les données envoyées à la base lors de la création/modification d'un contrôle à bord
+- **Bug : Données de fraude perdues en mode édition** : Lors de la modification d'un contrôle, les listes tarifsControle et pvList étaient initialisées à vide au lieu d'être reconstruites depuis les données en base
+- **Bug : RNV et montants non persistés** : Les montants des RNV et autres tarifs n'étaient pas sauvegardés lors de la soumission du formulaire
+- **Bug : Données offline incomplètes** : Le fallback offline n'incluait pas les champs titre_tiers, doc_naissance, autre_tarif et leurs montants
+
+### Modifié
+- Interface OnboardControl étendue avec tous les champs de fraude détaillés
+- Notifications profil supprimées (doublon avec Paramètres)
+- Mode sombre amélioré avec tokens CSS pour graphiques et cartes statistiques
+
 ## [1.6.0] - 2026-02-04
 
 ### Ajouté

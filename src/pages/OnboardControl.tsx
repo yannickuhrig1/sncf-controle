@@ -194,8 +194,62 @@ export default function OnboardControl() {
     const loadControl = async (controlId: string, forDuplicate: boolean) => {
       if (isLoading) return;
       
+      // Helper to reconstruct tarif entries from DB fields
+      const reconstructTarifsControle = (data: any): TarifEntry[] => {
+        const entries: TarifEntry[] = [];
+        const addEntries = (count: number, type: string, typeLabel: string, totalAmount: number) => {
+          if (count <= 0) return;
+          const amountPerEntry = totalAmount > 0 ? totalAmount / count : 0;
+          for (let i = 0; i < count; i++) {
+            entries.push({
+              id: crypto.randomUUID(),
+              type,
+              typeLabel,
+              montant: amountPerEntry,
+              category: 'controle',
+            });
+          }
+        };
+        addEntries(data.rnv || 0, 'rnv', 'RNV', data.rnv_amount || 0);
+        addEntries(data.titre_tiers || 0, 'titre_tiers', 'Titre tiers', data.titre_tiers_amount || 0);
+        addEntries(data.doc_naissance || 0, 'd_naissance', 'D. naissance', data.doc_naissance_amount || 0);
+        addEntries(data.autre_tarif || 0, 'autre', 'Autre', data.autre_tarif_amount || 0);
+        return entries;
+      };
+
+      const reconstructPvList = (data: any): TarifEntry[] => {
+        const entries: TarifEntry[] = [];
+        const addEntries = (count: number, type: string, typeLabel: string, totalAmount: number) => {
+          if (count <= 0) return;
+          const amountPerEntry = totalAmount > 0 ? totalAmount / count : 0;
+          for (let i = 0; i < count; i++) {
+            entries.push({
+              id: crypto.randomUUID(),
+              type,
+              typeLabel,
+              montant: amountPerEntry,
+              category: 'pv',
+            });
+          }
+        };
+        addEntries(data.pv_absence_titre || 0, 'stt', 'Absence titre', data.pv_absence_titre_amount || 0);
+        addEntries(data.pv_titre_invalide || 0, 'rnv', 'Titre invalide', data.pv_titre_invalide_amount || 0);
+        addEntries(data.pv_refus_controle || 0, 'autre', 'Refus contrôle', data.pv_refus_controle_amount || 0);
+        addEntries(data.pv_autre || 0, 'autre', 'Autre PV', data.pv_autre_amount || 0);
+        return entries;
+      };
+
       // Helper to set form data from control
       const setFormFromControl = (data: any) => {
+        // Reconstruct tarif lists from DB fields
+        const tarifsControle = reconstructTarifsControle(data);
+        const pvList = reconstructPvList(data);
+        
+        // Compute stt100Count from PV total minus pvList entries (pv_absence_titre etc. are detailed PV)
+        const detailedPvCount = (data.pv_absence_titre || 0) + (data.pv_titre_invalide || 0) + 
+          (data.pv_refus_controle || 0) + (data.pv_autre || 0);
+        const remainingPv = Math.max(0, (data.pv || 0) - detailedPvCount - pvList.length);
+        
         setFormState({
           trainNumber: data.train_number || '',
           origin: data.origin || '',
@@ -205,9 +259,9 @@ export default function OnboardControl() {
           passengers: data.nb_passagers,
           tarifsBord: [],
           tarifMode: 'bord',
-          tarifsControle: [],
+          tarifsControle,
           stt50Count: data.stt_50 || 0,
-          pvList: [],
+          pvList,
           stt100Count: data.stt_100 || 0,
           riPositif: data.ri_positive || 0,
           riNegatif: data.ri_negative || 0,
@@ -468,6 +522,13 @@ export default function OnboardControl() {
           ? `${formState.origin} → ${formState.destination}`
           : formState.trainNumber;
 
+      // Extract detailed fraud counts and amounts from tarifsControle
+      const rnvEntries = formState.tarifsControle.filter((t) => t.type === 'rnv');
+      const titreTiersEntries = formState.tarifsControle.filter((t) => t.type === 'titre_tiers');
+      const docNaissanceEntries = formState.tarifsControle.filter((t) => t.type === 'd_naissance');
+      const autreEntries = formState.tarifsControle.filter((t) => t.type === 'autre');
+      const sttEntries = formState.tarifsControle.filter((t) => t.type === 'stt');
+
       const controlData = {
         location: locationName,
         train_number: formState.trainNumber.trim(),
@@ -479,9 +540,17 @@ export default function OnboardControl() {
         nb_en_regle: formState.passengers - fraudStats.fraudCount,
         tarifs_controle: fraudStats.tarifsControleCount,
         pv: fraudStats.pvCount,
-        stt_50: formState.stt50Count,
+        stt_50: formState.stt50Count + sttEntries.length,
+        stt_50_amount: sttEntries.reduce((sum, t) => sum + t.montant, 0) || null,
         stt_100: formState.stt100Count,
-        rnv: formState.tarifsControle.filter((t) => t.type === 'rnv').length,
+        rnv: rnvEntries.length,
+        rnv_amount: rnvEntries.reduce((sum, t) => sum + t.montant, 0) || null,
+        titre_tiers: titreTiersEntries.length,
+        titre_tiers_amount: titreTiersEntries.reduce((sum, t) => sum + t.montant, 0) || null,
+        doc_naissance: docNaissanceEntries.length,
+        doc_naissance_amount: docNaissanceEntries.reduce((sum, t) => sum + t.montant, 0) || null,
+        autre_tarif: autreEntries.length,
+        autre_tarif_amount: autreEntries.reduce((sum, t) => sum + t.montant, 0) || null,
         ri_positive: formState.riPositif,
         ri_negative: formState.riNegatif,
         notes: formState.commentaire.trim() || null,
@@ -534,9 +603,17 @@ export default function OnboardControl() {
           nb_en_regle: formState.passengers - fraudStats.fraudCount,
           tarifs_controle: fraudStats.tarifsControleCount,
           pv: fraudStats.pvCount,
-          stt_50: formState.stt50Count,
+          stt_50: formState.stt50Count + formState.tarifsControle.filter((t) => t.type === 'stt').length,
+          stt_50_amount: formState.tarifsControle.filter((t) => t.type === 'stt').reduce((sum, t) => sum + t.montant, 0) || null,
           stt_100: formState.stt100Count,
           rnv: formState.tarifsControle.filter((t) => t.type === 'rnv').length,
+          rnv_amount: formState.tarifsControle.filter((t) => t.type === 'rnv').reduce((sum, t) => sum + t.montant, 0) || null,
+          titre_tiers: formState.tarifsControle.filter((t) => t.type === 'titre_tiers').length,
+          titre_tiers_amount: formState.tarifsControle.filter((t) => t.type === 'titre_tiers').reduce((sum, t) => sum + t.montant, 0) || null,
+          doc_naissance: formState.tarifsControle.filter((t) => t.type === 'd_naissance').length,
+          doc_naissance_amount: formState.tarifsControle.filter((t) => t.type === 'd_naissance').reduce((sum, t) => sum + t.montant, 0) || null,
+          autre_tarif: formState.tarifsControle.filter((t) => t.type === 'autre').length,
+          autre_tarif_amount: formState.tarifsControle.filter((t) => t.type === 'autre').reduce((sum, t) => sum + t.montant, 0) || null,
           ri_positive: formState.riPositif,
           ri_negative: formState.riNegatif,
           notes: formState.commentaire.trim() || null,

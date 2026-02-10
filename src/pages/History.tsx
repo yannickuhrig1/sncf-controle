@@ -16,6 +16,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ControlDetailDialog } from '@/components/controls/ControlDetailDialog';
 import { ExportDialog } from '@/components/controls/ExportDialog';
+import { PdfPreviewDialog } from '@/components/controls/PdfPreviewDialog';
 import { LastSyncIndicator } from '@/components/controls/LastSyncIndicator';
 import { OfflineIndicator } from '@/components/controls/OfflineIndicator';
 import { HistoryTableView } from '@/components/history/HistoryTableView';
@@ -24,7 +25,7 @@ import { DateRangeFilter } from '@/components/history/DateRangeFilter';
 import { MonthYearFilter, getDateRangeFromMonthYear } from '@/components/history/MonthYearFilter';
 import { ViewModeToggle } from '@/components/dashboard/ViewModeToggle';
 import { getFraudRateColor } from '@/lib/stats';
-import { exportTableToPDF } from '@/lib/exportUtils';
+import { exportTableToPDF, exportToPDF, downloadPDF } from '@/lib/exportUtils';
 import type { ViewMode } from '@/hooks/useControlsWithFilter';
 import { 
   Loader2, 
@@ -47,6 +48,7 @@ import {
   FileText,
   ArrowDownToLine,
   ArrowUpFromLine,
+  Eye,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -170,6 +172,9 @@ export default function HistoryPage() {
   const [selectedMonth, setSelectedMonth] = useState<number | undefined>(undefined);
   const [selectedYear, setSelectedYear] = useState<number | undefined>(undefined);
   const [dataViewMode, setDataViewMode] = useState<ViewMode>('my-data');
+  const [pdfPreviewOpen, setPdfPreviewOpen] = useState(false);
+  const [pdfPreviewUrl, setPdfPreviewUrl] = useState<string | null>(null);
+  const [pdfDocRef, setPdfDocRef] = useState<ReturnType<typeof exportToPDF> | null>(null);
   
   // Get view mode from preferences, default to 'list'
   const viewMode: HistoryViewMode = preferences?.history_view_mode ?? 'list';
@@ -349,6 +354,53 @@ export default function HistoryPage() {
     }
   };
 
+  const getDateRangeString = () => {
+    if (startDate && endDate) return `${format(startDate, 'dd/MM/yyyy', { locale: fr })} - ${format(endDate, 'dd/MM/yyyy', { locale: fr })}`;
+    if (startDate) return `Depuis ${format(startDate, 'dd/MM/yyyy', { locale: fr })}`;
+    if (endDate) return `Jusqu'au ${format(endDate, 'dd/MM/yyyy', { locale: fr })}`;
+    return 'Toutes les dates';
+  };
+
+  const handlePreviewPDF = () => {
+    if (filteredControls.length === 0) {
+      toast.error('Aucun contrôle à prévisualiser');
+      return;
+    }
+    try {
+      const doc = exportToPDF({
+        controls: filteredControls,
+        title: `Historique des contrôles (${filteredControls.length})`,
+        dateRange: getDateRangeString(),
+        includeStats: true,
+        orientation: 'auto',
+      });
+      const blob = doc.output('blob');
+      if (pdfPreviewUrl) URL.revokeObjectURL(pdfPreviewUrl);
+      const url = URL.createObjectURL(blob);
+      setPdfDocRef(doc);
+      setPdfPreviewUrl(url);
+      setPdfPreviewOpen(true);
+    } catch (error) {
+      toast.error("Erreur lors de la génération du PDF");
+    }
+  };
+
+  const handleDownloadFromPreview = () => {
+    if (pdfDocRef) {
+      downloadPDF(pdfDocRef, `controles-${format(new Date(), 'yyyy-MM-dd-HHmm')}.pdf`);
+      toast.success('PDF téléchargé');
+    }
+  };
+
+  const handleClosePreview = (isOpen: boolean) => {
+    if (!isOpen && pdfPreviewUrl) {
+      URL.revokeObjectURL(pdfPreviewUrl);
+      setPdfPreviewUrl(null);
+      setPdfDocRef(null);
+    }
+    setPdfPreviewOpen(isOpen);
+  };
+
   // Early returns AFTER all hooks
   if (authLoading) {
     return (
@@ -436,10 +488,16 @@ export default function HistoryPage() {
                 onSync={handleSync}
               />
               {controls.length > 0 && (
-                <Button variant="outline" size="sm" onClick={() => setExportOpen(true)}>
-                  <Download className="h-4 w-4 mr-2" />
-                  Exporter
-                </Button>
+                <>
+                  <Button variant="outline" size="sm" onClick={handlePreviewPDF} disabled={filteredControls.length === 0}>
+                    <Eye className="h-4 w-4 mr-2" />
+                    Aperçu
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => setExportOpen(true)}>
+                    <Download className="h-4 w-4 mr-2" />
+                    Exporter
+                  </Button>
+                </>
               )}
             </div>
           </div>
@@ -736,6 +794,15 @@ export default function HistoryPage() {
         controls={controls}
         open={exportOpen}
         onOpenChange={setExportOpen}
+      />
+
+      {/* PDF Preview Dialog */}
+      <PdfPreviewDialog
+        open={pdfPreviewOpen}
+        onOpenChange={handleClosePreview}
+        pdfUrl={pdfPreviewUrl}
+        onDownload={handleDownloadFromPreview}
+        title={`Aperçu PDF - ${filteredControls.length} contrôle(s)`}
       />
     </AppLayout>
   );
