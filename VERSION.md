@@ -1,5 +1,11 @@
 # Notes de Version
 
+## Version 1.8.0 (Février 2026)
+
+### 🎯 Points clés
+
+Administration étendue avec toggles de visibilité pour toutes les pages, système d'export entièrement refondu avec modes détaillé/simplifié, navigation temporelle et exports HTML interactifs.
+
 ## Version 1.7.1 (Février 2026)
 
 ### 🎯 Points clés

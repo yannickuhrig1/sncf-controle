@@ -5,6 +5,20 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/),
 et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.8.0] - 2026-02-10
+
+### Ajouté
+- **Admin : Toggles de visibilité étendus** : Toutes les pages (Accueil, Contrôle à bord, Contrôle en gare, Statistiques, Historique, Infos utiles) peuvent être activées/désactivées pour la maintenance
+- **Profil : Numéro de téléphone** : Champ numéro de téléphone ajouté dans le formulaire de profil
+- **Export : Navigation semaine/mois/année** : Flèches précédent/suivant pour naviguer dans les périodes d'export
+- **Export : Modes détaillé/simplifié** : 3 modes d'export — Détaillé (manager LAF), Simplifié (direction régionale), Les deux
+- **Export HTML amélioré** : Liste des trains en haut avec liens ancres, tri par colonnes interactif, toggles pour masquer/afficher les types de données, seules les valeurs non nulles sont affichées dans les détails, montants totaux encaissés mis en avant
+
+### Modifié
+- Historique : filtre par quai supprimé
+- Historique : bouton Aperçu PDF supprimé (doublon avec Exporter > Prévisualiser)
+- Historique : bouton PDF dans le tri du tableau supprimé (doublon avec Exporter)
+
 ## [1.7.1] - 2026-02-10
 
 ### Ajouté

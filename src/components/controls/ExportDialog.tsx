@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { format, startOfWeek, endOfWeek, startOfDay, endOfDay, startOfMonth, endOfMonth, startOfYear, endOfYear } from 'date-fns';
+import { format, startOfWeek, endOfWeek, startOfDay, endOfDay, startOfMonth, endOfMonth, startOfYear, endOfYear, addWeeks, subWeeks, addMonths, subMonths, addYears, subYears } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { 
   Dialog, 
@@ -38,6 +38,8 @@ import {
   Monitor,
   Eye,
   HelpCircle,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { 
@@ -48,6 +50,7 @@ import {
   openMailClient,
   downloadPDF,
   type ExportOptions,
+  type ExportMode,
 } from '@/lib/exportUtils';
 import { calculateStats, formatFraudRate } from '@/lib/stats';
 import type { Database } from '@/integrations/supabase/types';
@@ -75,7 +78,6 @@ const MONTHS = [
   { value: 11, label: 'Décembre' },
 ];
 
-// Generate years from 2020 to current year + 1
 const currentYear = new Date().getFullYear();
 const YEARS = Array.from({ length: currentYear - 2019 }, (_, i) => 2020 + i).reverse();
 
@@ -96,12 +98,18 @@ export function ExportDialog({ controls, open, onOpenChange }: ExportDialogProps
   const [selectedMonthYear, setSelectedMonthYear] = useState<number>(new Date().getFullYear());
   const [exportFormat, setExportFormat] = useState<ExportFormat>('pdf');
   const [includeStats, setIncludeStats] = useState(true);
+  const [exportMode, setExportMode] = useState<ExportMode>('detailed');
   const [pdfOrientation, setPdfOrientation] = useState<PdfOrientation>(
     preferences?.pdf_orientation || 'auto'
   );
   const [showPreview, setShowPreview] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [pdfDoc, setPdfDoc] = useState<ReturnType<typeof exportToPDF> | null>(null);
+  
+  // Navigation offset for week/month/year
+  const [weekOffset, setWeekOffset] = useState(0);
+  const [monthOffset, setMonthOffset] = useState(0);
+  const [yearOffset, setYearOffset] = useState(0);
   
   // Filter controls based on date selection
   const filteredControls = useMemo(() => {
@@ -117,16 +125,18 @@ export function ExportDialog({ controls, open, onOpenChange }: ExportDialogProps
         });
       }
       case 'week': {
-        const weekStart = startOfWeek(now, { weekStartsOn: 1 });
-        const weekEnd = endOfWeek(now, { weekStartsOn: 1 });
+        const refDate = weekOffset === 0 ? now : (weekOffset > 0 ? addWeeks(now, weekOffset) : subWeeks(now, Math.abs(weekOffset)));
+        const weekStart = startOfWeek(refDate, { weekStartsOn: 1 });
+        const weekEnd = endOfWeek(refDate, { weekStartsOn: 1 });
         return controls.filter(c => {
           const date = new Date(c.control_date);
           return date >= weekStart && date <= weekEnd;
         });
       }
       case 'month': {
-        const monthStart = startOfMonth(now);
-        const monthEnd = endOfMonth(now);
+        const refDate = monthOffset === 0 ? now : (monthOffset > 0 ? addMonths(now, monthOffset) : subMonths(now, Math.abs(monthOffset)));
+        const monthStart = startOfMonth(refDate);
+        const monthEnd = endOfMonth(refDate);
         return controls.filter(c => {
           const date = new Date(c.control_date);
           return date >= monthStart && date <= monthEnd;
@@ -142,8 +152,9 @@ export function ExportDialog({ controls, open, onOpenChange }: ExportDialogProps
         });
       }
       case 'year': {
-        const yearStart = startOfYear(now);
-        const yearEnd = endOfYear(now);
+        const refDate = yearOffset === 0 ? now : (yearOffset > 0 ? addYears(now, yearOffset) : subYears(now, Math.abs(yearOffset)));
+        const yearStart = startOfYear(refDate);
+        const yearEnd = endOfYear(refDate);
         return controls.filter(c => {
           const date = new Date(c.control_date);
           return date >= yearStart && date <= yearEnd;
@@ -161,7 +172,7 @@ export function ExportDialog({ controls, open, onOpenChange }: ExportDialogProps
       default:
         return controls;
     }
-  }, [controls, dateFilter, customDateRange, selectedMonth, selectedMonthYear]);
+  }, [controls, dateFilter, customDateRange, selectedMonth, selectedMonthYear, weekOffset, monthOffset, yearOffset]);
 
   // Get date range string
   const getDateRangeString = () => {
@@ -169,17 +180,24 @@ export function ExportDialog({ controls, open, onOpenChange }: ExportDialogProps
     switch (dateFilter) {
       case 'today':
         return format(now, 'dd MMMM yyyy', { locale: fr });
-      case 'week':
-        const weekStart = startOfWeek(now, { weekStartsOn: 1 });
-        const weekEnd = endOfWeek(now, { weekStartsOn: 1 });
+      case 'week': {
+        const refDate = weekOffset === 0 ? now : (weekOffset > 0 ? addWeeks(now, weekOffset) : subWeeks(now, Math.abs(weekOffset)));
+        const weekStart = startOfWeek(refDate, { weekStartsOn: 1 });
+        const weekEnd = endOfWeek(refDate, { weekStartsOn: 1 });
         return `${format(weekStart, 'dd MMM', { locale: fr })} - ${format(weekEnd, 'dd MMM yyyy', { locale: fr })}`;
-      case 'month':
-        return format(now, 'MMMM yyyy', { locale: fr });
-      case 'specific_month':
+      }
+      case 'month': {
+        const refDate = monthOffset === 0 ? now : (monthOffset > 0 ? addMonths(now, monthOffset) : subMonths(now, Math.abs(monthOffset)));
+        return format(refDate, 'MMMM yyyy', { locale: fr });
+      }
+      case 'specific_month': {
         const targetDate = new Date(selectedMonthYear, selectedMonth, 1);
         return format(targetDate, 'MMMM yyyy', { locale: fr });
-      case 'year':
-        return format(now, 'yyyy', { locale: fr });
+      }
+      case 'year': {
+        const refDate = yearOffset === 0 ? now : (yearOffset > 0 ? addYears(now, yearOffset) : subYears(now, Math.abs(yearOffset)));
+        return format(refDate, 'yyyy', { locale: fr });
+      }
       case 'custom':
         if (!customDateRange.from) return 'Sélectionnez une période';
         if (!customDateRange.to) return format(customDateRange.from, 'dd MMMM yyyy', { locale: fr });
@@ -197,6 +215,7 @@ export function ExportDialog({ controls, open, onOpenChange }: ExportDialogProps
     dateRange: getDateRangeString(),
     includeStats,
     orientation: pdfOrientation,
+    exportMode,
   });
 
   const handlePreview = () => {
@@ -204,23 +223,16 @@ export function ExportDialog({ controls, open, onOpenChange }: ExportDialogProps
       toast.error('Aucun contrôle à exporter pour cette période');
       return;
     }
-
     try {
       const doc = exportToPDF(getExportOptions());
       const blob = doc.output('blob');
       const url = URL.createObjectURL(blob);
-      
-      // Cleanup previous URL
-      if (previewUrl) {
-        URL.revokeObjectURL(previewUrl);
-      }
-      
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
       setPdfDoc(doc);
       setPreviewUrl(url);
       setShowPreview(true);
     } catch (error) {
       toast.error("Erreur lors de la génération du PDF");
-      console.error('Preview error:', error);
     }
   };
 
@@ -245,37 +257,81 @@ export function ExportDialog({ controls, open, onOpenChange }: ExportDialogProps
       toast.error('Aucun contrôle à exporter pour cette période');
       return;
     }
-
     const options = getExportOptions();
-
     try {
       switch (exportFormat) {
-        case 'pdf':
+        case 'pdf': {
           const doc = exportToPDF(options);
           downloadPDF(doc, `controles-${format(new Date(), 'yyyy-MM-dd-HHmm')}.pdf`);
           toast.success('PDF généré avec succès');
           break;
-        case 'html':
+        }
+        case 'html': {
           const html = exportToHTML(options);
           downloadHTML(html, `controles-${format(new Date(), 'yyyy-MM-dd')}.html`);
           toast.success('Fichier HTML téléchargé');
           break;
-        case 'email':
+        }
+        case 'email': {
           const email = generateEmailContent(options);
           openMailClient(email);
           toast.success('Client mail ouvert');
           break;
+        }
       }
       onOpenChange(false);
     } catch (error) {
       toast.error("Erreur lors de l'export");
-      console.error('Export error:', error);
     }
+  };
+
+  // Navigation arrows for week/month/year
+  const renderNavArrows = () => {
+    if (dateFilter === 'week') {
+      return (
+        <div className="flex items-center gap-1 pl-6">
+          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setWeekOffset(o => o - 1)}>
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          <span className="text-xs text-muted-foreground min-w-[140px] text-center">{getDateRangeString()}</span>
+          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setWeekOffset(o => o + 1)}>
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
+      );
+    }
+    if (dateFilter === 'month') {
+      return (
+        <div className="flex items-center gap-1 pl-6">
+          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setMonthOffset(o => o - 1)}>
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          <span className="text-xs text-muted-foreground min-w-[140px] text-center capitalize">{getDateRangeString()}</span>
+          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setMonthOffset(o => o + 1)}>
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
+      );
+    }
+    if (dateFilter === 'year') {
+      return (
+        <div className="flex items-center gap-1 pl-6">
+          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setYearOffset(o => o - 1)}>
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          <span className="text-xs text-muted-foreground min-w-[140px] text-center">{getDateRangeString()}</span>
+          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setYearOffset(o => o + 1)}>
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
+      );
+    }
+    return null;
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Download className="h-5 w-5" />
@@ -290,68 +346,60 @@ export function ExportDialog({ controls, open, onOpenChange }: ExportDialogProps
           {/* Date filter */}
           <div className="space-y-3">
             <Label>Période</Label>
-            <RadioGroup value={dateFilter} onValueChange={(v) => setDateFilter(v as DateFilterType)}>
+            <RadioGroup value={dateFilter} onValueChange={(v) => {
+              setDateFilter(v as DateFilterType);
+              setWeekOffset(0);
+              setMonthOffset(0);
+              setYearOffset(0);
+            }}>
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="today" id="today" />
                 <Label htmlFor="today" className="font-normal cursor-pointer">Aujourd'hui</Label>
               </div>
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="week" id="week" />
-                <Label htmlFor="week" className="font-normal cursor-pointer">Cette semaine</Label>
+                <Label htmlFor="week" className="font-normal cursor-pointer">Semaine</Label>
               </div>
+              {dateFilter === 'week' && renderNavArrows()}
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="month" id="month" />
-                <Label htmlFor="month" className="font-normal cursor-pointer">Mois en cours</Label>
+                <Label htmlFor="month" className="font-normal cursor-pointer">Mois</Label>
               </div>
+              {dateFilter === 'month' && renderNavArrows()}
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="specific_month" id="specific_month" />
-                <Label htmlFor="specific_month" className="font-normal cursor-pointer">Mois</Label>
+                <Label htmlFor="specific_month" className="font-normal cursor-pointer">Mois spécifique</Label>
               </div>
+              {dateFilter === 'specific_month' && (
+                <div className="flex gap-2 pl-6">
+                  <Select value={String(selectedMonth)} onValueChange={(v) => setSelectedMonth(parseInt(v, 10))}>
+                    <SelectTrigger className="w-[130px] h-9"><SelectValue placeholder="Mois" /></SelectTrigger>
+                    <SelectContent>
+                      {MONTHS.map((month) => (
+                        <SelectItem key={month.value} value={String(month.value)}>{month.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Select value={String(selectedMonthYear)} onValueChange={(v) => setSelectedMonthYear(parseInt(v, 10))}>
+                    <SelectTrigger className="w-[100px] h-9"><SelectValue placeholder="Année" /></SelectTrigger>
+                    <SelectContent>
+                      {YEARS.map((year) => (
+                        <SelectItem key={year} value={String(year)}>{year}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="year" id="year" />
-                <Label htmlFor="year" className="font-normal cursor-pointer">Cette année</Label>
+                <Label htmlFor="year" className="font-normal cursor-pointer">Année</Label>
               </div>
+              {dateFilter === 'year' && renderNavArrows()}
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="custom" id="custom" />
                 <Label htmlFor="custom" className="font-normal cursor-pointer">Période personnalisée</Label>
               </div>
             </RadioGroup>
-            
-            {/* Month/Year selectors for specific_month */}
-            {dateFilter === 'specific_month' && (
-              <div className="flex gap-2 pl-6">
-                <Select
-                  value={String(selectedMonth)}
-                  onValueChange={(v) => setSelectedMonth(parseInt(v, 10))}
-                >
-                  <SelectTrigger className="w-[130px] h-9">
-                    <SelectValue placeholder="Mois" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {MONTHS.map((month) => (
-                      <SelectItem key={month.value} value={String(month.value)}>
-                        {month.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Select
-                  value={String(selectedMonthYear)}
-                  onValueChange={(v) => setSelectedMonthYear(parseInt(v, 10))}
-                >
-                  <SelectTrigger className="w-[100px] h-9">
-                    <SelectValue placeholder="Année" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {YEARS.map((year) => (
-                      <SelectItem key={year} value={String(year)}>
-                        {year}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
             
             {dateFilter === 'custom' && (
               <Popover>
@@ -418,6 +466,34 @@ export function ExportDialog({ controls, open, onOpenChange }: ExportDialogProps
             </div>
           </div>
           
+          {/* Export mode */}
+          <div className="space-y-3">
+            <Label>Type de rapport</Label>
+            <RadioGroup value={exportMode} onValueChange={(v) => setExportMode(v as ExportMode)}>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="detailed" id="mode-detailed" />
+                <div>
+                  <Label htmlFor="mode-detailed" className="font-normal cursor-pointer">Détaillé</Label>
+                  <p className="text-xs text-muted-foreground">Pour le manager LAF — tous les détails, taux de fraude mis en avant</p>
+                </div>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="simplified" id="mode-simplified" />
+                <div>
+                  <Label htmlFor="mode-simplified" className="font-normal cursor-pointer">Simplifié</Label>
+                  <p className="text-xs text-muted-foreground">Pour les responsables région — tarifs, montants et taux de fraude</p>
+                </div>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="both" id="mode-both" />
+                <div>
+                  <Label htmlFor="mode-both" className="font-normal cursor-pointer">Les deux</Label>
+                  <p className="text-xs text-muted-foreground">Les deux versions dans un seul fichier</p>
+                </div>
+              </div>
+            </RadioGroup>
+          </div>
+
           {/* Format selection */}
           <div className="space-y-3">
             <Label>Format d'export</Label>
@@ -452,35 +528,21 @@ export function ExportDialog({ controls, open, onOpenChange }: ExportDialogProps
             </div>
           </div>
 
-          {/* PDF Orientation - only show for PDF */}
+          {/* PDF Orientation */}
           {exportFormat === 'pdf' && (
             <div className="space-y-2">
               <Label>Orientation du PDF</Label>
-              <Select
-                value={pdfOrientation}
-                onValueChange={(value: PdfOrientation) => setPdfOrientation(value)}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
+              <Select value={pdfOrientation} onValueChange={(value: PdfOrientation) => setPdfOrientation(value)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="auto">
-                    <div className="flex items-center gap-2">
-                      <Monitor className="h-4 w-4" />
-                      Automatique
-                    </div>
+                    <div className="flex items-center gap-2"><Monitor className="h-4 w-4" />Automatique</div>
                   </SelectItem>
                   <SelectItem value="portrait">
-                    <div className="flex items-center gap-2">
-                      <div className="h-4 w-3 border border-foreground/50 rounded-sm" />
-                      Portrait
-                    </div>
+                    <div className="flex items-center gap-2"><div className="h-4 w-3 border border-foreground/50 rounded-sm" />Portrait</div>
                   </SelectItem>
                   <SelectItem value="landscape">
-                    <div className="flex items-center gap-2">
-                      <div className="h-3 w-4 border border-foreground/50 rounded-sm" />
-                      Paysage
-                    </div>
+                    <div className="flex items-center gap-2"><div className="h-3 w-4 border border-foreground/50 rounded-sm" />Paysage</div>
                   </SelectItem>
                 </SelectContent>
               </Select>
@@ -502,8 +564,7 @@ export function ExportDialog({ controls, open, onOpenChange }: ExportDialogProps
                   <TooltipContent side="top" className="max-w-xs">
                     <p className="text-sm">
                       Ajoute un résumé avec : nombre total de contrôles, voyageurs contrôlés, 
-                      taux de fraude global, répartition des infractions (STT, RNV, PV), 
-                      et montants totaux.
+                      taux de fraude global, répartition des infractions.
                     </p>
                   </TooltipContent>
                 </Tooltip>
