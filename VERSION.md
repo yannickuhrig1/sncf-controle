@@ -1,5 +1,11 @@
 # Notes de Version
 
+## Version 1.7.1 (Février 2026)
+
+### 🎯 Points clés
+
+Amélioration de l'ergonomie des Paramètres avec des sections déroulantes, déplacement du bouton d'installation, toggles de pages dans l'Admin et couleurs enrichies en mode sombre Coloré.
+
 ## Version 1.7.0 (Février 2026)
 
 ### 🎯 Points clés

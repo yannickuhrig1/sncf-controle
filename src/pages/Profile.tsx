@@ -9,16 +9,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, User, BadgeCheck, Shield, LogOut, Save, Smartphone } from 'lucide-react';
+import { Loader2, User, BadgeCheck, Shield, LogOut, Save } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
-import { InstallAppButton } from '@/components/InstallAppButton';
 
 export default function ProfilePage() {
   const { user, profile, loading: authLoading, signOut } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  
 
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
@@ -212,30 +210,6 @@ export default function ProfilePage() {
                 )}
               </Button>
             </form>
-          </CardContent>
-        </Card>
-
-        {/* Application */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Smartphone className="h-4 w-4" />
-              Application
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label className="flex items-center gap-2">
-                  <Smartphone className="h-4 w-4" />
-                  Installer l'application
-                </Label>
-                <p className="text-xs text-muted-foreground">
-                  Ajoutez l'app à votre écran d'accueil
-                </p>
-              </div>
-              <InstallAppButton variant="outline" size="sm" />
-            </div>
           </CardContent>
         </Card>
 
