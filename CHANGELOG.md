@@ -5,6 +5,18 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/),
 et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.7.1] - 2026-02-10
+
+### Ajouté
+- **Sections déroulantes dans Paramètres** : Chaque section (Apparence, Navigation, Notifications, Données, Application) est désormais dans un menu déroulant pour plus de clarté
+- **Bouton Installer l'app déplacé dans Paramètres** : Déplacé depuis le Profil vers la section Application des Paramètres
+- **Toggles de pages dans Admin > Affichage** : Interface améliorée avec toggles pour activer/désactiver chaque page depuis le panneau Admin
+
+### Modifié
+- Mode sombre Coloré amélioré : couleurs plus vibrantes et saturées pour les sections, graphiques et cartes statistiques
+- Page Profil simplifiée (retrait de la section Application)
+- Admin > Affichage restructuré avec section "Visibilité des pages"
+
 ## [1.7.0] - 2026-02-10
 
 ### Ajouté

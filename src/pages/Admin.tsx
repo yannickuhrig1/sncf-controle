@@ -568,44 +568,39 @@ export default function AdminPage() {
           <TabsContent value="display" className="space-y-4">
             <FraudThresholdsSettings />
             
-            {/* Infos Page Visibility Toggle */}
+            {/* Page Visibility Toggles */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Info className="h-5 w-5" />
-                  Page Infos utiles
+                  <Eye className="h-5 w-5" />
+                  Visibilité des pages
                 </CardTitle>
                 <CardDescription>
-                  Gérez la visibilité de la page d'informations
+                  Activez ou désactivez chaque page de l'application (utile pour la maintenance)
                 </CardDescription>
               </CardHeader>
-              <CardContent>
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label className="flex items-center gap-2">
-                      {hideInfosPage ? (
-                        <EyeOff className="h-4 w-4 text-muted-foreground" />
-                      ) : (
-                        <Eye className="h-4 w-4 text-primary" />
-                      )}
-                      {hideInfosPage ? 'Page masquée' : 'Page visible'}
-                    </Label>
-                    <p className="text-xs text-muted-foreground">
-                      {hideInfosPage 
-                        ? 'La page Infos utiles est masquée pour tous les utilisateurs'
-                        : 'La page Infos utiles est accessible à tous les utilisateurs'
-                      }
-                    </p>
+              <CardContent className="space-y-3">
+                {[
+                  { key: 'hide_infos_page', label: 'Infos utiles', icon: Info, description: 'Page d\'informations, FAQ et contacts' },
+                ].map(page => (
+                  <div key={page.key} className="flex items-center justify-between py-2">
+                    <div className="space-y-0.5">
+                      <Label className="flex items-center gap-2">
+                        <page.icon className="h-4 w-4" />
+                        {page.label}
+                      </Label>
+                      <p className="text-xs text-muted-foreground">{page.description}</p>
+                    </div>
+                    <Switch
+                      checked={!hideInfosPage}
+                      onCheckedChange={(checked) => {
+                        setHideInfosPage(!checked);
+                        toggleInfosPageVisibility.mutate(!checked);
+                      }}
+                      disabled={toggleInfosPageVisibility.isPending}
+                    />
                   </div>
-                  <Switch
-                    checked={!hideInfosPage}
-                    onCheckedChange={(checked) => {
-                      setHideInfosPage(!checked);
-                      toggleInfosPageVisibility.mutate(!checked);
-                    }}
-                    disabled={toggleInfosPageVisibility.isPending}
-                  />
-                </div>
+                ))}
               </CardContent>
             </Card>
           </TabsContent>
