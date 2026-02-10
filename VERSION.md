@@ -1,10 +1,42 @@
 # Notes de Version
 
-## Version 1.5.0 (Janvier 2026)
+## Version 1.7.0 (Février 2026)
 
 ### 🎯 Points clés
 
-Cette version transforme l'application en **PWA complète** avec notifications push, sauvegarde offline et synchronisation automatique.
+Cette version corrige des bugs critiques de persistance des données de fraude et ajoute l'aperçu PDF direct dans l'historique.
+
+### 🐛 Corrections critiques
+
+#### Données de fraude manquantes
+- **Titre tiers** et **Date de naissance** n'étaient pas sauvegardés lors de la création/modification des contrôles
+- Les données disparaissaient après modification d'un contrôle car les listes n'étaient pas reconstruites
+- Les montants associés (RNV, Titre tiers, etc.) n'étaient pas persistés
+- Le mode offline ne transmettait pas ces champs
+
+### ✨ Nouveautés
+
+#### Aperçu PDF dans l'historique
+- Bouton "Aperçu" directement dans la page Historique
+- Prévisualisation dans un dialogue avec zoom, rotation et téléchargement
+- Fonctionne avec les filtres actifs (date, type, recherche)
+
+#### Export PDF groupé embarquement
+- Export de toutes les missions filtrées en un seul document PDF
+- Page de synthèse + rapports individuels par mission
+
+#### Graphique de tendance fraude
+- Évolution du taux de fraude par semaine ou par mois
+- Toggle semaine/mois dans l'onglet Statistiques
+
+### 🔧 Améliorations
+- Mode sombre amélioré pour graphiques et cartes
+- Vue grille pour les missions d'embarquement
+- Filtres avancés dans l'onglet Embarquement
+
+---
+
+## Version 1.5.0 (Janvier 2026)
 
 ### ✨ Nouveautés
 

@@ -7,6 +7,7 @@ Application de gestion et suivi des contrôles ferroviaires pour les agents SNCF
 ### Contrôles
 - **Contrôle à bord** : Saisie des contrôles effectués dans les trains (passagers, tarifs, PV)
 - **Contrôle en gare/quai** : Saisie des contrôles en gare ou sur quai
+- **Types de fraude complets** : STT 50€/100€, RNV, Titre tiers, Date de naissance, Autre
 - **Mode hors-ligne** : Synchronisation automatique des données à la reconnexion
 - **Historique dépliable** : Animation fluide avec framer-motion pour afficher/masquer l'historique
 
@@ -23,6 +24,8 @@ Application de gestion et suivi des contrôles ferroviaires pour les agents SNCF
 ### Exports
 - **HTML** : Rapport web interactif (format prioritaire)
 - **PDF** : Rapport détaillé avec statistiques et tableau des contrôles (Portrait, Paysage, Auto)
+- **Aperçu PDF** : Prévisualisation directe dans un dialogue avant téléchargement
+- **Export groupé embarquement** : Export PDF de toutes les missions filtrées en un seul document
 - Filtrage par période : Aujourd'hui, Ce mois, Mois spécifique, Cette année, Tout
 - Option d'inclusion des statistiques avec infobulle explicative
 
