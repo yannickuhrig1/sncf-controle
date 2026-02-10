@@ -5,6 +5,21 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/),
 et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.8.1] - 2026-02-10
+
+### Ajouté
+- **Export HTML : Graphique évolution fraude** : Graphique à barres de l'évolution du taux de fraude par jour
+- **Export HTML : Trains sensibles** : Liste des trains classés par taux de fraude (top 10)
+- **Export HTML : Nombre de fraudeurs** : Affiché sous le taux de fraude dans la vue d'ensemble
+- **Export HTML : Nombre de trains contrôlés** : Nouvelle stat card dans la vue d'ensemble
+- **Export HTML : Bouton Imprimer** : Bouton flottant pour impression directe
+- **Export HTML : Masquer/Afficher sections** : Chaque section peut être repliée/dépliée
+
+### Corrigé
+- **Montants à 0 corrigés** : Les montants STT 50€ (=50€), STT 100€ (=100€) et PV sont maintenant calculés automatiquement si non renseignés
+- **RI renommé** : "Contrôles ID" remplacé par "RI (Relevés d'identité)" avec affichage RI+/RI-
+- **Synthèse renommée** : "Synthèse pour la direction (version simplifiée)" → "Synthèse"
+
 ## [1.8.0] - 2026-02-10
 
 ### Ajouté
