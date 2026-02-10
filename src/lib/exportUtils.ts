@@ -80,17 +80,17 @@ function calculateExtendedStats(controls: Control[]) {
     quai: controls.filter(c => c.location_type === 'quai'),
   };
 
-  // Calculate amounts
+  // Calculate amounts - fallback to default prices if amount is 0 but count > 0
   const totalAmounts = controls.reduce((acc, c) => ({
-    stt50: acc.stt50 + (c.stt_50_amount || 0),
-    stt100: acc.stt100 + (c.stt_100_amount || 0),
+    stt50: acc.stt50 + ((c.stt_50_amount || 0) > 0 ? c.stt_50_amount! : c.stt_50 * 50),
+    stt100: acc.stt100 + ((c.stt_100_amount || 0) > 0 ? c.stt_100_amount! : c.stt_100 * 100),
     rnv: acc.rnv + (c.rnv_amount || 0),
     titreTiers: acc.titreTiers + (c.titre_tiers_amount || 0),
     docNaissance: acc.docNaissance + (c.doc_naissance_amount || 0),
     autre: acc.autre + (c.autre_tarif_amount || 0),
-    pvAbsenceTitre: acc.pvAbsenceTitre + (c.pv_absence_titre_amount || 0),
-    pvTitreInvalide: acc.pvTitreInvalide + (c.pv_titre_invalide_amount || 0),
-    pvRefusControle: acc.pvRefusControle + (c.pv_refus_controle_amount || 0),
+    pvAbsenceTitre: acc.pvAbsenceTitre + ((c.pv_absence_titre_amount || 0) > 0 ? c.pv_absence_titre_amount! : (c.pv_absence_titre || 0) * 100),
+    pvTitreInvalide: acc.pvTitreInvalide + ((c.pv_titre_invalide_amount || 0) > 0 ? c.pv_titre_invalide_amount! : (c.pv_titre_invalide || 0) * 100),
+    pvRefusControle: acc.pvRefusControle + ((c.pv_refus_controle_amount || 0) > 0 ? c.pv_refus_controle_amount! : (c.pv_refus_controle || 0) * 100),
     pvAutre: acc.pvAutre + (c.pv_autre_amount || 0),
   }), {
     stt50: 0, stt100: 0, rnv: 0, titreTiers: 0, docNaissance: 0, autre: 0,
@@ -576,6 +576,37 @@ export function exportToHTML({ controls, title, dateRange, includeStats, exportM
   });
   const trainKeys = Object.keys(trainGroups).sort();
 
+  // Count unique trains
+  const uniqueTrains = new Set(controls.filter(c => c.location_type === 'train').map(c => c.train_number)).size;
+
+  // Calculate total amounts
+  const totalEncaisse = stats.totalAmounts.stt50 + stats.totalAmounts.stt100 + stats.totalAmounts.rnv + stats.totalAmounts.titreTiers + stats.totalAmounts.docNaissance + stats.totalAmounts.autre + stats.totalAmounts.pvAbsenceTitre + stats.totalAmounts.pvTitreInvalide + stats.totalAmounts.pvRefusControle + stats.totalAmounts.pvAutre;
+  const totalTarifsControle = stats.totalAmounts.stt50 + stats.totalAmounts.stt100 + stats.totalAmounts.rnv + stats.totalAmounts.titreTiers + stats.totalAmounts.docNaissance + stats.totalAmounts.autre;
+  const totalPV = stats.totalAmounts.pvAbsenceTitre + stats.totalAmounts.pvTitreInvalide + stats.totalAmounts.pvRefusControle + stats.totalAmounts.pvAutre;
+
+  // Most sensitive trains (by fraud rate)
+  const trainFraudStats = trainKeys.map(key => {
+    const group = trainGroups[key];
+    const totalPax = group.reduce((s, c) => s + c.nb_passagers, 0);
+    const totalFraud = group.reduce((s, c) => s + c.tarifs_controle + c.pv + c.ri_negative, 0);
+    const rate = totalPax > 0 ? (totalFraud / totalPax) * 100 : 0;
+    return { train: key, passengers: totalPax, fraudCount: totalFraud, rate, controlCount: group.length };
+  }).sort((a, b) => b.rate - a.rate);
+
+  // Fraud evolution by date
+  const fraudByDate: Record<string, { pax: number; fraud: number }> = {};
+  controls.forEach(c => {
+    const d = c.control_date;
+    if (!fraudByDate[d]) fraudByDate[d] = { pax: 0, fraud: 0 };
+    fraudByDate[d].pax += c.nb_passagers;
+    fraudByDate[d].fraud += c.tarifs_controle + c.pv + c.ri_negative;
+  });
+  const sortedDates = Object.keys(fraudByDate).sort();
+  const chartData = sortedDates.map(d => ({
+    date: format(new Date(d), 'dd/MM', { locale: fr }),
+    rate: fraudByDate[d].pax > 0 ? (fraudByDate[d].fraud / fraudByDate[d].pax * 100) : 0,
+  }));
+
   // Helper: only show non-zero detail rows
   const detailRow = (label: string, count: number, amount?: number) => {
     if (count === 0 && (!amount || amount === 0)) return '';
@@ -599,7 +630,11 @@ export function exportToHTML({ controls, title, dateRange, includeStats, exportM
     .header h1 { margin: 0 0 10px 0; font-size: 28px; }
     .header .meta { opacity: 0.9; font-size: 14px; }
     .section { background: white; border-radius: 12px; padding: 24px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
-    .section h2 { margin: 0 0 20px 0; color: #00008B; font-size: 18px; border-bottom: 2px solid #00008B; padding-bottom: 10px; }
+    .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; cursor: pointer; }
+    .section-header h2 { margin: 0; color: #00008B; font-size: 18px; border-bottom: 2px solid #00008B; padding-bottom: 10px; flex: 1; }
+    .section-toggle { background: none; border: 1px solid #cbd5e1; border-radius: 6px; padding: 4px 12px; cursor: pointer; font-size: 12px; color: #64748b; margin-left: 12px; }
+    .section-toggle:hover { background: #f1f5f9; }
+    .section-body.hidden { display: none; }
     .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 12px; }
     .stat-card { background: #f8f9fa; padding: 16px; border-radius: 8px; text-align: center; border-left: 4px solid #00008B; }
     .stat-card.green { border-left-color: #22c55e; }
@@ -608,6 +643,7 @@ export function exportToHTML({ controls, title, dateRange, includeStats, exportM
     .stat-card.purple { border-left-color: #8b5cf6; }
     .stat-card.orange { border-left-color: #f97316; }
     .stat-value { font-size: 24px; font-weight: bold; color: #1a1a2e; }
+    .stat-sub { font-size: 12px; color: #64748b; margin-top: 2px; }
     .stat-label { font-size: 11px; color: #666; margin-top: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
     .detail-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
     .detail-table { width: 100%; border-collapse: collapse; }
@@ -634,236 +670,329 @@ export function exportToHTML({ controls, title, dateRange, includeStats, exportM
     .toggles { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; padding: 12px; background: #f8fafc; border-radius: 8px; }
     .toggle-btn { padding: 4px 12px; border: 1px solid #cbd5e1; border-radius: 6px; background: white; cursor: pointer; font-size: 12px; transition: all 0.2s; }
     .toggle-btn.active { background: #00008B; color: white; border-color: #00008B; }
-    .section-title { font-size: 16px; color: #00008B; font-weight: 600; margin: 16px 0 8px; border-left: 4px solid #00008B; padding-left: 10px; }
     .amount-highlight { background: #fef3c7; padding: 2px 6px; border-radius: 4px; font-weight: 600; }
+    .chart-container { width: 100%; height: 200px; position: relative; margin: 16px 0; }
+    .chart-bar-container { display: flex; align-items: flex-end; gap: 4px; height: 160px; padding: 0 4px; }
+    .chart-bar-wrapper { flex: 1; display: flex; flex-direction: column; align-items: center; min-width: 24px; }
+    .chart-bar { width: 100%; min-height: 4px; border-radius: 4px 4px 0 0; transition: all 0.3s; }
+    .chart-bar:hover { opacity: 0.8; }
+    .chart-label { font-size: 9px; color: #64748b; margin-top: 4px; transform: rotate(-45deg); white-space: nowrap; }
+    .chart-value { font-size: 9px; color: #1a1a2e; margin-bottom: 2px; font-weight: 600; }
+    .sensitive-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 12px; }
+    .sensitive-item { padding: 12px 16px; border-radius: 8px; border: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; }
+    .sensitive-item.high { border-left: 4px solid #ef4444; background: #fef2f2; }
+    .sensitive-item.medium { border-left: 4px solid #f59e0b; background: #fffbeb; }
+    .sensitive-item.low { border-left: 4px solid #22c55e; background: #f0fdf4; }
+    .print-btn { position: fixed; bottom: 20px; right: 20px; background: #00008B; color: white; border: none; padding: 12px 24px; border-radius: 8px; font-size: 14px; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,139,0.3); z-index: 100; }
+    .print-btn:hover { background: #0000a8; }
     .footer { text-align: center; padding: 20px; color: #94a3b8; font-size: 12px; }
     @media print {
       body { background: white; padding: 0; }
-      .section { box-shadow: none; border: 1px solid #e2e8f0; }
+      .section { box-shadow: none; border: 1px solid #e2e8f0; break-inside: avoid; }
       .controls-table th { background: #1a1a2e !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-      .toggles { display: none; }
+      .toggles, .print-btn, .section-toggle { display: none !important; }
     }
   </style>
 </head>
 <body>
+  <button class="print-btn" onclick="window.print()">🖨️ Imprimer</button>
   <div class="container">
     <div class="header">
       <h1>🚂 SNCF Contrôles - ${exportMode === 'simplified' ? 'Rapport Simplifié' : exportMode === 'both' ? 'Rapport Complet' : 'Rapport Détaillé'}</h1>
       <div class="meta">
         <p><strong>${title}</strong></p>
         <p>Période: ${dateRange} | Généré le: ${format(new Date(), 'dd MMMM yyyy à HH:mm', { locale: fr })}</p>
-        <p>Total: ${controls.length} contrôle${controls.length > 1 ? 's' : ''}</p>
+        <p>Total: ${controls.length} contrôle${controls.length > 1 ? 's' : ''} | ${uniqueTrains} train${uniqueTrains > 1 ? 's' : ''} contrôlé${uniqueTrains > 1 ? 's' : ''}</p>
       </div>
     </div>
 
     <!-- Train navigation -->
     ${trainKeys.length > 1 ? `
     <div class="section">
-      <h2>🚆 Trains dans cet export (${trainKeys.length})</h2>
-      <div class="train-nav">
-        ${trainKeys.map(key => `<a href="#train-${key.replace(/\s/g, '-')}" class="train-link">${key} (${trainGroups[key].length})</a>`).join('')}
+      <div class="section-header" onclick="toggleSection('trains-nav')">
+        <h2>🚆 Trains dans cet export (${trainKeys.length})</h2>
+        <button class="section-toggle">Masquer</button>
+      </div>
+      <div class="section-body" id="trains-nav">
+        <div class="train-nav">
+          ${trainKeys.map(key => `<a href="#train-${key.replace(/\s/g, '-')}" class="train-link">${key} (${trainGroups[key].length})</a>`).join('')}
+        </div>
       </div>
     </div>
     ` : ''}
     
     ${includeStats ? `
     <div class="section">
-      <h2>📊 Vue d'ensemble</h2>
-      <div class="stats-grid">
-        <div class="stat-card">
-          <div class="stat-value">${stats.totalPassengers}</div>
-          <div class="stat-label">Voyageurs</div>
-        </div>
-        <div class="stat-card green">
-          <div class="stat-value">${stats.passengersInRule}</div>
-          <div class="stat-label">En règle</div>
-        </div>
-        <div class="stat-card red">
-          <div class="stat-value">${formatFraudRate(stats.fraudRate)}</div>
-          <div class="stat-label">Taux fraude</div>
-        </div>
-        <div class="stat-card orange">
-          <div class="stat-value">${stats.tarifsControle}</div>
-          <div class="stat-label">Tarifs contrôle</div>
-        </div>
-        <div class="stat-card red">
-          <div class="stat-value">${stats.pv}</div>
-          <div class="stat-label">PV</div>
-        </div>
-        <div class="stat-card blue">
-          <div class="stat-value">${stats.totalTarifsBord}</div>
-          <div class="stat-label">Tarifs bord</div>
-        </div>
-        <div class="stat-card purple">
-          <div class="stat-value">${stats.riPositive + stats.riNegative}</div>
-          <div class="stat-label">Contrôles ID</div>
-        </div>
-        <div class="stat-card orange">
-          <div class="stat-value">${(stats.totalAmounts.stt50 + stats.totalAmounts.stt100 + stats.totalAmounts.rnv + stats.totalAmounts.titreTiers + stats.totalAmounts.docNaissance + stats.totalAmounts.autre + stats.totalAmounts.pvAbsenceTitre + stats.totalAmounts.pvTitreInvalide + stats.totalAmounts.pvRefusControle + stats.totalAmounts.pvAutre).toFixed(0)} €</div>
-          <div class="stat-label">Total encaissé</div>
+      <div class="section-header" onclick="toggleSection('overview')">
+        <h2>📊 Vue d'ensemble</h2>
+        <button class="section-toggle">Masquer</button>
+      </div>
+      <div class="section-body" id="overview">
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-value">${stats.totalPassengers}</div>
+            <div class="stat-label">Voyageurs</div>
+          </div>
+          <div class="stat-card green">
+            <div class="stat-value">${stats.passengersInRule}</div>
+            <div class="stat-label">En règle</div>
+          </div>
+          <div class="stat-card red">
+            <div class="stat-value">${formatFraudRate(stats.fraudRate)}</div>
+            <div class="stat-sub">${stats.fraudCount} fraudeur${stats.fraudCount > 1 ? 's' : ''}</div>
+            <div class="stat-label">Taux fraude</div>
+          </div>
+          <div class="stat-card blue">
+            <div class="stat-value">${uniqueTrains}</div>
+            <div class="stat-label">Trains contrôlés</div>
+          </div>
+          <div class="stat-card orange">
+            <div class="stat-value">${stats.tarifsControle}</div>
+            <div class="stat-label">Tarifs contrôle</div>
+          </div>
+          <div class="stat-card red">
+            <div class="stat-value">${stats.pv}</div>
+            <div class="stat-label">PV</div>
+          </div>
+          <div class="stat-card purple">
+            <div class="stat-value">${stats.riPositive}+ / ${stats.riNegative}-</div>
+            <div class="stat-label">RI (Relevés d'identité)</div>
+          </div>
+          <div class="stat-card orange">
+            <div class="stat-value">${totalEncaisse.toFixed(0)} €</div>
+            <div class="stat-label">Total encaissé</div>
+          </div>
         </div>
       </div>
     </div>
 
+    <!-- Fraud evolution chart -->
+    ${chartData.length > 1 ? `
+    <div class="section">
+      <div class="section-header" onclick="toggleSection('fraud-chart')">
+        <h2>📈 Évolution du taux de fraude</h2>
+        <button class="section-toggle">Masquer</button>
+      </div>
+      <div class="section-body" id="fraud-chart">
+        <div class="chart-container">
+          <div class="chart-bar-container">
+            ${chartData.map(d => {
+              const maxRate = Math.max(...chartData.map(x => x.rate), 1);
+              const height = Math.max((d.rate / maxRate) * 140, 4);
+              const color = d.rate > 10 ? '#ef4444' : d.rate > 5 ? '#f59e0b' : '#22c55e';
+              return `<div class="chart-bar-wrapper">
+                <div class="chart-value">${d.rate.toFixed(1)}%</div>
+                <div class="chart-bar" style="height:${height}px;background:${color};" title="${d.date}: ${d.rate.toFixed(2)}%"></div>
+                <div class="chart-label">${d.date}</div>
+              </div>`;
+            }).join('')}
+          </div>
+        </div>
+      </div>
+    </div>
+    ` : ''}
+
+    <!-- Most sensitive trains -->
+    ${trainFraudStats.length > 0 ? `
+    <div class="section">
+      <div class="section-header" onclick="toggleSection('sensitive-trains')">
+        <h2>⚠️ Trains les plus sensibles</h2>
+        <button class="section-toggle">Masquer</button>
+      </div>
+      <div class="section-body" id="sensitive-trains">
+        <div class="sensitive-list">
+          ${trainFraudStats.slice(0, 10).map(t => {
+            const cls = t.rate > 10 ? 'high' : t.rate > 5 ? 'medium' : 'low';
+            return `<div class="sensitive-item ${cls}">
+              <div>
+                <strong>${t.train}</strong>
+                <div style="font-size:12px;color:#64748b;">${t.passengers} voy. · ${t.controlCount} contrôle${t.controlCount > 1 ? 's' : ''}</div>
+              </div>
+              <div style="text-align:right;">
+                <div style="font-size:18px;font-weight:bold;${t.rate > 10 ? 'color:#ef4444' : t.rate > 5 ? 'color:#f59e0b' : 'color:#22c55e'}">${t.rate.toFixed(1)}%</div>
+                <div style="font-size:11px;color:#64748b;">${t.fraudCount} fraud.</div>
+              </div>
+            </div>`;
+          }).join('')}
+        </div>
+      </div>
+    </div>
+    ` : ''}
+
     ${isDetailed ? `
     <div class="section">
-      <h2>💶 Détail des opérations</h2>
-      <div class="detail-grid">
-        <div>
-          <h3 style="color: #22c55e; margin-bottom: 12px;">Tarifs Contrôle (régularisations)</h3>
-          <table class="detail-table">
-            <tr><th>Type</th><th>Nombre</th><th>Montant</th></tr>
-            ${detailRow('STT 50€', stats.stt50, stats.totalAmounts.stt50)}
-            ${detailRow('STT 100€', stats.stt100, stats.totalAmounts.stt100)}
-            ${detailRow('RNV', stats.rnv, stats.totalAmounts.rnv)}
-            ${detailRow('Titre tiers', stats.tarifsControleDetails.titreTiers, stats.totalAmounts.titreTiers)}
-            ${detailRow('Date naissance', stats.tarifsControleDetails.docNaissance, stats.totalAmounts.docNaissance)}
-            ${detailRow('Autre tarif', stats.tarifsControleDetails.autre, stats.totalAmounts.autre)}
-            <tr class="total"><td>TOTAL</td><td><strong>${stats.tarifsControle}</strong></td><td><strong>${(stats.totalAmounts.stt50 + stats.totalAmounts.stt100 + stats.totalAmounts.rnv + stats.totalAmounts.titreTiers + stats.totalAmounts.docNaissance + stats.totalAmounts.autre).toFixed(2)} €</strong></td></tr>
-          </table>
-        </div>
-        <div>
-          <h3 style="color: #ef4444; margin-bottom: 12px;">PV (procès-verbaux)</h3>
-          <table class="detail-table">
-            <tr><th>Type</th><th>Nombre</th><th>Montant</th></tr>
-            ${detailRow('Absence de titre', stats.pvBreakdown.absenceTitre, stats.totalAmounts.pvAbsenceTitre)}
-            ${detailRow('Titre invalide', stats.pvBreakdown.titreInvalide, stats.totalAmounts.pvTitreInvalide)}
-            ${detailRow('Refus contrôle', stats.pvBreakdown.refusControle, stats.totalAmounts.pvRefusControle)}
-            ${detailRow('Autre PV', stats.pvBreakdown.autre, stats.totalAmounts.pvAutre)}
-            <tr class="total"><td>TOTAL</td><td><strong>${stats.pv}</strong></td><td><strong>${(stats.totalAmounts.pvAbsenceTitre + stats.totalAmounts.pvTitreInvalide + stats.totalAmounts.pvRefusControle + stats.totalAmounts.pvAutre).toFixed(2)} €</strong></td></tr>
-          </table>
-        </div>
-        ${(stats.totalTarifsBord > 0 || stats.riPositive + stats.riNegative > 0) ? `
-        <div>
-          ${stats.totalTarifsBord > 0 ? `
-          <h3 style="color: #3b82f6; margin-bottom: 12px;">Tarifs à bord (ventes)</h3>
-          <table class="detail-table">
-            <tr><th>Type</th><th>Nombre</th></tr>
-            ${detailRow('STT 50€', stats.tarifsBord.stt50)}
-            ${detailRow('STT 100€', stats.tarifsBord.stt100)}
-            ${detailRow('RNV', stats.tarifsBord.rnv)}
-            ${detailRow('Titre tiers', stats.tarifsBord.titreTiers)}
-            ${detailRow('Date naissance', stats.tarifsBord.docNaissance)}
-            ${detailRow('Autre', stats.tarifsBord.autre)}
-            <tr class="total"><td>TOTAL</td><td><strong>${stats.totalTarifsBord}</strong></td></tr>
-          </table>
+      <div class="section-header" onclick="toggleSection('detail-ops')">
+        <h2>💶 Détail des opérations</h2>
+        <button class="section-toggle">Masquer</button>
+      </div>
+      <div class="section-body" id="detail-ops">
+        <div class="detail-grid">
+          <div>
+            <h3 style="color: #22c55e; margin-bottom: 12px;">Tarifs Contrôle (régularisations)</h3>
+            <table class="detail-table">
+              <tr><th>Type</th><th>Nombre</th><th>Montant</th></tr>
+              ${detailRow('STT 50€', stats.stt50, stats.totalAmounts.stt50)}
+              ${detailRow('STT 100€', stats.stt100, stats.totalAmounts.stt100)}
+              ${detailRow('RNV', stats.rnv, stats.totalAmounts.rnv)}
+              ${detailRow('Titre tiers', stats.tarifsControleDetails.titreTiers, stats.totalAmounts.titreTiers)}
+              ${detailRow('Date naissance', stats.tarifsControleDetails.docNaissance, stats.totalAmounts.docNaissance)}
+              ${detailRow('Autre tarif', stats.tarifsControleDetails.autre, stats.totalAmounts.autre)}
+              <tr class="total"><td>TOTAL</td><td><strong>${stats.tarifsControle}</strong></td><td><strong>${totalTarifsControle.toFixed(2)} €</strong></td></tr>
+            </table>
+          </div>
+          <div>
+            <h3 style="color: #ef4444; margin-bottom: 12px;">PV (procès-verbaux)</h3>
+            <table class="detail-table">
+              <tr><th>Type</th><th>Nombre</th><th>Montant</th></tr>
+              ${detailRow('Absence de titre', stats.pvBreakdown.absenceTitre, stats.totalAmounts.pvAbsenceTitre)}
+              ${detailRow('Titre invalide', stats.pvBreakdown.titreInvalide, stats.totalAmounts.pvTitreInvalide)}
+              ${detailRow('Refus contrôle', stats.pvBreakdown.refusControle, stats.totalAmounts.pvRefusControle)}
+              ${detailRow('Autre PV', stats.pvBreakdown.autre, stats.totalAmounts.pvAutre)}
+              <tr class="total"><td>TOTAL</td><td><strong>${stats.pv}</strong></td><td><strong>${totalPV.toFixed(2)} €</strong></td></tr>
+            </table>
+          </div>
+          ${(stats.totalTarifsBord > 0 || stats.riPositive + stats.riNegative > 0) ? `
+          <div>
+            ${stats.totalTarifsBord > 0 ? `
+            <h3 style="color: #3b82f6; margin-bottom: 12px;">Tarifs à bord (ventes)</h3>
+            <table class="detail-table">
+              <tr><th>Type</th><th>Nombre</th></tr>
+              ${detailRow('STT 50€', stats.tarifsBord.stt50)}
+              ${detailRow('STT 100€', stats.tarifsBord.stt100)}
+              ${detailRow('RNV', stats.tarifsBord.rnv)}
+              ${detailRow('Titre tiers', stats.tarifsBord.titreTiers)}
+              ${detailRow('Date naissance', stats.tarifsBord.docNaissance)}
+              ${detailRow('Autre', stats.tarifsBord.autre)}
+              <tr class="total"><td>TOTAL</td><td><strong>${stats.totalTarifsBord}</strong></td></tr>
+            </table>
+            ` : ''}
+          </div>
+          <div>
+            ${(stats.riPositive + stats.riNegative > 0) ? `
+            <h3 style="color: #8b5cf6; margin-bottom: 12px;">Relevés d'identité (RI)</h3>
+            <table class="detail-table">
+              <tr><th>Type</th><th>Nombre</th></tr>
+              ${detailRow('RI Positive', stats.riPositive)}
+              ${detailRow('RI Négative', stats.riNegative)}
+              <tr class="total"><td>TOTAL</td><td><strong>${stats.riPositive + stats.riNegative}</strong></td></tr>
+            </table>
+            ` : ''}
+          </div>
           ` : ''}
         </div>
-        <div>
-          ${(stats.riPositive + stats.riNegative > 0) ? `
-          <h3 style="color: #8b5cf6; margin-bottom: 12px;">Contrôles d'identité (RI)</h3>
-          <table class="detail-table">
-            <tr><th>Type</th><th>Nombre</th></tr>
-            ${detailRow('RI Positive', stats.riPositive)}
-            ${detailRow('RI Négative', stats.riNegative)}
-            <tr class="total"><td>TOTAL</td><td><strong>${stats.riPositive + stats.riNegative}</strong></td></tr>
-          </table>
-          ` : ''}
-        </div>
-        ` : ''}
       </div>
     </div>
     ` : ''}
 
     ${isSimplified ? `
     <div class="section">
-      <h2>📋 Synthèse pour la direction${exportMode === 'both' ? ' (version simplifiée)' : ''}</h2>
-      <div class="stats-grid">
-        <div class="stat-card">
-          <div class="stat-value">${controls.length}</div>
-          <div class="stat-label">Contrôles</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-value">${stats.totalPassengers}</div>
-          <div class="stat-label">Voyageurs</div>
-        </div>
-        <div class="stat-card red">
-          <div class="stat-value">${formatFraudRate(stats.fraudRate)}</div>
-          <div class="stat-label">Taux de fraude</div>
-        </div>
-        <div class="stat-card orange">
-          <div class="stat-value">${(stats.totalAmounts.stt50 + stats.totalAmounts.stt100 + stats.totalAmounts.rnv + stats.totalAmounts.titreTiers + stats.totalAmounts.docNaissance + stats.totalAmounts.autre + stats.totalAmounts.pvAbsenceTitre + stats.totalAmounts.pvTitreInvalide + stats.totalAmounts.pvRefusControle + stats.totalAmounts.pvAutre).toFixed(0)} €</div>
-          <div class="stat-label">Total encaissé</div>
-        </div>
+      <div class="section-header" onclick="toggleSection('synthese')">
+        <h2>📋 Synthèse</h2>
+        <button class="section-toggle">Masquer</button>
       </div>
-      <table class="detail-table" style="margin-top: 16px;">
-        <tr><th>Catégorie</th><th>Nombre</th><th>Montant</th></tr>
-        <tr><td>Tarifs contrôle</td><td><strong>${stats.tarifsControle}</strong></td><td class="amount-highlight">${(stats.totalAmounts.stt50 + stats.totalAmounts.stt100 + stats.totalAmounts.rnv + stats.totalAmounts.titreTiers + stats.totalAmounts.docNaissance + stats.totalAmounts.autre).toFixed(2)} €</td></tr>
-        <tr><td>Procès-verbaux</td><td><strong>${stats.pv}</strong></td><td class="amount-highlight">${(stats.totalAmounts.pvAbsenceTitre + stats.totalAmounts.pvTitreInvalide + stats.totalAmounts.pvRefusControle + stats.totalAmounts.pvAutre).toFixed(2)} €</td></tr>
-        ${stats.totalTarifsBord > 0 ? `<tr><td>Tarifs à bord</td><td><strong>${stats.totalTarifsBord}</strong></td><td>-</td></tr>` : ''}
-        ${(stats.riPositive + stats.riNegative > 0) ? `<tr><td>Relevés d'identité</td><td><strong>${stats.riPositive + stats.riNegative}</strong></td><td>-</td></tr>` : ''}
-      </table>
+      <div class="section-body" id="synthese">
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-value">${controls.length}</div>
+            <div class="stat-label">Contrôles</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">${stats.totalPassengers}</div>
+            <div class="stat-label">Voyageurs</div>
+          </div>
+          <div class="stat-card red">
+            <div class="stat-value">${formatFraudRate(stats.fraudRate)}</div>
+            <div class="stat-sub">${stats.fraudCount} fraudeur${stats.fraudCount > 1 ? 's' : ''}</div>
+            <div class="stat-label">Taux de fraude</div>
+          </div>
+          <div class="stat-card orange">
+            <div class="stat-value">${totalEncaisse.toFixed(0)} €</div>
+            <div class="stat-label">Total encaissé</div>
+          </div>
+        </div>
+        <table class="detail-table" style="margin-top: 16px;">
+          <tr><th>Catégorie</th><th>Nombre</th><th>Montant</th></tr>
+          <tr><td>Tarifs contrôle</td><td><strong>${stats.tarifsControle}</strong></td><td class="amount-highlight">${totalTarifsControle.toFixed(2)} €</td></tr>
+          <tr><td>Procès-verbaux</td><td><strong>${stats.pv}</strong></td><td class="amount-highlight">${totalPV.toFixed(2)} €</td></tr>
+          ${stats.totalTarifsBord > 0 ? `<tr><td>Tarifs à bord</td><td><strong>${stats.totalTarifsBord}</strong></td><td>-</td></tr>` : ''}
+          ${(stats.riPositive + stats.riNegative > 0) ? `<tr><td>Relevés d'identité (RI)</td><td><strong>${stats.riPositive}+ / ${stats.riNegative}-</strong></td><td>-</td></tr>` : ''}
+        </table>
+      </div>
     </div>
     ` : ''}
     ` : ''}
     
     <div class="section">
-      <h2>📋 Détail des contrôles</h2>
-      
-      <!-- Toggles for columns -->
-      <div class="toggles" id="column-toggles">
-        <button class="toggle-btn active" onclick="toggleColumn('col-stt')">STT</button>
-        <button class="toggle-btn active" onclick="toggleColumn('col-rnv')">RNV</button>
-        <button class="toggle-btn active" onclick="toggleColumn('col-pv')">PV</button>
-        <button class="toggle-btn active" onclick="toggleColumn('col-ri')">RI</button>
-        <button class="toggle-btn active" onclick="toggleColumn('col-tiers')">Titre tiers</button>
-        <button class="toggle-btn active" onclick="toggleColumn('col-naiss')">Date naiss.</button>
-        <button class="toggle-btn active" onclick="toggleColumn('col-bord')">Tarifs bord</button>
+      <div class="section-header" onclick="toggleSection('detail-controls')">
+        <h2>📋 Détail des contrôles</h2>
+        <button class="section-toggle">Masquer</button>
       </div>
+      <div class="section-body" id="detail-controls">
+        <!-- Toggles for columns -->
+        <div class="toggles" id="column-toggles">
+          <button class="toggle-btn active" onclick="event.stopPropagation();toggleColumn('col-stt')">STT</button>
+          <button class="toggle-btn active" onclick="event.stopPropagation();toggleColumn('col-rnv')">RNV</button>
+          <button class="toggle-btn active" onclick="event.stopPropagation();toggleColumn('col-pv')">PV</button>
+          <button class="toggle-btn active" onclick="event.stopPropagation();toggleColumn('col-ri')">RI</button>
+          <button class="toggle-btn active" onclick="event.stopPropagation();toggleColumn('col-tiers')">Titre tiers</button>
+          <button class="toggle-btn active" onclick="event.stopPropagation();toggleColumn('col-naiss')">Date naiss.</button>
+          <button class="toggle-btn active" onclick="event.stopPropagation();toggleColumn('col-bord')">Tarifs bord</button>
+        </div>
 
-      <div style="overflow-x: auto;">
-        <table class="controls-table" id="controls-table">
-          <thead>
-            <tr>
-              <th onclick="sortTable(0)">Date ↕</th>
-              <th onclick="sortTable(1)">Heure</th>
-              <th onclick="sortTable(2)">Type</th>
-              <th onclick="sortTable(3)">N° Train ↕</th>
-              <th onclick="sortTable(4)">Trajet ↕</th>
-              <th onclick="sortTable(5)">Voyageurs</th>
-              <th onclick="sortTable(6)">En règle</th>
-              <th class="col-stt" onclick="sortTable(7)">STT 50€</th>
-              <th class="col-stt" onclick="sortTable(8)">STT 100€</th>
-              <th class="col-rnv" onclick="sortTable(9)">RNV</th>
-              <th class="col-pv" onclick="sortTable(10)">PV</th>
-              <th class="col-tiers" onclick="sortTable(11)">T.Tiers</th>
-              <th class="col-naiss" onclick="sortTable(12)">D.Naiss</th>
-              <th class="col-ri" onclick="sortTable(13)">RI +/-</th>
-              <th class="col-bord" onclick="sortTable(14)">T.Bord</th>
-              <th onclick="sortTable(15)">Fraude ↕</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${controls.map(control => {
-              const details = getControlDetails(control);
-              const fraudClass = details.fraudRate > 10 ? 'fraud-high' : details.fraudRate > 5 ? 'fraud-medium' : 'fraud-low';
-              const badgeClass = control.location_type === 'train' ? 'badge-train' : control.location_type === 'gare' ? 'badge-gare' : 'badge-quai';
-              const typeLabel = control.location_type === 'train' ? '🚆' : control.location_type === 'gare' ? '🏢' : '🚉';
-              const tarifBordTotal = (control.tarif_bord_stt_50 || 0) + (control.tarif_bord_stt_100 || 0) + (control.tarif_bord_rnv || 0) + (control.tarif_bord_titre_tiers || 0) + (control.tarif_bord_doc_naissance || 0) + (control.tarif_bord_autre || 0);
-              const trainId = (control.train_number || control.location || 'Inconnu').replace(/\s/g, '-');
-              return `
-              <tr id="train-${trainId}">
-                <td>${details.date}</td>
-                <td>${details.time}</td>
-                <td><span class="badge ${badgeClass}">${typeLabel} ${control.location_type}</span></td>
-                <td>${control.location_type === 'train' ? details.trainNumber : details.location}</td>
-                <td>${control.location_type === 'train' ? `${details.origin} → ${details.destination}` : '-'}</td>
-                <td><strong>${details.passengers}</strong></td>
-                <td>${details.inRule}</td>
-                <td class="col-stt">${details.stt50 || '-'}</td>
-                <td class="col-stt">${details.stt100 || '-'}</td>
-                <td class="col-rnv">${details.rnv || '-'}</td>
-                <td class="col-pv">${details.pv ? `<strong>${details.pv}</strong>` : '-'}</td>
-                <td class="col-tiers">${details.titreTiers || '-'}</td>
-                <td class="col-naiss">${details.docNaissance || '-'}</td>
-                <td class="col-ri">${(details.riPositive || details.riNegative) ? `${details.riPositive}/${details.riNegative}` : '-'}</td>
-                <td class="col-bord">${tarifBordTotal || '-'}</td>
-                <td class="${fraudClass}">${details.fraudRateFormatted}</td>
+        <div style="overflow-x: auto;">
+          <table class="controls-table" id="controls-table">
+            <thead>
+              <tr>
+                <th onclick="sortTable(0)">Date ↕</th>
+                <th onclick="sortTable(1)">Heure</th>
+                <th onclick="sortTable(2)">Type</th>
+                <th onclick="sortTable(3)">N° Train ↕</th>
+                <th onclick="sortTable(4)">Trajet ↕</th>
+                <th onclick="sortTable(5)">Voyageurs</th>
+                <th onclick="sortTable(6)">En règle</th>
+                <th class="col-stt" onclick="sortTable(7)">STT 50€</th>
+                <th class="col-stt" onclick="sortTable(8)">STT 100€</th>
+                <th class="col-rnv" onclick="sortTable(9)">RNV</th>
+                <th class="col-pv" onclick="sortTable(10)">PV</th>
+                <th class="col-tiers" onclick="sortTable(11)">T.Tiers</th>
+                <th class="col-naiss" onclick="sortTable(12)">D.Naiss</th>
+                <th class="col-ri" onclick="sortTable(13)">RI +/-</th>
+                <th class="col-bord" onclick="sortTable(14)">T.Bord</th>
+                <th onclick="sortTable(15)">Fraude ↕</th>
               </tr>
-              `;
-            }).join('')}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              ${controls.map(control => {
+                const details = getControlDetails(control);
+                const fraudClass = details.fraudRate > 10 ? 'fraud-high' : details.fraudRate > 5 ? 'fraud-medium' : 'fraud-low';
+                const badgeClass = control.location_type === 'train' ? 'badge-train' : control.location_type === 'gare' ? 'badge-gare' : 'badge-quai';
+                const typeLabel = control.location_type === 'train' ? '🚆' : control.location_type === 'gare' ? '🏢' : '🚉';
+                const tarifBordTotal = (control.tarif_bord_stt_50 || 0) + (control.tarif_bord_stt_100 || 0) + (control.tarif_bord_rnv || 0) + (control.tarif_bord_titre_tiers || 0) + (control.tarif_bord_doc_naissance || 0) + (control.tarif_bord_autre || 0);
+                const trainId = (control.train_number || control.location || 'Inconnu').replace(/\s/g, '-');
+                return `
+                <tr id="train-${trainId}">
+                  <td>${details.date}</td>
+                  <td>${details.time}</td>
+                  <td><span class="badge ${badgeClass}">${typeLabel} ${control.location_type}</span></td>
+                  <td>${control.location_type === 'train' ? details.trainNumber : details.location}</td>
+                  <td>${control.location_type === 'train' ? (details.origin + ' → ' + details.destination) : '-'}</td>
+                  <td><strong>${details.passengers}</strong></td>
+                  <td>${details.inRule}</td>
+                  <td class="col-stt">${details.stt50 || '-'}</td>
+                  <td class="col-stt">${details.stt100 || '-'}</td>
+                  <td class="col-rnv">${details.rnv || '-'}</td>
+                  <td class="col-pv">${details.pv ? '<strong>' + details.pv + '</strong>' : '-'}</td>
+                  <td class="col-tiers">${details.titreTiers || '-'}</td>
+                  <td class="col-naiss">${details.docNaissance || '-'}</td>
+                  <td class="col-ri">${(details.riPositive || details.riNegative) ? (details.riPositive + '/' + details.riNegative) : '-'}</td>
+                  <td class="col-bord">${tarifBordTotal || '-'}</td>
+                  <td class="${fraudClass}">${details.fraudRateFormatted}</td>
+                </tr>
+                `;
+              }).join('')}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
     
@@ -873,6 +1002,18 @@ export function exportToHTML({ controls, title, dateRange, includeStats, exportM
   </div>
 
   <script>
+    function toggleSection(id) {
+      const body = document.getElementById(id);
+      const btn = body.closest('.section').querySelector('.section-toggle');
+      if (body.classList.contains('hidden')) {
+        body.classList.remove('hidden');
+        btn.textContent = 'Masquer';
+      } else {
+        body.classList.add('hidden');
+        btn.textContent = 'Afficher';
+      }
+    }
+
     function toggleColumn(className) {
       const cells = document.querySelectorAll('.' + className);
       const btn = event.target;
@@ -891,7 +1032,6 @@ export function exportToHTML({ controls, title, dateRange, includeStats, exportM
       rows.sort((a, b) => {
         let aVal = a.cells[colIndex]?.textContent.trim() || '';
         let bVal = b.cells[colIndex]?.textContent.trim() || '';
-        // Try numeric
         const aNum = parseFloat(aVal.replace(/[^\\d.-]/g, ''));
         const bNum = parseFloat(bVal.replace(/[^\\d.-]/g, ''));
         if (!isNaN(aNum) && !isNaN(bNum)) {
