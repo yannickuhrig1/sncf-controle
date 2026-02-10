@@ -21,6 +21,7 @@ export default function ProfilePage() {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [matricule, setMatricule] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
   const [isUpdating, setIsUpdating] = useState(false);
 
   useEffect(() => {
@@ -28,6 +29,7 @@ export default function ProfilePage() {
     setFirstName(profile.first_name ?? '');
     setLastName(profile.last_name ?? '');
     setMatricule(profile.matricule ?? '');
+    setPhoneNumber(profile.phone_number ?? '');
   }, [profile?.id]);
 
   if (authLoading) {
@@ -61,6 +63,7 @@ export default function ProfilePage() {
           first_name: firstName.trim(),
           last_name: lastName.trim(),
           matricule: matricule.trim() || null,
+          phone_number: phoneNumber.trim() || null,
         })
         .eq('user_id', user.id);
 
@@ -183,6 +186,17 @@ export default function ProfilePage() {
                   value={user.email}
                   disabled
                   className="bg-muted"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="phone">Numéro de téléphone (optionnel)</Label>
+                <Input
+                  id="phone"
+                  type="tel"
+                  placeholder="06 12 34 56 78"
+                  value={phoneNumber}
+                  onChange={(e) => setPhoneNumber(e.target.value)}
                 />
               </div>
 

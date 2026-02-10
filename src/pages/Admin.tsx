@@ -63,6 +63,9 @@ import {
   Info,
   Eye,
   EyeOff,
+  Train,
+  BarChart3,
+  History,
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
@@ -103,8 +106,8 @@ export default function AdminPage() {
   const [selectedRole, setSelectedRole] = useState<AppRole>('agent');
   const [selectedTeamId, setSelectedTeamId] = useState<string>('');
   
-  // Infos page visibility state
-  const [hideInfosPage, setHideInfosPage] = useState(false);
+  // Page visibility states
+  const [pageVisibility, setPageVisibility] = useState<Record<string, boolean>>({});
 
   // Fetch all profiles (admin only)
   const { data: profiles = [], isLoading: profilesLoading } = useQuery({
@@ -147,39 +150,37 @@ export default function AdminPage() {
     enabled: !!profile && isAdmin(),
   });
 
-  // Load hide_infos_page setting on mount
+  // Load page visibility settings on mount
   useEffect(() => {
-    const setting = adminSettings.find(s => s.key === 'hide_infos_page');
-    if (setting) {
-      setHideInfosPage(setting.value === true);
-    }
+    const visibility: Record<string, boolean> = {};
+    const pageKeys = ['hide_infos_page', 'hide_statistics_page', 'hide_history_page', 'hide_onboard_page', 'hide_station_page', 'hide_dashboard_page'];
+    pageKeys.forEach(key => {
+      const setting = adminSettings.find(s => s.key === key);
+      visibility[key] = setting?.value === true;
+    });
+    setPageVisibility(visibility);
   }, [adminSettings]);
 
-  // Toggle infos page visibility
-  const toggleInfosPageVisibility = useMutation({
-    mutationFn: async (hide: boolean) => {
-      // Check if setting exists
-      const existing = adminSettings.find(s => s.key === 'hide_infos_page');
+  // Toggle page visibility
+  const togglePageVisibility = useMutation({
+    mutationFn: async ({ key, hide, description }: { key: string; hide: boolean; description: string }) => {
+      const existing = adminSettings.find(s => s.key === key);
       if (existing) {
         const { error } = await supabase
           .from('admin_settings' as any)
           .update({ value: hide })
-          .eq('key', 'hide_infos_page');
+          .eq('key', key);
         if (error) throw error;
       } else {
         const { error } = await supabase
           .from('admin_settings' as any)
-          .insert({
-            key: 'hide_infos_page',
-            value: hide,
-            description: 'Masquer la page Infos utiles pour tous les utilisateurs',
-          });
+          .insert({ key, value: hide, description });
         if (error) throw error;
       }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-settings'] });
-      toast.success(hideInfosPage ? 'Page Infos utiles masquée' : 'Page Infos utiles visible');
+      toast.success('Visibilité mise à jour');
     },
     onError: (error) => {
       toast.error('Erreur: ' + error.message);
@@ -581,6 +582,11 @@ export default function AdminPage() {
               </CardHeader>
               <CardContent className="space-y-3">
                 {[
+                  { key: 'hide_dashboard_page', label: 'Accueil', icon: Eye, description: 'Page d\'accueil / tableau de bord' },
+                  { key: 'hide_onboard_page', label: 'Contrôle à bord', icon: Train, description: 'Formulaire de contrôle en train' },
+                  { key: 'hide_station_page', label: 'Contrôle en gare', icon: Building2, description: 'Formulaire de contrôle en gare/quai' },
+                  { key: 'hide_statistics_page', label: 'Statistiques', icon: Database, description: 'Graphiques et analyses statistiques' },
+                  { key: 'hide_history_page', label: 'Historique', icon: Settings, description: 'Historique et export des contrôles' },
                   { key: 'hide_infos_page', label: 'Infos utiles', icon: Info, description: 'Page d\'informations, FAQ et contacts' },
                 ].map(page => (
                   <div key={page.key} className="flex items-center justify-between py-2">
@@ -592,12 +598,12 @@ export default function AdminPage() {
                       <p className="text-xs text-muted-foreground">{page.description}</p>
                     </div>
                     <Switch
-                      checked={!hideInfosPage}
+                      checked={!pageVisibility[page.key]}
                       onCheckedChange={(checked) => {
-                        setHideInfosPage(!checked);
-                        toggleInfosPageVisibility.mutate(!checked);
+                        setPageVisibility(prev => ({ ...prev, [page.key]: !checked }));
+                        togglePageVisibility.mutate({ key: page.key, hide: !checked, description: `Masquer la page ${page.label}` });
                       }}
-                      disabled={toggleInfosPageVisibility.isPending}
+                      disabled={togglePageVisibility.isPending}
                     />
                   </div>
                 ))}

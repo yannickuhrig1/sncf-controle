@@ -489,11 +489,7 @@ export default function HistoryPage() {
               />
               {controls.length > 0 && (
                 <>
-                  <Button variant="outline" size="sm" onClick={handlePreviewPDF} disabled={filteredControls.length === 0}>
-                    <Eye className="h-4 w-4 mr-2" />
-                    Aperçu
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={() => setExportOpen(true)}>
+              <Button variant="outline" size="sm" onClick={() => setExportOpen(true)}>
                     <Download className="h-4 w-4 mr-2" />
                     Exporter
                   </Button>
@@ -572,10 +568,6 @@ export default function HistoryPage() {
                       <Building2 className="h-3.5 w-3.5" />
                       Gare
                     </ToggleGroupItem>
-                    <ToggleGroupItem value="quai" aria-label="Quai" size="sm" className="gap-1">
-                      <TrainTrack className="h-3.5 w-3.5" />
-                      Quai
-                    </ToggleGroupItem>
                   </ToggleGroup>
                 </div>
 
@@ -637,17 +629,6 @@ export default function HistoryPage() {
                     </SelectContent>
                   </Select>
                   
-                  {viewMode === 'table' && filteredControls.length > 0 && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handleExportTablePDF}
-                      className="ml-2"
-                    >
-                      <FileText className="h-4 w-4 mr-2" />
-                      PDF
-                    </Button>
-                  )}
                   {hasActiveFilters && (
                     <Button variant="ghost" size="sm" onClick={clearFilters} className="ml-auto text-muted-foreground">
                       <X className="h-3.5 w-3.5 mr-1" />
