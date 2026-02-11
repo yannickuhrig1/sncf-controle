@@ -580,9 +580,11 @@ export function exportToHTML({ controls, title, dateRange, includeStats, exportM
   const uniqueTrains = new Set(controls.filter(c => c.location_type === 'train').map(c => c.train_number)).size;
 
   // Calculate total amounts
-  const totalEncaisse = stats.totalAmounts.stt50 + stats.totalAmounts.stt100 + stats.totalAmounts.rnv + stats.totalAmounts.titreTiers + stats.totalAmounts.docNaissance + stats.totalAmounts.autre + stats.totalAmounts.pvAbsenceTitre + stats.totalAmounts.pvTitreInvalide + stats.totalAmounts.pvRefusControle + stats.totalAmounts.pvAutre;
-  const totalTarifsControle = stats.totalAmounts.stt50 + stats.totalAmounts.stt100 + stats.totalAmounts.rnv + stats.totalAmounts.titreTiers + stats.totalAmounts.docNaissance + stats.totalAmounts.autre;
-  const totalPV = stats.totalAmounts.pvAbsenceTitre + stats.totalAmounts.pvTitreInvalide + stats.totalAmounts.pvRefusControle + stats.totalAmounts.pvAutre;
+  // STT 100 goes into PV, not Tarifs Contrôle
+  const totalTarifsControle = stats.totalAmounts.stt50 + stats.totalAmounts.rnv + stats.totalAmounts.titreTiers + stats.totalAmounts.docNaissance + stats.totalAmounts.autre;
+  const totalPV = stats.totalAmounts.stt100 + stats.totalAmounts.pvAbsenceTitre + stats.totalAmounts.pvTitreInvalide + stats.totalAmounts.pvRefusControle + stats.totalAmounts.pvAutre;
+  // Total encaissé = Tarifs contrôle + Tarifs bord (sans PV)
+  const totalEncaisse = totalTarifsControle;
 
   // Most sensitive trains (by fraud rate)
   const trainFraudStats = trainKeys.map(key => {
@@ -762,6 +764,10 @@ export function exportToHTML({ controls, title, dateRange, includeStats, exportM
             <div class="stat-value">${totalEncaisse.toFixed(0)} €</div>
             <div class="stat-label">Total encaissé</div>
           </div>
+          <div class="stat-card red">
+            <div class="stat-value">${totalPV.toFixed(0)} €</div>
+            <div class="stat-label">Montant total PV</div>
+          </div>
         </div>
       </div>
     </div>
@@ -832,23 +838,23 @@ export function exportToHTML({ controls, title, dateRange, includeStats, exportM
             <table class="detail-table">
               <tr><th>Type</th><th>Nombre</th><th>Montant</th></tr>
               ${detailRow('STT 50€', stats.stt50, stats.totalAmounts.stt50)}
-              ${detailRow('STT 100€', stats.stt100, stats.totalAmounts.stt100)}
               ${detailRow('RNV', stats.rnv, stats.totalAmounts.rnv)}
               ${detailRow('Titre tiers', stats.tarifsControleDetails.titreTiers, stats.totalAmounts.titreTiers)}
               ${detailRow('Date naissance', stats.tarifsControleDetails.docNaissance, stats.totalAmounts.docNaissance)}
               ${detailRow('Autre tarif', stats.tarifsControleDetails.autre, stats.totalAmounts.autre)}
-              <tr class="total"><td>TOTAL</td><td><strong>${stats.tarifsControle}</strong></td><td><strong>${totalTarifsControle.toFixed(2)} €</strong></td></tr>
+              <tr class="total"><td>TOTAL</td><td><strong>${stats.tarifsControle - stats.stt100}</strong></td><td><strong>${totalTarifsControle.toFixed(2)} €</strong></td></tr>
             </table>
           </div>
           <div>
             <h3 style="color: #ef4444; margin-bottom: 12px;">PV (procès-verbaux)</h3>
             <table class="detail-table">
               <tr><th>Type</th><th>Nombre</th><th>Montant</th></tr>
+              ${detailRow('STT 100€', stats.stt100, stats.totalAmounts.stt100)}
               ${detailRow('Absence de titre', stats.pvBreakdown.absenceTitre, stats.totalAmounts.pvAbsenceTitre)}
               ${detailRow('Titre invalide', stats.pvBreakdown.titreInvalide, stats.totalAmounts.pvTitreInvalide)}
               ${detailRow('Refus contrôle', stats.pvBreakdown.refusControle, stats.totalAmounts.pvRefusControle)}
               ${detailRow('Autre PV', stats.pvBreakdown.autre, stats.totalAmounts.pvAutre)}
-              <tr class="total"><td>TOTAL</td><td><strong>${stats.pv}</strong></td><td><strong>${totalPV.toFixed(2)} €</strong></td></tr>
+              <tr class="total"><td>TOTAL</td><td><strong>${stats.pv + stats.stt100}</strong></td><td><strong>${totalPV.toFixed(2)} €</strong></td></tr>
             </table>
           </div>
           ${(stats.totalTarifsBord > 0 || stats.riPositive + stats.riNegative > 0) ? `
@@ -909,11 +915,15 @@ export function exportToHTML({ controls, title, dateRange, includeStats, exportM
             <div class="stat-value">${totalEncaisse.toFixed(0)} €</div>
             <div class="stat-label">Total encaissé</div>
           </div>
+          <div class="stat-card red">
+            <div class="stat-value">${totalPV.toFixed(0)} €</div>
+            <div class="stat-label">Montant total PV</div>
+          </div>
         </div>
         <table class="detail-table" style="margin-top: 16px;">
           <tr><th>Catégorie</th><th>Nombre</th><th>Montant</th></tr>
-          <tr><td>Tarifs contrôle</td><td><strong>${stats.tarifsControle}</strong></td><td class="amount-highlight">${totalTarifsControle.toFixed(2)} €</td></tr>
-          <tr><td>Procès-verbaux</td><td><strong>${stats.pv}</strong></td><td class="amount-highlight">${totalPV.toFixed(2)} €</td></tr>
+          <tr><td>Tarifs contrôle (hors STT 100)</td><td><strong>${stats.tarifsControle - stats.stt100}</strong></td><td class="amount-highlight">${totalTarifsControle.toFixed(2)} €</td></tr>
+          <tr><td>Procès-verbaux (incl. STT 100)</td><td><strong>${stats.pv + stats.stt100}</strong></td><td class="amount-highlight">${totalPV.toFixed(2)} €</td></tr>
           ${stats.totalTarifsBord > 0 ? `<tr><td>Tarifs à bord</td><td><strong>${stats.totalTarifsBord}</strong></td><td>-</td></tr>` : ''}
           ${(stats.riPositive + stats.riNegative > 0) ? `<tr><td>Relevés d'identité (RI)</td><td><strong>${stats.riPositive}+ / ${stats.riNegative}-</strong></td><td>-</td></tr>` : ''}
         </table>
