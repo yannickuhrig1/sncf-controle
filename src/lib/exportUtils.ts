@@ -206,20 +206,20 @@ export function exportToPDF({ controls, title, dateRange, includeStats, orientat
 
     yPosition = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 10;
 
-    // Tarifs contrôle detail
+    // Tarifs contrôle detail (STT 100 is in PV, not here)
     doc.setFontSize(11);
     doc.text('Détail Tarifs Contrôle (régularisations)', 14, yPosition);
     yPosition += 6;
 
+    const totalTarifsControleAmount = stats.totalAmounts.stt50 + stats.totalAmounts.rnv + stats.totalAmounts.titreTiers + stats.totalAmounts.docNaissance + stats.totalAmounts.autre;
     const tarifsData = [
       ['Type', 'Nombre', 'Montant (€)'],
       ['STT 50€', stats.stt50.toString(), stats.totalAmounts.stt50.toFixed(2)],
-      ['STT 100€', stats.stt100.toString(), stats.totalAmounts.stt100.toFixed(2)],
       ['RNV', stats.rnv.toString(), stats.totalAmounts.rnv.toFixed(2)],
       ['Titre tiers', stats.tarifsControleDetails.titreTiers.toString(), stats.totalAmounts.titreTiers.toFixed(2)],
       ['Date naissance', stats.tarifsControleDetails.docNaissance.toString(), stats.totalAmounts.docNaissance.toFixed(2)],
       ['Autre tarif', stats.tarifsControleDetails.autre.toString(), stats.totalAmounts.autre.toFixed(2)],
-      ['TOTAL', stats.tarifsControle.toString(), (stats.totalAmounts.stt50 + stats.totalAmounts.stt100 + stats.totalAmounts.rnv + stats.totalAmounts.titreTiers + stats.totalAmounts.docNaissance + stats.totalAmounts.autre).toFixed(2)],
+      ['TOTAL', stats.tarifsControle.toString(), totalTarifsControleAmount.toFixed(2)],
     ];
 
     autoTable(doc, {
@@ -237,13 +237,15 @@ export function exportToPDF({ controls, title, dateRange, includeStats, orientat
     doc.setFontSize(11);
     doc.text('Détail PV (procès-verbaux)', 110, yPosition);
 
+    const totalPVAmount = stats.totalAmounts.stt100 + stats.totalAmounts.pvAbsenceTitre + stats.totalAmounts.pvTitreInvalide + stats.totalAmounts.pvRefusControle + stats.totalAmounts.pvAutre;
     const pvData = [
       ['Type', 'Nombre', 'Montant (€)'],
+      ['STT 100€', stats.stt100.toString(), stats.totalAmounts.stt100.toFixed(2)],
       ['Absence de titre', stats.pvBreakdown.absenceTitre.toString(), stats.totalAmounts.pvAbsenceTitre.toFixed(2)],
       ['Titre invalide', stats.pvBreakdown.titreInvalide.toString(), stats.totalAmounts.pvTitreInvalide.toFixed(2)],
       ['Refus contrôle', stats.pvBreakdown.refusControle.toString(), stats.totalAmounts.pvRefusControle.toFixed(2)],
       ['Autre PV', stats.pvBreakdown.autre.toString(), stats.totalAmounts.pvAutre.toFixed(2)],
-      ['TOTAL', stats.pv.toString(), (stats.totalAmounts.pvAbsenceTitre + stats.totalAmounts.pvTitreInvalide + stats.totalAmounts.pvRefusControle + stats.totalAmounts.pvAutre).toFixed(2)],
+      ['TOTAL', stats.pv.toString(), totalPVAmount.toFixed(2)],
     ];
 
     autoTable(doc, {
@@ -842,7 +844,7 @@ export function exportToHTML({ controls, title, dateRange, includeStats, exportM
               ${detailRow('Titre tiers', stats.tarifsControleDetails.titreTiers, stats.totalAmounts.titreTiers)}
               ${detailRow('Date naissance', stats.tarifsControleDetails.docNaissance, stats.totalAmounts.docNaissance)}
               ${detailRow('Autre tarif', stats.tarifsControleDetails.autre, stats.totalAmounts.autre)}
-              <tr class="total"><td>TOTAL</td><td><strong>${stats.tarifsControle - stats.stt100}</strong></td><td><strong>${totalTarifsControle.toFixed(2)} €</strong></td></tr>
+              <tr class="total"><td>TOTAL</td><td><strong>${stats.tarifsControle}</strong></td><td><strong>${totalTarifsControle.toFixed(2)} €</strong></td></tr>
             </table>
           </div>
           <div>
@@ -854,7 +856,7 @@ export function exportToHTML({ controls, title, dateRange, includeStats, exportM
               ${detailRow('Titre invalide', stats.pvBreakdown.titreInvalide, stats.totalAmounts.pvTitreInvalide)}
               ${detailRow('Refus contrôle', stats.pvBreakdown.refusControle, stats.totalAmounts.pvRefusControle)}
               ${detailRow('Autre PV', stats.pvBreakdown.autre, stats.totalAmounts.pvAutre)}
-              <tr class="total"><td>TOTAL</td><td><strong>${stats.pv + stats.stt100}</strong></td><td><strong>${totalPV.toFixed(2)} €</strong></td></tr>
+              <tr class="total"><td>TOTAL</td><td><strong>${stats.pv}</strong></td><td><strong>${totalPV.toFixed(2)} €</strong></td></tr>
             </table>
           </div>
           ${(stats.totalTarifsBord > 0 || stats.riPositive + stats.riNegative > 0) ? `
@@ -922,8 +924,8 @@ export function exportToHTML({ controls, title, dateRange, includeStats, exportM
         </div>
         <table class="detail-table" style="margin-top: 16px;">
           <tr><th>Catégorie</th><th>Nombre</th><th>Montant</th></tr>
-          <tr><td>Tarifs contrôle (hors STT 100)</td><td><strong>${stats.tarifsControle - stats.stt100}</strong></td><td class="amount-highlight">${totalTarifsControle.toFixed(2)} €</td></tr>
-          <tr><td>Procès-verbaux (incl. STT 100)</td><td><strong>${stats.pv + stats.stt100}</strong></td><td class="amount-highlight">${totalPV.toFixed(2)} €</td></tr>
+          <tr><td>Tarifs contrôle</td><td><strong>${stats.tarifsControle}</strong></td><td class="amount-highlight">${totalTarifsControle.toFixed(2)} €</td></tr>
+          <tr><td>Procès-verbaux</td><td><strong>${stats.pv}</strong></td><td class="amount-highlight">${totalPV.toFixed(2)} €</td></tr>
           ${stats.totalTarifsBord > 0 ? `<tr><td>Tarifs à bord</td><td><strong>${stats.totalTarifsBord}</strong></td><td>-</td></tr>` : ''}
           ${(stats.riPositive + stats.riNegative > 0) ? `<tr><td>Relevés d'identité (RI)</td><td><strong>${stats.riPositive}+ / ${stats.riNegative}-</strong></td><td>-</td></tr>` : ''}
         </table>

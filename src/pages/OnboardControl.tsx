@@ -346,10 +346,11 @@ export default function OnboardControl() {
   const fraudStats = useMemo(() => {
     const tarifsControleCount = formState.tarifsControle.length + formState.stt50Count;
     const pvCount = formState.pvList.length + formState.stt100Count;
-    const fraudCount = tarifsControleCount + pvCount;
+    // RI négatifs comptent aussi comme fraude
+    const fraudCount = tarifsControleCount + pvCount + formState.riNegatif;
     const fraudRate = formState.passengers > 0 ? (fraudCount / formState.passengers) * 100 : 0;
     return { fraudCount, fraudRate, tarifsControleCount, pvCount };
-  }, [formState.tarifsControle, formState.stt50Count, formState.pvList, formState.stt100Count, formState.passengers]);
+  }, [formState.tarifsControle, formState.stt50Count, formState.pvList, formState.stt100Count, formState.passengers, formState.riNegatif]);
 
   // Helper to calculate fraud rate (works with both Control and OnboardControlType)
   const getFraudRate = (control: { tarifs_controle: number; pv: number; nb_passagers: number }) => {

@@ -238,7 +238,8 @@ export function ExportDialog({ controls, open, onOpenChange }: ExportDialogProps
 
   const handleDownloadFromPreview = () => {
     if (pdfDoc) {
-      downloadPDF(pdfDoc, `controles-${format(new Date(), 'yyyy-MM-dd-HHmm')}.pdf`);
+      const periodSlug = getDateRangeString().replace(/[^a-zA-Z0-9àâäéèêëïîôùûüÿçæœ]+/gi, '-').replace(/-+/g, '-').replace(/^-|-$/g, '').toLowerCase();
+      downloadPDF(pdfDoc, `controles-${periodSlug}.pdf`);
       toast.success('PDF téléchargé avec succès');
     }
   };
@@ -259,16 +260,17 @@ export function ExportDialog({ controls, open, onOpenChange }: ExportDialogProps
     }
     const options = getExportOptions();
     try {
+      const periodSlug = getDateRangeString().replace(/[^a-zA-Z0-9àâäéèêëïîôùûüÿçæœ]+/gi, '-').replace(/-+/g, '-').replace(/^-|-$/g, '').toLowerCase();
       switch (exportFormat) {
         case 'pdf': {
           const doc = exportToPDF(options);
-          downloadPDF(doc, `controles-${format(new Date(), 'yyyy-MM-dd-HHmm')}.pdf`);
+          downloadPDF(doc, `controles-${periodSlug}.pdf`);
           toast.success('PDF généré avec succès');
           break;
         }
         case 'html': {
           const html = exportToHTML(options);
-          downloadHTML(html, `controles-${format(new Date(), 'yyyy-MM-dd')}.html`);
+          downloadHTML(html, `controles-${periodSlug}.html`);
           toast.success('Fichier HTML téléchargé');
           break;
         }
