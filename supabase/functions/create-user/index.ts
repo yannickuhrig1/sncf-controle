@@ -2,7 +2,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
 Deno.serve(async (req) => {
@@ -14,22 +14,30 @@ Deno.serve(async (req) => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
-    // Verify the caller is authenticated and is admin or manager
-    const authHeader = req.headers.get("Authorization")!;
-    const callerClient = createClient(supabaseUrl, Deno.env.get("SUPABASE_PUBLISHABLE_KEY")!, {
-      global: { headers: { Authorization: authHeader } },
-    });
-
-    const { data: { user: caller } } = await callerClient.auth.getUser();
-    if (!caller) {
+    // Use service role to verify caller identity and check role
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
       return new Response(JSON.stringify({ error: "Non authentifié" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // Check role
-    const { data: callerProfile } = await callerClient
+    // Use service role client to verify the JWT and get user
+    const adminClient = createClient(supabaseUrl, serviceRoleKey);
+    
+    // Extract the token and get user
+    const token = authHeader.replace("Bearer ", "");
+    const { data: { user: caller }, error: authError } = await adminClient.auth.getUser(token);
+    if (authError || !caller) {
+      return new Response(JSON.stringify({ error: "Non authentifié" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Check role using service role client (bypasses RLS)
+    const { data: callerProfile } = await adminClient
       .from("profiles")
       .select("role, team_id")
       .eq("user_id", caller.id)
@@ -54,8 +62,7 @@ Deno.serve(async (req) => {
     // Managers can only create agents in their own team
     const assignedTeamId = callerProfile.role === "manager" ? callerProfile.team_id : (team_id || null);
 
-    // Create user with admin client
-    const adminClient = createClient(supabaseUrl, serviceRoleKey);
+    // Create user with admin client (reuse existing adminClient)
     
     const { data: newUser, error: createError } = await adminClient.auth.admin.createUser({
       email,
