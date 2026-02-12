@@ -32,8 +32,8 @@ export function usePushNotifications() {
       
       // Check if already subscribed
       try {
-        const registration = await navigator.serviceWorker.ready;
-        const subscription = await registration.pushManager.getSubscription();
+      const registration = await navigator.serviceWorker.ready;
+        const subscription = await (registration as any).pushManager?.getSubscription();
         
         setState({
           isSupported: true,
@@ -74,7 +74,7 @@ export function usePushNotifications() {
 
       // Subscribe to push notifications
       const vapidKey = urlBase64ToUint8Array(VAPID_PUBLIC_KEY);
-      const subscription = await registration.pushManager.subscribe({
+      const subscription = await (registration as any).pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: vapidKey.buffer as ArrayBuffer,
       });
@@ -108,7 +108,7 @@ export function usePushNotifications() {
 
     try {
       const registration = await navigator.serviceWorker.ready;
-      const subscription = await registration.pushManager.getSubscription();
+      const subscription = await (registration as any).pushManager?.getSubscription();
 
       if (subscription) {
         await subscription.unsubscribe();

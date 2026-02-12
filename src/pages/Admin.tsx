@@ -67,8 +67,9 @@ import {
   BarChart3,
   History,
 } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
+import { UserPlus, Phone } from 'lucide-react';
 import type { Database as DbType } from '@/integrations/supabase/types';
 import { useUserPreferences } from '@/hooks/useUserPreferences';
 import { FraudThresholdsSettings } from '@/components/admin/FraudThresholdsSettings';
@@ -105,6 +106,16 @@ export default function AdminPage() {
   const [editingUser, setEditingUser] = useState<Profile | null>(null);
   const [selectedRole, setSelectedRole] = useState<AppRole>('agent');
   const [selectedTeamId, setSelectedTeamId] = useState<string>('');
+
+  // Create user dialog state
+  const [createUserOpen, setCreateUserOpen] = useState(false);
+  const [newUserEmail, setNewUserEmail] = useState('');
+  const [newUserPassword, setNewUserPassword] = useState('');
+  const [newUserFirstName, setNewUserFirstName] = useState('');
+  const [newUserLastName, setNewUserLastName] = useState('');
+  const [newUserPhone, setNewUserPhone] = useState('');
+  const [newUserTeamId, setNewUserTeamId] = useState('');
+  const [isCreatingUser, setIsCreatingUser] = useState(false);
   
   // Page visibility states
   const [pageVisibility, setPageVisibility] = useState<Record<string, boolean>>({});
@@ -319,6 +330,57 @@ export default function AdminPage() {
     });
   };
 
+  const handleCreateUser = async () => {
+    if (!newUserEmail || !newUserPassword || !newUserFirstName || !newUserLastName) {
+      toast.error('Veuillez remplir tous les champs obligatoires');
+      return;
+    }
+    if (newUserPassword.length < 6) {
+      toast.error('Le mot de passe doit contenir au moins 6 caractères');
+      return;
+    }
+
+    setIsCreatingUser(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const response = await supabase.functions.invoke('create-user', {
+        body: {
+          email: newUserEmail,
+          password: newUserPassword,
+          first_name: newUserFirstName,
+          last_name: newUserLastName,
+          phone_number: newUserPhone || null,
+          team_id: newUserTeamId || null,
+        },
+      });
+
+      if (response.error) {
+        throw new Error(response.error.message || 'Erreur lors de la création');
+      }
+      
+      const result = response.data;
+      if (result?.error) {
+        throw new Error(result.error);
+      }
+
+      toast.success('Agent créé avec succès', {
+        description: `${newUserFirstName} ${newUserLastName} (${newUserEmail})`,
+      });
+      queryClient.invalidateQueries({ queryKey: ['admin-profiles'] });
+      setCreateUserOpen(false);
+      setNewUserEmail('');
+      setNewUserPassword('');
+      setNewUserFirstName('');
+      setNewUserLastName('');
+      setNewUserPhone('');
+      setNewUserTeamId('');
+    } catch (error: any) {
+      toast.error('Erreur: ' + (error.message || 'Impossible de créer le compte'));
+    } finally {
+      setIsCreatingUser(false);
+    }
+  };
+
   const getTeamName = (teamId: string | null) => {
     if (!teamId) return '-';
     const team = teams.find(t => t.id === teamId);
@@ -381,11 +443,15 @@ export default function AdminPage() {
           {/* Users Tab */}
           <TabsContent value="users" className="space-y-4">
             <Card>
-              <CardHeader>
+              <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle className="flex items-center gap-2">
                   <UserCog className="h-5 w-5" />
                   Gestion des utilisateurs
                 </CardTitle>
+                <Button size="sm" onClick={() => setCreateUserOpen(true)}>
+                  <UserPlus className="h-4 w-4 mr-2" />
+                  Créer un agent
+                </Button>
               </CardHeader>
               <CardContent>
                 {isLoading ? (
@@ -798,6 +864,102 @@ export default function AdminPage() {
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                 )}
                 Enregistrer
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Create User Dialog */}
+        <Dialog open={createUserOpen} onOpenChange={setCreateUserOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <UserPlus className="h-5 w-5" />
+                Créer un agent
+              </DialogTitle>
+              <DialogDescription>
+                Créez un nouveau compte agent. L'utilisateur pourra se connecter immédiatement.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="new-first-name">Prénom *</Label>
+                  <Input
+                    id="new-first-name"
+                    value={newUserFirstName}
+                    onChange={(e) => setNewUserFirstName(e.target.value)}
+                    placeholder="Jean"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="new-last-name">Nom *</Label>
+                  <Input
+                    id="new-last-name"
+                    value={newUserLastName}
+                    onChange={(e) => setNewUserLastName(e.target.value)}
+                    placeholder="Dupont"
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="new-phone">Téléphone</Label>
+                <div className="relative">
+                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="new-phone"
+                    type="tel"
+                    className="pl-10"
+                    value={newUserPhone}
+                    onChange={(e) => setNewUserPhone(e.target.value)}
+                    placeholder="06 12 34 56 78"
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="new-email">Email *</Label>
+                <Input
+                  id="new-email"
+                  type="email"
+                  value={newUserEmail}
+                  onChange={(e) => setNewUserEmail(e.target.value)}
+                  placeholder="agent@sncf.fr"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="new-password">Mot de passe *</Label>
+                <Input
+                  id="new-password"
+                  type="password"
+                  value={newUserPassword}
+                  onChange={(e) => setNewUserPassword(e.target.value)}
+                  placeholder="Minimum 6 caractères"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Équipe</Label>
+                <Select value={newUserTeamId} onValueChange={setNewUserTeamId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Aucune équipe" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">Aucune équipe</SelectItem>
+                    {teams.map((team) => (
+                      <SelectItem key={team.id} value={team.id}>
+                        {team.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setCreateUserOpen(false)}>
+                Annuler
+              </Button>
+              <Button onClick={handleCreateUser} disabled={isCreatingUser}>
+                {isCreatingUser && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                Créer le compte
               </Button>
             </DialogFooter>
           </DialogContent>
