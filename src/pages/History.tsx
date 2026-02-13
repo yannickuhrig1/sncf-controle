@@ -130,6 +130,61 @@ function ControlRow({ control, onClick }: ControlRowProps) {
             <ChevronRight className="h-4 w-4 text-muted-foreground" />
           </div>
         </div>
+        {/* Quick detail badges */}
+        {fraudCount > 0 && (
+          <div className="flex flex-wrap gap-1.5 mt-2 ml-11">
+            {control.tarifs_controle > 0 && (
+              <Badge className="text-[10px] px-1.5 py-0 bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 hover:bg-green-100">
+                TC: {control.tarifs_controle}
+              </Badge>
+            )}
+            {control.pv > 0 && (
+              <Badge variant="destructive" className="text-[10px] px-1.5 py-0">
+                PV: {control.pv}
+              </Badge>
+            )}
+            {(control.pv_absence_titre || 0) > 0 && (
+              <Badge variant="outline" className="text-[10px] px-1.5 py-0 text-red-600 border-red-200">
+                Abs. titre: {control.pv_absence_titre}
+              </Badge>
+            )}
+            {(control.pv_titre_invalide || 0) > 0 && (
+              <Badge variant="outline" className="text-[10px] px-1.5 py-0 text-red-600 border-red-200">
+                Titre inv.: {control.pv_titre_invalide}
+              </Badge>
+            )}
+            {(control.pv_refus_controle || 0) > 0 && (
+              <Badge variant="outline" className="text-[10px] px-1.5 py-0 text-red-600 border-red-200">
+                Refus: {control.pv_refus_controle}
+              </Badge>
+            )}
+            {(control.pv_autre || 0) > 0 && (
+              <Badge variant="outline" className="text-[10px] px-1.5 py-0 text-red-600 border-red-200">
+                Autre PV: {control.pv_autre}
+              </Badge>
+            )}
+            {control.rnv > 0 && (
+              <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                RNV: {control.rnv}
+              </Badge>
+            )}
+            {(control.titre_tiers || 0) > 0 && (
+              <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                T.Tiers: {control.titre_tiers}
+              </Badge>
+            )}
+            {(control.doc_naissance || 0) > 0 && (
+              <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                D.Naiss: {control.doc_naissance}
+              </Badge>
+            )}
+            {(control.autre_tarif || 0) > 0 && (
+              <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                Autre: {control.autre_tarif}
+              </Badge>
+            )}
+          </div>
+        )}
       </CardContent>
     </Card>
   );

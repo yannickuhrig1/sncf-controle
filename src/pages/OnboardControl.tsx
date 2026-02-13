@@ -40,6 +40,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { useToast } from '@/hooks/use-toast';
 import { toast as sonnerToast } from 'sonner';
 import {
@@ -54,6 +55,8 @@ import {
   RotateCcw,
   Download,
   Search,
+  Layers,
+  LayoutList,
   Plus,
   Calendar,
   Clock,
@@ -137,6 +140,8 @@ export default function OnboardControl() {
   const duplicateId = searchParams.get('duplicate');
   const [isEditMode, setIsEditMode] = useState(false);
   const [isDuplicateMode, setIsDuplicateMode] = useState(false);
+  const [compactMode, setCompactMode] = useState(false);
+  const [activeSection, setActiveSection] = useState<'info' | 'stt' | 'controle' | 'pv' | 'bord' | 'ri' | 'notes'>('info');
 
   // Initial form state using Paris time
   const getInitialFormState = useCallback((): FormState => ({
@@ -751,6 +756,25 @@ export default function OnboardControl() {
           </div>
         </div>
 
+        {/* Compact/Extended Toggle */}
+        <div className="flex items-center gap-2">
+          <ToggleGroup 
+            type="single" 
+            value={compactMode ? 'compact' : 'extended'}
+            onValueChange={(v) => v && setCompactMode(v === 'compact')}
+            className="border rounded-md"
+          >
+            <ToggleGroupItem value="extended" aria-label="Mode étendu" size="sm" className="gap-1.5 px-3">
+              <LayoutList className="h-4 w-4" />
+              <span className="hidden sm:inline text-xs">Étendu</span>
+            </ToggleGroupItem>
+            <ToggleGroupItem value="compact" aria-label="Mode compact" size="sm" className="gap-1.5 px-3">
+              <Layers className="h-4 w-4" />
+              <span className="hidden sm:inline text-xs">Compact</span>
+            </ToggleGroupItem>
+          </ToggleGroup>
+        </div>
+
         {/* Compact Fraud Stats for Train - toggleable from settings */}
         {preferences?.show_onboard_fraud_chart && (
           <TrainFraudCompact 
@@ -777,308 +801,425 @@ export default function OnboardControl() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Left Column - Form (2/3 on desktop) */}
           <div className="lg:col-span-2 space-y-4">
-            {/* Card 1: Train Info */}
-            <Card className="bg-card-cyan text-card-cyan-foreground border-card-cyan">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <Train className="h-4 w-4" />
-                  Informations du contrôle
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="trainNumber">Numéro de train *</Label>
-                  <Input
-                    id="trainNumber"
-                    placeholder="TGV 6201"
-                    value={formState.trainNumber}
-                    onChange={(e) => setFormState((p) => ({ ...p, trainNumber: e.target.value }))}
-                    list="recent-trains"
-                    required
-                  />
-                  <datalist id="recent-trains">
-                    {recentTrains.map((train) => (
-                      <option key={train} value={train} />
+
+            {/* === COMPACT MODE === */}
+            {compactMode ? (
+              <Card>
+                {/* Section navigation buttons */}
+                <CardHeader className="pb-3">
+                  <div className="flex flex-wrap gap-1.5">
+                    {[
+                      { key: 'info' as const, icon: Train, label: 'Info' },
+                      { key: 'stt' as const, icon: Ticket, label: 'STT/PV' },
+                      { key: 'controle' as const, icon: FileText, label: 'Tarif C.' },
+                      { key: 'pv' as const, icon: AlertTriangle, label: 'PV' },
+                      { key: 'bord' as const, icon: Ticket, label: 'Bord' },
+                      { key: 'ri' as const, icon: User, label: 'RI' },
+                      { key: 'notes' as const, icon: MessageSquare, label: 'Notes' },
+                    ].map(({ key, icon: SectionIcon, label }) => (
+                      <Button
+                        key={key}
+                        type="button"
+                        variant={activeSection === key ? 'default' : 'outline'}
+                        size="sm"
+                        className="gap-1 text-xs"
+                        onClick={() => setActiveSection(key)}
+                      >
+                        <SectionIcon className="h-3.5 w-3.5" />
+                        {label}
+                      </Button>
                     ))}
-                  </datalist>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="origin">Origine</Label>
-                    <StationAutocomplete
-                      id="origin"
-                      placeholder="Gare de départ"
-                      value={formState.origin}
-                      onChange={(v) => setFormState((p) => ({ ...p, origin: v }))}
-                    />
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="destination">Destination</Label>
-                    <StationAutocomplete
-                      id="destination"
-                      placeholder="Gare d'arrivée"
-                      value={formState.destination}
-                      onChange={(v) => setFormState((p) => ({ ...p, destination: v }))}
-                    />
-                  </div>
-                </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {/* Info Section */}
+                  {activeSection === 'info' && (
+                    <>
+                      <div className="space-y-2">
+                        <Label htmlFor="trainNumber">Numéro de train *</Label>
+                        <Input
+                          id="trainNumber"
+                          placeholder="TGV 6201"
+                          value={formState.trainNumber}
+                          onChange={(e) => setFormState((p) => ({ ...p, trainNumber: e.target.value }))}
+                          list="recent-trains"
+                          required
+                        />
+                        <datalist id="recent-trains">
+                          {recentTrains.map((train) => (
+                            <option key={train} value={train} />
+                          ))}
+                        </datalist>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="origin">Origine</Label>
+                          <StationAutocomplete id="origin" placeholder="Gare de départ" value={formState.origin} onChange={(v) => setFormState((p) => ({ ...p, origin: v }))} />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="destination">Destination</Label>
+                          <StationAutocomplete id="destination" placeholder="Gare d'arrivée" value={formState.destination} onChange={(v) => setFormState((p) => ({ ...p, destination: v }))} />
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="controlDate">Date</Label>
+                          <div className="relative">
+                            <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                            <Input id="controlDate" type="date" className="pl-10" value={formState.controlDate} onChange={(e) => setFormState((p) => ({ ...p, controlDate: e.target.value }))} />
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="controlTime">Heure</Label>
+                          <div className="relative">
+                            <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                            <Input id="controlTime" type="time" className="pl-10" value={formState.controlTime} onChange={(e) => setFormState((p) => ({ ...p, controlTime: e.target.value }))} />
+                          </div>
+                        </div>
+                      </div>
+                      <CounterInput label="Nombre de passagers *" value={formState.passengers} onChange={(v) => setFormState((p) => ({ ...p, passengers: v }))} min={0} max={9999} steps={[1, 10]} />
+                    </>
+                  )}
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="controlDate">Date</Label>
-                    <div className="relative">
-                      <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        id="controlDate"
-                        type="date"
-                        className="pl-10"
-                        value={formState.controlDate}
-                        onChange={(e) => setFormState((p) => ({ ...p, controlDate: e.target.value }))}
-                      />
+                  {/* STT Section */}
+                  {activeSection === 'stt' && (
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg">
+                        <CounterInput label="STT 50€" sublabel="Tarif contrôle" value={formState.stt50Count} onChange={(v) => setFormState((p) => ({ ...p, stt50Count: v }))} showTotal={{ unitPrice: 50, label: 'Total' }} />
+                      </div>
+                      <div className="p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
+                        <CounterInput label="PV 100€" sublabel="Procès-verbal" value={formState.stt100Count} onChange={(v) => setFormState((p) => ({ ...p, stt100Count: v }))} showTotal={{ unitPrice: 100, label: 'Total' }} variant="danger" />
+                      </div>
                     </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="controlTime">Heure</Label>
-                    <div className="relative">
-                      <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        id="controlTime"
-                        type="time"
-                        className="pl-10"
-                        value={formState.controlTime}
-                        onChange={(e) => setFormState((p) => ({ ...p, controlTime: e.target.value }))}
-                      />
+                  )}
+
+                  {/* Tarif Contrôle Section */}
+                  {activeSection === 'controle' && (
+                    <>
+                      <TarifTypeToggle types={TARIF_TYPES} value={controleTarifType} onChange={setControleTarifType} />
+                      <div className="flex gap-2">
+                        <Input type="number" min="0" step="0.01" placeholder="Montant (€)" value={controleTarifMontant} onChange={(e) => setControleTarifMontant(e.target.value)} className="flex-1" onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addTarifControle())} />
+                        <Button type="button" onClick={addTarifControle} disabled={!controleTarifMontant}><Plus className="h-4 w-4 mr-1" />Ajouter</Button>
+                      </div>
+                      {formState.tarifsControle.length > 0 && (
+                        <div className="space-y-2">
+                          {formState.tarifsControle.map((t) => (<TarifListItem key={t.id} item={t} onRemove={removeTarifControle} />))}
+                        </div>
+                      )}
+                    </>
+                  )}
+
+                  {/* PV Section */}
+                  {activeSection === 'pv' && (
+                    <>
+                      <TarifTypeToggle types={TARIF_TYPES} value={pvTarifType} onChange={setPvTarifType} />
+                      <div className="flex gap-2">
+                        <Input type="number" min="0" step="0.01" placeholder="Montant (€)" value={pvTarifMontant} onChange={(e) => setPvTarifMontant(e.target.value)} className="flex-1" onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addPv())} />
+                        <Button type="button" onClick={addPv} disabled={!pvTarifMontant} variant="destructive"><Plus className="h-4 w-4 mr-1" />Ajouter</Button>
+                      </div>
+                      {formState.pvList.length > 0 && (
+                        <div className="space-y-2">
+                          {formState.pvList.map((t) => (<TarifListItem key={t.id} item={t} onRemove={removePv} />))}
+                        </div>
+                      )}
+                    </>
+                  )}
+
+                  {/* Bord Section */}
+                  {activeSection === 'bord' && (
+                    <>
+                      <div className="flex gap-2">
+                        <Button type="button" variant={formState.tarifMode === 'bord' ? 'default' : 'outline'} size="sm" onClick={() => setFormState((p) => ({ ...p, tarifMode: 'bord' }))}>Bord</Button>
+                        <Button type="button" variant={formState.tarifMode === 'exceptionnel' ? 'default' : 'outline'} size="sm" onClick={() => setFormState((p) => ({ ...p, tarifMode: 'exceptionnel' }))}>Exceptionnel</Button>
+                      </div>
+                      <div className="flex gap-2">
+                        <Input type="number" min="0" step="0.01" placeholder="Montant (€)" value={bordTarifMontant} onChange={(e) => setBordTarifMontant(e.target.value)} className="flex-1" onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addTarifBord())} />
+                        <Button type="button" onClick={addTarifBord} disabled={!bordTarifMontant}><Plus className="h-4 w-4 mr-1" />Ajouter</Button>
+                      </div>
+                      {formState.tarifsBord.length > 0 && (
+                        <div className="space-y-2">
+                          {formState.tarifsBord.map((t) => (<TarifListItem key={t.id} item={t} onRemove={removeTarifBord} />))}
+                        </div>
+                      )}
+                    </>
+                  )}
+
+                  {/* RI Section */}
+                  {activeSection === 'ri' && (
+                    <div className="grid grid-cols-2 gap-4">
+                      <CounterInput label="RI positif" sublabel="Identité vérifiée" value={formState.riPositif} onChange={(v) => setFormState((p) => ({ ...p, riPositif: v }))} variant="success" />
+                      <CounterInput label="RI négatif" sublabel="Identité non vérifiable" value={formState.riNegatif} onChange={(v) => setFormState((p) => ({ ...p, riNegatif: v }))} variant="danger" />
                     </div>
-                  </div>
-                </div>
+                  )}
 
-                <CounterInput
-                  label="Nombre de passagers *"
-                  value={formState.passengers}
-                  onChange={(v) => setFormState((p) => ({ ...p, passengers: v }))}
-                  min={0}
-                  max={9999}
-                  steps={[1, 10]}
-                />
-              </CardContent>
-            </Card>
+                  {/* Notes Section */}
+                  {activeSection === 'notes' && (
+                    <Textarea placeholder="Remarques, observations..." value={formState.commentaire} onChange={(e) => setFormState((p) => ({ ...p, commentaire: e.target.value }))} rows={3} />
+                  )}
+                </CardContent>
+              </Card>
+            ) : (
+              /* === EXTENDED MODE (original layout) === */
+              <>
+                {/* Card 1: Train Info */}
+                <Card className="bg-card-cyan text-card-cyan-foreground border-card-cyan">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <Train className="h-4 w-4" />
+                      Informations du contrôle
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="trainNumber">Numéro de train *</Label>
+                      <Input
+                        id="trainNumber"
+                        placeholder="TGV 6201"
+                        value={formState.trainNumber}
+                        onChange={(e) => setFormState((p) => ({ ...p, trainNumber: e.target.value }))}
+                        list="recent-trains"
+                        required
+                      />
+                      <datalist id="recent-trains">
+                        {recentTrains.map((train) => (
+                          <option key={train} value={train} />
+                        ))}
+                      </datalist>
+                    </div>
 
-            {/* Card 1b: STT 50€ and PV 100€ */}
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <Ticket className="h-4 w-4" />
-                  Suppléments rapides
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="origin">Origine</Label>
+                        <StationAutocomplete
+                          id="origin"
+                          placeholder="Gare de départ"
+                          value={formState.origin}
+                          onChange={(v) => setFormState((p) => ({ ...p, origin: v }))}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="destination">Destination</Label>
+                        <StationAutocomplete
+                          id="destination"
+                          placeholder="Gare d'arrivée"
+                          value={formState.destination}
+                          onChange={(v) => setFormState((p) => ({ ...p, destination: v }))}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="controlDate">Date</Label>
+                        <div className="relative">
+                          <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                          <Input
+                            id="controlDate"
+                            type="date"
+                            className="pl-10"
+                            value={formState.controlDate}
+                            onChange={(e) => setFormState((p) => ({ ...p, controlDate: e.target.value }))}
+                          />
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="controlTime">Heure</Label>
+                        <div className="relative">
+                          <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                          <Input
+                            id="controlTime"
+                            type="time"
+                            className="pl-10"
+                            value={formState.controlTime}
+                            onChange={(e) => setFormState((p) => ({ ...p, controlTime: e.target.value }))}
+                          />
+                        </div>
+                      </div>
+                    </div>
+
                     <CounterInput
-                      label="STT 50€"
-                      sublabel="Tarif contrôle"
-                      value={formState.stt50Count}
-                      onChange={(v) => setFormState((p) => ({ ...p, stt50Count: v }))}
-                      showTotal={{ unitPrice: 50, label: 'Total' }}
+                      label="Nombre de passagers *"
+                      value={formState.passengers}
+                      onChange={(v) => setFormState((p) => ({ ...p, passengers: v }))}
+                      min={0}
+                      max={9999}
+                      steps={[1, 10]}
                     />
-                  </div>
-                  <div className="p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
-                    <CounterInput
-                      label="PV 100€"
-                      sublabel="Procès-verbal"
-                      value={formState.stt100Count}
-                      onChange={(v) => setFormState((p) => ({ ...p, stt100Count: v }))}
-                      showTotal={{ unitPrice: 100, label: 'Total' }}
-                      variant="danger"
+                  </CardContent>
+                </Card>
+
+                {/* Card 1b: STT 50€ and PV 100€ */}
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <Ticket className="h-4 w-4" />
+                      Suppléments rapides
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg">
+                        <CounterInput
+                          label="STT 50€"
+                          sublabel="Tarif contrôle"
+                          value={formState.stt50Count}
+                          onChange={(v) => setFormState((p) => ({ ...p, stt50Count: v }))}
+                          showTotal={{ unitPrice: 50, label: 'Total' }}
+                        />
+                      </div>
+                      <div className="p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
+                        <CounterInput
+                          label="PV 100€"
+                          sublabel="Procès-verbal"
+                          value={formState.stt100Count}
+                          onChange={(v) => setFormState((p) => ({ ...p, stt100Count: v }))}
+                          showTotal={{ unitPrice: 100, label: 'Total' }}
+                          variant="danger"
+                        />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Card 2: Tarifs contrôle */}
+                <Card className="bg-card-amber text-card-amber-foreground border-card-amber">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <FileText className="h-4 w-4" />
+                      Tarif contrôle
+                    </CardTitle>
+                    <CardDescription className="text-card-amber-foreground/70">Infractions régularisées sur place</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <TarifTypeToggle types={TARIF_TYPES} value={controleTarifType} onChange={setControleTarifType} />
+
+                    <div className="flex gap-2">
+                      <Input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        placeholder="Montant (€)"
+                        value={controleTarifMontant}
+                        onChange={(e) => setControleTarifMontant(e.target.value)}
+                        className="flex-1"
+                        onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addTarifControle())}
+                      />
+                      <Button type="button" onClick={addTarifControle} disabled={!controleTarifMontant}>
+                        <Plus className="h-4 w-4 mr-1" />
+                        Ajouter
+                      </Button>
+                    </div>
+
+                    {formState.tarifsControle.length > 0 && (
+                      <div className="space-y-2">
+                        {formState.tarifsControle.map((t) => (
+                          <TarifListItem key={t.id} item={t} onRemove={removeTarifControle} />
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* Card 3: PV */}
+                <Card className="bg-card-rose text-card-rose-foreground border-card-rose">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <AlertTriangle className="h-4 w-4" />
+                      Procès-verbaux (PV)
+                    </CardTitle>
+                    <CardDescription className="text-card-rose-foreground/70">Infractions verbalisées</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <TarifTypeToggle types={TARIF_TYPES} value={pvTarifType} onChange={setPvTarifType} />
+
+                    <div className="flex gap-2">
+                      <Input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        placeholder="Montant (€)"
+                        value={pvTarifMontant}
+                        onChange={(e) => setPvTarifMontant(e.target.value)}
+                        className="flex-1"
+                        onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addPv())}
+                      />
+                      <Button type="button" onClick={addPv} disabled={!pvTarifMontant} variant="destructive">
+                        <Plus className="h-4 w-4 mr-1" />
+                        Ajouter
+                      </Button>
+                    </div>
+
+                    {formState.pvList.length > 0 && (
+                      <div className="space-y-2">
+                        {formState.pvList.map((t) => (
+                          <TarifListItem key={t.id} item={t} onRemove={removePv} />
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* Card 4: Tarifs à bord */}
+                <Card className="bg-card-mint text-card-mint-foreground border-card-mint">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <Ticket className="h-4 w-4" />
+                      Tarif à bord / exceptionnel
+                    </CardTitle>
+                    <CardDescription className="text-card-mint-foreground/70">Ces tarifs ne comptent PAS dans le taux de fraude</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="flex gap-2">
+                      <Button type="button" variant={formState.tarifMode === 'bord' ? 'default' : 'outline'} size="sm" onClick={() => setFormState((p) => ({ ...p, tarifMode: 'bord' }))}>Bord</Button>
+                      <Button type="button" variant={formState.tarifMode === 'exceptionnel' ? 'default' : 'outline'} size="sm" onClick={() => setFormState((p) => ({ ...p, tarifMode: 'exceptionnel' }))}>Exceptionnel</Button>
+                    </div>
+                    <div className="flex gap-2">
+                      <Input type="number" min="0" step="0.01" placeholder="Montant (€)" value={bordTarifMontant} onChange={(e) => setBordTarifMontant(e.target.value)} className="flex-1" onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addTarifBord())} />
+                      <Button type="button" onClick={addTarifBord} disabled={!bordTarifMontant}><Plus className="h-4 w-4 mr-1" />Ajouter</Button>
+                    </div>
+                    {formState.tarifsBord.length > 0 && (
+                      <div className="space-y-2">
+                        {formState.tarifsBord.map((t) => (<TarifListItem key={t.id} item={t} onRemove={removeTarifBord} />))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* Card 5: RI */}
+                <Card className="bg-card-violet text-card-violet-foreground border-card-violet">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <User className="h-4 w-4" />
+                      Relevés d'identité (RI)
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-2 gap-4">
+                      <CounterInput label="RI positif" sublabel="Identité vérifiée" value={formState.riPositif} onChange={(v) => setFormState((p) => ({ ...p, riPositif: v }))} variant="success" />
+                      <CounterInput label="RI négatif" sublabel="Identité non vérifiable" value={formState.riNegatif} onChange={(v) => setFormState((p) => ({ ...p, riNegatif: v }))} variant="danger" />
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Card 6: Commentaires */}
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <MessageSquare className="h-4 w-4" />
+                      Commentaires
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <Textarea
+                      placeholder="Remarques, observations..."
+                      value={formState.commentaire}
+                      onChange={(e) => setFormState((p) => ({ ...p, commentaire: e.target.value }))}
+                      rows={3}
                     />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Card 2: Tarifs contrôle */}
-            <Card className="bg-card-amber text-card-amber-foreground border-card-amber">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <FileText className="h-4 w-4" />
-                  Tarif contrôle
-                </CardTitle>
-                <CardDescription className="text-card-amber-foreground/70">Infractions régularisées sur place</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <TarifTypeToggle types={TARIF_TYPES} value={controleTarifType} onChange={setControleTarifType} />
-
-                <div className="flex gap-2">
-                  <Input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    placeholder="Montant (€)"
-                    value={controleTarifMontant}
-                    onChange={(e) => setControleTarifMontant(e.target.value)}
-                    className="flex-1"
-                    onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addTarifControle())}
-                  />
-                  <Button type="button" onClick={addTarifControle} disabled={!controleTarifMontant}>
-                    <Plus className="h-4 w-4 mr-1" />
-                    Ajouter
-                  </Button>
-                </div>
-
-                {formState.tarifsControle.length > 0 && (
-                  <div className="space-y-2">
-                    {formState.tarifsControle.map((t) => (
-                      <TarifListItem key={t.id} item={t} onRemove={removeTarifControle} />
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Card 3: PV */}
-            <Card className="bg-card-rose text-card-rose-foreground border-card-rose">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <AlertTriangle className="h-4 w-4" />
-                  Procès-verbaux (PV)
-                </CardTitle>
-                <CardDescription className="text-card-rose-foreground/70">Infractions verbalisées</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <TarifTypeToggle types={TARIF_TYPES} value={pvTarifType} onChange={setPvTarifType} />
-
-                <div className="flex gap-2">
-                  <Input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    placeholder="Montant (€)"
-                    value={pvTarifMontant}
-                    onChange={(e) => setPvTarifMontant(e.target.value)}
-                    className="flex-1"
-                    onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addPv())}
-                  />
-                  <Button type="button" onClick={addPv} disabled={!pvTarifMontant} variant="destructive">
-                    <Plus className="h-4 w-4 mr-1" />
-                    Ajouter
-                  </Button>
-                </div>
-
-                {formState.pvList.length > 0 && (
-                  <div className="space-y-2">
-                    {formState.pvList.map((t) => (
-                      <TarifListItem key={t.id} item={t} onRemove={removePv} />
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Card 4: Tarifs à bord (moved here, just above RI) */}
-            <Card className="bg-card-mint text-card-mint-foreground border-card-mint">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <Ticket className="h-4 w-4" />
-                  Tarif à bord / exceptionnel
-                </CardTitle>
-                <CardDescription className="text-card-mint-foreground/70">Ces tarifs ne comptent PAS dans le taux de fraude</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {/* Toggle Bord / Exceptionnel */}
-                <div className="flex gap-2">
-                  <Button
-                    type="button"
-                    variant={formState.tarifMode === 'bord' ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setFormState((p) => ({ ...p, tarifMode: 'bord' }))}
-                  >
-                    Bord
-                  </Button>
-                  <Button
-                    type="button"
-                    variant={formState.tarifMode === 'exceptionnel' ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setFormState((p) => ({ ...p, tarifMode: 'exceptionnel' }))}
-                  >
-                    Exceptionnel
-                  </Button>
-                </div>
-
-                {/* Amount input + Add button */}
-                <div className="flex gap-2">
-                  <Input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    placeholder="Montant (€)"
-                    value={bordTarifMontant}
-                    onChange={(e) => setBordTarifMontant(e.target.value)}
-                    className="flex-1"
-                    onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addTarifBord())}
-                  />
-                  <Button type="button" onClick={addTarifBord} disabled={!bordTarifMontant}>
-                    <Plus className="h-4 w-4 mr-1" />
-                    Ajouter
-                  </Button>
-                </div>
-
-                {/* List of added tarifs */}
-                {formState.tarifsBord.length > 0 && (
-                  <div className="space-y-2">
-                    {formState.tarifsBord.map((t) => (
-                      <TarifListItem key={t.id} item={t} onRemove={removeTarifBord} />
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Card 5: RI */}
-            <Card className="bg-card-violet text-card-violet-foreground border-card-violet">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <User className="h-4 w-4" />
-                  Relevés d'identité (RI)
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 gap-4">
-                  <CounterInput
-                    label="RI positif"
-                    sublabel="Identité vérifiée"
-                    value={formState.riPositif}
-                    onChange={(v) => setFormState((p) => ({ ...p, riPositif: v }))}
-                    variant="success"
-                  />
-                  <CounterInput
-                    label="RI négatif"
-                    sublabel="Identité non vérifiable"
-                    value={formState.riNegatif}
-                    onChange={(v) => setFormState((p) => ({ ...p, riNegatif: v }))}
-                    variant="danger"
-                  />
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Card 6: Commentaires */}
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <MessageSquare className="h-4 w-4" />
-                  Commentaires
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Textarea
-                  placeholder="Remarques, observations..."
-                  value={formState.commentaire}
-                  onChange={(e) => setFormState((p) => ({ ...p, commentaire: e.target.value }))}
-                  rows={3}
-                />
-              </CardContent>
-            </Card>
+                  </CardContent>
+                </Card>
+              </>
+            )}
           </div>
 
           {/* Right Column - Action Buttons (1/3 on desktop) */}

@@ -88,7 +88,7 @@ export default function Auth() {
     } else {
       toast({
         title: 'Inscription réussie',
-        description: 'Vérifiez votre email pour confirmer votre compte',
+        description: 'Votre compte est en attente de validation par un administrateur. Vous serez notifié une fois approuvé.',
       });
     }
 

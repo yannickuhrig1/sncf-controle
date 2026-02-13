@@ -152,7 +152,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signIn = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
-    return { error: error as Error | null };
+    if (error) return { error: error as Error | null };
+    
+    // Check if user is approved
+    const { data: profileData } = await supabase
+      .from('profiles')
+      .select('is_approved')
+      .eq('user_id', (await supabase.auth.getUser()).data.user?.id ?? '')
+      .maybeSingle();
+    
+    if (profileData && !(profileData as any).is_approved) {
+      await supabase.auth.signOut();
+      return { error: new Error('Votre compte est en attente de validation par un administrateur ou manager.') };
+    }
+    
+    return { error: null };
   };
 
   const signUp = async (

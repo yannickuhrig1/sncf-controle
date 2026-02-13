@@ -471,10 +471,15 @@ export default function AdminPage() {
                       </TableHeader>
                       <TableBody>
                         {profiles.map((p) => (
-                          <TableRow key={p.id}>
+                          <TableRow key={p.id} className={!(p as any).is_approved ? 'bg-amber-50 dark:bg-amber-900/10' : ''}>
                             <TableCell>
-                              <div className="font-medium">
+                              <div className="font-medium flex items-center gap-2">
                                 {p.first_name} {p.last_name}
+                                {!(p as any).is_approved && (
+                                  <Badge variant="outline" className="text-[10px] text-amber-600 border-amber-300">
+                                    En attente
+                                  </Badge>
+                                )}
                               </div>
                               <div className="text-xs text-muted-foreground">
                                 {p.phone_number || 'N/A'}
@@ -489,13 +494,36 @@ export default function AdminPage() {
                               {getTeamName(p.team_id)}
                             </TableCell>
                             <TableCell>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => openEditUser(p)}
-                              >
-                                <Pencil className="h-4 w-4" />
-                              </Button>
+                              <div className="flex items-center gap-1">
+                                {!(p as any).is_approved && (
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                                    onClick={async () => {
+                                      const { error } = await supabase
+                                        .from('profiles')
+                                        .update({ is_approved: true } as any)
+                                        .eq('id', p.id);
+                                      if (error) {
+                                        toast.error('Erreur: ' + error.message);
+                                      } else {
+                                        toast.success(`${p.first_name} ${p.last_name} a été approuvé`);
+                                        queryClient.invalidateQueries({ queryKey: ['admin-profiles'] });
+                                      }
+                                    }}
+                                  >
+                                    <ShieldCheck className="h-4 w-4" />
+                                  </Button>
+                                )}
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => openEditUser(p)}
+                                >
+                                  <Pencil className="h-4 w-4" />
+                                </Button>
+                              </div>
                             </TableCell>
                           </TableRow>
                         ))}
