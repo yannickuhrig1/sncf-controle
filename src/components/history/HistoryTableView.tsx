@@ -169,8 +169,8 @@ export function HistoryTableView({ controls, onControlClick }: HistoryTableViewP
               <TableHead>Trajet</TableHead>
               <SortableHeader columnKey="passengers" className="w-[80px] text-center">Voyageurs</SortableHeader>
               <SortableHeader columnKey="enRegle" className="w-[80px] text-center">En règle</SortableHeader>
-              <SortableHeader columnKey="tarifsC" className="w-[80px] text-center">Tarifs C.</SortableHeader>
-              <SortableHeader columnKey="pv" className="w-[60px] text-center">PV</SortableHeader>
+              <SortableHeader columnKey="tarifsC" className="w-[80px] text-center text-green-600">Tarifs C.</SortableHeader>
+              <SortableHeader columnKey="pv" className="w-[60px] text-center text-red-600">PV</SortableHeader>
               <SortableHeader columnKey="stt50" className="w-[70px] text-center">STT 50</SortableHeader>
               <SortableHeader columnKey="stt100" className="w-[70px] text-center">STT 100</SortableHeader>
               <SortableHeader columnKey="rnv" className="w-[60px] text-center">RNV</SortableHeader>
@@ -228,7 +228,7 @@ export function HistoryTableView({ controls, onControlClick }: HistoryTableViewP
                   </TableCell>
                   <TableCell className="text-center">
                     {control.tarifs_controle > 0 ? (
-                      <Badge variant="secondary" className="text-xs">
+                      <Badge className="text-xs bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 hover:bg-green-100">
                         {control.tarifs_controle}
                       </Badge>
                     ) : '-'}
@@ -240,10 +240,10 @@ export function HistoryTableView({ controls, onControlClick }: HistoryTableViewP
                       </Badge>
                     ) : '-'}
                   </TableCell>
-                  <TableCell className="text-center text-sm">
+                  <TableCell className="text-center text-sm text-green-600">
                     {control.stt_50 > 0 ? control.stt_50 : '-'}
                   </TableCell>
-                  <TableCell className="text-center text-sm">
+                  <TableCell className="text-center text-sm text-red-600">
                     {control.stt_100 > 0 ? control.stt_100 : '-'}
                   </TableCell>
                   <TableCell className="text-center text-sm">

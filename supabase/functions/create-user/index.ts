@@ -63,7 +63,7 @@ Deno.serve(async (req) => {
     const assignedTeamId = callerProfile.role === "manager" ? callerProfile.team_id : (team_id || null);
 
     // Create user with admin client (reuse existing adminClient)
-    
+    // Admin-created users are automatically approved
     const { data: newUser, error: createError } = await adminClient.auth.admin.createUser({
       email,
       password,
@@ -78,14 +78,17 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Update the profile with team assignment (profile is auto-created by trigger)
-    if (assignedTeamId && newUser.user) {
+    // Update the profile with team assignment and approval (profile is auto-created by trigger)
+    if (newUser.user) {
       // Wait briefly for the trigger to create the profile
       await new Promise((r) => setTimeout(r, 500));
       
+      const updateData: Record<string, unknown> = { is_approved: true };
+      if (assignedTeamId) updateData.team_id = assignedTeamId;
+      
       await adminClient
         .from("profiles")
-        .update({ team_id: assignedTeamId })
+        .update(updateData)
         .eq("user_id", newUser.user.id);
     }
 
