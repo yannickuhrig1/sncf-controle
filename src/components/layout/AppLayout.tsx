@@ -1,4 +1,4 @@
-import { ReactNode, useState, useEffect } from 'react';
+import { ReactNode, useState, useEffect, useMemo } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { LayoutDashboard, Train, Building2, History, User, BarChart3, Settings, Shield, Menu, UserCheck, Wifi, WifiOff, Download, Info } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -84,6 +84,21 @@ export function AppLayout({ children }: AppLayoutProps) {
 
   const hideInfosPage = adminSettings.find(s => s.key === 'hide_infos_page')?.value === true;
 
+  // Fetch pending approval count for admin badge
+  const { data: pendingApprovalCount = 0 } = useQuery({
+    queryKey: ['pending-approvals-count'],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from('profiles')
+        .select('*', { count: 'exact', head: true })
+        .eq('is_approved', false);
+      if (error) return 0;
+      return count || 0;
+    },
+    enabled: isAdmin() || isManager(),
+    refetchInterval: 30000, // Refresh every 30s
+  });
+
   const isUserAdmin = isAdmin();
   const isUserManager = isManager();
   const showBottomBar = preferences?.show_bottom_bar ?? true;
@@ -144,7 +159,14 @@ export function AppLayout({ children }: AppLayoutProps) {
                   : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
               )}
             >
-              <item.icon className="h-5 w-5" />
+              <div className="relative">
+                <item.icon className="h-5 w-5" />
+                {item.pageId === 'admin' && pendingApprovalCount > 0 && (
+                  <span className="absolute -top-1.5 -right-1.5 flex items-center justify-center h-4 min-w-4 px-0.5 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold">
+                    {pendingApprovalCount}
+                  </span>
+                )}
+              </div>
               <span className="font-medium">{item.label}</span>
             </Link>
           </motion.div>
@@ -163,7 +185,7 @@ export function AppLayout({ children }: AppLayoutProps) {
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             transition={{ duration: 0.1 }}
-            className="flex flex-col items-center justify-center flex-1 h-full"
+            className="flex flex-col items-center justify-center flex-1 h-full relative"
           >
             <Link
               to={item.href}
@@ -174,7 +196,14 @@ export function AppLayout({ children }: AppLayoutProps) {
                   : 'text-muted-foreground hover:text-foreground'
               )}
             >
-              <item.icon className={cn('h-5 w-5', isActive && 'text-primary')} />
+              <div className="relative">
+                <item.icon className={cn('h-5 w-5', isActive && 'text-primary')} />
+                {item.pageId === 'admin' && pendingApprovalCount > 0 && (
+                  <span className="absolute -top-1.5 -right-1.5 flex items-center justify-center h-4 min-w-4 px-0.5 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold">
+                    {pendingApprovalCount}
+                  </span>
+                )}
+              </div>
               <span className="text-xs">{item.label}</span>
             </Link>
           </motion.div>

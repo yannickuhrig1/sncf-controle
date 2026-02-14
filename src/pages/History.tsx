@@ -145,22 +145,22 @@ function ControlRow({ control, onClick }: ControlRowProps) {
             )}
             {(control.pv_absence_titre || 0) > 0 && (
               <Badge variant="outline" className="text-[10px] px-1.5 py-0 text-red-600 border-red-200">
-                Abs. titre: {control.pv_absence_titre}
+                STT100: {control.pv_absence_titre}
               </Badge>
             )}
             {(control.pv_titre_invalide || 0) > 0 && (
               <Badge variant="outline" className="text-[10px] px-1.5 py-0 text-red-600 border-red-200">
-                Titre inv.: {control.pv_titre_invalide}
+                RNV: {control.pv_titre_invalide}
               </Badge>
             )}
             {(control.pv_refus_controle || 0) > 0 && (
               <Badge variant="outline" className="text-[10px] px-1.5 py-0 text-red-600 border-red-200">
-                Refus: {control.pv_refus_controle}
+                T.Tiers: {control.pv_refus_controle}
               </Badge>
             )}
             {(control.pv_autre || 0) > 0 && (
               <Badge variant="outline" className="text-[10px] px-1.5 py-0 text-red-600 border-red-200">
-                Autre PV: {control.pv_autre}
+                D.Naiss: {control.pv_autre}
               </Badge>
             )}
             {control.rnv > 0 && (

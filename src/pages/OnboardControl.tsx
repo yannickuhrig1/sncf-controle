@@ -85,10 +85,10 @@ const TARIF_TYPES = [
 ];
 
 const PV_TYPES = [
-  { value: 'absence_titre', label: 'Absence titre' },
-  { value: 'titre_invalide', label: 'Titre invalide' },
-  { value: 'refus_controle', label: 'Refus contrôle' },
-  { value: 'autre_pv', label: 'Autre' },
+  { value: 'stt100_pv', label: 'STT100' },
+  { value: 'rnv_pv', label: 'RNV' },
+  { value: 'titre_tiers_pv', label: 'Titre tiers' },
+  { value: 'd_naissance_pv', label: 'D. naissance' },
 ];
 
 interface FormState {
@@ -188,7 +188,7 @@ export default function OnboardControl() {
   const [bordTarifMontant, setBordTarifMontant] = useState('');
   const [controleTarifType, setControleTarifType] = useState('stt');
   const [controleTarifMontant, setControleTarifMontant] = useState('');
-  const [pvTarifType, setPvTarifType] = useState('absence_titre');
+  const [pvTarifType, setPvTarifType] = useState('stt100_pv');
   const [pvTarifMontant, setPvTarifMontant] = useState('');
 
   // History filter states
@@ -244,10 +244,10 @@ export default function OnboardControl() {
             });
           }
         };
-        addEntries(data.pv_absence_titre || 0, 'absence_titre', 'Absence titre', data.pv_absence_titre_amount || 0);
-        addEntries(data.pv_titre_invalide || 0, 'titre_invalide', 'Titre invalide', data.pv_titre_invalide_amount || 0);
-        addEntries(data.pv_refus_controle || 0, 'refus_controle', 'Refus contrôle', data.pv_refus_controle_amount || 0);
-        addEntries(data.pv_autre || 0, 'autre_pv', 'Autre PV', data.pv_autre_amount || 0);
+        addEntries(data.pv_absence_titre || 0, 'stt100_pv', 'STT100', data.pv_absence_titre_amount || 0);
+        addEntries(data.pv_titre_invalide || 0, 'rnv_pv', 'RNV', data.pv_titre_invalide_amount || 0);
+        addEntries(data.pv_refus_controle || 0, 'titre_tiers_pv', 'Titre tiers', data.pv_refus_controle_amount || 0);
+        addEntries(data.pv_autre || 0, 'd_naissance_pv', 'D. naissance', data.pv_autre_amount || 0);
         return entries;
       };
 
@@ -543,10 +543,10 @@ export default function OnboardControl() {
       const sttEntries = formState.tarifsControle.filter((t) => t.type === 'stt');
 
       // Extract detailed PV counts and amounts from pvList
-      const pvAbsenceTitreEntries = formState.pvList.filter((t) => t.type === 'absence_titre');
-      const pvTitreInvalideEntries = formState.pvList.filter((t) => t.type === 'titre_invalide');
-      const pvRefusControleEntries = formState.pvList.filter((t) => t.type === 'refus_controle');
-      const pvAutreEntries = formState.pvList.filter((t) => t.type === 'autre_pv');
+      const pvStt100Entries = formState.pvList.filter((t) => t.type === 'stt100_pv');
+      const pvRnvEntries = formState.pvList.filter((t) => t.type === 'rnv_pv');
+      const pvTitreTiersEntries = formState.pvList.filter((t) => t.type === 'titre_tiers_pv');
+      const pvDocNaissanceEntries = formState.pvList.filter((t) => t.type === 'd_naissance_pv');
 
       // Extract tarifs bord details
       const bordSttEntries = formState.tarifsBord.filter((t) => t.type === 'stt' || t.category === 'bord');
@@ -578,15 +578,15 @@ export default function OnboardControl() {
         doc_naissance_amount: docNaissanceEntries.reduce((sum, t) => sum + t.montant, 0) || null,
         autre_tarif: autreEntries.length,
         autre_tarif_amount: autreEntries.reduce((sum, t) => sum + t.montant, 0) || null,
-        // PV details
-        pv_absence_titre: pvAbsenceTitreEntries.length,
-        pv_absence_titre_amount: pvAbsenceTitreEntries.reduce((sum, t) => sum + t.montant, 0) || null,
-        pv_titre_invalide: pvTitreInvalideEntries.length,
-        pv_titre_invalide_amount: pvTitreInvalideEntries.reduce((sum, t) => sum + t.montant, 0) || null,
-        pv_refus_controle: pvRefusControleEntries.length,
-        pv_refus_controle_amount: pvRefusControleEntries.reduce((sum, t) => sum + t.montant, 0) || null,
-        pv_autre: pvAutreEntries.length,
-        pv_autre_amount: pvAutreEntries.reduce((sum, t) => sum + t.montant, 0) || null,
+        // PV details (mapped: absence_titre=STT100, titre_invalide=RNV, refus_controle=Titre tiers, autre=D.naissance)
+        pv_absence_titre: pvStt100Entries.length,
+        pv_absence_titre_amount: pvStt100Entries.reduce((sum, t) => sum + t.montant, 0) || null,
+        pv_titre_invalide: pvRnvEntries.length,
+        pv_titre_invalide_amount: pvRnvEntries.reduce((sum, t) => sum + t.montant, 0) || null,
+        pv_refus_controle: pvTitreTiersEntries.length,
+        pv_refus_controle_amount: pvTitreTiersEntries.reduce((sum, t) => sum + t.montant, 0) || null,
+        pv_autre: pvDocNaissanceEntries.length,
+        pv_autre_amount: pvDocNaissanceEntries.reduce((sum, t) => sum + t.montant, 0) || null,
         // Tarifs bord
         tarif_bord_stt_50: bordSttEntries.filter(t => t.category === 'bord').length || null,
         tarif_bord_stt_50_amount: bordSttEntries.filter(t => t.category === 'bord').reduce((sum, t) => sum + t.montant, 0) || null,
