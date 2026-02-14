@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Navigate, Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -86,6 +87,15 @@ export default function Auth() {
         description: error.message,
       });
     } else {
+      // Notify admins/managers of new signup
+      try {
+        await supabase.functions.invoke('notify-new-signup', {
+          body: { user_name: `${firstName} ${lastName}`, user_email: registerEmail },
+        });
+      } catch (e) {
+        console.error('Failed to send signup notification:', e);
+      }
+      
       toast({
         title: 'Inscription réussie',
         description: 'Votre compte est en attente de validation par un administrateur. Vous serez notifié une fois approuvé.',
