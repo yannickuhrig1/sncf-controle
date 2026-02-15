@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 const VAPID_PUBLIC_KEY = 'BEl62iUYgUivxIkv69yViEuiBIa-Ib9-SkvMeAtA3LFgDzkrxZJjSgSnfckjBJuBkr3qBUYIHBQFLXYp5Nksh8U';
 
@@ -18,7 +19,6 @@ export function usePushNotifications() {
     permission: 'default',
   });
 
-  // Check if push notifications are supported
   useEffect(() => {
     const checkSupport = async () => {
       const isSupported = 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
@@ -30,9 +30,8 @@ export function usePushNotifications() {
 
       const permission = Notification.permission;
       
-      // Check if already subscribed
       try {
-      const registration = await navigator.serviceWorker.ready;
+        const registration = await navigator.serviceWorker.ready;
         const subscription = await (registration as any).pushManager?.getSubscription();
         
         setState({
@@ -50,7 +49,6 @@ export function usePushNotifications() {
     checkSupport();
   }, []);
 
-  // Request permission and subscribe
   const subscribe = useCallback(async () => {
     if (!state.isSupported) {
       toast.error('Les notifications push ne sont pas supportées sur ce navigateur');
@@ -60,7 +58,6 @@ export function usePushNotifications() {
     setState(prev => ({ ...prev, isLoading: true }));
 
     try {
-      // Request notification permission
       const permission = await Notification.requestPermission();
       
       if (permission !== 'granted') {
@@ -69,18 +66,28 @@ export function usePushNotifications() {
         return false;
       }
 
-      // Get service worker registration
       const registration = await navigator.serviceWorker.ready;
-
-      // Subscribe to push notifications
       const vapidKey = urlBase64ToUint8Array(VAPID_PUBLIC_KEY);
       const subscription = await (registration as any).pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: vapidKey.buffer as ArrayBuffer,
       });
 
-      // Store subscription locally for now
-      localStorage.setItem('push_subscription', JSON.stringify(subscription.toJSON()));
+      // Save subscription to Supabase
+      const subJson = subscription.toJSON();
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (user && subJson.endpoint && subJson.keys) {
+        await supabase.from('push_subscriptions').upsert({
+          user_id: user.id,
+          endpoint: subJson.endpoint,
+          p256dh: subJson.keys.p256dh,
+          auth: subJson.keys.auth,
+        }, { onConflict: 'user_id,endpoint' });
+      }
+
+      // Also keep localStorage for backward compat
+      localStorage.setItem('push_subscription', JSON.stringify(subJson));
 
       setState({
         isSupported: true,
@@ -102,7 +109,6 @@ export function usePushNotifications() {
     }
   }, [state.isSupported]);
 
-  // Unsubscribe
   const unsubscribe = useCallback(async () => {
     setState(prev => ({ ...prev, isLoading: true }));
 
@@ -111,7 +117,19 @@ export function usePushNotifications() {
       const subscription = await (registration as any).pushManager?.getSubscription();
 
       if (subscription) {
+        const subJson = subscription.toJSON();
         await subscription.unsubscribe();
+        
+        // Remove from Supabase
+        if (subJson.endpoint) {
+          const { data: { user } } = await supabase.auth.getUser();
+          if (user) {
+            await supabase.from('push_subscriptions')
+              .delete()
+              .eq('user_id', user.id)
+              .eq('endpoint', subJson.endpoint);
+          }
+        }
       }
 
       localStorage.removeItem('push_subscription');
@@ -132,7 +150,6 @@ export function usePushNotifications() {
     }
   }, []);
 
-  // Send a local notification (for testing)
   const sendLocalNotification = useCallback(async (title: string, options?: NotificationOptions) => {
     if (!state.isSupported || state.permission !== 'granted') {
       return false;
@@ -160,7 +177,6 @@ export function usePushNotifications() {
   };
 }
 
-// Helper function to convert VAPID key
 function urlBase64ToUint8Array(base64String: string): Uint8Array {
   const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
   const base64 = (base64String + padding)
