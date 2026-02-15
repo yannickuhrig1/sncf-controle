@@ -89,6 +89,7 @@ const PV_TYPES = [
   { value: 'rnv_pv', label: 'RNV' },
   { value: 'titre_tiers_pv', label: 'Titre tiers' },
   { value: 'd_naissance_pv', label: 'D. naissance' },
+  { value: 'autre_pv', label: 'Autre' },
 ];
 
 interface FormState {
@@ -107,6 +108,8 @@ interface FormState {
   riPositif: number;
   riNegatif: number;
   commentaire: string;
+  autreControleComment: string;
+  autrePvComment: string;
 }
 
 const INITIAL_FORM_STATE: FormState = {
@@ -125,6 +128,8 @@ const INITIAL_FORM_STATE: FormState = {
   riPositif: 0,
   riNegatif: 0,
   commentaire: '',
+  autreControleComment: '',
+  autrePvComment: '',
 };
 
 export default function OnboardControl() {
@@ -167,6 +172,8 @@ export default function OnboardControl() {
     riPositif: 0,
     riNegatif: 0,
     commentaire: '',
+    autreControleComment: '',
+    autrePvComment: '',
   }), [parisDate, parisTime]);
 
   // Form state
@@ -278,6 +285,8 @@ export default function OnboardControl() {
           riPositif: data.ri_positive || 0,
           riNegatif: data.ri_negative || 0,
           commentaire: data.notes || '',
+          autreControleComment: '',
+          autrePvComment: '',
         });
       };
       
@@ -547,6 +556,7 @@ export default function OnboardControl() {
       const pvRnvEntries = formState.pvList.filter((t) => t.type === 'rnv_pv');
       const pvTitreTiersEntries = formState.pvList.filter((t) => t.type === 'titre_tiers_pv');
       const pvDocNaissanceEntries = formState.pvList.filter((t) => t.type === 'd_naissance_pv');
+      const pvAutreEntries = formState.pvList.filter((t) => t.type === 'autre_pv');
 
       // Extract tarifs bord details
       const bordSttEntries = formState.tarifsBord.filter((t) => t.type === 'stt' || t.category === 'bord');
@@ -554,6 +564,19 @@ export default function OnboardControl() {
       const bordTitreTiersEntries = formState.tarifsBord.filter((t) => t.type === 'titre_tiers');
       const bordDocNaissanceEntries = formState.tarifsBord.filter((t) => t.type === 'd_naissance');
       const bordAutreEntries = formState.tarifsBord.filter((t) => t.type === 'autre');
+
+      // Build notes with "Autre" comments
+      const notesParts: string[] = [];
+      if (formState.autreControleComment.trim()) {
+        notesParts.push(`[Tarif Autre] ${formState.autreControleComment.trim()}`);
+      }
+      if (formState.autrePvComment.trim()) {
+        notesParts.push(`[PV Autre] ${formState.autrePvComment.trim()}`);
+      }
+      if (formState.commentaire.trim()) {
+        notesParts.push(formState.commentaire.trim());
+      }
+      const finalNotes = notesParts.length > 0 ? notesParts.join(' | ') : null;
 
       const controlData = {
         location: locationName,
@@ -578,15 +601,15 @@ export default function OnboardControl() {
         doc_naissance_amount: docNaissanceEntries.reduce((sum, t) => sum + t.montant, 0) || null,
         autre_tarif: autreEntries.length,
         autre_tarif_amount: autreEntries.reduce((sum, t) => sum + t.montant, 0) || null,
-        // PV details (mapped: absence_titre=STT100, titre_invalide=RNV, refus_controle=Titre tiers, autre=D.naissance)
+        // PV details
         pv_absence_titre: pvStt100Entries.length,
         pv_absence_titre_amount: pvStt100Entries.reduce((sum, t) => sum + t.montant, 0) || null,
         pv_titre_invalide: pvRnvEntries.length,
         pv_titre_invalide_amount: pvRnvEntries.reduce((sum, t) => sum + t.montant, 0) || null,
         pv_refus_controle: pvTitreTiersEntries.length,
         pv_refus_controle_amount: pvTitreTiersEntries.reduce((sum, t) => sum + t.montant, 0) || null,
-        pv_autre: pvDocNaissanceEntries.length,
-        pv_autre_amount: pvDocNaissanceEntries.reduce((sum, t) => sum + t.montant, 0) || null,
+        pv_autre: pvDocNaissanceEntries.length + pvAutreEntries.length,
+        pv_autre_amount: (pvDocNaissanceEntries.reduce((sum, t) => sum + t.montant, 0) + pvAutreEntries.reduce((sum, t) => sum + t.montant, 0)) || null,
         // Tarifs bord
         tarif_bord_stt_50: bordSttEntries.filter(t => t.category === 'bord').length || null,
         tarif_bord_stt_50_amount: bordSttEntries.filter(t => t.category === 'bord').reduce((sum, t) => sum + t.montant, 0) || null,
@@ -602,7 +625,7 @@ export default function OnboardControl() {
         tarif_bord_autre_amount: bordAutreEntries.reduce((sum, t) => sum + t.montant, 0) || null,
         ri_positive: formState.riPositif,
         ri_negative: formState.riNegatif,
-        notes: formState.commentaire.trim() || null,
+        notes: finalNotes,
       };
 
       if (isEditMode && editId) {
@@ -940,6 +963,9 @@ export default function OnboardControl() {
                   {activeSection === 'controle' && (
                     <>
                       <TarifTypeToggle types={TARIF_TYPES} value={controleTarifType} onChange={setControleTarifType} />
+                      {controleTarifType === 'autre' && (
+                        <Input placeholder="Précisez l'infraction..." value={formState.autreControleComment} onChange={(e) => setFormState((p) => ({ ...p, autreControleComment: e.target.value }))} />
+                      )}
                       <div className="flex gap-2">
                         <Input type="number" min="0" step="0.01" placeholder="Montant (€)" value={controleTarifMontant} onChange={(e) => setControleTarifMontant(e.target.value)} className="flex-1" onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addTarifControle())} />
                         <Button type="button" onClick={addTarifControle} disabled={!controleTarifMontant}><Plus className="h-4 w-4 mr-1" />Ajouter</Button>
@@ -956,6 +982,9 @@ export default function OnboardControl() {
                   {activeSection === 'pv' && (
                     <>
                        <TarifTypeToggle types={PV_TYPES} value={pvTarifType} onChange={setPvTarifType} />
+                      {pvTarifType === 'autre_pv' && (
+                        <Input placeholder="Précisez l'infraction..." value={formState.autrePvComment} onChange={(e) => setFormState((p) => ({ ...p, autrePvComment: e.target.value }))} />
+                      )}
                       <div className="flex gap-2">
                         <Input type="number" min="0" step="0.01" placeholder="Montant (€)" value={pvTarifMontant} onChange={(e) => setPvTarifMontant(e.target.value)} className="flex-1" onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addPv())} />
                         <Button type="button" onClick={addPv} disabled={!pvTarifMontant} variant="destructive"><Plus className="h-4 w-4 mr-1" />Ajouter</Button>
@@ -1136,6 +1165,14 @@ export default function OnboardControl() {
                   <CardContent className="space-y-4">
                     <TarifTypeToggle types={TARIF_TYPES} value={controleTarifType} onChange={setControleTarifType} />
 
+                    {controleTarifType === 'autre' && (
+                      <Input
+                        placeholder="Précisez l'infraction..."
+                        value={formState.autreControleComment}
+                        onChange={(e) => setFormState((p) => ({ ...p, autreControleComment: e.target.value }))}
+                      />
+                    )}
+
                     <div className="flex gap-2">
                       <Input
                         type="number"
@@ -1175,6 +1212,13 @@ export default function OnboardControl() {
                   <CardContent className="space-y-4">
                     <TarifTypeToggle types={PV_TYPES} value={pvTarifType} onChange={setPvTarifType} />
 
+                    {pvTarifType === 'autre_pv' && (
+                      <Input
+                        placeholder="Précisez l'infraction..."
+                        value={formState.autrePvComment}
+                        onChange={(e) => setFormState((p) => ({ ...p, autrePvComment: e.target.value }))}
+                      />
+                    )}
                     <div className="flex gap-2">
                       <Input
                         type="number"
