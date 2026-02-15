@@ -115,9 +115,10 @@ export default function StationControl() {
   const [autreTarif, setAutreTarif] = useState({ count: 0, amount: 0 });
 
   // PV
-  const [pvAbsenceTitre, setPvAbsenceTitre] = useState({ count: 0, amount: 0 });
-  const [pvTitreInvalide, setPvTitreInvalide] = useState({ count: 0, amount: 0 });
-  const [pvRefusControle, setPvRefusControle] = useState({ count: 0, amount: 0 });
+  const [pvStt100, setPvStt100] = useState({ count: 0, amount: 0 });
+  const [pvRnv, setPvRnv] = useState({ count: 0, amount: 0 });
+  const [pvTitreTiers, setPvTitreTiers] = useState({ count: 0, amount: 0 });
+  const [pvDocNaissance, setPvDocNaissance] = useState({ count: 0, amount: 0 });
   const [pvAutre, setPvAutre] = useState({ count: 0, amount: 0 });
 
   // RI
@@ -130,11 +131,11 @@ export default function StationControl() {
   // Calculate fraud stats
   const fraudStats = useMemo(() => {
     const tarifsControleCount = stt50.count + stt100.count + rnv.count + titreTiers.count + docNaissance.count + autreTarif.count;
-    const pvCount = pvAbsenceTitre.count + pvTitreInvalide.count + pvRefusControle.count + pvAutre.count;
+    const pvCount = pvStt100.count + pvRnv.count + pvTitreTiers.count + pvDocNaissance.count + pvAutre.count;
     const fraudCount = tarifsControleCount + pvCount;
     const fraudRate = nbPassagers > 0 ? (fraudCount / nbPassagers) * 100 : 0;
     return { fraudCount, fraudRate, tarifsControleCount, pvCount };
-  }, [nbPassagers, stt50, stt100, rnv, titreTiers, docNaissance, autreTarif, pvAbsenceTitre, pvTitreInvalide, pvRefusControle, pvAutre]);
+  }, [nbPassagers, stt50, stt100, rnv, titreTiers, docNaissance, autreTarif, pvStt100, pvRnv, pvTitreTiers, pvDocNaissance, pvAutre]);
 
   // Load control for editing or duplicating
   useEffect(() => {
@@ -224,9 +225,10 @@ export default function StationControl() {
     setTarifBordDocNaissance({ count: data.tarif_bord_doc_naissance || 0, amount: Number(data.tarif_bord_doc_naissance_amount) || 0 });
     setTarifBordAutre({ count: data.tarif_bord_autre || 0, amount: Number(data.tarif_bord_autre_amount) || 0 });
     // PV
-    setPvAbsenceTitre({ count: data.pv_absence_titre || 0, amount: Number(data.pv_absence_titre_amount) || 0 });
-    setPvTitreInvalide({ count: data.pv_titre_invalide || 0, amount: Number(data.pv_titre_invalide_amount) || 0 });
-    setPvRefusControle({ count: data.pv_refus_controle || 0, amount: Number(data.pv_refus_controle_amount) || 0 });
+    setPvStt100({ count: data.pv_stt100 || 0, amount: Number(data.pv_stt100_amount) || 0 });
+    setPvRnv({ count: data.pv_rnv || 0, amount: Number(data.pv_rnv_amount) || 0 });
+    setPvTitreTiers({ count: data.pv_titre_tiers || 0, amount: Number(data.pv_titre_tiers_amount) || 0 });
+    setPvDocNaissance({ count: data.pv_doc_naissance || 0, amount: Number(data.pv_doc_naissance_amount) || 0 });
     setPvAutre({ count: data.pv_autre || 0, amount: Number(data.pv_autre_amount) || 0 });
     // RI
     setRiPositive(data.ri_positive || 0);
@@ -331,12 +333,14 @@ export default function StationControl() {
         tarifs_controle: fraudStats.tarifsControleCount,
         // PV
         pv: fraudStats.pvCount,
-        pv_absence_titre: pvAbsenceTitre.count,
-        pv_absence_titre_amount: pvAbsenceTitre.amount,
-        pv_titre_invalide: pvTitreInvalide.count,
-        pv_titre_invalide_amount: pvTitreInvalide.amount,
-        pv_refus_controle: pvRefusControle.count,
-        pv_refus_controle_amount: pvRefusControle.amount,
+        pv_stt100: pvStt100.count,
+        pv_stt100_amount: pvStt100.amount,
+        pv_rnv: pvRnv.count,
+        pv_rnv_amount: pvRnv.amount,
+        pv_titre_tiers: pvTitreTiers.count,
+        pv_titre_tiers_amount: pvTitreTiers.amount,
+        pv_doc_naissance: pvDocNaissance.count,
+        pv_doc_naissance_amount: pvDocNaissance.amount,
         pv_autre: pvAutre.count,
         pv_autre_amount: pvAutre.amount,
         // RI
@@ -399,12 +403,14 @@ export default function StationControl() {
           rnv_amount: rnv.amount,
           tarifs_controle: fraudStats.tarifsControleCount,
           pv: fraudStats.pvCount,
-          pv_absence_titre: pvAbsenceTitre.count,
-          pv_absence_titre_amount: pvAbsenceTitre.amount,
-          pv_titre_invalide: pvTitreInvalide.count,
-          pv_titre_invalide_amount: pvTitreInvalide.amount,
-          pv_refus_controle: pvRefusControle.count,
-          pv_refus_controle_amount: pvRefusControle.amount,
+          pv_stt100: pvStt100.count,
+          pv_stt100_amount: pvStt100.amount,
+          pv_rnv: pvRnv.count,
+          pv_rnv_amount: pvRnv.amount,
+          pv_titre_tiers: pvTitreTiers.count,
+          pv_titre_tiers_amount: pvTitreTiers.amount,
+          pv_doc_naissance: pvDocNaissance.count,
+          pv_doc_naissance_amount: pvDocNaissance.amount,
           pv_autre: pvAutre.count,
           pv_autre_amount: pvAutre.amount,
           ri_positive: riPositive,
@@ -442,10 +448,11 @@ export default function StationControl() {
   ];
 
   const pvItems = [
-    { id: 'pv-absence', label: 'Absence de titre', ...pvAbsenceTitre, onCountChange: (v: number) => setPvAbsenceTitre(p => ({ ...p, count: v })), onAmountChange: (v: number) => setPvAbsenceTitre(p => ({ ...p, amount: v })) },
-    { id: 'pv-invalide', label: 'Titre non valide', ...pvTitreInvalide, onCountChange: (v: number) => setPvTitreInvalide(p => ({ ...p, count: v })), onAmountChange: (v: number) => setPvTitreInvalide(p => ({ ...p, amount: v })) },
-    { id: 'pv-refus', label: 'Refus de contrôle', ...pvRefusControle, onCountChange: (v: number) => setPvRefusControle(p => ({ ...p, count: v })), onAmountChange: (v: number) => setPvRefusControle(p => ({ ...p, amount: v })) },
-    { id: 'pv-autre', label: 'Autre motif', ...pvAutre, onCountChange: (v: number) => setPvAutre(p => ({ ...p, count: v })), onAmountChange: (v: number) => setPvAutre(p => ({ ...p, amount: v })) },
+    { id: 'pv-stt100', label: 'STT100', ...pvStt100, onCountChange: (v: number) => setPvStt100(p => ({ ...p, count: v })), onAmountChange: (v: number) => setPvStt100(p => ({ ...p, amount: v })) },
+    { id: 'pv-rnv', label: 'RNV', ...pvRnv, onCountChange: (v: number) => setPvRnv(p => ({ ...p, count: v })), onAmountChange: (v: number) => setPvRnv(p => ({ ...p, amount: v })) },
+    { id: 'pv-titre-tiers', label: 'Titre tiers', ...pvTitreTiers, onCountChange: (v: number) => setPvTitreTiers(p => ({ ...p, count: v })), onAmountChange: (v: number) => setPvTitreTiers(p => ({ ...p, amount: v })) },
+    { id: 'pv-doc-naissance', label: 'D. naissance', ...pvDocNaissance, onCountChange: (v: number) => setPvDocNaissance(p => ({ ...p, count: v })), onAmountChange: (v: number) => setPvDocNaissance(p => ({ ...p, amount: v })) },
+    { id: 'pv-autre', label: 'Autre', ...pvAutre, onCountChange: (v: number) => setPvAutre(p => ({ ...p, count: v })), onAmountChange: (v: number) => setPvAutre(p => ({ ...p, amount: v })) },
   ];
 
 

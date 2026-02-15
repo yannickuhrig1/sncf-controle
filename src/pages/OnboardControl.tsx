@@ -85,11 +85,11 @@ const TARIF_TYPES = [
 ];
 
 const PV_TYPES = [
-  { value: 'stt100_pv', label: 'STT100' },
-  { value: 'rnv_pv', label: 'RNV' },
-  { value: 'titre_tiers_pv', label: 'Titre tiers' },
-  { value: 'd_naissance_pv', label: 'D. naissance' },
-  { value: 'autre_pv', label: 'Autre' },
+  { value: 'pv_stt100', label: 'STT100' },
+  { value: 'pv_rnv', label: 'RNV' },
+  { value: 'pv_titre_tiers', label: 'Titre tiers' },
+  { value: 'pv_doc_naissance', label: 'D. naissance' },
+  { value: 'pv_autre', label: 'Autre' },
 ];
 
 interface FormState {
@@ -195,7 +195,7 @@ export default function OnboardControl() {
   const [bordTarifMontant, setBordTarifMontant] = useState('');
   const [controleTarifType, setControleTarifType] = useState('stt');
   const [controleTarifMontant, setControleTarifMontant] = useState('');
-  const [pvTarifType, setPvTarifType] = useState('stt100_pv');
+  const [pvTarifType, setPvTarifType] = useState('pv_stt100');
   const [pvTarifMontant, setPvTarifMontant] = useState('');
 
   // History filter states
@@ -251,10 +251,11 @@ export default function OnboardControl() {
             });
           }
         };
-        addEntries(data.pv_absence_titre || 0, 'stt100_pv', 'STT100', data.pv_absence_titre_amount || 0);
-        addEntries(data.pv_titre_invalide || 0, 'rnv_pv', 'RNV', data.pv_titre_invalide_amount || 0);
-        addEntries(data.pv_refus_controle || 0, 'titre_tiers_pv', 'Titre tiers', data.pv_refus_controle_amount || 0);
-        addEntries(data.pv_autre || 0, 'd_naissance_pv', 'D. naissance', data.pv_autre_amount || 0);
+        addEntries(data.pv_stt100 || 0, 'pv_stt100', 'STT100', data.pv_stt100_amount || 0);
+        addEntries(data.pv_rnv || 0, 'pv_rnv', 'RNV', data.pv_rnv_amount || 0);
+        addEntries(data.pv_titre_tiers || 0, 'pv_titre_tiers', 'Titre tiers', data.pv_titre_tiers_amount || 0);
+        addEntries(data.pv_doc_naissance || 0, 'pv_doc_naissance', 'D. naissance', data.pv_doc_naissance_amount || 0);
+        addEntries(data.pv_autre || 0, 'pv_autre', 'Autre', data.pv_autre_amount || 0);
         return entries;
       };
 
@@ -264,9 +265,9 @@ export default function OnboardControl() {
         const tarifsControle = reconstructTarifsControle(data);
         const pvList = reconstructPvList(data);
         
-        // Compute stt100Count from PV total minus pvList entries (pv_absence_titre etc. are detailed PV)
-        const detailedPvCount = (data.pv_absence_titre || 0) + (data.pv_titre_invalide || 0) + 
-          (data.pv_refus_controle || 0) + (data.pv_autre || 0);
+        // Compute stt100Count from PV total minus pvList entries (pv_stt100 etc. are detailed PV)
+        const detailedPvCount = (data.pv_stt100 || 0) + (data.pv_rnv || 0) + 
+          (data.pv_titre_tiers || 0) + (data.pv_doc_naissance || 0) + (data.pv_autre || 0);
         const remainingPv = Math.max(0, (data.pv || 0) - detailedPvCount - pvList.length);
         
         setFormState({
@@ -552,11 +553,11 @@ export default function OnboardControl() {
       const sttEntries = formState.tarifsControle.filter((t) => t.type === 'stt');
 
       // Extract detailed PV counts and amounts from pvList
-      const pvStt100Entries = formState.pvList.filter((t) => t.type === 'stt100_pv');
-      const pvRnvEntries = formState.pvList.filter((t) => t.type === 'rnv_pv');
-      const pvTitreTiersEntries = formState.pvList.filter((t) => t.type === 'titre_tiers_pv');
-      const pvDocNaissanceEntries = formState.pvList.filter((t) => t.type === 'd_naissance_pv');
-      const pvAutreEntries = formState.pvList.filter((t) => t.type === 'autre_pv');
+      const pvStt100Entries = formState.pvList.filter((t) => t.type === 'pv_stt100');
+      const pvRnvEntries = formState.pvList.filter((t) => t.type === 'pv_rnv');
+      const pvTitreTiersEntries = formState.pvList.filter((t) => t.type === 'pv_titre_tiers');
+      const pvDocNaissanceEntries = formState.pvList.filter((t) => t.type === 'pv_doc_naissance');
+      const pvAutreEntries = formState.pvList.filter((t) => t.type === 'pv_autre');
 
       // Extract tarifs bord details
       const bordSttEntries = formState.tarifsBord.filter((t) => t.type === 'stt' || t.category === 'bord');
@@ -602,14 +603,16 @@ export default function OnboardControl() {
         autre_tarif: autreEntries.length,
         autre_tarif_amount: autreEntries.reduce((sum, t) => sum + t.montant, 0) || null,
         // PV details
-        pv_absence_titre: pvStt100Entries.length,
-        pv_absence_titre_amount: pvStt100Entries.reduce((sum, t) => sum + t.montant, 0) || null,
-        pv_titre_invalide: pvRnvEntries.length,
-        pv_titre_invalide_amount: pvRnvEntries.reduce((sum, t) => sum + t.montant, 0) || null,
-        pv_refus_controle: pvTitreTiersEntries.length,
-        pv_refus_controle_amount: pvTitreTiersEntries.reduce((sum, t) => sum + t.montant, 0) || null,
-        pv_autre: pvDocNaissanceEntries.length + pvAutreEntries.length,
-        pv_autre_amount: (pvDocNaissanceEntries.reduce((sum, t) => sum + t.montant, 0) + pvAutreEntries.reduce((sum, t) => sum + t.montant, 0)) || null,
+        pv_stt100: pvStt100Entries.length,
+        pv_stt100_amount: pvStt100Entries.reduce((sum, t) => sum + t.montant, 0) || null,
+        pv_rnv: pvRnvEntries.length,
+        pv_rnv_amount: pvRnvEntries.reduce((sum, t) => sum + t.montant, 0) || null,
+        pv_titre_tiers: pvTitreTiersEntries.length,
+        pv_titre_tiers_amount: pvTitreTiersEntries.reduce((sum, t) => sum + t.montant, 0) || null,
+        pv_doc_naissance: pvDocNaissanceEntries.length,
+        pv_doc_naissance_amount: pvDocNaissanceEntries.reduce((sum, t) => sum + t.montant, 0) || null,
+        pv_autre: pvAutreEntries.length,
+        pv_autre_amount: pvAutreEntries.reduce((sum, t) => sum + t.montant, 0) || null,
         // Tarifs bord
         tarif_bord_stt_50: bordSttEntries.filter(t => t.category === 'bord').length || null,
         tarif_bord_stt_50_amount: bordSttEntries.filter(t => t.category === 'bord').reduce((sum, t) => sum + t.montant, 0) || null,
@@ -982,7 +985,7 @@ export default function OnboardControl() {
                   {activeSection === 'pv' && (
                     <>
                        <TarifTypeToggle types={PV_TYPES} value={pvTarifType} onChange={setPvTarifType} />
-                      {pvTarifType === 'autre_pv' && (
+                      {pvTarifType === 'pv_autre' && (
                         <Input placeholder="Précisez l'infraction..." value={formState.autrePvComment} onChange={(e) => setFormState((p) => ({ ...p, autrePvComment: e.target.value }))} />
                       )}
                       <div className="flex gap-2">
@@ -1212,7 +1215,7 @@ export default function OnboardControl() {
                   <CardContent className="space-y-4">
                     <TarifTypeToggle types={PV_TYPES} value={pvTarifType} onChange={setPvTarifType} />
 
-                    {pvTarifType === 'autre_pv' && (
+                    {pvTarifType === 'pv_autre' && (
                       <Input
                         placeholder="Précisez l'infraction..."
                         value={formState.autrePvComment}
