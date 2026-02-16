@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 
 export interface OnboardControl {
   id: string;
@@ -28,12 +28,14 @@ export interface OnboardControl {
   doc_naissance_amount: number | null;
   autre_tarif: number | null;
   autre_tarif_amount: number | null;
-  pv_absence_titre: number | null;
-  pv_absence_titre_amount: number | null;
-  pv_titre_invalide: number | null;
-  pv_titre_invalide_amount: number | null;
-  pv_refus_controle: number | null;
-  pv_refus_controle_amount: number | null;
+  pv_stt100: number | null;
+  pv_stt100_amount: number | null;
+  pv_rnv: number | null;
+  pv_rnv_amount: number | null;
+  pv_titre_tiers: number | null;
+  pv_titre_tiers_amount: number | null;
+  pv_doc_naissance: number | null;
+  pv_doc_naissance_amount: number | null;
   pv_autre: number | null;
   pv_autre_amount: number | null;
   ri_positive: number;
@@ -46,7 +48,6 @@ export interface OnboardControl {
 
 export function useOnboardControls() {
   const { profile } = useAuth();
-  const { toast } = useToast();
   const queryClient = useQueryClient();
 
   // Fetch all onboard controls (location_type = 'train')
@@ -111,10 +112,7 @@ export function useOnboardControls() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['onboard-controls'] });
       queryClient.invalidateQueries({ queryKey: ['controls'] });
-      toast({
-        title: 'Contrôle supprimé',
-        description: 'Le contrôle a été supprimé avec succès.',
-      });
+      toast.success('Contrôle supprimé', { description: 'Le contrôle a été supprimé avec succès.' });
     },
   });
 

@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { useControls } from '@/hooks/useControls';
 import { useEmbarkmentMissions } from '@/hooks/useEmbarkmentMissions';
 import { useLastSync } from '@/hooks/useLastSync';
@@ -36,9 +37,7 @@ import {
   Calendar, 
   Clock, 
   Users, 
-  AlertTriangle,
   Download,
-  ChevronRight,
   Search,
   X,
   Filter,
@@ -83,108 +82,115 @@ function ControlRow({ control, onClick }: ControlRowProps) {
       className="cursor-pointer hover:bg-muted/50 transition-colors"
       onClick={onClick}
     >
-      <CardContent className="p-4">
-        <div className="flex items-center gap-3">
+      <CardContent className="p-3 sm:p-4">
+        <div className="flex items-start gap-3">
           {/* Icon */}
-          <div className="p-2 rounded-lg bg-primary/10 shrink-0">
+          <div className="p-2 rounded-lg bg-primary/10 shrink-0 mt-0.5">
             <Icon className="h-4 w-4 text-primary" />
           </div>
           
           {/* Main info */}
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2">
-              <span className="font-medium truncate">{control.location}</span>
+            {/* Line 1: location + train number */}
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="font-medium truncate text-sm">
+                {control.origin && control.destination
+                  ? `${control.origin} → ${control.destination}`
+                  : control.location}
+              </span>
               {control.train_number && (
                 <Badge variant="outline" className="text-xs shrink-0">
                   N° {control.train_number}
                 </Badge>
               )}
             </div>
+
+            {/* Line 2: date + time */}
             <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1">
+              <span className="flex items-center gap-1">
+                <Calendar className="h-3 w-3" />
+                {format(new Date(control.control_date), 'dd/MM/yy', { locale: fr })}
+              </span>
               <span className="flex items-center gap-1">
                 <Clock className="h-3 w-3" />
                 {control.control_time.slice(0, 5)}
               </span>
-              {control.origin && control.destination && (
-                <span className="truncate">
-                  {control.origin} → {control.destination}
-                </span>
-              )}
-            </div>
-          </div>
-          
-          {/* Stats */}
-          <div className="flex items-center gap-4 shrink-0">
-            <div className="text-center hidden sm:block">
-              <div className="flex items-center gap-1 text-sm font-medium">
+              <span className="flex items-center gap-1">
                 <Users className="h-3 w-3" />
                 {control.nb_passagers}
-              </div>
+              </span>
             </div>
-            <div className={`text-center ${getFraudRateColor(fraudRate)}`}>
-              <div className="flex items-center gap-1 text-sm font-semibold">
-                <AlertTriangle className="h-3 w-3" />
-                {fraudCount} ({fraudRate.toFixed(1)}%)
+
+            {/* Line 3: fraud badges */}
+            {fraudCount > 0 && (
+              <div className="flex flex-wrap gap-1 mt-2">
+                {control.tarifs_controle > 0 && (
+                  <Badge className="text-[10px] px-1.5 py-0 bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 hover:bg-amber-100">
+                    TC: {control.tarifs_controle}
+                  </Badge>
+                )}
+                {control.pv > 0 && (
+                  <Badge variant="destructive" className="text-[10px] px-1.5 py-0">
+                    PV: {control.pv}
+                  </Badge>
+                )}
+                {(control.stt_50 || 0) > 0 && (
+                  <Badge variant="outline" className="text-[10px] px-1.5 py-0 text-amber-600 border-amber-200">
+                    STT50: {control.stt_50}
+                  </Badge>
+                )}
+                {(control.pv_stt100 || 0) > 0 && (
+                  <Badge variant="outline" className="text-[10px] px-1.5 py-0 text-red-600 border-red-200">
+                    STT100: {control.pv_stt100}
+                  </Badge>
+                )}
+                {(control.pv_rnv || 0) > 0 && (
+                  <Badge variant="outline" className="text-[10px] px-1.5 py-0 text-red-600 border-red-200">
+                    RNV: {control.pv_rnv}
+                  </Badge>
+                )}
+                {(control.pv_titre_tiers || 0) > 0 && (
+                  <Badge variant="outline" className="text-[10px] px-1.5 py-0 text-red-600 border-red-200">
+                    T.Tiers: {control.pv_titre_tiers}
+                  </Badge>
+                )}
+                {(control.pv_doc_naissance || 0) > 0 && (
+                  <Badge variant="outline" className="text-[10px] px-1.5 py-0 text-red-600 border-red-200">
+                    D.Naiss: {control.pv_doc_naissance}
+                  </Badge>
+                )}
+                {(control.pv_autre || 0) > 0 && (
+                  <Badge variant="outline" className="text-[10px] px-1.5 py-0 text-red-600 border-red-200">
+                    Autre PV: {control.pv_autre}
+                  </Badge>
+                )}
+                {control.rnv > 0 && (
+                  <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                    RNV: {control.rnv}
+                  </Badge>
+                )}
+                {(control.titre_tiers || 0) > 0 && (
+                  <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                    T.Tiers: {control.titre_tiers}
+                  </Badge>
+                )}
+                {(control.doc_naissance || 0) > 0 && (
+                  <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                    D.Naiss: {control.doc_naissance}
+                  </Badge>
+                )}
               </div>
-            </div>
-            <ChevronRight className="h-4 w-4 text-muted-foreground" />
+            )}
+          </div>
+          
+          {/* Fraud rate — always visible */}
+          <div className={`text-right shrink-0 ${getFraudRateColor(fraudRate)}`}>
+            <div className="text-sm font-bold">{fraudRate.toFixed(1)}%</div>
+            {fraudCount > 0 && (
+              <div className="text-xs opacity-80">{fraudCount} fraude{fraudCount > 1 ? 's' : ''}</div>
+            )}
           </div>
         </div>
-        {/* Quick detail badges */}
-        {fraudCount > 0 && (
-          <div className="flex flex-wrap gap-1.5 mt-2 ml-11">
-            {control.tarifs_controle > 0 && (
-              <Badge className="text-[10px] px-1.5 py-0 bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 hover:bg-green-100">
-                TC: {control.tarifs_controle}
-              </Badge>
-            )}
-            {control.pv > 0 && (
-              <Badge variant="destructive" className="text-[10px] px-1.5 py-0">
-                PV: {control.pv}
-              </Badge>
-            )}
-            {(control.pv_absence_titre || 0) > 0 && (
-              <Badge variant="outline" className="text-[10px] px-1.5 py-0 text-red-600 border-red-200">
-                STT100: {control.pv_absence_titre}
-              </Badge>
-            )}
-            {(control.pv_titre_invalide || 0) > 0 && (
-              <Badge variant="outline" className="text-[10px] px-1.5 py-0 text-red-600 border-red-200">
-                RNV: {control.pv_titre_invalide}
-              </Badge>
-            )}
-            {(control.pv_refus_controle || 0) > 0 && (
-              <Badge variant="outline" className="text-[10px] px-1.5 py-0 text-red-600 border-red-200">
-                T.Tiers: {control.pv_refus_controle}
-              </Badge>
-            )}
-            {(control.pv_autre || 0) > 0 && (
-              <Badge variant="outline" className="text-[10px] px-1.5 py-0 text-red-600 border-red-200">
-                D.Naiss: {control.pv_autre}
-              </Badge>
-            )}
-            {control.rnv > 0 && (
-              <Badge variant="outline" className="text-[10px] px-1.5 py-0">
-                RNV: {control.rnv}
-              </Badge>
-            )}
-            {(control.titre_tiers || 0) > 0 && (
-              <Badge variant="outline" className="text-[10px] px-1.5 py-0">
-                T.Tiers: {control.titre_tiers}
-              </Badge>
-            )}
-            {(control.doc_naissance || 0) > 0 && (
-              <Badge variant="outline" className="text-[10px] px-1.5 py-0">
-                D.Naiss: {control.doc_naissance}
-              </Badge>
-            )}
-            {(control.autre_tarif || 0) > 0 && (
-              <Badge variant="outline" className="text-[10px] px-1.5 py-0">
-                Autre: {control.autre_tarif}
-              </Badge>
-            )}
-          </div>
-        )}
       </CardContent>
     </Card>
   );
@@ -192,6 +198,7 @@ function ControlRow({ control, onClick }: ControlRowProps) {
 
 export default function HistoryPage() {
   const { user, profile, loading: authLoading } = useAuth();
+  const isMobile = useIsMobile();
   const { 
     controls, 
     isLoading, 
@@ -232,7 +239,9 @@ export default function HistoryPage() {
   const [pdfDocRef, setPdfDocRef] = useState<ReturnType<typeof exportToPDF> | null>(null);
   
   // Get view mode from preferences, default to 'list'
-  const viewMode: HistoryViewMode = preferences?.history_view_mode ?? 'list';
+  // On mobile, always force list view regardless of preference
+  const savedViewMode: HistoryViewMode = preferences?.history_view_mode ?? 'list';
+  const viewMode: HistoryViewMode = isMobile ? 'list' : savedViewMode;
   
   const handleViewModeChange = (newMode: string | undefined) => {
     if (newMode && (newMode === 'list' || newMode === 'table')) {
@@ -517,7 +526,8 @@ export default function HistoryPage() {
               )}
             </div>
             <div className="flex items-center gap-2">
-              {/* View mode toggle */}
+              {/* View mode toggle — desktop only (mobile always uses list) */}
+              {!isMobile && (
               <ToggleGroup 
                 type="single" 
                 value={viewMode} 
@@ -531,6 +541,7 @@ export default function HistoryPage() {
                   <TableIcon className="h-4 w-4" />
                 </ToggleGroupItem>
               </ToggleGroup>
+              )}
               
               <OfflineIndicator 
                 isOnline={isOnline} 

@@ -34,9 +34,9 @@ function getControlDetails(control: Control) {
     inRule: control.nb_en_regle,
     tarifsControle: control.tarifs_controle,
     pv: control.pv,
-    pvAbsenceTitre: control.pv_absence_titre || 0,
-    pvTitreInvalide: control.pv_titre_invalide || 0,
-    pvRefusControle: control.pv_refus_controle || 0,
+    pvStt100: control.pv_stt100 || 0,
+    pvRnv: control.pv_rnv || 0,
+    pvTitreTiers: control.pv_titre_tiers || 0,
     pvAutre: control.pv_autre || 0,
     stt50: control.stt_50,
     stt50Amount: control.stt_50_amount || 0,
@@ -88,22 +88,22 @@ function calculateExtendedStats(controls: Control[]) {
     titreTiers: acc.titreTiers + (c.titre_tiers_amount || 0),
     docNaissance: acc.docNaissance + (c.doc_naissance_amount || 0),
     autre: acc.autre + (c.autre_tarif_amount || 0),
-    pvAbsenceTitre: acc.pvAbsenceTitre + ((c.pv_absence_titre_amount || 0) > 0 ? c.pv_absence_titre_amount! : (c.pv_absence_titre || 0) * 100),
-    pvTitreInvalide: acc.pvTitreInvalide + ((c.pv_titre_invalide_amount || 0) > 0 ? c.pv_titre_invalide_amount! : (c.pv_titre_invalide || 0) * 100),
-    pvRefusControle: acc.pvRefusControle + ((c.pv_refus_controle_amount || 0) > 0 ? c.pv_refus_controle_amount! : (c.pv_refus_controle || 0) * 100),
+    pvStt100: acc.pvStt100 + ((c.pv_stt100_amount || 0) > 0 ? c.pv_stt100_amount! : (c.pv_stt100 || 0) * 100),
+    pvRnv: acc.pvRnv + ((c.pv_rnv_amount || 0) > 0 ? c.pv_rnv_amount! : (c.pv_rnv || 0) * 100),
+    pvTitreTiers: acc.pvTitreTiers + ((c.pv_titre_tiers_amount || 0) > 0 ? c.pv_titre_tiers_amount! : (c.pv_titre_tiers || 0) * 100),
     pvAutre: acc.pvAutre + (c.pv_autre_amount || 0),
   }), {
     stt50: 0, stt100: 0, rnv: 0, titreTiers: 0, docNaissance: 0, autre: 0,
-    pvAbsenceTitre: 0, pvTitreInvalide: 0, pvRefusControle: 0, pvAutre: 0,
+    pvStt100: 0, pvRnv: 0, pvTitreTiers: 0, pvAutre: 0,
   });
 
   // PV breakdown
   const pvBreakdown = controls.reduce((acc, c) => ({
-    absenceTitre: acc.absenceTitre + (c.pv_absence_titre || 0),
-    titreInvalide: acc.titreInvalide + (c.pv_titre_invalide || 0),
-    refusControle: acc.refusControle + (c.pv_refus_controle || 0),
+    stt100: acc.stt100 + (c.pv_stt100 || 0),
+    rnv: acc.rnv + (c.pv_rnv || 0),
+    titreTiers: acc.titreTiers + (c.pv_titre_tiers || 0),
     autre: acc.autre + (c.pv_autre || 0),
-  }), { absenceTitre: 0, titreInvalide: 0, refusControle: 0, autre: 0 });
+  }), { stt100: 0, rnv: 0, titreTiers: 0, autre: 0 });
 
   // Tarifs bord
   const tarifsBord = controls.reduce((acc, c) => ({
@@ -237,13 +237,13 @@ export function exportToPDF({ controls, title, dateRange, includeStats, orientat
     doc.setFontSize(11);
     doc.text('Détail PV (procès-verbaux)', 110, yPosition);
 
-    const totalPVAmount = stats.totalAmounts.stt100 + stats.totalAmounts.pvAbsenceTitre + stats.totalAmounts.pvTitreInvalide + stats.totalAmounts.pvRefusControle + stats.totalAmounts.pvAutre;
+    const totalPVAmount = stats.totalAmounts.stt100 + stats.totalAmounts.pvStt100 + stats.totalAmounts.pvRnv + stats.totalAmounts.pvTitreTiers + stats.totalAmounts.pvAutre;
     const pvData = [
       ['Type', 'Nombre', 'Montant (€)'],
       ['STT 100€', stats.stt100.toString(), stats.totalAmounts.stt100.toFixed(2)],
-      ['Absence de titre', stats.pvBreakdown.absenceTitre.toString(), stats.totalAmounts.pvAbsenceTitre.toFixed(2)],
-      ['Titre invalide', stats.pvBreakdown.titreInvalide.toString(), stats.totalAmounts.pvTitreInvalide.toFixed(2)],
-      ['Refus contrôle', stats.pvBreakdown.refusControle.toString(), stats.totalAmounts.pvRefusControle.toFixed(2)],
+      ['Absence de titre', stats.pvBreakdown.stt100.toString(), stats.totalAmounts.pvStt100.toFixed(2)],
+      ['Titre invalide', stats.pvBreakdown.rnv.toString(), stats.totalAmounts.pvRnv.toFixed(2)],
+      ['Refus contrôle', stats.pvBreakdown.titreTiers.toString(), stats.totalAmounts.pvTitreTiers.toFixed(2)],
       ['Autre PV', stats.pvBreakdown.autre.toString(), stats.totalAmounts.pvAutre.toFixed(2)],
       ['TOTAL', stats.pv.toString(), totalPVAmount.toFixed(2)],
     ];
@@ -584,7 +584,7 @@ export function exportToHTML({ controls, title, dateRange, includeStats, exportM
   // Calculate total amounts
   // STT 100 goes into PV, not Tarifs Contrôle
   const totalTarifsControle = stats.totalAmounts.stt50 + stats.totalAmounts.rnv + stats.totalAmounts.titreTiers + stats.totalAmounts.docNaissance + stats.totalAmounts.autre;
-  const totalPV = stats.totalAmounts.stt100 + stats.totalAmounts.pvAbsenceTitre + stats.totalAmounts.pvTitreInvalide + stats.totalAmounts.pvRefusControle + stats.totalAmounts.pvAutre;
+  const totalPV = stats.totalAmounts.stt100 + stats.totalAmounts.pvStt100 + stats.totalAmounts.pvRnv + stats.totalAmounts.pvTitreTiers + stats.totalAmounts.pvAutre;
   // Total encaissé = Tarifs contrôle + Tarifs bord (sans PV)
   const totalEncaisse = totalTarifsControle;
 
@@ -852,9 +852,9 @@ export function exportToHTML({ controls, title, dateRange, includeStats, exportM
             <table class="detail-table">
               <tr><th>Type</th><th>Nombre</th><th>Montant</th></tr>
               ${detailRow('STT 100€', stats.stt100, stats.totalAmounts.stt100)}
-              ${detailRow('Absence de titre', stats.pvBreakdown.absenceTitre, stats.totalAmounts.pvAbsenceTitre)}
-              ${detailRow('Titre invalide', stats.pvBreakdown.titreInvalide, stats.totalAmounts.pvTitreInvalide)}
-              ${detailRow('Refus contrôle', stats.pvBreakdown.refusControle, stats.totalAmounts.pvRefusControle)}
+              ${detailRow('Absence de titre', stats.pvBreakdown.stt100, stats.totalAmounts.pvStt100)}
+              ${detailRow('Titre invalide', stats.pvBreakdown.rnv, stats.totalAmounts.pvRnv)}
+              ${detailRow('Refus contrôle', stats.pvBreakdown.titreTiers, stats.totalAmounts.pvTitreTiers)}
               ${detailRow('Autre PV', stats.pvBreakdown.autre, stats.totalAmounts.pvAutre)}
               <tr class="total"><td>TOTAL</td><td><strong>${stats.pv}</strong></td><td><strong>${totalPV.toFixed(2)} €</strong></td></tr>
             </table>
@@ -1112,9 +1112,9 @@ export function generateEmailContent({ controls, title, dateRange, includeStats 
     body += `   TOTAL: ${stats.tarifsControle}\n\n`;
     
     body += `⚠️ PV (procès-verbaux)\n`;
-    body += `   Absence de titre: ${stats.pvBreakdown.absenceTitre} (${stats.totalAmounts.pvAbsenceTitre.toFixed(2)} €)\n`;
-    body += `   Titre invalide: ${stats.pvBreakdown.titreInvalide} (${stats.totalAmounts.pvTitreInvalide.toFixed(2)} €)\n`;
-    body += `   Refus contrôle: ${stats.pvBreakdown.refusControle} (${stats.totalAmounts.pvRefusControle.toFixed(2)} €)\n`;
+    body += `   Absence de titre: ${stats.pvBreakdown.stt100} (${stats.totalAmounts.pvStt100.toFixed(2)} €)\n`;
+    body += `   Titre invalide: ${stats.pvBreakdown.rnv} (${stats.totalAmounts.pvRnv.toFixed(2)} €)\n`;
+    body += `   Refus contrôle: ${stats.pvBreakdown.titreTiers} (${stats.totalAmounts.pvTitreTiers.toFixed(2)} €)\n`;
     body += `   Autre PV: ${stats.pvBreakdown.autre} (${stats.totalAmounts.pvAutre.toFixed(2)} €)\n`;
     body += `   ─────────────────────────────\n`;
     body += `   TOTAL: ${stats.pv}\n\n`;
@@ -1164,7 +1164,7 @@ export function generateEmailContent({ controls, title, dateRange, includeStats 
     body += `      Titre tiers: ${details.titreTiers} | Date naiss.: ${details.docNaissance} | Autre: ${details.autreTarif}\n`;
     
     body += `\n   ⚠️ PV: ${details.pv}\n`;
-    body += `      Absence: ${details.pvAbsenceTitre} | Invalide: ${details.pvTitreInvalide} | Refus: ${details.pvRefusControle} | Autre: ${details.pvAutre}\n`;
+    body += `      Absence: ${details.pvStt100} | Invalide: ${details.pvRnv} | Refus: ${details.pvTitreTiers} | Autre: ${details.pvAutre}\n`;
     
     body += `\n   🔍 RI: +${details.riPositive} / -${details.riNegative}\n`;
     

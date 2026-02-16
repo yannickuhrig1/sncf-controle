@@ -7,6 +7,7 @@ import { FraudTrendChart } from '@/components/charts/FraudTrendChart';
 import { PassengersChart } from '@/components/charts/PassengersChart';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { calculateStats, formatFraudRate, getFraudRateColor } from '@/lib/stats';
+import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { 
   Loader2, 
   BarChart3, 
@@ -14,7 +15,6 @@ import {
   TrendingDown, 
   Users,
   AlertTriangle,
-  CheckCircle2
 } from 'lucide-react';
 
 export default function StatisticsPage() {
@@ -167,7 +167,90 @@ export default function StatisticsPage() {
             {/* Fraud breakdown */}
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-base">Détail des fraudes</CardTitle>
+                <CardTitle className="text-base">Répartition des PV</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {stats.pv === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-6">Aucun PV enregistré</p>
+                ) : (() => {
+                  const pvData = [
+                    { name: 'STT100', value: stats.pvStt100, color: '#ef4444' },
+                    { name: 'RNV',    value: stats.pvRnv,    color: '#f97316' },
+                    { name: 'T.Tiers',value: stats.pvTitreTiers, color: '#eab308' },
+                    { name: 'D.Naiss',value: stats.pvDocNaissance, color: '#8b5cf6' },
+                    { name: 'Autre',  value: stats.pvAutre,  color: '#6b7280' },
+                  ].filter(d => d.value > 0);
+
+                  return (
+                    <div className="space-y-4">
+                      <ResponsiveContainer width="100%" height={220}>
+                        <PieChart>
+                          <Pie
+                            data={pvData}
+                            cx="50%"
+                            cy="50%"
+                            innerRadius={55}
+                            outerRadius={85}
+                            paddingAngle={3}
+                            dataKey="value"
+                          >
+                            {pvData.map((entry, i) => (
+                              <Cell key={i} fill={entry.color} />
+                            ))}
+                          </Pie>
+                          <Tooltip
+                            formatter={(value: number, name: string) => [
+                              `${value} (${((value / stats.pv) * 100).toFixed(1)}%)`,
+                              name,
+                            ]}
+                          />
+                          <Legend
+                            formatter={(value, entry: any) =>
+                              `${value} — ${entry.payload.value}`
+                            }
+                          />
+                        </PieChart>
+                      </ResponsiveContainer>
+
+                      {/* Breakdown list */}
+                      <div className="grid grid-cols-2 gap-x-6 gap-y-2">
+                        {[
+                          { label: 'STT 100 €', value: stats.pvStt100, color: 'bg-red-500' },
+                          { label: 'RNV',       value: stats.pvRnv,    color: 'bg-orange-500' },
+                          { label: 'Titre tiers', value: stats.pvTitreTiers, color: 'bg-yellow-500' },
+                          { label: 'D. naissance', value: stats.pvDocNaissance, color: 'bg-violet-500' },
+                          { label: 'Autre',     value: stats.pvAutre,  color: 'bg-gray-500' },
+                        ].map(({ label, value, color }) => (
+                          <div key={label} className="flex items-center justify-between text-sm">
+                            <span className="flex items-center gap-2 text-muted-foreground">
+                              <span className={`inline-block h-2.5 w-2.5 rounded-full ${color}`} />
+                              {label}
+                            </span>
+                            <span className="font-semibold tabular-nums">
+                              {value}
+                              {stats.pv > 0 && (
+                                <span className="text-xs text-muted-foreground ml-1">
+                                  ({((value / stats.pv) * 100).toFixed(0)}%)
+                                </span>
+                              )}
+                            </span>
+                          </div>
+                        ))}
+                        <div className="col-span-2 border-t pt-2 flex items-center justify-between text-sm font-semibold">
+                          <span>Total PV</span>
+                          <span>{stats.pv}</span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
+              </CardContent>
+            </Card>
+
+            {/* Tarifs & RI breakdown */}
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base">Détail des infractions</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-2 gap-4">
@@ -177,26 +260,26 @@ export default function StatisticsPage() {
                       <span className="font-semibold">{stats.tarifsControle}</span>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-sm text-muted-foreground">PV</span>
-                      <span className="font-semibold">{stats.pv}</span>
+                      <span className="text-sm text-muted-foreground">STT 50 €</span>
+                      <span className="font-semibold">{stats.stt50}</span>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-sm text-muted-foreground">STT 50%</span>
-                      <span className="font-semibold">{stats.stt50}</span>
+                      <span className="text-sm text-muted-foreground">STT 100 €</span>
+                      <span className="font-semibold">{stats.stt100}</span>
                     </div>
                   </div>
                   <div className="space-y-3">
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-muted-foreground">STT 100%</span>
-                      <span className="font-semibold">{stats.stt100}</span>
-                    </div>
                     <div className="flex justify-between items-center">
                       <span className="text-sm text-muted-foreground">RNV</span>
                       <span className="font-semibold">{stats.rnv}</span>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-sm text-muted-foreground">RI (+/-)</span>
-                      <span className="font-semibold">{stats.riPositive}/{stats.riNegative}</span>
+                      <span className="text-sm text-muted-foreground">RI+</span>
+                      <span className="font-semibold text-green-600">{stats.riPositive}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-muted-foreground">RI−</span>
+                      <span className="font-semibold text-red-600">{stats.riNegative}</span>
                     </div>
                   </div>
                 </div>

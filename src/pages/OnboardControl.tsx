@@ -41,8 +41,7 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
-import { useToast } from '@/hooks/use-toast';
-import { toast as sonnerToast } from 'sonner';
+import { toast } from 'sonner';
 import {
   Loader2,
   Train,
@@ -85,11 +84,11 @@ const TARIF_TYPES = [
 ];
 
 const PV_TYPES = [
-  { value: 'stt100_pv', label: 'STT100' },
-  { value: 'rnv_pv', label: 'RNV' },
-  { value: 'titre_tiers_pv', label: 'Titre tiers' },
-  { value: 'd_naissance_pv', label: 'D. naissance' },
-  { value: 'autre_pv', label: 'Autre' },
+  { value: 'pv_stt100', label: 'STT100' },
+  { value: 'pv_rnv', label: 'RNV' },
+  { value: 'pv_titre_tiers', label: 'Titre tiers' },
+  { value: 'pv_doc_naissance', label: 'D. naissance' },
+  { value: 'pv_autre', label: 'Autre' },
 ];
 
 interface FormState {
@@ -139,7 +138,6 @@ export default function OnboardControl() {
     useOnboardControls();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const { toast } = useToast();
   const { formattedLastSync, updateLastSync } = useLastSync();
   const { isOnline, pendingCount, isSyncing } = useOfflineSync();
   const { offlineCount, addOfflineControl, syncOfflineControls, isSyncing: isOfflineSyncing } = useOfflineControls();
@@ -195,7 +193,7 @@ export default function OnboardControl() {
   const [bordTarifMontant, setBordTarifMontant] = useState('');
   const [controleTarifType, setControleTarifType] = useState('stt');
   const [controleTarifMontant, setControleTarifMontant] = useState('');
-  const [pvTarifType, setPvTarifType] = useState('stt100_pv');
+  const [pvTarifType, setPvTarifType] = useState('pv_stt100');
   const [pvTarifMontant, setPvTarifMontant] = useState('');
 
   // History filter states
@@ -251,10 +249,11 @@ export default function OnboardControl() {
             });
           }
         };
-        addEntries(data.pv_absence_titre || 0, 'stt100_pv', 'STT100', data.pv_absence_titre_amount || 0);
-        addEntries(data.pv_titre_invalide || 0, 'rnv_pv', 'RNV', data.pv_titre_invalide_amount || 0);
-        addEntries(data.pv_refus_controle || 0, 'titre_tiers_pv', 'Titre tiers', data.pv_refus_controle_amount || 0);
-        addEntries(data.pv_autre || 0, 'd_naissance_pv', 'D. naissance', data.pv_autre_amount || 0);
+        addEntries(data.pv_stt100 || 0, 'pv_stt100', 'STT100', data.pv_stt100_amount || 0);
+        addEntries(data.pv_rnv || 0, 'pv_rnv', 'RNV', data.pv_rnv_amount || 0);
+        addEntries(data.pv_titre_tiers || 0, 'pv_titre_tiers', 'Titre tiers', data.pv_titre_tiers_amount || 0);
+        addEntries(data.pv_doc_naissance || 0, 'pv_doc_naissance', 'D. naissance', data.pv_doc_naissance_amount || 0);
+        addEntries(data.pv_autre || 0, 'pv_autre', 'Autre', data.pv_autre_amount || 0);
         return entries;
       };
 
@@ -264,9 +263,9 @@ export default function OnboardControl() {
         const tarifsControle = reconstructTarifsControle(data);
         const pvList = reconstructPvList(data);
         
-        // Compute stt100Count from PV total minus pvList entries (pv_absence_titre etc. are detailed PV)
-        const detailedPvCount = (data.pv_absence_titre || 0) + (data.pv_titre_invalide || 0) + 
-          (data.pv_refus_controle || 0) + (data.pv_autre || 0);
+        // Compute stt100Count from PV total minus pvList entries (pv_stt100 etc. are detailed PV)
+        const detailedPvCount = (data.pv_stt100 || 0) + (data.pv_rnv || 0) + 
+          (data.pv_titre_tiers || 0) + (data.pv_doc_naissance || 0) + (data.pv_autre || 0);
         const remainingPv = Math.max(0, (data.pv || 0) - detailedPvCount - pvList.length);
         
         setFormState({
@@ -317,11 +316,7 @@ export default function OnboardControl() {
           .single();
         
         if (error || !data) {
-          toast({
-            variant: 'destructive',
-            title: 'Erreur',
-            description: 'Contrôle non trouvé',
-          });
+          toast.error('Erreur', { description: 'Contrôle non trouvé' });
           setSearchParams({});
           return;
         }
@@ -519,21 +514,13 @@ export default function OnboardControl() {
   // Submit handler
   const handleSubmit = async () => {
     if (!formState.trainNumber.trim()) {
-      toast({
-        variant: 'destructive',
-        title: 'Erreur',
-        description: 'Veuillez indiquer le numéro de train',
-      });
+      toast.error('Erreur', { description: 'Veuillez indiquer le numéro de train' });
       triggerHaptic('error');
       return;
     }
 
     if (formState.passengers <= 0) {
-      toast({
-        variant: 'destructive',
-        title: 'Erreur',
-        description: 'Veuillez indiquer le nombre de passagers',
-      });
+      toast.error('Erreur', { description: 'Veuillez indiquer le nombre de passagers' });
       triggerHaptic('error');
       return;
     }
@@ -552,11 +539,11 @@ export default function OnboardControl() {
       const sttEntries = formState.tarifsControle.filter((t) => t.type === 'stt');
 
       // Extract detailed PV counts and amounts from pvList
-      const pvStt100Entries = formState.pvList.filter((t) => t.type === 'stt100_pv');
-      const pvRnvEntries = formState.pvList.filter((t) => t.type === 'rnv_pv');
-      const pvTitreTiersEntries = formState.pvList.filter((t) => t.type === 'titre_tiers_pv');
-      const pvDocNaissanceEntries = formState.pvList.filter((t) => t.type === 'd_naissance_pv');
-      const pvAutreEntries = formState.pvList.filter((t) => t.type === 'autre_pv');
+      const pvStt100Entries = formState.pvList.filter((t) => t.type === 'pv_stt100');
+      const pvRnvEntries = formState.pvList.filter((t) => t.type === 'pv_rnv');
+      const pvTitreTiersEntries = formState.pvList.filter((t) => t.type === 'pv_titre_tiers');
+      const pvDocNaissanceEntries = formState.pvList.filter((t) => t.type === 'pv_doc_naissance');
+      const pvAutreEntries = formState.pvList.filter((t) => t.type === 'pv_autre');
 
       // Extract tarifs bord details
       const bordSttEntries = formState.tarifsBord.filter((t) => t.type === 'stt' || t.category === 'bord');
@@ -602,14 +589,16 @@ export default function OnboardControl() {
         autre_tarif: autreEntries.length,
         autre_tarif_amount: autreEntries.reduce((sum, t) => sum + t.montant, 0) || null,
         // PV details
-        pv_absence_titre: pvStt100Entries.length,
-        pv_absence_titre_amount: pvStt100Entries.reduce((sum, t) => sum + t.montant, 0) || null,
-        pv_titre_invalide: pvRnvEntries.length,
-        pv_titre_invalide_amount: pvRnvEntries.reduce((sum, t) => sum + t.montant, 0) || null,
-        pv_refus_controle: pvTitreTiersEntries.length,
-        pv_refus_controle_amount: pvTitreTiersEntries.reduce((sum, t) => sum + t.montant, 0) || null,
-        pv_autre: pvDocNaissanceEntries.length + pvAutreEntries.length,
-        pv_autre_amount: (pvDocNaissanceEntries.reduce((sum, t) => sum + t.montant, 0) + pvAutreEntries.reduce((sum, t) => sum + t.montant, 0)) || null,
+        pv_stt100: pvStt100Entries.length,
+        pv_stt100_amount: pvStt100Entries.reduce((sum, t) => sum + t.montant, 0) || null,
+        pv_rnv: pvRnvEntries.length,
+        pv_rnv_amount: pvRnvEntries.reduce((sum, t) => sum + t.montant, 0) || null,
+        pv_titre_tiers: pvTitreTiersEntries.length,
+        pv_titre_tiers_amount: pvTitreTiersEntries.reduce((sum, t) => sum + t.montant, 0) || null,
+        pv_doc_naissance: pvDocNaissanceEntries.length,
+        pv_doc_naissance_amount: pvDocNaissanceEntries.reduce((sum, t) => sum + t.montant, 0) || null,
+        pv_autre: pvAutreEntries.length,
+        pv_autre_amount: pvAutreEntries.reduce((sum, t) => sum + t.montant, 0) || null,
         // Tarifs bord
         tarif_bord_stt_50: bordSttEntries.filter(t => t.category === 'bord').length || null,
         tarif_bord_stt_50_amount: bordSttEntries.filter(t => t.category === 'bord').reduce((sum, t) => sum + t.montant, 0) || null,
@@ -630,10 +619,7 @@ export default function OnboardControl() {
 
       if (isEditMode && editId) {
         await updateControl({ id: editId, data: controlData as any });
-        toast({
-          title: 'Contrôle modifié',
-          description: 'Le contrôle a été mis à jour avec succès',
-        });
+        toast.success('Contrôle modifié', { description: 'Le contrôle a été mis à jour avec succès' });
         setIsEditMode(false);
         setSearchParams({});
       } else {
@@ -647,10 +633,7 @@ export default function OnboardControl() {
         }
         
         await createControl(controlData as any);
-        toast({
-          title: 'Contrôle enregistré',
-          description: 'Le contrôle à bord a été ajouté avec succès',
-        });
+        toast.success('Contrôle enregistré', { description: 'Le contrôle à bord a été ajouté avec succès' });
       }
       
       triggerHaptic('success');
@@ -696,11 +679,7 @@ export default function OnboardControl() {
         return;
       }
       
-      toast({
-        variant: 'destructive',
-        title: 'Erreur',
-        description: error.message || "Impossible d'enregistrer le contrôle",
-      });
+      toast.error('Erreur', { description: error.message || "Impossible d'enregistrer le contrôle" });
       triggerHaptic('error');
     }
   };
@@ -709,10 +688,7 @@ export default function OnboardControl() {
   const handleReset = () => {
     clearDraft();
     setFormState(INITIAL_FORM_STATE);
-    toast({
-      title: 'Formulaire réinitialisé',
-      description: 'Toutes les données ont été effacées',
-    });
+    toast.success('Formulaire réinitialisé', { description: 'Toutes les données ont été effacées' });
   };
 
   // Control click handler
@@ -730,9 +706,9 @@ export default function OnboardControl() {
   const handleDeleteControl = async (control: Control) => {
     try {
       await deleteControl(control.id);
-      sonnerToast.success('Contrôle supprimé');
+      toast.success('Contrôle supprimé');
     } catch (error) {
-      sonnerToast.error('Erreur lors de la suppression');
+      toast.error('Erreur lors de la suppression');
     }
   };
 
@@ -784,7 +760,7 @@ export default function OnboardControl() {
                 await refetch();
                 await syncOfflineControls();
                 updateLastSync();
-                sonnerToast.success('Données synchronisées');
+                toast.success('Données synchronisées');
               }}
             />
             {isEditMode && (
@@ -982,7 +958,7 @@ export default function OnboardControl() {
                   {activeSection === 'pv' && (
                     <>
                        <TarifTypeToggle types={PV_TYPES} value={pvTarifType} onChange={setPvTarifType} />
-                      {pvTarifType === 'autre_pv' && (
+                      {pvTarifType === 'pv_autre' && (
                         <Input placeholder="Précisez l'infraction..." value={formState.autrePvComment} onChange={(e) => setFormState((p) => ({ ...p, autrePvComment: e.target.value }))} />
                       )}
                       <div className="flex gap-2">
@@ -1212,7 +1188,7 @@ export default function OnboardControl() {
                   <CardContent className="space-y-4">
                     <TarifTypeToggle types={PV_TYPES} value={pvTarifType} onChange={setPvTarifType} />
 
-                    {pvTarifType === 'autre_pv' && (
+                    {pvTarifType === 'pv_autre' && (
                       <Input
                         placeholder="Précisez l'infraction..."
                         value={formState.autrePvComment}

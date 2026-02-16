@@ -137,9 +137,10 @@ export function ControlDetailDialog({
     (control.autre_tarif || 0) > 0;
 
   // Check if there are any PV entries
-  const hasPV = (control.pv_absence_titre || 0) > 0 ||
-    (control.pv_titre_invalide || 0) > 0 ||
-    (control.pv_refus_controle || 0) > 0 ||
+  const hasPV = (control.pv_stt100 || 0) > 0 ||
+    (control.pv_rnv || 0) > 0 ||
+    (control.pv_titre_tiers || 0) > 0 ||
+    (control.pv_doc_naissance || 0) > 0 ||
     (control.pv_autre || 0) > 0 ||
     control.pv > 0;
 
@@ -312,10 +313,11 @@ export function ControlDetailDialog({
                     Procès-verbaux ({control.pv})
                   </h4>
                   <div className="space-y-1">
-                    <DetailRow label="Absence de titre" value={control.pv_absence_titre || 0} amount={control.pv_absence_titre_amount} />
-                    <DetailRow label="Titre invalide" value={control.pv_titre_invalide || 0} amount={control.pv_titre_invalide_amount} />
-                    <DetailRow label="Refus de contrôle" value={control.pv_refus_controle || 0} amount={control.pv_refus_controle_amount} />
-                    <DetailRow label="Autre PV" value={control.pv_autre || 0} amount={control.pv_autre_amount} />
+                    <DetailRow label="STT100" value={control.pv_stt100 || 0} amount={control.pv_stt100_amount} />
+                    <DetailRow label="RNV" value={control.pv_rnv || 0} amount={control.pv_rnv_amount} />
+                    <DetailRow label="Titre tiers" value={control.pv_titre_tiers || 0} amount={control.pv_titre_tiers_amount} />
+                    <DetailRow label="D. naissance" value={control.pv_doc_naissance || 0} amount={control.pv_doc_naissance_amount} />
+                    <DetailRow label="Autre" value={control.pv_autre || 0} amount={control.pv_autre_amount} />
                   </div>
                 </div>
               )}
