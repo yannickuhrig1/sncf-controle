@@ -21,8 +21,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { useToast } from '@/hooks/use-toast';
-import { toast as sonnerToast } from 'sonner';
+import { toast } from 'sonner';
 import { Loader2, Building2, ArrowLeft, Save, ArrowRight, X, Clock, Calendar, ArrowDownToLine, ArrowUpFromLine } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -57,7 +56,6 @@ export default function StationControl() {
   const { controls, createControl, updateControl, isCreating, isUpdating, isFetching, refetch } = useControls();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const { toast } = useToast();
   const { formattedLastSync, updateLastSync } = useLastSync();
   const { isOnline, pendingCount, isSyncing } = useOfflineSync();
   const { offlineCount, addOfflineControl, syncOfflineControls, isSyncing: isOfflineSyncing } = useOfflineControls();
@@ -168,11 +166,7 @@ export default function StationControl() {
           .single();
         
         if (error || !data) {
-          toast({
-            variant: 'destructive',
-            title: 'Erreur',
-            description: 'Contrôle non trouvé',
-          });
+          toast.error('Erreur', { description: 'Contrôle non trouvé' });
           setSearchParams({});
           return;
         }
@@ -261,7 +255,7 @@ export default function StationControl() {
   const handleSync = useCallback(async () => {
     await refetch();
     updateLastSync();
-    sonnerToast.success('Données synchronisées');
+    toast.success('Données synchronisées');
   }, [refetch, updateLastSync]);
 
   if (authLoading) {
@@ -280,11 +274,7 @@ export default function StationControl() {
     e.preventDefault();
 
     if (!stationName.trim()) {
-      toast({
-        variant: 'destructive',
-        title: 'Erreur',
-        description: 'Veuillez sélectionner une gare',
-      });
+      toast.error('Erreur', { description: 'Veuillez sélectionner une gare' });
       return;
     }
 
@@ -351,10 +341,7 @@ export default function StationControl() {
 
       if (isEditMode && editId) {
         await updateControl({ id: editId, ...controlData } as any);
-        toast({
-          title: 'Contrôle modifié',
-          description: 'Le contrôle en gare a été mis à jour avec succès',
-        });
+        toast.success('Contrôle modifié', { description: 'Le contrôle en gare a été mis à jour avec succès' });
         setIsEditMode(false);
         setSearchParams({});
       } else {
@@ -366,10 +353,7 @@ export default function StationControl() {
         }
         
         await createControl(controlData as any);
-        toast({
-          title: 'Contrôle enregistré',
-          description: 'Le contrôle en gare a été ajouté avec succès',
-        });
+        toast.success('Contrôle enregistré', { description: 'Le contrôle en gare a été ajouté avec succès' });
       }
 
       navigate('/');
@@ -421,11 +405,7 @@ export default function StationControl() {
         return;
       }
       
-      toast({
-        variant: 'destructive',
-        title: 'Erreur',
-        description: error.message || "Impossible d'enregistrer le contrôle",
-      });
+      toast.error('Erreur', { description: error.message || "Impossible d'enregistrer le contrôle" });
     }
   };
 

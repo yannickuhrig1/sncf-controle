@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 
 export interface OnboardControl {
   id: string;
@@ -48,7 +48,6 @@ export interface OnboardControl {
 
 export function useOnboardControls() {
   const { profile } = useAuth();
-  const { toast } = useToast();
   const queryClient = useQueryClient();
 
   // Fetch all onboard controls (location_type = 'train')
@@ -113,10 +112,7 @@ export function useOnboardControls() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['onboard-controls'] });
       queryClient.invalidateQueries({ queryKey: ['controls'] });
-      toast({
-        title: 'Contrôle supprimé',
-        description: 'Le contrôle a été supprimé avec succès.',
-      });
+      toast.success('Contrôle supprimé', { description: 'Le contrôle a été supprimé avec succès.' });
     },
   });
 

@@ -7,12 +7,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { Train, Loader2, Phone } from 'lucide-react';
 
 export default function Auth() {
   const { user, loading, signIn, signUp } = useAuth();
-  const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Login form state
@@ -45,16 +44,9 @@ export default function Auth() {
     const { error } = await signIn(loginEmail, loginPassword);
 
     if (error) {
-      toast({
-        variant: 'destructive',
-        title: 'Erreur de connexion',
-        description: error.message,
-      });
+      toast.error('Erreur de connexion', { description: error.message });
     } else {
-      toast({
-        title: 'Connexion réussie',
-        description: 'Bienvenue sur SNCF Contrôles',
-      });
+      toast.success('Connexion réussie', { description: 'Bienvenue sur SNCF Contrôles' });
     }
 
     setIsSubmitting(false);
@@ -65,11 +57,7 @@ export default function Auth() {
     setIsSubmitting(true);
 
     if (!firstName.trim() || !lastName.trim() || !phoneNumber.trim()) {
-      toast({
-        variant: 'destructive',
-        title: 'Erreur',
-        description: 'Veuillez remplir tous les champs obligatoires',
-      });
+      toast.error('Erreur', { description: 'Veuillez remplir tous les champs obligatoires' });
       setIsSubmitting(false);
       return;
     }
@@ -81,11 +69,7 @@ export default function Auth() {
     });
 
     if (error) {
-      toast({
-        variant: 'destructive',
-        title: "Erreur d'inscription",
-        description: error.message,
-      });
+      toast.error("Erreur d'inscription", { description: error.message });
     } else {
       // Notify admins/managers of new signup
       try {
@@ -96,10 +80,7 @@ export default function Auth() {
         console.error('Failed to send signup notification:', e);
       }
       
-      toast({
-        title: 'Inscription réussie',
-        description: 'Votre compte est en attente de validation par un administrateur. Vous serez notifié une fois approuvé.',
-      });
+      toast.success('Inscription réussie', { description: 'Votre compte est en attente de validation par un administrateur. Vous serez notifié une fois approuvé.' });
     }
 
     setIsSubmitting(false);

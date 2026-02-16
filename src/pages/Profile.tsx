@@ -8,14 +8,13 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { Loader2, User, BadgeCheck, Shield, LogOut, Save } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 
 export default function ProfilePage() {
   const { user, profile, loading: authLoading, signOut } = useAuth();
-  const { toast } = useToast();
   const queryClient = useQueryClient();
 
   const [firstName, setFirstName] = useState('');
@@ -69,18 +68,11 @@ export default function ProfilePage() {
 
       if (error) throw error;
 
-      toast({
-        title: 'Profil mis à jour',
-        description: 'Vos informations ont été enregistrées',
-      });
+      toast.success('Profil mis à jour', { description: 'Vos informations ont été enregistrées' });
 
       queryClient.invalidateQueries({ queryKey: ['profile'] });
     } catch (error: any) {
-      toast({
-        variant: 'destructive',
-        title: 'Erreur',
-        description: error.message || 'Impossible de mettre à jour le profil',
-      });
+      toast.error('Erreur', { description: error.message || 'Impossible de mettre à jour le profil' });
     } finally {
       setIsUpdating(false);
     }
@@ -88,10 +80,7 @@ export default function ProfilePage() {
 
   const handleSignOut = async () => {
     await signOut();
-    toast({
-      title: 'Déconnexion',
-      description: 'À bientôt !',
-    });
+    toast('Déconnexion — À bientôt !');
   };
 
   const roleLabels = {

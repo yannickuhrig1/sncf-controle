@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { Loader2, Train, Building2, TrainTrack, ArrowLeft, Save } from 'lucide-react';
 import type { Database } from '@/integrations/supabase/types';
 
@@ -19,7 +19,6 @@ export default function NewControl() {
   const { user, loading: authLoading } = useAuth();
   const { createControl, isCreating } = useControls();
   const navigate = useNavigate();
-  const { toast } = useToast();
 
   const [locationType, setLocationType] = useState<LocationType>('train');
   const [location, setLocation] = useState('');
@@ -51,11 +50,7 @@ export default function NewControl() {
     e.preventDefault();
 
     if (!location.trim()) {
-      toast({
-        variant: 'destructive',
-        title: 'Erreur',
-        description: 'Veuillez indiquer un lieu',
-      });
+      toast.error('Erreur', { description: 'Veuillez indiquer un lieu' });
       return;
     }
 
@@ -76,18 +71,11 @@ export default function NewControl() {
         notes: notes.trim() || null,
       });
 
-      toast({
-        title: 'Contrôle enregistré',
-        description: 'Le contrôle a été ajouté avec succès',
-      });
+      toast.success('Contrôle enregistré', { description: 'Le contrôle a été ajouté avec succès' });
 
       navigate('/');
     } catch (error: any) {
-      toast({
-        variant: 'destructive',
-        title: 'Erreur',
-        description: error.message || "Impossible d'enregistrer le contrôle",
-      });
+      toast.error('Erreur', { description: error.message || "Impossible d'enregistrer le contrôle" });
     }
   };
 

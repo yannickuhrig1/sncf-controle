@@ -41,8 +41,7 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
-import { useToast } from '@/hooks/use-toast';
-import { toast as sonnerToast } from 'sonner';
+import { toast } from 'sonner';
 import {
   Loader2,
   Train,
@@ -139,7 +138,6 @@ export default function OnboardControl() {
     useOnboardControls();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const { toast } = useToast();
   const { formattedLastSync, updateLastSync } = useLastSync();
   const { isOnline, pendingCount, isSyncing } = useOfflineSync();
   const { offlineCount, addOfflineControl, syncOfflineControls, isSyncing: isOfflineSyncing } = useOfflineControls();
@@ -318,11 +316,7 @@ export default function OnboardControl() {
           .single();
         
         if (error || !data) {
-          toast({
-            variant: 'destructive',
-            title: 'Erreur',
-            description: 'Contrôle non trouvé',
-          });
+          toast.error('Erreur', { description: 'Contrôle non trouvé' });
           setSearchParams({});
           return;
         }
@@ -520,21 +514,13 @@ export default function OnboardControl() {
   // Submit handler
   const handleSubmit = async () => {
     if (!formState.trainNumber.trim()) {
-      toast({
-        variant: 'destructive',
-        title: 'Erreur',
-        description: 'Veuillez indiquer le numéro de train',
-      });
+      toast.error('Erreur', { description: 'Veuillez indiquer le numéro de train' });
       triggerHaptic('error');
       return;
     }
 
     if (formState.passengers <= 0) {
-      toast({
-        variant: 'destructive',
-        title: 'Erreur',
-        description: 'Veuillez indiquer le nombre de passagers',
-      });
+      toast.error('Erreur', { description: 'Veuillez indiquer le nombre de passagers' });
       triggerHaptic('error');
       return;
     }
@@ -633,10 +619,7 @@ export default function OnboardControl() {
 
       if (isEditMode && editId) {
         await updateControl({ id: editId, data: controlData as any });
-        toast({
-          title: 'Contrôle modifié',
-          description: 'Le contrôle a été mis à jour avec succès',
-        });
+        toast.success('Contrôle modifié', { description: 'Le contrôle a été mis à jour avec succès' });
         setIsEditMode(false);
         setSearchParams({});
       } else {
@@ -650,10 +633,7 @@ export default function OnboardControl() {
         }
         
         await createControl(controlData as any);
-        toast({
-          title: 'Contrôle enregistré',
-          description: 'Le contrôle à bord a été ajouté avec succès',
-        });
+        toast.success('Contrôle enregistré', { description: 'Le contrôle à bord a été ajouté avec succès' });
       }
       
       triggerHaptic('success');
@@ -699,11 +679,7 @@ export default function OnboardControl() {
         return;
       }
       
-      toast({
-        variant: 'destructive',
-        title: 'Erreur',
-        description: error.message || "Impossible d'enregistrer le contrôle",
-      });
+      toast.error('Erreur', { description: error.message || "Impossible d'enregistrer le contrôle" });
       triggerHaptic('error');
     }
   };
@@ -712,10 +688,7 @@ export default function OnboardControl() {
   const handleReset = () => {
     clearDraft();
     setFormState(INITIAL_FORM_STATE);
-    toast({
-      title: 'Formulaire réinitialisé',
-      description: 'Toutes les données ont été effacées',
-    });
+    toast.success('Formulaire réinitialisé', { description: 'Toutes les données ont été effacées' });
   };
 
   // Control click handler
@@ -733,9 +706,9 @@ export default function OnboardControl() {
   const handleDeleteControl = async (control: Control) => {
     try {
       await deleteControl(control.id);
-      sonnerToast.success('Contrôle supprimé');
+      toast.success('Contrôle supprimé');
     } catch (error) {
-      sonnerToast.error('Erreur lors de la suppression');
+      toast.error('Erreur lors de la suppression');
     }
   };
 
@@ -787,7 +760,7 @@ export default function OnboardControl() {
                 await refetch();
                 await syncOfflineControls();
                 updateLastSync();
-                sonnerToast.success('Données synchronisées');
+                toast.success('Données synchronisées');
               }}
             />
             {isEditMode && (
