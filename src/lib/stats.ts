@@ -15,6 +15,11 @@ export interface ControlStats {
   riPositive: number;
   riNegative: number;
   controlCount: number;
+  pvStt100: number;
+  pvRnv: number;
+  pvTitreTiers: number;
+  pvDocNaissance: number;
+  pvAutre: number;
 }
 
 export function calculateStats(controls: Control[]): ControlStats {
@@ -30,6 +35,11 @@ export function calculateStats(controls: Control[]): ControlStats {
       acc.riPositive += control.ri_positive;
       acc.riNegative += control.ri_negative;
       acc.controlCount += 1;
+      acc.pvStt100 += control.pv_stt100 ?? 0;
+      acc.pvRnv += control.pv_rnv ?? 0;
+      acc.pvTitreTiers += control.pv_titre_tiers ?? 0;
+      acc.pvDocNaissance += control.pv_doc_naissance ?? 0;
+      acc.pvAutre += control.pv_autre ?? 0;
       return acc;
     },
     {
@@ -43,6 +53,11 @@ export function calculateStats(controls: Control[]): ControlStats {
       riPositive: 0,
       riNegative: 0,
       controlCount: 0,
+      pvStt100: 0,
+      pvRnv: 0,
+      pvTitreTiers: 0,
+      pvDocNaissance: 0,
+      pvAutre: 0,
     }
   );
 
