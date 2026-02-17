@@ -247,6 +247,308 @@
     --sidebar-ring: 180 45% 45%;
   }
 
+  /* ===== THÈME PRO — Professionnel sobre (Bleu marine) ===== */
+  .theme-pro {
+    --background: 210 25% 98%;
+    --foreground: 215 35% 12%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 215 35% 12%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 215 35% 12%;
+
+    --primary: 215 65% 28%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 210 20% 94%;
+    --secondary-foreground: 215 35% 20%;
+
+    --muted: 210 20% 95%;
+    --muted-foreground: 215 15% 48%;
+
+    --accent: 210 20% 92%;
+    --accent-foreground: 215 35% 12%;
+
+    --destructive: 0 78% 55%;
+    --destructive-foreground: 0 0% 100%;
+
+    --success: 152 60% 34%;
+    --success-foreground: 0 0% 100%;
+
+    --warning: 36 88% 48%;
+    --warning-foreground: 0 0% 0%;
+
+    --border: 210 20% 88%;
+    --input: 210 20% 90%;
+    --ring: 215 65% 28%;
+
+    --radius: 0.625rem;
+
+    --chart-grid: 210 20% 88%;
+    --chart-tooltip-bg: 0 0% 100%;
+    --chart-tooltip-border: 210 20% 86%;
+    --chart-line-primary: 215 65% 28%;
+    --chart-line-secondary: 215 50% 50%;
+    --chart-bar-primary: 215 60% 32%;
+    --chart-bar-secondary: 215 40% 55%;
+    --chart-area-fill: 215 60% 32%;
+
+    --stat-green-bg: 152 55% 92%;
+    --stat-green-text: 152 60% 28%;
+    --stat-yellow-bg: 36 80% 90%;
+    --stat-yellow-text: 36 80% 32%;
+    --stat-red-bg: 0 70% 92%;
+    --stat-red-text: 0 72% 42%;
+    --stat-blue-bg: 215 60% 92%;
+    --stat-blue-text: 215 65% 28%;
+
+    --card-cyan: 0 0% 100%;
+    --card-cyan-foreground: 215 35% 12%;
+    --card-rose: 0 0% 100%;
+    --card-rose-foreground: 215 35% 12%;
+    --card-mint: 0 0% 100%;
+    --card-mint-foreground: 215 35% 12%;
+    --card-amber: 0 0% 100%;
+    --card-amber-foreground: 215 35% 12%;
+    --card-violet: 0 0% 100%;
+    --card-violet-foreground: 215 35% 12%;
+
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 215 35% 25%;
+    --sidebar-primary: 215 65% 28%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 210 20% 94%;
+    --sidebar-accent-foreground: 215 35% 12%;
+    --sidebar-border: 210 20% 88%;
+    --sidebar-ring: 215 65% 28%;
+  }
+
+  .theme-pro.dark {
+    --background: 218 30% 8%;
+    --foreground: 215 20% 90%;
+
+    --card: 218 26% 12%;
+    --card-foreground: 215 20% 90%;
+
+    --popover: 218 26% 12%;
+    --popover-foreground: 215 20% 90%;
+
+    --primary: 215 70% 55%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 218 22% 18%;
+    --secondary-foreground: 215 20% 85%;
+
+    --muted: 218 22% 15%;
+    --muted-foreground: 215 12% 58%;
+
+    --accent: 218 22% 18%;
+    --accent-foreground: 215 20% 90%;
+
+    --destructive: 0 68% 52%;
+    --destructive-foreground: 0 0% 100%;
+
+    --success: 152 62% 46%;
+    --success-foreground: 0 0% 100%;
+
+    --warning: 36 88% 52%;
+    --warning-foreground: 0 0% 0%;
+
+    --border: 218 20% 20%;
+    --input: 218 20% 20%;
+    --ring: 215 70% 55%;
+
+    --chart-grid: 218 18% 22%;
+    --chart-tooltip-bg: 218 26% 14%;
+    --chart-tooltip-border: 218 20% 26%;
+    --chart-line-primary: 215 70% 60%;
+    --chart-line-secondary: 215 50% 65%;
+    --chart-bar-primary: 215 65% 55%;
+    --chart-bar-secondary: 215 45% 60%;
+    --chart-area-fill: 215 65% 55%;
+
+    --stat-green-bg: 152 50% 14%;
+    --stat-green-text: 152 62% 58%;
+    --stat-yellow-bg: 36 55% 14%;
+    --stat-yellow-text: 36 88% 65%;
+    --stat-red-bg: 0 55% 14%;
+    --stat-red-text: 0 68% 62%;
+    --stat-blue-bg: 215 55% 14%;
+    --stat-blue-text: 215 70% 65%;
+
+    --card-cyan: 218 26% 13%;
+    --card-cyan-foreground: 215 20% 88%;
+    --card-rose: 218 26% 13%;
+    --card-rose-foreground: 215 20% 88%;
+    --card-mint: 218 26% 13%;
+    --card-mint-foreground: 215 20% 88%;
+    --card-amber: 218 26% 13%;
+    --card-amber-foreground: 215 20% 88%;
+    --card-violet: 218 26% 13%;
+    --card-violet-foreground: 215 20% 88%;
+
+    --sidebar-background: 218 30% 9%;
+    --sidebar-foreground: 215 20% 85%;
+    --sidebar-primary: 215 70% 55%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 218 22% 16%;
+    --sidebar-accent-foreground: 215 20% 90%;
+    --sidebar-border: 218 20% 18%;
+    --sidebar-ring: 215 70% 55%;
+  }
+
+  /* ===== THÈME MODERNE — Coloré vibrant (Violet/Indigo) ===== */
+  .theme-moderne {
+    --background: 240 15% 97%;
+    --foreground: 240 25% 12%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 240 25% 12%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 25% 12%;
+
+    --primary: 239 68% 60%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 240 12% 93%;
+    --secondary-foreground: 240 25% 20%;
+
+    --muted: 240 12% 94%;
+    --muted-foreground: 240 10% 46%;
+
+    --accent: 262 55% 90%;
+    --accent-foreground: 262 50% 28%;
+
+    --destructive: 0 72% 58%;
+    --destructive-foreground: 0 0% 100%;
+
+    --success: 142 65% 38%;
+    --success-foreground: 0 0% 100%;
+
+    --warning: 38 88% 52%;
+    --warning-foreground: 0 0% 0%;
+
+    --border: 240 12% 88%;
+    --input: 240 12% 90%;
+    --ring: 239 68% 60%;
+
+    --radius: 0.875rem;
+
+    --chart-grid: 240 12% 88%;
+    --chart-tooltip-bg: 0 0% 100%;
+    --chart-tooltip-border: 240 12% 86%;
+    --chart-line-primary: 239 68% 60%;
+    --chart-line-secondary: 262 55% 55%;
+    --chart-bar-primary: 239 65% 58%;
+    --chart-bar-secondary: 262 50% 52%;
+    --chart-area-fill: 239 65% 58%;
+
+    --stat-green-bg: 142 55% 91%;
+    --stat-green-text: 142 65% 30%;
+    --stat-yellow-bg: 38 80% 90%;
+    --stat-yellow-text: 38 80% 32%;
+    --stat-red-bg: 0 70% 92%;
+    --stat-red-text: 0 72% 42%;
+    --stat-blue-bg: 239 65% 92%;
+    --stat-blue-text: 239 68% 42%;
+
+    --card-cyan: 199 75% 90%;
+    --card-cyan-foreground: 199 65% 22%;
+    --card-rose: 340 75% 91%;
+    --card-rose-foreground: 340 60% 30%;
+    --card-mint: 158 55% 88%;
+    --card-mint-foreground: 158 50% 22%;
+    --card-amber: 38 80% 88%;
+    --card-amber-foreground: 38 70% 26%;
+    --card-violet: 262 60% 90%;
+    --card-violet-foreground: 262 55% 28%;
+
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 240 25% 28%;
+    --sidebar-primary: 239 68% 60%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 239 60% 93%;
+    --sidebar-accent-foreground: 239 50% 28%;
+    --sidebar-border: 240 12% 88%;
+    --sidebar-ring: 239 68% 60%;
+  }
+
+  .theme-moderne.dark {
+    --background: 238 28% 9%;
+    --foreground: 240 18% 90%;
+
+    --card: 238 24% 13%;
+    --card-foreground: 240 18% 90%;
+
+    --popover: 238 24% 13%;
+    --popover-foreground: 240 18% 90%;
+
+    --primary: 239 75% 68%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 238 20% 18%;
+    --secondary-foreground: 240 18% 85%;
+
+    --muted: 238 20% 16%;
+    --muted-foreground: 240 12% 58%;
+
+    --accent: 262 45% 30%;
+    --accent-foreground: 262 50% 88%;
+
+    --destructive: 0 65% 52%;
+    --destructive-foreground: 0 0% 100%;
+
+    --success: 142 58% 46%;
+    --success-foreground: 0 0% 100%;
+
+    --warning: 38 85% 52%;
+    --warning-foreground: 0 0% 0%;
+
+    --border: 238 18% 20%;
+    --input: 238 18% 20%;
+    --ring: 239 75% 68%;
+
+    --chart-grid: 238 16% 22%;
+    --chart-tooltip-bg: 238 24% 15%;
+    --chart-tooltip-border: 238 18% 26%;
+    --chart-line-primary: 239 75% 70%;
+    --chart-line-secondary: 262 55% 65%;
+    --chart-bar-primary: 239 70% 65%;
+    --chart-bar-secondary: 262 50% 60%;
+    --chart-area-fill: 239 70% 65%;
+
+    --stat-green-bg: 142 50% 15%;
+    --stat-green-text: 142 58% 58%;
+    --stat-yellow-bg: 38 52% 15%;
+    --stat-yellow-text: 38 85% 65%;
+    --stat-red-bg: 0 52% 15%;
+    --stat-red-text: 0 65% 62%;
+    --stat-blue-bg: 239 55% 16%;
+    --stat-blue-text: 239 75% 72%;
+
+    --card-cyan: 199 45% 18%;
+    --card-cyan-foreground: 199 60% 82%;
+    --card-rose: 340 40% 20%;
+    --card-rose-foreground: 340 55% 85%;
+    --card-mint: 158 42% 18%;
+    --card-mint-foreground: 158 52% 80%;
+    --card-amber: 38 42% 18%;
+    --card-amber-foreground: 38 65% 82%;
+    --card-violet: 262 42% 20%;
+    --card-violet-foreground: 262 58% 85%;
+
+    --sidebar-background: 238 28% 10%;
+    --sidebar-foreground: 240 18% 85%;
+    --sidebar-primary: 239 75% 68%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 239 45% 20%;
+    --sidebar-accent-foreground: 239 60% 85%;
+    --sidebar-border: 238 18% 18%;
+    --sidebar-ring: 239 75% 68%;
+  }
+
   .theme-colore.dark {
     --background: 220 25% 10%;
     --foreground: 210 20% 92%;
