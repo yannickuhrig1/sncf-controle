@@ -197,10 +197,8 @@ export function AppLayout({ children }: AppLayoutProps) {
               )}
             >
               <div className={cn(
-                'relative flex items-center justify-center rounded-full transition-all duration-200',
-                isActive 
-                  ? 'bg-primary/12 px-4 py-1.5' 
-                  : 'px-4 py-1.5'
+                'relative flex items-center justify-center rounded-full transition-all duration-200 px-4 py-1.5',
+                isActive && 'bg-primary/10'
               )}>
                 <item.icon className={cn(
                   'h-5 w-5 transition-all duration-200',
