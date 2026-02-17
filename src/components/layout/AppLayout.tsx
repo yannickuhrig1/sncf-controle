@@ -190,21 +190,32 @@ export function AppLayout({ children }: AppLayoutProps) {
             <Link
               to={item.href}
               className={cn(
-                'flex flex-col items-center justify-center gap-1 transition-colors w-full h-full',
+                'flex flex-col items-center justify-center gap-1 transition-all w-full h-full',
                 isActive 
                   ? 'text-primary'
                   : 'text-muted-foreground hover:text-foreground'
               )}
             >
-              <div className="relative">
-                <item.icon className={cn('h-5 w-5', isActive && 'text-primary')} />
+              <div className={cn(
+                'relative flex items-center justify-center rounded-full transition-all duration-200',
+                isActive 
+                  ? 'bg-primary/12 px-4 py-1.5' 
+                  : 'px-4 py-1.5'
+              )}>
+                <item.icon className={cn(
+                  'h-5 w-5 transition-all duration-200',
+                  isActive && 'text-primary scale-110'
+                )} />
                 {item.pageId === 'admin' && pendingApprovalCount > 0 && (
-                  <span className="absolute -top-1.5 -right-1.5 flex items-center justify-center h-4 min-w-4 px-0.5 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold">
+                  <span className="absolute -top-1 -right-1 flex items-center justify-center h-4 min-w-4 px-0.5 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold">
                     {pendingApprovalCount}
                   </span>
                 )}
               </div>
-              <span className="text-xs">{item.label}</span>
+              <span className={cn(
+                'text-xs transition-all duration-200',
+                isActive ? 'font-semibold text-primary' : 'font-normal'
+              )}>{item.label}</span>
             </Link>
           </motion.div>
         );
