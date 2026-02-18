@@ -4,8 +4,10 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import { useFraudThresholds } from "@/hooks/useFraudThresholds";
+import { useTheme } from "@/hooks/useTheme";
 import { AnimatePresence } from "framer-motion";
 import { PageTransition } from "@/components/layout/PageTransition";
+import "@/styles/themes.css";
 import Dashboard from "./pages/Dashboard";
 import Auth from "./pages/Auth";
 import NewControl from "./pages/NewControl";
@@ -24,6 +26,12 @@ import NotFound from "./pages/NotFound";
 // Component to initialize global fraud thresholds from admin settings
 function FraudThresholdsInitializer() {
   useFraudThresholds();
+  return null;
+}
+
+// Component to initialize theme system
+function ThemeInitializer() {
+  useTheme();
   return null;
 }
 
@@ -58,6 +66,7 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
       <FraudThresholdsInitializer />
+      <ThemeInitializer />
       <TooltipProvider>
         <Sonner />
         <BrowserRouter>
