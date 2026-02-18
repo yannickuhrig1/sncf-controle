@@ -12,8 +12,13 @@ const initializeTheme = () => {
       const root = document.documentElement;
       
       // Apply theme variant
+      root.classList.remove('theme-colore', 'theme-pro', 'theme-moderne');
       if (prefs.theme_variant === 'colore') {
         root.classList.add('theme-colore');
+      } else if (prefs.theme_variant === 'pro') {
+        root.classList.add('theme-pro');
+      } else if (prefs.theme_variant === 'moderne') {
+        root.classList.add('theme-moderne');
       }
       
       // Apply dark/light mode

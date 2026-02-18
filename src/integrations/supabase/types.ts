@@ -61,16 +61,16 @@ export type Database = {
           origin: string | null
           platform_number: string | null
           pv: number
-          pv_stt100: number | null
-          pv_stt100_amount: number | null
-          pv_rnv: number | null
-          pv_rnv_amount: number | null
-          pv_titre_tiers: number | null
-          pv_titre_tiers_amount: number | null
-          pv_doc_naissance: number | null
-          pv_doc_naissance_amount: number | null
           pv_autre: number | null
           pv_autre_amount: number | null
+          pv_doc_naissance: number | null
+          pv_doc_naissance_amount: number | null
+          pv_rnv: number | null
+          pv_rnv_amount: number | null
+          pv_stt100: number | null
+          pv_stt100_amount: number | null
+          pv_titre_tiers: number | null
+          pv_titre_tiers_amount: number | null
           ri_negative: number
           ri_positive: number
           rnv: number
@@ -117,16 +117,16 @@ export type Database = {
           origin?: string | null
           platform_number?: string | null
           pv?: number
-          pv_stt100?: number | null
-          pv_stt100_amount?: number | null
-          pv_rnv?: number | null
-          pv_rnv_amount?: number | null
-          pv_titre_tiers?: number | null
-          pv_titre_tiers_amount?: number | null
-          pv_doc_naissance?: number | null
-          pv_doc_naissance_amount?: number | null
           pv_autre?: number | null
           pv_autre_amount?: number | null
+          pv_doc_naissance?: number | null
+          pv_doc_naissance_amount?: number | null
+          pv_rnv?: number | null
+          pv_rnv_amount?: number | null
+          pv_stt100?: number | null
+          pv_stt100_amount?: number | null
+          pv_titre_tiers?: number | null
+          pv_titre_tiers_amount?: number | null
           ri_negative?: number
           ri_positive?: number
           rnv?: number
@@ -173,16 +173,16 @@ export type Database = {
           origin?: string | null
           platform_number?: string | null
           pv?: number
-          pv_stt100?: number | null
-          pv_stt100_amount?: number | null
-          pv_rnv?: number | null
-          pv_rnv_amount?: number | null
-          pv_titre_tiers?: number | null
-          pv_titre_tiers_amount?: number | null
-          pv_doc_naissance?: number | null
-          pv_doc_naissance_amount?: number | null
           pv_autre?: number | null
           pv_autre_amount?: number | null
+          pv_doc_naissance?: number | null
+          pv_doc_naissance_amount?: number | null
+          pv_rnv?: number | null
+          pv_rnv_amount?: number | null
+          pv_stt100?: number | null
+          pv_stt100_amount?: number | null
+          pv_titre_tiers?: number | null
+          pv_titre_tiers_amount?: number | null
           ri_negative?: number
           ri_positive?: number
           rnv?: number
