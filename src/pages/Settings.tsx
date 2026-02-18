@@ -257,10 +257,10 @@ export default function Settings() {
                       {
                         value: 'pro',
                         label: 'Professionnel',
-                        primary: 'hsl(215,65%,28%)',
-                        bg: 'hsl(210,25%,98%)',
+                        primary: 'hsl(214,90%,42%)',
+                        bg: 'hsl(214,18%,93%)',
                         card: '#fff',
-                        desc: 'Bleu marine sobre',
+                        desc: 'Acier électrique',
                       },
                       {
                         value: 'moderne',

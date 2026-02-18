@@ -247,155 +247,202 @@
     --sidebar-ring: 180 45% 45%;
   }
 
-  /* ===== THÈME PRO — Professionnel sobre (Bleu marine) ===== */
+  /* ===== THÈME PRO — Acier Électrique Premium ===== */
   .theme-pro {
-    --background: 210 25% 98%;
-    --foreground: 215 35% 12%;
+    /* Fond graphite froid légèrement bleuté */
+    --background: 214 18% 93%;
+    --foreground: 214 40% 10%;
 
+    /* Cartes avec fond légèrement en relief */
     --card: 0 0% 100%;
-    --card-foreground: 215 35% 12%;
+    --card-foreground: 214 40% 10%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 215 35% 12%;
+    --popover-foreground: 214 40% 10%;
 
-    --primary: 215 65% 28%;
+    /* Bleu électrique vif et profond */
+    --primary: 214 90% 42%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 210 20% 94%;
-    --secondary-foreground: 215 35% 20%;
+    --secondary: 214 22% 88%;
+    --secondary-foreground: 214 40% 15%;
 
-    --muted: 210 20% 95%;
-    --muted-foreground: 215 15% 48%;
+    --muted: 214 18% 91%;
+    --muted-foreground: 214 20% 44%;
 
-    --accent: 210 20% 92%;
-    --accent-foreground: 215 35% 12%;
+    /* Accent cyan électrique */
+    --accent: 200 85% 45%;
+    --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 78% 55%;
+    --destructive: 0 82% 55%;
     --destructive-foreground: 0 0% 100%;
 
-    --success: 152 60% 34%;
+    --success: 152 65% 36%;
     --success-foreground: 0 0% 100%;
 
-    --warning: 36 88% 48%;
+    --warning: 36 92% 48%;
     --warning-foreground: 0 0% 0%;
 
-    --border: 210 20% 88%;
-    --input: 210 20% 90%;
-    --ring: 215 65% 28%;
+    --border: 214 22% 82%;
+    --input: 214 20% 86%;
+    --ring: 214 90% 42%;
 
-    --radius: 0.625rem;
+    --radius: 0.75rem;
 
-    --chart-grid: 210 20% 88%;
+    --chart-grid: 214 18% 84%;
     --chart-tooltip-bg: 0 0% 100%;
-    --chart-tooltip-border: 210 20% 86%;
-    --chart-line-primary: 215 65% 28%;
-    --chart-line-secondary: 215 50% 50%;
-    --chart-bar-primary: 215 60% 32%;
-    --chart-bar-secondary: 215 40% 55%;
-    --chart-area-fill: 215 60% 32%;
+    --chart-tooltip-border: 214 22% 80%;
+    --chart-line-primary: 214 90% 42%;
+    --chart-line-secondary: 200 85% 45%;
+    --chart-bar-primary: 214 85% 46%;
+    --chart-bar-secondary: 200 80% 48%;
+    --chart-area-fill: 214 85% 46%;
 
-    --stat-green-bg: 152 55% 92%;
-    --stat-green-text: 152 60% 28%;
-    --stat-yellow-bg: 36 80% 90%;
-    --stat-yellow-text: 36 80% 32%;
-    --stat-red-bg: 0 70% 92%;
-    --stat-red-text: 0 72% 42%;
-    --stat-blue-bg: 215 60% 92%;
-    --stat-blue-text: 215 65% 28%;
+    --stat-green-bg: 152 60% 90%;
+    --stat-green-text: 152 65% 26%;
+    --stat-yellow-bg: 36 85% 89%;
+    --stat-yellow-text: 36 85% 30%;
+    --stat-red-bg: 0 75% 91%;
+    --stat-red-text: 0 75% 38%;
+    --stat-blue-bg: 214 80% 90%;
+    --stat-blue-text: 214 90% 32%;
 
-    --card-cyan: 0 0% 100%;
-    --card-cyan-foreground: 215 35% 12%;
+    --card-cyan: 200 70% 92%;
+    --card-cyan-foreground: 200 70% 20%;
     --card-rose: 0 0% 100%;
-    --card-rose-foreground: 215 35% 12%;
-    --card-mint: 0 0% 100%;
-    --card-mint-foreground: 215 35% 12%;
-    --card-amber: 0 0% 100%;
-    --card-amber-foreground: 215 35% 12%;
-    --card-violet: 0 0% 100%;
-    --card-violet-foreground: 215 35% 12%;
+    --card-rose-foreground: 214 40% 10%;
+    --card-mint: 152 60% 91%;
+    --card-mint-foreground: 152 55% 20%;
+    --card-amber: 36 80% 91%;
+    --card-amber-foreground: 36 80% 22%;
+    --card-violet: 260 65% 92%;
+    --card-violet-foreground: 260 60% 25%;
 
-    --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 215 35% 25%;
-    --sidebar-primary: 215 65% 28%;
+    --sidebar-background: 214 25% 97%;
+    --sidebar-foreground: 214 40% 20%;
+    --sidebar-primary: 214 90% 42%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 210 20% 94%;
-    --sidebar-accent-foreground: 215 35% 12%;
-    --sidebar-border: 210 20% 88%;
-    --sidebar-ring: 215 65% 28%;
+    --sidebar-accent: 214 30% 90%;
+    --sidebar-accent-foreground: 214 40% 15%;
+    --sidebar-border: 214 22% 84%;
+    --sidebar-ring: 214 90% 42%;
+  }
+
+  /* Ombres et reliefs pour le thème Pro en mode clair */
+  .theme-pro [data-slot="card"] {
+    box-shadow:
+      0 1px 0 0 hsl(0 0% 100% / 0.9) inset,
+      0 2px 8px -2px hsl(214 40% 30% / 0.12),
+      0 4px 16px -4px hsl(214 50% 30% / 0.10);
+    border-color: hsl(214 22% 85%);
+  }
+
+  .theme-pro [data-slot="card"]:hover {
+    box-shadow:
+      0 1px 0 0 hsl(0 0% 100% / 0.95) inset,
+      0 4px 16px -4px hsl(214 80% 42% / 0.18),
+      0 8px 32px -8px hsl(214 80% 42% / 0.12);
+    border-color: hsl(214 60% 75%);
+    transform: translateY(-1px);
   }
 
   .theme-pro.dark {
-    --background: 218 30% 8%;
-    --foreground: 215 20% 90%;
+    /* Graphite acier profond */
+    --background: 216 22% 9%;
+    --foreground: 214 15% 92%;
 
-    --card: 218 26% 12%;
-    --card-foreground: 215 20% 90%;
+    /* Cartes en acier poli */
+    --card: 216 20% 13%;
+    --card-foreground: 214 15% 92%;
 
-    --popover: 218 26% 12%;
-    --popover-foreground: 215 20% 90%;
+    --popover: 216 20% 13%;
+    --popover-foreground: 214 15% 92%;
 
-    --primary: 215 70% 55%;
+    /* Bleu électrique lumineux */
+    --primary: 210 100% 58%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 218 22% 18%;
-    --secondary-foreground: 215 20% 85%;
+    --secondary: 216 18% 20%;
+    --secondary-foreground: 214 15% 85%;
 
-    --muted: 218 22% 15%;
-    --muted-foreground: 215 12% 58%;
+    --muted: 216 18% 17%;
+    --muted-foreground: 214 12% 56%;
 
-    --accent: 218 22% 18%;
-    --accent-foreground: 215 20% 90%;
+    /* Accent cyan électrique vif */
+    --accent: 195 100% 50%;
+    --accent-foreground: 216 22% 9%;
 
-    --destructive: 0 68% 52%;
+    --destructive: 0 72% 55%;
     --destructive-foreground: 0 0% 100%;
 
-    --success: 152 62% 46%;
+    --success: 152 65% 50%;
     --success-foreground: 0 0% 100%;
 
-    --warning: 36 88% 52%;
+    --warning: 36 90% 55%;
     --warning-foreground: 0 0% 0%;
 
-    --border: 218 20% 20%;
-    --input: 218 20% 20%;
-    --ring: 215 70% 55%;
+    /* Bordures lumineuses subtiles */
+    --border: 216 18% 22%;
+    --input: 216 18% 20%;
+    --ring: 210 100% 58%;
 
-    --chart-grid: 218 18% 22%;
-    --chart-tooltip-bg: 218 26% 14%;
-    --chart-tooltip-border: 218 20% 26%;
-    --chart-line-primary: 215 70% 60%;
-    --chart-line-secondary: 215 50% 65%;
-    --chart-bar-primary: 215 65% 55%;
-    --chart-bar-secondary: 215 45% 60%;
-    --chart-area-fill: 215 65% 55%;
+    --chart-grid: 216 16% 24%;
+    --chart-tooltip-bg: 216 22% 15%;
+    --chart-tooltip-border: 216 18% 28%;
+    --chart-line-primary: 210 100% 62%;
+    --chart-line-secondary: 195 90% 55%;
+    --chart-bar-primary: 210 95% 58%;
+    --chart-bar-secondary: 195 85% 52%;
+    --chart-area-fill: 210 95% 58%;
 
-    --stat-green-bg: 152 50% 14%;
-    --stat-green-text: 152 62% 58%;
-    --stat-yellow-bg: 36 55% 14%;
-    --stat-yellow-text: 36 88% 65%;
-    --stat-red-bg: 0 55% 14%;
-    --stat-red-text: 0 68% 62%;
-    --stat-blue-bg: 215 55% 14%;
-    --stat-blue-text: 215 70% 65%;
+    --stat-green-bg: 152 55% 13%;
+    --stat-green-text: 152 65% 62%;
+    --stat-yellow-bg: 36 60% 13%;
+    --stat-yellow-text: 36 90% 68%;
+    --stat-red-bg: 0 58% 13%;
+    --stat-red-text: 0 72% 65%;
+    --stat-blue-bg: 210 70% 14%;
+    --stat-blue-text: 210 100% 70%;
 
-    --card-cyan: 218 26% 13%;
-    --card-cyan-foreground: 215 20% 88%;
-    --card-rose: 218 26% 13%;
-    --card-rose-foreground: 215 20% 88%;
-    --card-mint: 218 26% 13%;
-    --card-mint-foreground: 215 20% 88%;
-    --card-amber: 218 26% 13%;
-    --card-amber-foreground: 215 20% 88%;
-    --card-violet: 218 26% 13%;
-    --card-violet-foreground: 215 20% 88%;
+    --card-cyan: 195 55% 16%;
+    --card-cyan-foreground: 195 80% 80%;
+    --card-rose: 0 45% 18%;
+    --card-rose-foreground: 0 60% 85%;
+    --card-mint: 152 45% 15%;
+    --card-mint-foreground: 152 60% 78%;
+    --card-amber: 36 50% 15%;
+    --card-amber-foreground: 36 80% 80%;
+    --card-violet: 260 45% 18%;
+    --card-violet-foreground: 260 65% 85%;
 
-    --sidebar-background: 218 30% 9%;
-    --sidebar-foreground: 215 20% 85%;
-    --sidebar-primary: 215 70% 55%;
+    --sidebar-background: 216 24% 10%;
+    --sidebar-foreground: 214 15% 88%;
+    --sidebar-primary: 210 100% 58%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 218 22% 16%;
-    --sidebar-accent-foreground: 215 20% 90%;
-    --sidebar-border: 218 20% 18%;
-    --sidebar-ring: 215 70% 55%;
+    --sidebar-accent: 210 60% 18%;
+    --sidebar-accent-foreground: 210 80% 82%;
+    --sidebar-border: 216 18% 20%;
+    --sidebar-ring: 210 100% 58%;
+  }
+
+  /* Ombres et reliefs Pro en mode sombre — effet acier éclairé */
+  .theme-pro.dark [data-slot="card"] {
+    box-shadow:
+      0 1px 0 0 hsl(214 30% 28% / 0.6) inset,
+      0 -1px 0 0 hsl(0 0% 0% / 0.4) inset,
+      0 2px 12px -4px hsl(210 100% 50% / 0.08),
+      0 8px 24px -8px hsl(0 0% 0% / 0.5);
+    border-color: hsl(216 18% 24%);
+  }
+
+  .theme-pro.dark [data-slot="card"]:hover {
+    box-shadow:
+      0 1px 0 0 hsl(210 50% 35% / 0.5) inset,
+      0 -1px 0 0 hsl(0 0% 0% / 0.5) inset,
+      0 4px 20px -4px hsl(210 100% 58% / 0.20),
+      0 12px 40px -12px hsl(0 0% 0% / 0.6);
+    border-color: hsl(210 60% 35%);
+    transform: translateY(-2px);
   }
 
   /* ===== THÈME MODERNE — Coloré vibrant (Violet/Indigo) ===== */
