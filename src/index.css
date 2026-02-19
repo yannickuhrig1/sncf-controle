@@ -701,6 +701,35 @@
     transform: translateY(-1px);
   }
 
+  /* ===== GRADIENT ANIMÉ — Thème Professionnel (Acier Électrique) ===== */
+  .theme-pro body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background:
+      radial-gradient(ellipse 70% 55% at 15% 15%, hsl(214 90% 55% / 0.07) 0%, transparent 60%),
+      radial-gradient(ellipse 55% 70% at 85% 85%, hsl(200 85% 50% / 0.08) 0%, transparent 55%),
+      radial-gradient(ellipse 45% 45% at 55% 35%, hsl(210 100% 60% / 0.04) 0%, transparent 50%);
+    animation: pro-drift 14s ease-in-out infinite alternate;
+  }
+
+  .theme-pro.dark body::before {
+    background:
+      radial-gradient(ellipse 70% 55% at 15% 15%, hsl(214 100% 58% / 0.18) 0%, transparent 60%),
+      radial-gradient(ellipse 55% 70% at 85% 85%, hsl(195 100% 52% / 0.20) 0%, transparent 55%),
+      radial-gradient(ellipse 45% 45% at 55% 35%, hsl(210 100% 62% / 0.09) 0%, transparent 50%);
+    animation: pro-drift 14s ease-in-out infinite alternate;
+  }
+
+  @keyframes pro-drift {
+    0%   { opacity: 1; transform: scale(1) translateX(0px) translateY(0px); }
+    30%  { opacity: 0.75; transform: scale(1.05) translateX(-10px) translateY(10px); }
+    60%  { opacity: 0.90; transform: scale(0.97) translateX(14px) translateY(-6px); }
+    100% { opacity: 1; transform: scale(1.03) translateX(-4px) translateY(8px); }
+  }
+
   /* Glow sur les boutons primaires du thème Pro */
   .theme-pro button[class*="bg-primary"],
   .theme-pro [data-slot="button"][class*="bg-primary"] {
