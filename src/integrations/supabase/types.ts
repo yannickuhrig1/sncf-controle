@@ -41,6 +41,39 @@ export type Database = {
         }
         Relationships: []
       }
+      control_audit_log: {
+        Row: {
+          action: string
+          changes: Json | null
+          control_id: string
+          created_at: string
+          id: string
+          new_values: Json | null
+          old_values: Json | null
+          user_id: string
+        }
+        Insert: {
+          action: string
+          changes?: Json | null
+          control_id: string
+          created_at?: string
+          id?: string
+          new_values?: Json | null
+          old_values?: Json | null
+          user_id: string
+        }
+        Update: {
+          action?: string
+          changes?: Json | null
+          control_id?: string
+          created_at?: string
+          id?: string
+          new_values?: Json | null
+          old_values?: Json | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       controls: {
         Row: {
           agent_id: string
