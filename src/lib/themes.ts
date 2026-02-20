@@ -43,12 +43,16 @@ const ALL_THEME_CLASSES = ['theme-colore', 'theme-pro', 'theme-moderne'];
 
 export function applyThemeVariant(variant: ThemeVariant): void {
   const root = document.documentElement;
+  // Add transitioning class for crossfade
+  root.classList.add('theme-transitioning');
   // Remove all theme variant classes
   root.classList.remove(...ALL_THEME_CLASSES);
   // Apply the new one if needed
   const cssClass = themes[variant]?.cssClass;
   if (cssClass) root.classList.add(cssClass);
   localStorage.setItem('app-theme-variant', variant);
+  // Remove transitioning class after animation
+  setTimeout(() => root.classList.remove('theme-transitioning'), 450);
 }
 
 export function getCurrentThemeVariant(): ThemeVariant {
