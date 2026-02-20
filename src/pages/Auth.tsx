@@ -87,8 +87,10 @@ export default function Auth() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-gradient-to-br from-background to-muted">
-      <div className="w-full max-w-md">
+    <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-background relative overflow-hidden">
+      {/* Theme-aware glow behind card */}
+      <div className="auth-card-glow absolute inset-0 pointer-events-none" aria-hidden="true" />
+      <div className="w-full max-w-md relative z-10">
         <div className="flex items-center justify-center gap-3 mb-8">
           <div className="p-3 bg-primary rounded-xl">
             <Train className="h-8 w-8 text-primary-foreground" />

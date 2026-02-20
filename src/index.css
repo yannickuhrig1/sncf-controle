@@ -931,9 +931,14 @@
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
   }
 
-  /* Smooth transitions for theme switching */
+  /* Smooth transitions for theme switching — crossfade 400ms */
   * {
-    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.15s ease;
+    transition: background-color 0.4s ease, border-color 0.4s ease, color 0.3s ease, box-shadow 0.4s ease;
+  }
+
+  /* During theme change, add transition to pseudo-elements (animated backgrounds) */
+  body::before {
+    transition: background 0.4s ease, opacity 0.4s ease;
   }
 }
 
@@ -1059,4 +1064,54 @@
 
 .dark .glass-frosted {
   background: hsl(var(--background) / 0.75);
+}
+
+/* ===== AUTH PAGE — Theme-aware visual effects ===== */
+/* The Auth page uses bg-background so it inherits body::before animated gradients.
+   Additional subtle radial glow behind the login card for premium feel. */
+
+/* SNCF theme auth glow */
+:root:not(.theme-colore):not(.theme-pro):not(.theme-moderne) .auth-card-glow {
+  background:
+    radial-gradient(ellipse 60% 50% at 50% 40%, hsl(343 100% 38% / 0.06) 0%, transparent 70%);
+}
+.dark:not(.theme-colore):not(.theme-pro):not(.theme-moderne) .auth-card-glow {
+  background:
+    radial-gradient(ellipse 60% 50% at 50% 40%, hsl(343 90% 55% / 0.12) 0%, transparent 70%);
+}
+
+/* Coloré theme auth glow */
+.theme-colore .auth-card-glow {
+  background:
+    radial-gradient(ellipse 55% 50% at 50% 45%, hsl(180 45% 50% / 0.08) 0%, transparent 65%),
+    radial-gradient(ellipse 40% 40% at 30% 60%, hsl(350 60% 55% / 0.05) 0%, transparent 55%);
+}
+.theme-colore.dark .auth-card-glow {
+  background:
+    radial-gradient(ellipse 55% 50% at 50% 45%, hsl(180 55% 52% / 0.18) 0%, transparent 65%),
+    radial-gradient(ellipse 40% 40% at 30% 60%, hsl(350 50% 48% / 0.10) 0%, transparent 55%);
+}
+
+/* Pro theme auth glow */
+.theme-pro .auth-card-glow {
+  background:
+    radial-gradient(ellipse 60% 50% at 50% 40%, hsl(214 90% 55% / 0.08) 0%, transparent 65%),
+    radial-gradient(ellipse 40% 35% at 65% 55%, hsl(200 85% 50% / 0.06) 0%, transparent 55%);
+}
+.theme-pro.dark .auth-card-glow {
+  background:
+    radial-gradient(ellipse 60% 50% at 50% 40%, hsl(210 100% 58% / 0.22) 0%, transparent 65%),
+    radial-gradient(ellipse 40% 35% at 65% 55%, hsl(195 100% 52% / 0.15) 0%, transparent 55%);
+}
+
+/* Moderne theme auth glow */
+.theme-moderne .auth-card-glow {
+  background:
+    radial-gradient(ellipse 55% 50% at 50% 40%, hsl(239 68% 60% / 0.10) 0%, transparent 65%),
+    radial-gradient(ellipse 45% 40% at 35% 60%, hsl(262 55% 55% / 0.07) 0%, transparent 55%);
+}
+.theme-moderne.dark .auth-card-glow {
+  background:
+    radial-gradient(ellipse 55% 50% at 50% 40%, hsl(239 75% 68% / 0.25) 0%, transparent 65%),
+    radial-gradient(ellipse 45% 40% at 35% 60%, hsl(262 60% 60% / 0.15) 0%, transparent 55%);
 }
