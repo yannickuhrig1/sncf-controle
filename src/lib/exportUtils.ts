@@ -530,8 +530,8 @@ export function exportToPDF({ controls, title, dateRange, includeStats, orientat
       startY: riBarY,
       head: [['Type', 'Nbre']],
       body: [
-        ['RI Positive', stats.riPositive.toString()],
-        ['RI Négative', stats.riNegative.toString()],
+        ['RI Positif', stats.riPositive.toString()],
+        ['RI Négatif', stats.riNegative.toString()],
         ['TOTAL',       (stats.riPositive + stats.riNegative).toString()],
       ],
       theme: 'plain',
@@ -1514,8 +1514,8 @@ export function exportToHTML({ controls, title, dateRange, includeStats, exportM
           <h3>Relevés d'identité (RI)</h3>
           <table class="detail-table">
             <tr><th>Type</th><th>Nbre</th></tr>
-            ${detailRow('RI Positive', stats.riPositive)}
-            ${detailRow('RI Négative', stats.riNegative)}
+            ${detailRow('RI Positif', stats.riPositive)}
+            ${detailRow('RI Négatif', stats.riNegative)}
             <tr class="total"><td>TOTAL</td><td>${stats.riPositive + stats.riNegative}</td></tr>
           </table>
         </div>
@@ -1768,8 +1768,8 @@ export function generateEmailContent({ controls, title, dateRange, includeStats 
     body += `   TOTAL : ${stats.totalTarifsBord}\n\n`;
 
     body += `🔍 RELEVÉS D'IDENTITÉ (RI)\n`;
-    body += `   RI Positive : ${stats.riPositive}\n`;
-    body += `   RI Négative : ${stats.riNegative}\n`;
+    body += `   RI Positif : ${stats.riPositive}\n`;
+    body += `   RI Négatif : ${stats.riNegative}\n`;
     body += `   ────────────────────────\n`;
     body += `   TOTAL : ${stats.riPositive + stats.riNegative}\n\n`;
   }
