@@ -130,14 +130,14 @@ export function ControlDetailDialog({
 
   // Check if there are any tarif contrôle entries
   const hasTarifControle = control.stt_50 > 0 ||
-    control.stt_100 > 0 ||
     control.rnv > 0 ||
     (control.titre_tiers || 0) > 0 ||
     (control.doc_naissance || 0) > 0 ||
     (control.autre_tarif || 0) > 0;
 
-  // Check if there are any PV entries
-  const hasPV = (control.pv_stt100 || 0) > 0 ||
+  // Check if there are any PV entries (stt_100 est un PV, pas une régularisation)
+  const hasPV = (control.stt_100 || 0) > 0 ||
+    (control.pv_stt100 || 0) > 0 ||
     (control.pv_rnv || 0) > 0 ||
     (control.pv_titre_tiers || 0) > 0 ||
     (control.pv_doc_naissance || 0) > 0 ||
@@ -296,7 +296,6 @@ export function ControlDetailDialog({
                   </h4>
                   <div className="space-y-1">
                     <DetailRow label="STT 50€" value={control.stt_50} amount={control.stt_50_amount} />
-                    <DetailRow label="STT 100€" value={control.stt_100} amount={control.stt_100_amount} />
                     <DetailRow label="RNV" value={control.rnv} amount={control.rnv_amount} />
                     <DetailRow label="Titre tiers" value={control.titre_tiers || 0} amount={control.titre_tiers_amount} />
                     <DetailRow label="Doc. naissance" value={control.doc_naissance || 0} amount={control.doc_naissance_amount} />
@@ -313,6 +312,7 @@ export function ControlDetailDialog({
                     Procès-verbaux ({control.pv})
                   </h4>
                   <div className="space-y-1">
+                    <DetailRow label="STT 100€" value={control.stt_100 || 0} amount={control.stt_100_amount} />
                     <DetailRow label="STT100" value={control.pv_stt100 || 0} amount={control.pv_stt100_amount} />
                     <DetailRow label="RNV" value={control.pv_rnv || 0} amount={control.pv_rnv_amount} />
                     <DetailRow label="Titre tiers" value={control.pv_titre_tiers || 0} amount={control.pv_titre_tiers_amount} />
