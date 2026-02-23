@@ -19,6 +19,35 @@ export interface ExportOptions {
   exportMode?: ExportMode;
 }
 
+// ─── Color palette ───────────────────────────────────────────────────────────
+const C = {
+  navy:       [10,  20,  80]  as [number,number,number],
+  navyMid:    [20,  40, 120]  as [number,number,number],
+  navyLight:  [40,  70, 160]  as [number,number,number],
+  gold:       [212,175,  55]  as [number,number,number],
+  goldLight:  [245,215, 110]  as [number,number,number],
+  green:      [22, 163,  74]  as [number,number,number],
+  greenLight: [220,252, 231]  as [number,number,number],
+  red:        [220,  38,  38] as [number,number,number],
+  redLight:   [254, 226, 226] as [number,number,number],
+  amber:      [245,158,  11]  as [number,number,number],
+  amberLight: [254,243, 199]  as [number,number,number],
+  blue:       [59, 130, 246]  as [number,number,number],
+  blueLight:  [219,234, 254]  as [number,number,number],
+  purple:     [139, 92, 246]  as [number,number,number],
+  purpleLight:[237,233, 254]  as [number,number,number],
+  teal:       [20, 184, 166]  as [number,number,number],
+  tealLight:  [204,251, 241]  as [number,number,number],
+  white:      [255,255, 255]  as [number,number,number],
+  gray50:     [248,250, 252]  as [number,number,number],
+  gray100:    [241,245, 249]  as [number,number,number],
+  gray200:    [226,232, 240]  as [number,number,number],
+  gray400:    [148,163, 184]  as [number,number,number],
+  gray600:    [100,116, 139]  as [number,number,number],
+  gray800:    [ 30, 41,  59]  as [number,number,number],
+  black:      [  0,  0,   0]  as [number,number,number],
+};
+
 function getControlDetails(control: Control) {
   const fraudCount = control.tarifs_controle + control.pv;
   return {
@@ -50,7 +79,6 @@ function getControlDetails(control: Control) {
     docNaissanceAmount: control.doc_naissance_amount || 0,
     autreTarif: control.autre_tarif || 0,
     autreTarifAmount: control.autre_tarif_amount || 0,
-    // Tarifs bord
     tarifBordStt50: control.tarif_bord_stt_50 || 0,
     tarifBordStt100: control.tarif_bord_stt_100 || 0,
     tarifBordRnv: control.tarif_bord_rnv || 0,
@@ -61,10 +89,10 @@ function getControlDetails(control: Control) {
     riNegative: control.ri_negative,
     notes: control.notes || '',
     fraudCount,
-    fraudRate: control.nb_passagers > 0 
+    fraudRate: control.nb_passagers > 0
       ? (fraudCount / control.nb_passagers) * 100
       : 0,
-    fraudRateFormatted: control.nb_passagers > 0 
+    fraudRateFormatted: control.nb_passagers > 0
       ? ((fraudCount / control.nb_passagers) * 100).toFixed(2) + '%'
       : '0.00%',
   };
@@ -72,54 +100,47 @@ function getControlDetails(control: Control) {
 
 function calculateExtendedStats(controls: Control[]) {
   const base = calculateStats(controls);
-  
-  // Group by location type
+
   const byLocationType = {
     train: controls.filter(c => c.location_type === 'train'),
-    gare: controls.filter(c => c.location_type === 'gare'),
-    quai: controls.filter(c => c.location_type === 'quai'),
+    gare:  controls.filter(c => c.location_type === 'gare'),
+    quai:  controls.filter(c => c.location_type === 'quai'),
   };
 
-  // Calculate amounts - fallback to default prices if amount is 0 but count > 0
   const totalAmounts = controls.reduce((acc, c) => ({
-    stt50: acc.stt50 + ((c.stt_50_amount || 0) > 0 ? c.stt_50_amount! : c.stt_50 * 50),
-    stt100: acc.stt100 + ((c.stt_100_amount || 0) > 0 ? c.stt_100_amount! : c.stt_100 * 100),
-    rnv: acc.rnv + (c.rnv_amount || 0),
-    titreTiers: acc.titreTiers + (c.titre_tiers_amount || 0),
-    docNaissance: acc.docNaissance + (c.doc_naissance_amount || 0),
-    autre: acc.autre + (c.autre_tarif_amount || 0),
-    pvStt100: acc.pvStt100 + ((c.pv_stt100_amount || 0) > 0 ? c.pv_stt100_amount! : (c.pv_stt100 || 0) * 100),
-    pvRnv: acc.pvRnv + ((c.pv_rnv_amount || 0) > 0 ? c.pv_rnv_amount! : (c.pv_rnv || 0) * 100),
-    pvTitreTiers: acc.pvTitreTiers + ((c.pv_titre_tiers_amount || 0) > 0 ? c.pv_titre_tiers_amount! : (c.pv_titre_tiers || 0) * 100),
-    pvAutre: acc.pvAutre + (c.pv_autre_amount || 0),
-  }), {
-    stt50: 0, stt100: 0, rnv: 0, titreTiers: 0, docNaissance: 0, autre: 0,
-    pvStt100: 0, pvRnv: 0, pvTitreTiers: 0, pvAutre: 0,
-  });
+    stt50:       acc.stt50       + ((c.stt_50_amount  || 0) > 0 ? c.stt_50_amount!  : c.stt_50  * 50),
+    stt100:      acc.stt100      + ((c.stt_100_amount || 0) > 0 ? c.stt_100_amount! : c.stt_100 * 100),
+    rnv:         acc.rnv         + (c.rnv_amount        || 0),
+    titreTiers:  acc.titreTiers  + (c.titre_tiers_amount || 0),
+    docNaissance:acc.docNaissance+ (c.doc_naissance_amount || 0),
+    autre:       acc.autre       + (c.autre_tarif_amount || 0),
+    pvStt100:    acc.pvStt100    + ((c.pv_stt100_amount || 0) > 0 ? c.pv_stt100_amount! : (c.pv_stt100 || 0) * 100),
+    pvRnv:       acc.pvRnv       + ((c.pv_rnv_amount    || 0) > 0 ? c.pv_rnv_amount!   : (c.pv_rnv    || 0) * 100),
+    pvTitreTiers:acc.pvTitreTiers+ ((c.pv_titre_tiers_amount || 0) > 0 ? c.pv_titre_tiers_amount! : (c.pv_titre_tiers || 0) * 100),
+    pvAutre:     acc.pvAutre     + (c.pv_autre_amount   || 0),
+  }), { stt50: 0, stt100: 0, rnv: 0, titreTiers: 0, docNaissance: 0, autre: 0,
+        pvStt100: 0, pvRnv: 0, pvTitreTiers: 0, pvAutre: 0 });
 
-  // PV breakdown
   const pvBreakdown = controls.reduce((acc, c) => ({
-    stt100: acc.stt100 + (c.pv_stt100 || 0),
-    rnv: acc.rnv + (c.pv_rnv || 0),
+    stt100:     acc.stt100     + (c.pv_stt100      || 0),
+    rnv:        acc.rnv        + (c.pv_rnv         || 0),
     titreTiers: acc.titreTiers + (c.pv_titre_tiers || 0),
-    autre: acc.autre + (c.pv_autre || 0),
+    autre:      acc.autre      + (c.pv_autre       || 0),
   }), { stt100: 0, rnv: 0, titreTiers: 0, autre: 0 });
 
-  // Tarifs bord
   const tarifsBord = controls.reduce((acc, c) => ({
-    stt50: acc.stt50 + (c.tarif_bord_stt_50 || 0),
-    stt100: acc.stt100 + (c.tarif_bord_stt_100 || 0),
-    rnv: acc.rnv + (c.tarif_bord_rnv || 0),
-    titreTiers: acc.titreTiers + (c.tarif_bord_titre_tiers || 0),
-    docNaissance: acc.docNaissance + (c.tarif_bord_doc_naissance || 0),
-    autre: acc.autre + (c.tarif_bord_autre || 0),
+    stt50:       acc.stt50       + (c.tarif_bord_stt_50        || 0),
+    stt100:      acc.stt100      + (c.tarif_bord_stt_100       || 0),
+    rnv:         acc.rnv         + (c.tarif_bord_rnv           || 0),
+    titreTiers:  acc.titreTiers  + (c.tarif_bord_titre_tiers   || 0),
+    docNaissance:acc.docNaissance+ (c.tarif_bord_doc_naissance || 0),
+    autre:       acc.autre       + (c.tarif_bord_autre         || 0),
   }), { stt50: 0, stt100: 0, rnv: 0, titreTiers: 0, docNaissance: 0, autre: 0 });
 
-  // Additional tarifs controle
   const tarifsControleDetails = controls.reduce((acc, c) => ({
-    titreTiers: acc.titreTiers + (c.titre_tiers || 0),
-    docNaissance: acc.docNaissance + (c.doc_naissance || 0),
-    autre: acc.autre + (c.autre_tarif || 0),
+    titreTiers:  acc.titreTiers  + (c.titre_tiers  || 0),
+    docNaissance:acc.docNaissance+ (c.doc_naissance || 0),
+    autre:       acc.autre       + (c.autre_tarif  || 0),
   }), { titreTiers: 0, docNaissance: 0, autre: 0 });
 
   return {
@@ -129,266 +150,424 @@ function calculateExtendedStats(controls: Control[]) {
     pvBreakdown,
     tarifsBord,
     tarifsControleDetails,
-    totalTarifsBord: tarifsBord.stt50 + tarifsBord.stt100 + tarifsBord.rnv + tarifsBord.titreTiers + tarifsBord.docNaissance + tarifsBord.autre,
+    totalTarifsBord: tarifsBord.stt50 + tarifsBord.stt100 + tarifsBord.rnv
+      + tarifsBord.titreTiers + tarifsBord.docNaissance + tarifsBord.autre,
   };
 }
 
-export function exportToPDF({ controls, title, dateRange, includeStats, orientation = 'auto' }: ExportOptions): jsPDF {
-  // Validate inputs early
-  if (!controls || controls.length === 0) {
-    throw new Error('Aucun contrôle à exporter');
-  }
+// ─────────────────────────────────────────────────────────────────────────────
+//  PDF helpers
+// ─────────────────────────────────────────────────────────────────────────────
 
-  // Determine orientation: auto uses landscape if many controls or includeStats
-  const useOrientation = orientation === 'auto' 
+/** Draw a filled rounded-rectangle approximation using a plain rect */
+function fillRect(doc: jsPDF, x: number, y: number, w: number, h: number, color: [number,number,number]) {
+  doc.setFillColor(...color);
+  doc.rect(x, y, w, h, 'F');
+}
+
+/** Draw a horizontal rule */
+function hRule(doc: jsPDF, x: number, y: number, w: number, color: [number,number,number], thickness = 0.4) {
+  doc.setDrawColor(...color);
+  doc.setLineWidth(thickness);
+  doc.line(x, y, x + w, y);
+}
+
+/** Section title bar */
+function sectionBar(doc: jsPDF, label: string, x: number, y: number, w: number, color: [number,number,number]) {
+  fillRect(doc, x, y, w, 7, color);
+  fillRect(doc, x, y, 2, 7, C.gold);          // Gold left accent
+  doc.setFontSize(8);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(...C.white);
+  doc.text(label.toUpperCase(), x + 5, y + 4.8);
+  doc.setFont('helvetica', 'normal');
+  return y + 9;
+}
+
+/** KPI mini-card */
+function kpiCard(
+  doc: jsPDF,
+  x: number, y: number, w: number, h: number,
+  label: string, value: string, sub: string,
+  accent: [number,number,number]
+) {
+  fillRect(doc, x, y, w, h, C.gray50);
+  fillRect(doc, x, y, w, 1.2, accent);           // Top accent bar
+  doc.setFontSize(14);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(...accent);
+  doc.text(value, x + w / 2, y + h / 2 + 1, { align: 'center' });
+  doc.setFontSize(6.5);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(...C.gray600);
+  doc.text(label.toUpperCase(), x + w / 2, y + h - 5.5, { align: 'center' });
+  if (sub) {
+    doc.setFontSize(6);
+    doc.setTextColor(...C.gray400);
+    doc.text(sub, x + w / 2, y + h - 2.5, { align: 'center' });
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  exportToPDF  (premium theme)
+// ─────────────────────────────────────────────────────────────────────────────
+export function exportToPDF({ controls, title, dateRange, includeStats, orientation = 'auto' }: ExportOptions): jsPDF {
+  if (!controls || controls.length === 0) throw new Error('Aucun contrôle à exporter');
+
+  const useOrientation = orientation === 'auto'
     ? (controls.length > 10 || includeStats ? 'landscape' : 'portrait')
     : orientation;
 
   const doc = new jsPDF({ orientation: useOrientation === 'landscape' ? 'landscape' : 'portrait' });
   const stats = calculateExtendedStats(controls);
+  const pageW = doc.internal.pageSize.getWidth();
+  const pageH = doc.internal.pageSize.getHeight();
   let pageNumber = 1;
-  
-  // Helper to add footer on each page
+
+  // ── Footer ────────────────────────────────────────────────────────────────
   const addFooter = () => {
-    const pageHeight = doc.internal.pageSize.getHeight();
-    const pageWidth = doc.internal.pageSize.getWidth();
-    doc.setFontSize(8);
-    doc.setTextColor(150, 150, 150);
-    doc.text(
-      `SNCF Contrôles - Page ${pageNumber}`,
-      pageWidth / 2,
-      pageHeight - 10,
-      { align: 'center' }
-    );
+    fillRect(doc, 0, pageH - 12, pageW, 12, C.navy);
+    fillRect(doc, 0, pageH - 12, pageW, 0.8, C.gold);
+    doc.setFontSize(7);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(...C.gray400);
+    doc.text('SNCF Contrôles — Document confidentiel', 14, pageH - 5);
+    doc.text(`Page ${pageNumber}`, pageW - 14, pageH - 5, { align: 'right' });
+    doc.text(format(new Date(), 'dd/MM/yyyy HH:mm', { locale: fr }), pageW / 2, pageH - 5, { align: 'center' });
   };
-  
-  // Header
-  doc.setFontSize(20);
-  doc.setTextColor(0, 0, 139);
-  doc.text('SNCF Contrôles', 14, 20);
-  
-  doc.setFontSize(14);
-  doc.setTextColor(60, 60, 60);
-  doc.text('Rapport détaillé', 14, 28);
-  
+
+  // ── Premium Header ────────────────────────────────────────────────────────
+  // Navy background banner
+  fillRect(doc, 0, 0, pageW, 38, C.navy);
+  // Gold accent line bottom of header
+  fillRect(doc, 0, 38, pageW, 1.5, C.gold);
+  // Diagonal gold stripe accent (simulate with thin rect)
+  fillRect(doc, pageW - 40, 0, 40, 38, C.navyMid);
+  fillRect(doc, pageW - 42, 0, 2, 38, C.gold);
+
+  // Title
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(22);
+  doc.setTextColor(...C.white);
+  doc.text('SNCF CONTRÔLES', 14, 16);
+
+  doc.setFont('helvetica', 'normal');
   doc.setFontSize(10);
-  doc.setTextColor(100, 100, 100);
-  doc.text(title, 14, 36);
-  doc.text(`Période: ${dateRange}`, 14, 42);
-  doc.text(`Généré le: ${format(new Date(), 'dd/MM/yyyy à HH:mm', { locale: fr })}`, 14, 48);
-  doc.text(`Total contrôles: ${controls.length}`, 14, 54);
+  doc.setTextColor(...C.goldLight);
+  doc.text('Rapport de contrôle ferroviaire', 14, 23);
 
-  let yPosition = 64;
+  doc.setFontSize(8);
+  doc.setTextColor(...C.gray400);
+  doc.text(title, 14, 30);
+  doc.text(`Période : ${dateRange}  |  Généré le ${format(new Date(), 'dd MMMM yyyy à HH:mm', { locale: fr })}`, 14, 35.5);
 
+  // Right-side badge
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(11);
+  doc.setTextColor(...C.gold);
+  doc.text(`${controls.length}`, pageW - 20, 18, { align: 'center' });
+  doc.setFontSize(6.5);
+  doc.setTextColor(...C.gray400);
+  doc.setFont('helvetica', 'normal');
+  doc.text('CONTRÔLES', pageW - 20, 23, { align: 'center' });
+
+  let y = 46;
+
+  // ── KPI cards ─────────────────────────────────────────────────────────────
   if (includeStats) {
-    // Main statistics
-    doc.setFontSize(12);
-    doc.setTextColor(0, 0, 0);
-    doc.text('Statistiques générales', 14, yPosition);
-    yPosition += 8;
+    const totalTarifsControleAmt = stats.totalAmounts.stt50 + stats.totalAmounts.rnv
+      + stats.totalAmounts.titreTiers + stats.totalAmounts.docNaissance + stats.totalAmounts.autre;
+    const totalPVAmt = stats.totalAmounts.stt100 + stats.totalAmounts.pvStt100
+      + stats.totalAmounts.pvRnv + stats.totalAmounts.pvTitreTiers + stats.totalAmounts.pvAutre;
 
-    const mainStatsData = [
-      ['Métrique', 'Nombre', 'Détail'],
-      ['Total voyageurs', stats.totalPassengers.toString(), `${stats.passengersInRule} en règle`],
-      ['Taux de fraude global', formatFraudRate(stats.fraudRate), `${stats.fraudCount} infractions`],
-      ['Contrôles par type', '', `Train: ${stats.byLocationType.train.length} | Gare: ${stats.byLocationType.gare.length} | Quai: ${stats.byLocationType.quai.length}`],
+    const cards = [
+      { label: 'Voyageurs',      value: stats.totalPassengers.toString(),        sub: `${stats.passengersInRule} en règle`, accent: C.navyLight },
+      { label: 'Taux de fraude', value: formatFraudRate(stats.fraudRate),        sub: `${stats.fraudCount} infractions`,   accent: C.red       },
+      { label: 'Tarifs contrôle',value: stats.tarifsControle.toString(),         sub: `${totalTarifsControleAmt.toFixed(0)} €`, accent: C.green  },
+      { label: 'PV',             value: stats.pv.toString(),                     sub: `${totalPVAmt.toFixed(0)} €`,        accent: C.red       },
+      { label: 'Trains contrôlés',value: stats.byLocationType.train.length.toString(), sub: `+ ${stats.byLocationType.gare.length} gare(s)`, accent: C.blue },
+      { label: 'RI',             value: `${stats.riPositive}+/${stats.riNegative}-`, sub: 'identités',                   accent: C.purple    },
     ];
 
-    autoTable(doc, {
-      startY: yPosition,
-      head: [mainStatsData[0]],
-      body: mainStatsData.slice(1),
-      theme: 'striped',
-      headStyles: { fillColor: [0, 0, 139], fontSize: 9 },
-      bodyStyles: { fontSize: 8 },
-      margin: { left: 14, right: 14 },
+    const cardW = (pageW - 28 - (cards.length - 1) * 4) / cards.length;
+    const cardH = 22;
+    cards.forEach((card, i) => {
+      kpiCard(doc, 14 + i * (cardW + 4), y, cardW, cardH, card.label, card.value, card.sub, card.accent);
     });
+    y += cardH + 8;
 
-    yPosition = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 10;
+    // ── Tarifs + PV tables side by side ──────────────────────────────────
+    const halfW = (pageW - 28) / 2;
 
-    // Tarifs contrôle detail (STT 100 is in PV, not here)
-    doc.setFontSize(11);
-    doc.text('Détail Tarifs Contrôle (régularisations)', 14, yPosition);
-    yPosition += 6;
+    y = sectionBar(doc, 'Tarifs Contrôle — Régularisations', 14, y, halfW, C.green);
 
-    const totalTarifsControleAmount = stats.totalAmounts.stt50 + stats.totalAmounts.rnv + stats.totalAmounts.titreTiers + stats.totalAmounts.docNaissance + stats.totalAmounts.autre;
-    const tarifsData = [
-      ['Type', 'Nombre', 'Montant (€)'],
-      ['STT 50€', stats.stt50.toString(), stats.totalAmounts.stt50.toFixed(2)],
-      ['RNV', stats.rnv.toString(), stats.totalAmounts.rnv.toFixed(2)],
-      ['Titre tiers', stats.tarifsControleDetails.titreTiers.toString(), stats.totalAmounts.titreTiers.toFixed(2)],
-      ['Date naissance', stats.tarifsControleDetails.docNaissance.toString(), stats.totalAmounts.docNaissance.toFixed(2)],
-      ['Autre tarif', stats.tarifsControleDetails.autre.toString(), stats.totalAmounts.autre.toFixed(2)],
-      ['TOTAL', stats.tarifsControle.toString(), totalTarifsControleAmount.toFixed(2)],
-    ];
+    const totalTarifsAmount = stats.totalAmounts.stt50 + stats.totalAmounts.rnv
+      + stats.totalAmounts.titreTiers + stats.totalAmounts.docNaissance + stats.totalAmounts.autre;
 
     autoTable(doc, {
-      startY: yPosition,
-      head: [tarifsData[0]],
-      body: tarifsData.slice(1),
-      theme: 'striped',
-      headStyles: { fillColor: [34, 139, 34], fontSize: 9 },
-      bodyStyles: { fontSize: 8 },
-      margin: { left: 14, right: 100 },
-      tableWidth: 80,
+      startY: y,
+      head: [['Type', 'Nbre', 'Montant (€)']],
+      body: [
+        ['STT 50€',      stats.stt50.toString(),                              stats.totalAmounts.stt50.toFixed(2)],
+        ['RNV',          stats.rnv.toString(),                                stats.totalAmounts.rnv.toFixed(2)],
+        ['Titre tiers',  stats.tarifsControleDetails.titreTiers.toString(),   stats.totalAmounts.titreTiers.toFixed(2)],
+        ['Date naiss.',  stats.tarifsControleDetails.docNaissance.toString(), stats.totalAmounts.docNaissance.toFixed(2)],
+        ['Autre tarif',  stats.tarifsControleDetails.autre.toString(),        stats.totalAmounts.autre.toFixed(2)],
+        ['TOTAL',        stats.tarifsControle.toString(),                     totalTarifsAmount.toFixed(2)],
+      ],
+      theme: 'plain',
+      headStyles: { fillColor: C.greenLight, textColor: C.green, fontSize: 7.5, fontStyle: 'bold', cellPadding: 2.5 },
+      bodyStyles: { fontSize: 7.5, cellPadding: 2.5, textColor: C.gray800 },
+      alternateRowStyles: { fillColor: C.gray50 },
+      didParseCell: (data) => {
+        if (data.row.index === 5) {
+          data.cell.styles.fillColor = C.green as unknown as string;
+          data.cell.styles.textColor = C.white as unknown as string;
+          data.cell.styles.fontStyle = 'bold';
+        }
+      },
+      margin: { left: 14, right: pageW - 14 - halfW },
+      tableWidth: halfW,
     });
 
-    // PV detail (on the right)
-    doc.setFontSize(11);
-    doc.text('Détail PV (procès-verbaux)', 110, yPosition);
+    const pvStartY = y;
+    y = sectionBar(doc, 'Procès-verbaux (PV)', 14 + halfW + 4, pvStartY, halfW, C.red);
 
-    const totalPVAmount = stats.totalAmounts.stt100 + stats.totalAmounts.pvStt100 + stats.totalAmounts.pvRnv + stats.totalAmounts.pvTitreTiers + stats.totalAmounts.pvAutre;
-    const pvData = [
-      ['Type', 'Nombre', 'Montant (€)'],
-      ['STT 100€', stats.stt100.toString(), stats.totalAmounts.stt100.toFixed(2)],
-      ['Absence de titre', stats.pvBreakdown.stt100.toString(), stats.totalAmounts.pvStt100.toFixed(2)],
-      ['Titre invalide', stats.pvBreakdown.rnv.toString(), stats.totalAmounts.pvRnv.toFixed(2)],
-      ['Refus contrôle', stats.pvBreakdown.titreTiers.toString(), stats.totalAmounts.pvTitreTiers.toFixed(2)],
-      ['Autre PV', stats.pvBreakdown.autre.toString(), stats.totalAmounts.pvAutre.toFixed(2)],
-      ['TOTAL', stats.pv.toString(), totalPVAmount.toFixed(2)],
-    ];
+    const totalPVAmount = stats.totalAmounts.stt100 + stats.totalAmounts.pvStt100
+      + stats.totalAmounts.pvRnv + stats.totalAmounts.pvTitreTiers + stats.totalAmounts.pvAutre;
 
     autoTable(doc, {
-      startY: yPosition + 6,
-      head: [pvData[0]],
-      body: pvData.slice(1),
-      theme: 'striped',
-      headStyles: { fillColor: [178, 34, 34], fontSize: 9 },
-      bodyStyles: { fontSize: 8 },
-      margin: { left: 110, right: 14 },
-      tableWidth: 80,
+      startY: pvStartY + (y - pvStartY),
+      head: [['Type', 'Nbre', 'Montant (€)']],
+      body: [
+        ['STT 100€',        stats.stt100.toString(),             stats.totalAmounts.stt100.toFixed(2)],
+        ['Absence de titre',stats.pvBreakdown.stt100.toString(), stats.totalAmounts.pvStt100.toFixed(2)],
+        ['Titre invalide',  stats.pvBreakdown.rnv.toString(),    stats.totalAmounts.pvRnv.toFixed(2)],
+        ['Refus contrôle',  stats.pvBreakdown.titreTiers.toString(), stats.totalAmounts.pvTitreTiers.toFixed(2)],
+        ['Autre PV',        stats.pvBreakdown.autre.toString(),  stats.totalAmounts.pvAutre.toFixed(2)],
+        ['TOTAL',           stats.pv.toString(),                 totalPVAmount.toFixed(2)],
+      ],
+      theme: 'plain',
+      headStyles: { fillColor: C.redLight, textColor: C.red, fontSize: 7.5, fontStyle: 'bold', cellPadding: 2.5 },
+      bodyStyles: { fontSize: 7.5, cellPadding: 2.5, textColor: C.gray800 },
+      alternateRowStyles: { fillColor: C.gray50 },
+      didParseCell: (data) => {
+        if (data.row.index === 5) {
+          data.cell.styles.fillColor = C.red as unknown as string;
+          data.cell.styles.textColor = C.white as unknown as string;
+          data.cell.styles.fontStyle = 'bold';
+        }
+      },
+      margin: { left: 14 + halfW + 4, right: 14 },
+      tableWidth: halfW,
     });
 
-    yPosition = Math.max(
+    y = Math.max(
       (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY,
-      yPosition + 50
+      y + 4
+    ) + 6;
+
+    // ── Tarifs bord + RI ─────────────────────────────────────────────────
+    const thirdW = (pageW - 28 - 8) / 3;
+
+    y = sectionBar(doc, 'Tarifs à bord — Ventes', 14, y, thirdW, C.blue);
+
+    autoTable(doc, {
+      startY: y,
+      head: [['Type', 'Nbre']],
+      body: [
+        ['STT 50€',      stats.tarifsBord.stt50.toString()],
+        ['STT 100€',     stats.tarifsBord.stt100.toString()],
+        ['RNV',          stats.tarifsBord.rnv.toString()],
+        ['Titre tiers',  stats.tarifsBord.titreTiers.toString()],
+        ['Date naiss.',  stats.tarifsBord.docNaissance.toString()],
+        ['Autre',        stats.tarifsBord.autre.toString()],
+        ['TOTAL',        stats.totalTarifsBord.toString()],
+      ],
+      theme: 'plain',
+      headStyles: { fillColor: C.blueLight, textColor: C.blue, fontSize: 7.5, fontStyle: 'bold', cellPadding: 2.5 },
+      bodyStyles: { fontSize: 7.5, cellPadding: 2.5, textColor: C.gray800 },
+      alternateRowStyles: { fillColor: C.gray50 },
+      didParseCell: (data) => {
+        if (data.row.index === 6) {
+          data.cell.styles.fillColor = C.blue as unknown as string;
+          data.cell.styles.textColor = C.white as unknown as string;
+          data.cell.styles.fontStyle = 'bold';
+        }
+      },
+      margin: { left: 14, right: pageW - 14 - thirdW },
+      tableWidth: thirdW,
+    });
+
+    const riY = y - 9;
+    sectionBar(doc, 'Relevés d\'identité (RI)', 14 + thirdW + 4, riY, thirdW, C.purple);
+
+    autoTable(doc, {
+      startY: riY + 9,
+      head: [['Type', 'Nbre']],
+      body: [
+        ['RI Positive', stats.riPositive.toString()],
+        ['RI Négative', stats.riNegative.toString()],
+        ['TOTAL',       (stats.riPositive + stats.riNegative).toString()],
+      ],
+      theme: 'plain',
+      headStyles: { fillColor: C.purpleLight, textColor: C.purple, fontSize: 7.5, fontStyle: 'bold', cellPadding: 2.5 },
+      bodyStyles: { fontSize: 7.5, cellPadding: 2.5, textColor: C.gray800 },
+      alternateRowStyles: { fillColor: C.gray50 },
+      didParseCell: (data) => {
+        if (data.row.index === 2) {
+          data.cell.styles.fillColor = C.purple as unknown as string;
+          data.cell.styles.textColor = C.white as unknown as string;
+          data.cell.styles.fontStyle = 'bold';
+        }
+      },
+      margin: { left: 14 + thirdW + 4, right: pageW - 14 - 2 * (thirdW + 4) },
+      tableWidth: thirdW,
+    });
+
+    // Répartition par type sur le 3e tiers
+    const typeY = riY;
+    sectionBar(doc, 'Répartition par type', 14 + 2 * (thirdW + 4), typeY, thirdW, C.teal);
+
+    autoTable(doc, {
+      startY: typeY + 9,
+      head: [['Type', 'Contrôles']],
+      body: [
+        ['Trains', stats.byLocationType.train.length.toString()],
+        ['Gares',  stats.byLocationType.gare.length.toString()],
+        ['Quais',  stats.byLocationType.quai.length.toString()],
+        ['TOTAL',  controls.length.toString()],
+      ],
+      theme: 'plain',
+      headStyles: { fillColor: C.tealLight, textColor: C.teal, fontSize: 7.5, fontStyle: 'bold', cellPadding: 2.5 },
+      bodyStyles: { fontSize: 7.5, cellPadding: 2.5, textColor: C.gray800 },
+      alternateRowStyles: { fillColor: C.gray50 },
+      didParseCell: (data) => {
+        if (data.row.index === 3) {
+          data.cell.styles.fillColor = C.teal as unknown as string;
+          data.cell.styles.textColor = C.white as unknown as string;
+          data.cell.styles.fontStyle = 'bold';
+        }
+      },
+      margin: { left: 14 + 2 * (thirdW + 4), right: 14 },
+      tableWidth: thirdW,
+    });
+
+    y = Math.max(
+      (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY,
+      y + 4
     ) + 10;
-
-    // Tarifs bord
-    doc.setFontSize(11);
-    doc.text('Tarifs à bord (ventes)', 14, yPosition);
-    yPosition += 6;
-
-    const tarifsBordData = [
-      ['Type', 'Nombre'],
-      ['STT 50€', stats.tarifsBord.stt50.toString()],
-      ['STT 100€', stats.tarifsBord.stt100.toString()],
-      ['RNV', stats.tarifsBord.rnv.toString()],
-      ['Titre tiers', stats.tarifsBord.titreTiers.toString()],
-      ['Date naissance', stats.tarifsBord.docNaissance.toString()],
-      ['Autre', stats.tarifsBord.autre.toString()],
-      ['TOTAL', stats.totalTarifsBord.toString()],
-    ];
-
-    autoTable(doc, {
-      startY: yPosition,
-      head: [tarifsBordData[0]],
-      body: tarifsBordData.slice(1),
-      theme: 'striped',
-      headStyles: { fillColor: [70, 130, 180], fontSize: 9 },
-      bodyStyles: { fontSize: 8 },
-      margin: { left: 14, right: 140 },
-      tableWidth: 60,
-    });
-
-    // Identity checks (on the right)
-    doc.setFontSize(11);
-    doc.text('Contrôles d\'identité (RI)', 90, yPosition);
-
-    const riData = [
-      ['Type', 'Nombre'],
-      ['RI Positive', stats.riPositive.toString()],
-      ['RI Négative', stats.riNegative.toString()],
-      ['TOTAL', (stats.riPositive + stats.riNegative).toString()],
-    ];
-
-    autoTable(doc, {
-      startY: yPosition + 6,
-      head: [riData[0]],
-      body: riData.slice(1),
-      theme: 'striped',
-      headStyles: { fillColor: [148, 103, 189], fontSize: 9 },
-      bodyStyles: { fontSize: 8 },
-      margin: { left: 90, right: 80 },
-      tableWidth: 50,
-    });
-
-    yPosition = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 15;
   }
 
-  // Check if we need a new page
-  if (yPosition > 240) {
+  // ── New page if needed ────────────────────────────────────────────────────
+  if (y > pageH - 60) {
+    addFooter();
     doc.addPage();
-    yPosition = 20;
+    pageNumber++;
+    y = 20;
   }
 
-  // Controls detail table
-  doc.setFontSize(12);
-  doc.setTextColor(0);
-  doc.text('Détail des contrôles', 14, yPosition);
-  yPosition += 8;
+  // ── Detail table ──────────────────────────────────────────────────────────
+  y = sectionBar(doc, 'Détail des contrôles', 0, y, pageW, C.navy);
 
   const tableData = controls.map(control => {
-    const details = getControlDetails(control);
-    const locationInfo = control.location_type === 'train' 
-      ? `Train ${details.trainNumber}`
-      : control.location_type === 'gare' 
-        ? `Gare ${details.location}`
-        : `Quai ${details.platformNumber}`;
+    const d = getControlDetails(control);
+    const locationInfo = control.location_type === 'train'
+      ? `Train ${d.trainNumber}`
+      : control.location_type === 'gare'
+        ? `Gare ${d.location}`
+        : `Quai ${d.platformNumber}`;
     return [
-      details.date,
-      details.time,
+      d.date,
+      d.time,
       locationInfo,
-      control.location_type === 'train' ? `${details.origin} → ${details.destination}` : details.location,
-      details.passengers.toString(),
-      details.inRule.toString(),
-      `${details.stt50}/${details.stt100}`,
-      details.rnv.toString(),
-      details.pv.toString(),
-      `${details.riPositive}/${details.riNegative}`,
-      details.fraudRateFormatted,
+      control.location_type === 'train' ? `${d.origin} → ${d.destination}` : d.location,
+      d.passengers.toString(),
+      d.inRule.toString(),
+      `${d.stt50}/${d.stt100}`,
+      d.rnv.toString(),
+      d.pv.toString(),
+      `${d.riPositive}/${d.riNegative}`,
+      d.fraudRateFormatted,
+      d.fraudRate,   // hidden – used for coloring
     ];
   });
 
   autoTable(doc, {
-    startY: yPosition,
-    head: [['Date', 'Heure', 'Type/N°', 'Lieu/Trajet', 'Voy.', 'OK', 'STT', 'RNV', 'PV', 'RI', 'Fraude']],
-    body: tableData,
-    theme: 'striped',
-    headStyles: { fillColor: [0, 0, 139], fontSize: 6, cellPadding: 1.5, halign: 'center' },
-    bodyStyles: { fontSize: 5.5, cellPadding: 1.5 },
+    startY: y,
+    head: [['Date','Heure','Type / N°','Lieu / Trajet','Voy.','OK','STT','RNV','PV','RI','Fraude']],
+    body: tableData.map(r => r.slice(0, 11)),
+    theme: 'plain',
+    headStyles: {
+      fillColor: C.navyMid,
+      textColor: C.white,
+      fontSize: 6.5,
+      cellPadding: 2,
+      halign: 'center',
+      fontStyle: 'bold',
+    },
+    bodyStyles: { fontSize: 6, cellPadding: 2, textColor: C.gray800 },
+    alternateRowStyles: { fillColor: C.gray50 },
+    didParseCell: (data) => {
+      if (data.section === 'body') {
+        const rate = tableData[data.row.index]?.[11] as number ?? 0;
+        if (data.column.index === 10) {
+          // Fraud rate cell
+          if (rate > 10) {
+            data.cell.styles.textColor = C.red as unknown as string;
+            data.cell.styles.fontStyle = 'bold';
+            data.cell.styles.fillColor = C.redLight as unknown as string;
+          } else if (rate > 5) {
+            data.cell.styles.textColor = C.amber as unknown as string;
+            data.cell.styles.fontStyle = 'bold';
+            data.cell.styles.fillColor = C.amberLight as unknown as string;
+          } else {
+            data.cell.styles.textColor = C.green as unknown as string;
+          }
+        }
+        if (data.column.index === 8 && data.cell.text[0] !== '0') {
+          // PV column
+          data.cell.styles.textColor = C.red as unknown as string;
+          data.cell.styles.fontStyle = 'bold';
+        }
+      }
+      // Gold header bottom border
+      if (data.section === 'head') {
+        data.cell.styles.lineWidth = { bottom: 0.5 } as unknown as number;
+        data.cell.styles.lineColor = C.gold as unknown as string;
+      }
+    },
     columnStyles: {
-      0: { cellWidth: 14, halign: 'center' },  // Date
-      1: { cellWidth: 10, halign: 'center' },  // Heure
-      2: { cellWidth: 20 },                     // Type/N°
-      3: { cellWidth: 32 },                     // Lieu/Trajet
-      4: { cellWidth: 10, halign: 'center' },  // Voy.
-      5: { cellWidth: 8, halign: 'center' },   // OK
-      6: { cellWidth: 12, halign: 'center' },  // STT
-      7: { cellWidth: 8, halign: 'center' },   // RNV
-      8: { cellWidth: 8, halign: 'center' },   // PV
-      9: { cellWidth: 12, halign: 'center' },  // RI
-      10: { cellWidth: 12, halign: 'center' }, // Fraude
+      0:  { cellWidth: 15, halign: 'center' },
+      1:  { cellWidth: 10, halign: 'center' },
+      2:  { cellWidth: 22 },
+      3:  { cellWidth: 34 },
+      4:  { cellWidth: 10, halign: 'center' },
+      5:  { cellWidth: 8,  halign: 'center' },
+      6:  { cellWidth: 12, halign: 'center' },
+      7:  { cellWidth: 8,  halign: 'center' },
+      8:  { cellWidth: 8,  halign: 'center' },
+      9:  { cellWidth: 12, halign: 'center' },
+      10: { cellWidth: 14, halign: 'center' },
     },
     margin: { left: 10, right: 10 },
     tableWidth: 'auto',
-    didDrawPage: function() {
+    didDrawPage: () => {
       addFooter();
       pageNumber++;
-    }
+    },
   });
 
   return doc;
 }
 
-// Generate PDF and return blob URL for preview
+// ─────────────────────────────────────────────────────────────────────────────
 export function generatePDFPreview(options: ExportOptions): string {
   const doc = exportToPDF(options);
   const pdfBlob = doc.output('blob');
   return URL.createObjectURL(pdfBlob);
 }
 
-// Download PDF from jsPDF document
 export function downloadPDF(doc: jsPDF, filename?: string) {
   const finalFilename = filename || `controles-${format(new Date(), 'yyyy-MM-dd-HHmm')}.pdf`;
   try {
@@ -402,7 +581,9 @@ export function downloadPDF(doc: jsPDF, filename?: string) {
   }
 }
 
-// Export table view to PDF (simplified version for table export)
+// ─────────────────────────────────────────────────────────────────────────────
+//  exportTableToPDF  (premium theme)
+// ─────────────────────────────────────────────────────────────────────────────
 export interface TableExportOptions {
   controls: Control[];
   title: string;
@@ -410,67 +591,74 @@ export interface TableExportOptions {
 }
 
 export function exportTableToPDF({ controls, title, dateRange }: TableExportOptions) {
-  if (!controls || controls.length === 0) {
-    throw new Error('Aucun contrôle à exporter');
-  }
+  if (!controls || controls.length === 0) throw new Error('Aucun contrôle à exporter');
 
   try {
     const doc = new jsPDF({ orientation: 'landscape' });
+    const pageW = doc.internal.pageSize.getWidth();
+    const pageH = doc.internal.pageSize.getHeight();
     let currentPage = 1;
-    
-    const addPageFooter = () => {
-      const pageHeight = doc.internal.pageSize.getHeight();
-      const pageWidth = doc.internal.pageSize.getWidth();
-      doc.setFontSize(8);
-      doc.setTextColor(150, 150, 150);
-      doc.text(
-        `SNCF Contrôles - Page ${currentPage}`,
-        pageWidth / 2,
-        pageHeight - 10,
-        { align: 'center' }
-      );
-    };
-    
-    // Header
-    doc.setFontSize(16);
-    doc.setTextColor(0, 0, 139);
-    doc.text('SNCF Contrôles - Tableau', 14, 15);
-    
-    doc.setFontSize(10);
-    doc.setTextColor(100, 100, 100);
-    doc.text(title, 14, 22);
-    doc.text(`Période: ${dateRange}`, 14, 28);
-    doc.text(`Généré le: ${format(new Date(), 'dd/MM/yyyy à HH:mm', { locale: fr })}`, 14, 34);
-    doc.text(`Total: ${controls.length} contrôle(s)`, 14, 40);
 
-    // Build table data with all details
+    const addPageFooter = () => {
+      fillRect(doc, 0, pageH - 11, pageW, 11, C.navy);
+      fillRect(doc, 0, pageH - 11, pageW, 0.8, C.gold);
+      doc.setFontSize(7);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(...C.gray400);
+      doc.text('SNCF Contrôles — Document confidentiel', 10, pageH - 4);
+      doc.text(`Page ${currentPage}`, pageW - 10, pageH - 4, { align: 'right' });
+      doc.text(format(new Date(), 'dd/MM/yyyy HH:mm', { locale: fr }), pageW / 2, pageH - 4, { align: 'center' });
+    };
+
+    // Header banner
+    fillRect(doc, 0, 0, pageW, 26, C.navy);
+    fillRect(doc, 0, 26, pageW, 1.2, C.gold);
+    fillRect(doc, pageW - 30, 0, 30, 26, C.navyMid);
+    fillRect(doc, pageW - 31.5, 0, 1.5, 26, C.gold);
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(17);
+    doc.setTextColor(...C.white);
+    doc.text('SNCF CONTRÔLES', 10, 12);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    doc.setTextColor(...C.goldLight);
+    doc.text('Tableau de bord complet', 10, 18);
+
+    doc.setFontSize(7);
+    doc.setTextColor(...C.gray400);
+    doc.text(`${title}  |  ${dateRange}  |  ${format(new Date(), 'dd/MM/yyyy HH:mm', { locale: fr })}`, 10, 23);
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(12);
+    doc.setTextColor(...C.gold);
+    doc.text(`${controls.length}`, pageW - 15, 13, { align: 'center' });
+    doc.setFontSize(6);
+    doc.setTextColor(...C.gray400);
+    doc.setFont('helvetica', 'normal');
+    doc.text('CONTRÔLES', pageW - 15, 18, { align: 'center' });
+
     const tableData = controls.map(control => {
       const fraudCount = control.tarifs_controle + control.pv;
-      const fraudRate = control.nb_passagers > 0 
+      const fraudRate = control.nb_passagers > 0
         ? ((fraudCount / control.nb_passagers) * 100).toFixed(1) + '%'
         : '0.0%';
-      
-      const locationInfo = control.location_type === 'train' 
-        ? `Train ${control.train_number || '-'}`
-        : control.location_type === 'gare' 
-          ? 'Gare'
-          : 'Quai';
-      
-      const trajet = control.origin && control.destination 
+      const fraudRateNum = control.nb_passagers > 0
+        ? (fraudCount / control.nb_passagers) * 100
+        : 0;
+      const locationInfo = control.location_type === 'train'
+        ? `T. ${control.train_number || '-'}`
+        : control.location_type === 'gare' ? 'Gare' : 'Quai';
+      const trajet = control.origin && control.destination
         ? `${control.origin} → ${control.destination}`
         : control.location;
-
-      // Tarifs à bord sum
-      const tarifBordTotal = (control.tarif_bord_stt_50 || 0) + 
-        (control.tarif_bord_stt_100 || 0) + 
-        (control.tarif_bord_rnv || 0) +
-        (control.tarif_bord_titre_tiers || 0) +
-        (control.tarif_bord_doc_naissance || 0) +
-        (control.tarif_bord_autre || 0);
-
-      // Titre tiers + doc naissance
-      const titreTiers = control.titre_tiers || 0;
-      const docNaissance = control.doc_naissance || 0;
+      const tarifBordTotal = (control.tarif_bord_stt_50 || 0)
+        + (control.tarif_bord_stt_100 || 0)
+        + (control.tarif_bord_rnv || 0)
+        + (control.tarif_bord_titre_tiers || 0)
+        + (control.tarif_bord_doc_naissance || 0)
+        + (control.tarif_bord_autre || 0);
 
       return [
         format(new Date(control.control_date), 'dd/MM/yy', { locale: fr }),
@@ -481,8 +669,8 @@ export function exportTableToPDF({ controls, title, dateRange }: TableExportOpti
         control.nb_en_regle.toString(),
         tarifBordTotal.toString(),
         control.tarifs_controle.toString(),
-        titreTiers.toString(),
-        docNaissance.toString(),
+        (control.titre_tiers || 0).toString(),
+        (control.doc_naissance || 0).toString(),
         control.pv.toString(),
         control.stt_50.toString(),
         control.stt_100.toString(),
@@ -490,86 +678,106 @@ export function exportTableToPDF({ controls, title, dateRange }: TableExportOpti
         control.ri_positive.toString(),
         control.ri_negative.toString(),
         fraudRate,
+        fraudRateNum,  // index 17 – for coloring
       ];
     });
 
     autoTable(doc, {
-      startY: 46,
-      head: [['Date', 'Heure', 'Type', 'Trajet', 'V.', 'OK', 'B.', 'TC', 'Ti', 'Na', 'PV', 'S50', 'S100', 'RNV', 'R+', 'R-', '%']],
-      body: tableData,
-      theme: 'striped',
-      headStyles: { 
-        fillColor: [0, 0, 139], 
-        fontSize: 6,
-        cellPadding: 1.5,
-        halign: 'center'
+      startY: 31,
+      head: [['Date','Heure','Type','Trajet','V.','OK','Bord','TC','Ti','Na','PV','S50','S100','RNV','R+','R−','%']],
+      body: tableData.map(r => r.slice(0, 17)),
+      theme: 'plain',
+      headStyles: {
+        fillColor: C.navyMid,
+        textColor: C.white,
+        fontSize: 6.5,
+        cellPadding: 2,
+        halign: 'center',
+        fontStyle: 'bold',
+        lineWidth: { bottom: 0.5 } as unknown as number,
+        lineColor: C.gold as unknown as string,
       },
-      bodyStyles: { 
-        fontSize: 5.5,
-        cellPadding: 1.5,
+      bodyStyles: { fontSize: 6, cellPadding: 1.8, textColor: C.gray800 },
+      alternateRowStyles: { fillColor: C.gray50 },
+      didParseCell: (data) => {
+        if (data.section === 'body') {
+          const rate = tableData[data.row.index]?.[17] as number ?? 0;
+          // Fraud rate column (index 16)
+          if (data.column.index === 16) {
+            if (rate > 10) {
+              data.cell.styles.textColor = C.red as unknown as string;
+              data.cell.styles.fontStyle = 'bold';
+              data.cell.styles.fillColor = C.redLight as unknown as string;
+            } else if (rate > 5) {
+              data.cell.styles.textColor = C.amber as unknown as string;
+              data.cell.styles.fontStyle = 'bold';
+              data.cell.styles.fillColor = C.amberLight as unknown as string;
+            } else {
+              data.cell.styles.textColor = C.green as unknown as string;
+            }
+          }
+          // PV column (index 10)
+          if (data.column.index === 10 && data.cell.text[0] !== '0') {
+            data.cell.styles.textColor = C.red as unknown as string;
+            data.cell.styles.fontStyle = 'bold';
+          }
+          // TC column (index 7)
+          if (data.column.index === 7 && data.cell.text[0] !== '0') {
+            data.cell.styles.textColor = C.green as unknown as string;
+          }
+        }
       },
-      alternateRowStyles: { fillColor: [245, 245, 245] },
       columnStyles: {
-        0: { cellWidth: 13 },                   // Date
-        1: { cellWidth: 10 },                   // Heure
-        2: { cellWidth: 15 },                   // Type
-        3: { cellWidth: 38 },                   // Trajet
-        4: { cellWidth: 8, halign: 'center' },  // Voy.
-        5: { cellWidth: 8, halign: 'center' },  // OK
-        6: { cellWidth: 8, halign: 'center' },  // Bord
-        7: { cellWidth: 8, halign: 'center' },  // T.C.
-        8: { cellWidth: 8, halign: 'center' },  // Tiers
-        9: { cellWidth: 8, halign: 'center' },  // Naiss.
-        10: { cellWidth: 8, halign: 'center' }, // PV
-        11: { cellWidth: 10, halign: 'center' },// STT50
-        12: { cellWidth: 12, halign: 'center' },// STT100
-        13: { cellWidth: 10, halign: 'center' },// RNV
-        14: { cellWidth: 8, halign: 'center' }, // RI+
-        15: { cellWidth: 8, halign: 'center' }, // RI-
-        16: { cellWidth: 12, halign: 'center' },// Fraude
+        0:  { cellWidth: 14 },
+        1:  { cellWidth: 10 },
+        2:  { cellWidth: 14 },
+        3:  { cellWidth: 38 },
+        4:  { cellWidth: 8,  halign: 'center' },
+        5:  { cellWidth: 8,  halign: 'center' },
+        6:  { cellWidth: 8,  halign: 'center' },
+        7:  { cellWidth: 8,  halign: 'center' },
+        8:  { cellWidth: 8,  halign: 'center' },
+        9:  { cellWidth: 8,  halign: 'center' },
+        10: { cellWidth: 8,  halign: 'center' },
+        11: { cellWidth: 10, halign: 'center' },
+        12: { cellWidth: 12, halign: 'center' },
+        13: { cellWidth: 10, halign: 'center' },
+        14: { cellWidth: 8,  halign: 'center' },
+        15: { cellWidth: 8,  halign: 'center' },
+        16: { cellWidth: 13, halign: 'center' },
       },
       margin: { left: 8, right: 8 },
       tableWidth: 'auto',
-      didDrawPage: function() {
+      didDrawPage: () => {
         addPageFooter();
         currentPage++;
-      }
+      },
     });
 
     const filename = `tableau-controles-${format(new Date(), 'yyyy-MM-dd-HHmm')}.pdf`;
-    
-    // Use blob method for better cross-browser support
     const pdfBlob = doc.output('blob');
     const url = URL.createObjectURL(pdfBlob);
-    
-    // Create download link
     const link = document.createElement('a');
     link.href = url;
     link.download = filename;
     link.style.display = 'none';
     document.body.appendChild(link);
-    
-    // Trigger download
     link.click();
-    
-    // Cleanup
-    setTimeout(() => {
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-    }, 1000);
-
+    setTimeout(() => { document.body.removeChild(link); URL.revokeObjectURL(url); }, 1000);
   } catch (error) {
     console.error('PDF export error:', error);
     throw new Error('Erreur lors de la génération du PDF. Veuillez réessayer.');
   }
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+//  exportToHTML  (premium theme)
+// ─────────────────────────────────────────────────────────────────────────────
 export function exportToHTML({ controls, title, dateRange, includeStats, exportMode = 'detailed' }: ExportOptions): string {
   const stats = calculateExtendedStats(controls);
-  const isDetailed = exportMode === 'detailed' || exportMode === 'both';
-  const isSimplified = exportMode === 'simplified' || exportMode === 'both';
-  
-  // Group controls by train number
+  const isDetailed  = exportMode === 'detailed'   || exportMode === 'both';
+  const isSimplified= exportMode === 'simplified' || exportMode === 'both';
+
   const trainGroups: Record<string, Control[]> = {};
   controls.forEach(c => {
     const key = c.train_number || c.location || 'Inconnu';
@@ -577,32 +785,27 @@ export function exportToHTML({ controls, title, dateRange, includeStats, exportM
     trainGroups[key].push(c);
   });
   const trainKeys = Object.keys(trainGroups).sort();
-
-  // Count unique trains
   const uniqueTrains = new Set(controls.filter(c => c.location_type === 'train').map(c => c.train_number)).size;
 
-  // Calculate total amounts
-  // STT 100 goes into PV, not Tarifs Contrôle
-  const totalTarifsControle = stats.totalAmounts.stt50 + stats.totalAmounts.rnv + stats.totalAmounts.titreTiers + stats.totalAmounts.docNaissance + stats.totalAmounts.autre;
-  const totalPV = stats.totalAmounts.stt100 + stats.totalAmounts.pvStt100 + stats.totalAmounts.pvRnv + stats.totalAmounts.pvTitreTiers + stats.totalAmounts.pvAutre;
-  // Total encaissé = Tarifs contrôle + Tarifs bord (sans PV)
+  const totalTarifsControle = stats.totalAmounts.stt50 + stats.totalAmounts.rnv
+    + stats.totalAmounts.titreTiers + stats.totalAmounts.docNaissance + stats.totalAmounts.autre;
+  const totalPV = stats.totalAmounts.stt100 + stats.totalAmounts.pvStt100
+    + stats.totalAmounts.pvRnv + stats.totalAmounts.pvTitreTiers + stats.totalAmounts.pvAutre;
   const totalEncaisse = totalTarifsControle;
 
-  // Most sensitive trains (by fraud rate)
   const trainFraudStats = trainKeys.map(key => {
     const group = trainGroups[key];
-    const totalPax = group.reduce((s, c) => s + c.nb_passagers, 0);
+    const totalPax   = group.reduce((s, c) => s + c.nb_passagers, 0);
     const totalFraud = group.reduce((s, c) => s + c.tarifs_controle + c.pv + c.ri_negative, 0);
     const rate = totalPax > 0 ? (totalFraud / totalPax) * 100 : 0;
     return { train: key, passengers: totalPax, fraudCount: totalFraud, rate, controlCount: group.length };
   }).sort((a, b) => b.rate - a.rate);
 
-  // Fraud evolution by date
   const fraudByDate: Record<string, { pax: number; fraud: number }> = {};
   controls.forEach(c => {
     const d = c.control_date;
     if (!fraudByDate[d]) fraudByDate[d] = { pax: 0, fraud: 0 };
-    fraudByDate[d].pax += c.nb_passagers;
+    fraudByDate[d].pax   += c.nb_passagers;
     fraudByDate[d].fraud += c.tarifs_controle + c.pv + c.ri_negative;
   });
   const sortedDates = Object.keys(fraudByDate).sort();
@@ -611,12 +814,11 @@ export function exportToHTML({ controls, title, dateRange, includeStats, exportM
     rate: fraudByDate[d].pax > 0 ? (fraudByDate[d].fraud / fraudByDate[d].pax * 100) : 0,
   }));
 
-  // Helper: only show non-zero detail rows
   const detailRow = (label: string, count: number, amount?: number) => {
     if (count === 0 && (!amount || amount === 0)) return '';
-    return amount !== undefined 
-      ? `<tr><td>${label}</td><td><strong>${count}</strong></td><td>${Number(amount).toFixed(2)} €</td></tr>`
-      : `<tr><td>${label}</td><td><strong>${count}</strong></td></tr>`;
+    return amount !== undefined
+      ? `<tr><td>${label}</td><td class="num"><span class="pill">${count}</span></td><td class="amount">${Number(amount).toFixed(2)} €</td></tr>`
+      : `<tr><td>${label}</td><td class="num"><span class="pill">${count}</span></td></tr>`;
   };
 
   const html = `
@@ -625,435 +827,740 @@ export function exportToHTML({ controls, title, dateRange, includeStats, exportM
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${title} - SNCF Contrôles</title>
+  <title>${title} — SNCF Contrôles</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
-    * { box-sizing: border-box; }
-    body { font-family: 'Segoe UI', Arial, sans-serif; margin: 0; padding: 20px; background: #f0f2f5; color: #1a1a2e; }
-    .container { max-width: 1400px; margin: 0 auto; }
-    .header { background: linear-gradient(135deg, #00008B 0%, #1a1a6e 100%); color: white; padding: 30px; border-radius: 12px; margin-bottom: 20px; }
-    .header h1 { margin: 0 0 10px 0; font-size: 28px; }
-    .header .meta { opacity: 0.9; font-size: 14px; }
-    .section { background: white; border-radius: 12px; padding: 24px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
-    .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; cursor: pointer; }
-    .section-header h2 { margin: 0; color: #00008B; font-size: 18px; border-bottom: 2px solid #00008B; padding-bottom: 10px; flex: 1; }
-    .section-toggle { background: none; border: 1px solid #cbd5e1; border-radius: 6px; padding: 4px 12px; cursor: pointer; font-size: 12px; color: #64748b; margin-left: 12px; }
-    .section-toggle:hover { background: #f1f5f9; }
+    /* ── Reset & base ─────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --navy:        #0a1450;
+      --navy-mid:    #142878;
+      --navy-light:  #2850a0;
+      --gold:        #d4af37;
+      --gold-light:  #f0d060;
+      --gold-pale:   #fdf6d8;
+      --green:       #16a34a;
+      --green-light: #dcfce7;
+      --red:         #dc2626;
+      --red-light:   #fee2e2;
+      --amber:       #d97706;
+      --amber-light: #fef3c7;
+      --blue:        #2563eb;
+      --blue-light:  #dbeafe;
+      --purple:      #7c3aed;
+      --purple-light:#ede9fe;
+      --teal:        #0d9488;
+      --teal-light:  #ccfbf1;
+      --bg:          #f1f5fb;
+      --surface:     #ffffff;
+      --border:      #e2e8f0;
+      --text:        #1e293b;
+      --text-muted:  #64748b;
+      --text-faint:  #94a3b8;
+    }
+    body {
+      font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      font-size: 14px;
+      line-height: 1.6;
+    }
+    .container { max-width: 1440px; margin: 0 auto; padding: 20px; }
+
+    /* ── Header ───────────────────────────────────────────────────── */
+    .header {
+      background: linear-gradient(135deg, var(--navy) 0%, var(--navy-mid) 60%, #1a3080 100%);
+      color: white;
+      padding: 36px 40px;
+      border-radius: 16px;
+      margin-bottom: 24px;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 8px 32px rgba(10,20,80,0.35);
+    }
+    .header::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, var(--gold), var(--gold-light), var(--gold));
+    }
+    .header::after {
+      content: '';
+      position: absolute;
+      top: -60px; right: -60px;
+      width: 200px; height: 200px;
+      border-radius: 50%;
+      background: rgba(212,175,55,0.08);
+      pointer-events: none;
+    }
+    .header-inner { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 20px; }
+    .header-title { font-size: 30px; font-weight: 800; letter-spacing: -0.5px; }
+    .header-subtitle { color: var(--gold-light); font-size: 14px; font-weight: 500; margin-top: 4px; }
+    .header-meta { color: rgba(255,255,255,0.65); font-size: 12px; margin-top: 10px; }
+    .header-badge {
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(212,175,55,0.4);
+      border-radius: 12px;
+      padding: 14px 22px;
+      text-align: center;
+      backdrop-filter: blur(8px);
+    }
+    .header-badge-num { font-size: 36px; font-weight: 800; color: var(--gold); line-height: 1; }
+    .header-badge-lbl { font-size: 11px; color: rgba(255,255,255,0.6); text-transform: uppercase; letter-spacing: 1px; margin-top: 4px; }
+
+    /* ── Cards ────────────────────────────────────────────────────── */
+    .section {
+      background: var(--surface);
+      border-radius: 14px;
+      padding: 0;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+      border: 1px solid var(--border);
+      overflow: hidden;
+    }
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 24px;
+      cursor: pointer;
+      border-bottom: 1px solid var(--border);
+      background: #fafbfe;
+      transition: background 0.15s;
+    }
+    .section-header:hover { background: #f1f5fb; }
+    .section-header h2 {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--navy);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .section-header h2 .icon { font-size: 18px; }
+    .section-toggle {
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 4px 12px;
+      cursor: pointer;
+      font-size: 11px;
+      color: var(--text-muted);
+      font-family: inherit;
+      transition: all 0.15s;
+    }
+    .section-toggle:hover { background: var(--navy); color: white; border-color: var(--navy); }
+    .section-body { padding: 24px; }
     .section-body.hidden { display: none; }
-    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 12px; }
-    .stat-card { background: #f8f9fa; padding: 16px; border-radius: 8px; text-align: center; border-left: 4px solid #00008B; }
-    .stat-card.green { border-left-color: #22c55e; }
-    .stat-card.red { border-left-color: #ef4444; }
-    .stat-card.blue { border-left-color: #3b82f6; }
-    .stat-card.purple { border-left-color: #8b5cf6; }
-    .stat-card.orange { border-left-color: #f97316; }
-    .stat-value { font-size: 24px; font-weight: bold; color: #1a1a2e; }
-    .stat-sub { font-size: 12px; color: #64748b; margin-top: 2px; }
-    .stat-label { font-size: 11px; color: #666; margin-top: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
-    .detail-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
-    .detail-table { width: 100%; border-collapse: collapse; }
-    .detail-table th { background: #f1f5f9; padding: 10px; text-align: left; font-size: 12px; color: #64748b; }
-    .detail-table td { padding: 10px; border-bottom: 1px solid #e2e8f0; font-size: 13px; }
-    .detail-table tr:hover { background: #f8fafc; }
-    .detail-table .total { background: #f1f5f9; font-weight: bold; }
-    .controls-table { width: 100%; border-collapse: collapse; font-size: 12px; }
-    .controls-table th { background: #00008B; color: white; padding: 12px 8px; text-align: left; position: sticky; top: 0; cursor: pointer; user-select: none; }
-    .controls-table th:hover { background: #0000a8; }
-    .controls-table td { padding: 10px 8px; border-bottom: 1px solid #e2e8f0; }
-    .controls-table tr:hover { background: #f0f9ff; }
-    .controls-table tr:nth-child(even) { background: #f8fafc; }
-    .badge { display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 500; }
-    .badge-train { background: #dbeafe; color: #1d4ed8; }
-    .badge-gare { background: #fef3c7; color: #92400e; }
-    .badge-quai { background: #d1fae5; color: #065f46; }
-    .fraud-high { color: #dc2626; font-weight: bold; background: #fef2f2; padding: 2px 6px; border-radius: 4px; }
-    .fraud-medium { color: #f59e0b; font-weight: 600; }
-    .fraud-low { color: #16a34a; }
-    .train-nav { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
-    .train-link { display: inline-block; padding: 6px 14px; background: #e0e7ff; color: #3730a3; border-radius: 6px; text-decoration: none; font-size: 13px; font-weight: 500; transition: all 0.2s; }
-    .train-link:hover { background: #c7d2fe; transform: translateY(-1px); }
-    .toggles { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; padding: 12px; background: #f8fafc; border-radius: 8px; }
-    .toggle-btn { padding: 4px 12px; border: 1px solid #cbd5e1; border-radius: 6px; background: white; cursor: pointer; font-size: 12px; transition: all 0.2s; }
-    .toggle-btn.active { background: #00008B; color: white; border-color: #00008B; }
-    .amount-highlight { background: #fef3c7; padding: 2px 6px; border-radius: 4px; font-weight: 600; }
-    .chart-container { width: 100%; height: 200px; position: relative; margin: 16px 0; }
-    .chart-bar-container { display: flex; align-items: flex-end; gap: 4px; height: 160px; padding: 0 4px; }
-    .chart-bar-wrapper { flex: 1; display: flex; flex-direction: column; align-items: center; min-width: 24px; }
-    .chart-bar { width: 100%; min-height: 4px; border-radius: 4px 4px 0 0; transition: all 0.3s; }
-    .chart-bar:hover { opacity: 0.8; }
-    .chart-label { font-size: 9px; color: #64748b; margin-top: 4px; transform: rotate(-45deg); white-space: nowrap; }
-    .chart-value { font-size: 9px; color: #1a1a2e; margin-bottom: 2px; font-weight: 600; }
-    .sensitive-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 12px; }
-    .sensitive-item { padding: 12px 16px; border-radius: 8px; border: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; }
-    .sensitive-item.high { border-left: 4px solid #ef4444; background: #fef2f2; }
-    .sensitive-item.medium { border-left: 4px solid #f59e0b; background: #fffbeb; }
-    .sensitive-item.low { border-left: 4px solid #22c55e; background: #f0fdf4; }
-    .print-btn { position: fixed; bottom: 20px; right: 20px; background: #00008B; color: white; border: none; padding: 12px 24px; border-radius: 8px; font-size: 14px; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,139,0.3); z-index: 100; }
-    .print-btn:hover { background: #0000a8; }
-    .footer { text-align: center; padding: 20px; color: #94a3b8; font-size: 12px; }
+
+    /* ── KPI grid ─────────────────────────────────────────────────── */
+    .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 14px; }
+    .kpi-card {
+      border-radius: 12px;
+      padding: 18px 16px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .kpi-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.12); }
+    .kpi-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+    }
+    .kpi-card.navy   { background: linear-gradient(135deg, var(--navy) 0%, var(--navy-light) 100%); color: white; }
+    .kpi-card.navy::before   { background: var(--gold); }
+    .kpi-card.green  { background: var(--green-light); }
+    .kpi-card.green::before  { background: var(--green); }
+    .kpi-card.red    { background: var(--red-light); }
+    .kpi-card.red::before    { background: var(--red); }
+    .kpi-card.amber  { background: var(--amber-light); }
+    .kpi-card.amber::before  { background: var(--amber); }
+    .kpi-card.blue   { background: var(--blue-light); }
+    .kpi-card.blue::before   { background: var(--blue); }
+    .kpi-card.purple { background: var(--purple-light); }
+    .kpi-card.purple::before { background: var(--purple); }
+    .kpi-card.teal   { background: var(--teal-light); }
+    .kpi-card.teal::before   { background: var(--teal); }
+    .kpi-card.gold   { background: var(--gold-pale); }
+    .kpi-card.gold::before   { background: var(--gold); }
+    .kpi-value { font-size: 28px; font-weight: 800; line-height: 1.1; }
+    .kpi-card.navy .kpi-value { color: white; }
+    .kpi-card.green  .kpi-value { color: var(--green);  }
+    .kpi-card.red    .kpi-value { color: var(--red);    }
+    .kpi-card.amber  .kpi-value { color: var(--amber);  }
+    .kpi-card.blue   .kpi-value { color: var(--blue);   }
+    .kpi-card.purple .kpi-value { color: var(--purple); }
+    .kpi-card.teal   .kpi-value { color: var(--teal);   }
+    .kpi-card.gold   .kpi-value { color: #92701a;        }
+    .kpi-sub { font-size: 11px; color: var(--text-muted); margin-top: 3px; }
+    .kpi-card.navy .kpi-sub { color: rgba(255,255,255,0.65); }
+    .kpi-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-faint); margin-top: 8px; }
+    .kpi-card.navy .kpi-label { color: rgba(255,255,255,0.45); }
+
+    /* ── Detail tables ────────────────────────────────────────────── */
+    .ops-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 20px; }
+    .ops-block h3 {
+      font-size: 13px;
+      font-weight: 700;
+      padding: 10px 14px;
+      border-radius: 8px 8px 0 0;
+      margin-bottom: 0;
+    }
+    .ops-block.green h3 { background: var(--green); color: white; }
+    .ops-block.red   h3 { background: var(--red);   color: white; }
+    .ops-block.blue  h3 { background: var(--blue);  color: white; }
+    .ops-block.purple h3 { background: var(--purple); color: white; }
+    .detail-table { width: 100%; border-collapse: collapse; border: 1px solid var(--border); border-top: none; border-radius: 0 0 8px 8px; overflow: hidden; }
+    .detail-table th { background: #f8fafc; padding: 9px 12px; text-align: left; font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid var(--border); }
+    .detail-table td { padding: 9px 12px; border-bottom: 1px solid var(--border); font-size: 13px; }
+    .detail-table tr:last-child td { border-bottom: none; }
+    .detail-table tr:hover td { background: var(--bg); }
+    .detail-table .total td { background: var(--navy); color: white; font-weight: 700; border-radius: 0 0 8px 8px; }
+    .pill { display: inline-block; background: var(--navy-mid); color: white; border-radius: 20px; padding: 1px 9px; font-size: 12px; font-weight: 600; }
+    .amount { font-weight: 600; color: var(--navy); font-variant-numeric: tabular-nums; }
+    td.num { text-align: center; }
+
+    /* ── Chart ────────────────────────────────────────────────────── */
+    .chart-wrap { overflow-x: auto; padding: 8px 0 4px; }
+    .chart-bars { display: flex; align-items: flex-end; gap: 6px; height: 140px; min-width: max-content; padding: 0 8px; }
+    .bar-col { display: flex; flex-direction: column; align-items: center; min-width: 36px; }
+    .bar-val { font-size: 9px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+    .bar { width: 100%; border-radius: 6px 6px 0 0; min-height: 6px; transition: opacity 0.2s; cursor: default; }
+    .bar:hover { opacity: 0.78; }
+    .bar-lbl { font-size: 9px; color: var(--text-muted); margin-top: 5px; transform: rotate(-40deg); white-space: nowrap; transform-origin: top left; }
+    .chart-legend { display: flex; gap: 16px; margin-top: 18px; flex-wrap: wrap; }
+    .legend-item { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text-muted); }
+    .legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+
+    /* ── Sensitive trains ─────────────────────────────────────────── */
+    .sensitive-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+    .sensitive-card {
+      border-radius: 10px;
+      padding: 14px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border: 1px solid var(--border);
+      transition: transform 0.15s;
+    }
+    .sensitive-card:hover { transform: translateX(3px); }
+    .sensitive-card.high   { border-left: 5px solid var(--red);   background: var(--red-light);   }
+    .sensitive-card.medium { border-left: 5px solid var(--amber); background: var(--amber-light); }
+    .sensitive-card.low    { border-left: 5px solid var(--green); background: var(--green-light); }
+    .sensitive-name { font-weight: 700; font-size: 14px; }
+    .sensitive-info { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+    .sensitive-rate { font-size: 22px; font-weight: 800; text-align: right; }
+    .sensitive-card.high   .sensitive-rate { color: var(--red);   }
+    .sensitive-card.medium .sensitive-rate { color: var(--amber); }
+    .sensitive-card.low    .sensitive-rate { color: var(--green); }
+    .sensitive-count { font-size: 10px; color: var(--text-muted); text-align: right; margin-top: 2px; }
+
+    /* ── Train nav ────────────────────────────────────────────────── */
+    .train-nav { display: flex; flex-wrap: wrap; gap: 8px; }
+    .train-chip {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 5px 14px; background: var(--navy); color: white;
+      border-radius: 20px; text-decoration: none; font-size: 12px; font-weight: 600;
+      transition: all 0.15s;
+    }
+    .train-chip:hover { background: var(--gold); color: var(--navy); transform: translateY(-1px); }
+    .train-chip .count {
+      background: rgba(255,255,255,0.2);
+      border-radius: 10px; padding: 1px 7px; font-size: 10px;
+    }
+    .train-chip:hover .count { background: rgba(10,20,80,0.2); }
+
+    /* ── Controls table ───────────────────────────────────────────── */
+    .table-wrap { overflow-x: auto; border-radius: 0 0 12px 12px; }
+    .controls-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+    .controls-table thead th {
+      background: var(--navy);
+      color: white;
+      padding: 11px 10px;
+      text-align: left;
+      position: sticky;
+      top: 0;
+      cursor: pointer;
+      user-select: none;
+      font-size: 11px;
+      font-weight: 600;
+      white-space: nowrap;
+      border-bottom: 2px solid var(--gold);
+      transition: background 0.15s;
+    }
+    .controls-table thead th:hover { background: var(--navy-light); }
+    .controls-table thead th::after { content: ' ↕'; opacity: 0.4; font-size: 9px; }
+    .controls-table tbody td { padding: 9px 10px; border-bottom: 1px solid var(--border); }
+    .controls-table tbody tr:hover td { background: #f0f4ff; }
+    .controls-table tbody tr:nth-child(even) td { background: #fafbfe; }
+    .controls-table tbody tr:nth-child(even):hover td { background: #ecf0ff; }
+    .badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 9px; border-radius: 20px; font-size: 10px; font-weight: 600; white-space: nowrap; }
+    .badge-train  { background: var(--blue-light);   color: var(--blue);   }
+    .badge-gare   { background: var(--amber-light);  color: #92400e;       }
+    .badge-quai   { background: var(--green-light);  color: #065f46;       }
+    .fraud-high   { color: var(--red);   font-weight: 700; background: var(--red-light);   padding: 2px 7px; border-radius: 4px; display: inline-block; }
+    .fraud-medium { color: var(--amber); font-weight: 600; background: var(--amber-light); padding: 2px 7px; border-radius: 4px; display: inline-block; }
+    .fraud-low    { color: var(--green); font-weight: 500; }
+    .pv-cell { color: var(--red); font-weight: 700; }
+    .col-num { text-align: center; }
+
+    /* ── Column toggles ───────────────────────────────────────────── */
+    .toggles {
+      display: flex; flex-wrap: wrap; gap: 6px; padding: 14px 0 6px;
+      border-bottom: 1px solid var(--border); margin-bottom: 16px;
+    }
+    .toggle-btn {
+      padding: 4px 13px; border: 1.5px solid var(--border);
+      border-radius: 20px; background: white; cursor: pointer;
+      font-size: 11px; font-weight: 500; color: var(--text-muted);
+      font-family: inherit; transition: all 0.15s;
+    }
+    .toggle-btn.active { background: var(--navy); color: white; border-color: var(--navy); }
+    .toggle-btn:hover:not(.active) { border-color: var(--navy); color: var(--navy); }
+
+    /* ── Print button ─────────────────────────────────────────────── */
+    .fab {
+      position: fixed; bottom: 28px; right: 28px;
+      background: linear-gradient(135deg, var(--navy), var(--navy-light));
+      color: white; border: none; padding: 14px 24px;
+      border-radius: 40px; font-size: 14px; font-weight: 600;
+      cursor: pointer; box-shadow: 0 6px 24px rgba(10,20,80,0.4);
+      font-family: inherit; z-index: 100;
+      display: flex; align-items: center; gap: 8px;
+      transition: all 0.2s;
+    }
+    .fab::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: var(--gold); border-radius: 40px 40px 0 0; }
+    .fab:hover { transform: translateY(-3px); box-shadow: 0 12px 32px rgba(10,20,80,0.5); }
+
+    /* ── Synthèse table ───────────────────────────────────────────── */
+    .synth-table { width: 100%; border-collapse: collapse; margin-top: 16px; }
+    .synth-table th { background: var(--navy); color: white; padding: 10px 14px; font-size: 12px; text-align: left; }
+    .synth-table th:first-child { border-radius: 8px 0 0 0; }
+    .synth-table th:last-child  { border-radius: 0 8px 0 0; }
+    .synth-table td { padding: 10px 14px; border-bottom: 1px solid var(--border); font-size: 13px; }
+    .synth-table tr:last-child td { border-bottom: none; }
+    .synth-table tr:hover td { background: var(--bg); }
+    .amount-badge {
+      background: var(--gold-pale); color: #7a5c00;
+      border: 1px solid #e8c84a; border-radius: 6px;
+      padding: 2px 8px; font-weight: 700; font-size: 12px;
+    }
+
+    /* ── Footer ───────────────────────────────────────────────────── */
+    .page-footer {
+      text-align: center; padding: 28px 20px;
+      color: var(--text-faint); font-size: 12px;
+      border-top: 1px solid var(--border); margin-top: 8px;
+    }
+    .page-footer strong { color: var(--navy); }
+
+    /* ── Print ────────────────────────────────────────────────────── */
     @media print {
-      body { background: white; padding: 0; }
-      .section { box-shadow: none; border: 1px solid #e2e8f0; break-inside: avoid; }
-      .controls-table th { background: #1a1a2e !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-      .toggles, .print-btn, .section-toggle { display: none !important; }
+      body { background: white; font-size: 11px; }
+      .container { padding: 0; }
+      .header { border-radius: 0; box-shadow: none; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .section { box-shadow: none; page-break-inside: avoid; }
+      .fab, .toggles, .section-toggle { display: none !important; }
+      .controls-table thead th { background: var(--navy) !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .kpi-card { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    }
+    @media (max-width: 600px) {
+      .header-inner { flex-direction: column; }
+      .kpi-grid { grid-template-columns: repeat(2, 1fr); }
     }
   </style>
 </head>
 <body>
-  <button class="print-btn" onclick="window.print()">🖨️ Imprimer</button>
-  <div class="container">
-    <div class="header">
-      <h1>🚂 SNCF Contrôles - ${exportMode === 'simplified' ? 'Rapport Simplifié' : exportMode === 'both' ? 'Rapport Complet' : 'Rapport Détaillé'}</h1>
-      <div class="meta">
-        <p><strong>${title}</strong></p>
-        <p>Période: ${dateRange} | Généré le: ${format(new Date(), 'dd MMMM yyyy à HH:mm', { locale: fr })}</p>
-        <p>Total: ${controls.length} contrôle${controls.length > 1 ? 's' : ''} | ${uniqueTrains} train${uniqueTrains > 1 ? 's' : ''} contrôlé${uniqueTrains > 1 ? 's' : ''}</p>
-      </div>
-    </div>
 
-    <!-- Train navigation -->
-    ${trainKeys.length > 1 ? `
-    <div class="section">
-      <div class="section-header" onclick="toggleSection('trains-nav')">
-        <h2>🚆 Trains dans cet export (${trainKeys.length})</h2>
-        <button class="section-toggle">Masquer</button>
-      </div>
-      <div class="section-body" id="trains-nav">
-        <div class="train-nav">
-          ${trainKeys.map(key => `<a href="#train-${key.replace(/\s/g, '-')}" class="train-link">${key} (${trainGroups[key].length})</a>`).join('')}
-        </div>
-      </div>
-    </div>
-    ` : ''}
-    
-    ${includeStats ? `
-    <div class="section">
-      <div class="section-header" onclick="toggleSection('overview')">
-        <h2>📊 Vue d'ensemble</h2>
-        <button class="section-toggle">Masquer</button>
-      </div>
-      <div class="section-body" id="overview">
-        <div class="stats-grid">
-          <div class="stat-card">
-            <div class="stat-value">${stats.totalPassengers}</div>
-            <div class="stat-label">Voyageurs</div>
-          </div>
-          <div class="stat-card green">
-            <div class="stat-value">${stats.passengersInRule}</div>
-            <div class="stat-label">En règle</div>
-          </div>
-          <div class="stat-card red">
-            <div class="stat-value">${formatFraudRate(stats.fraudRate)}</div>
-            <div class="stat-sub">${stats.fraudCount} fraudeur${stats.fraudCount > 1 ? 's' : ''}</div>
-            <div class="stat-label">Taux fraude</div>
-          </div>
-          <div class="stat-card blue">
-            <div class="stat-value">${uniqueTrains}</div>
-            <div class="stat-label">Trains contrôlés</div>
-          </div>
-          <div class="stat-card orange">
-            <div class="stat-value">${stats.tarifsControle}</div>
-            <div class="stat-label">Tarifs contrôle</div>
-          </div>
-          <div class="stat-card red">
-            <div class="stat-value">${stats.pv}</div>
-            <div class="stat-label">PV</div>
-          </div>
-          <div class="stat-card purple">
-            <div class="stat-value">${stats.riPositive}+ / ${stats.riNegative}-</div>
-            <div class="stat-label">RI (Relevés d'identité)</div>
-          </div>
-          <div class="stat-card orange">
-            <div class="stat-value">${totalEncaisse.toFixed(0)} €</div>
-            <div class="stat-label">Total encaissé</div>
-          </div>
-          <div class="stat-card red">
-            <div class="stat-value">${totalPV.toFixed(0)} €</div>
-            <div class="stat-label">Montant total PV</div>
-          </div>
-        </div>
-      </div>
-    </div>
+<button class="fab" onclick="window.print()">🖨️ Imprimer / PDF</button>
 
-    <!-- Fraud evolution chart -->
-    ${chartData.length > 1 ? `
-    <div class="section">
-      <div class="section-header" onclick="toggleSection('fraud-chart')">
-        <h2>📈 Évolution du taux de fraude</h2>
-        <button class="section-toggle">Masquer</button>
-      </div>
-      <div class="section-body" id="fraud-chart">
-        <div class="chart-container">
-          <div class="chart-bar-container">
-            ${chartData.map(d => {
-              const maxRate = Math.max(...chartData.map(x => x.rate), 1);
-              const height = Math.max((d.rate / maxRate) * 140, 4);
-              const color = d.rate > 10 ? '#ef4444' : d.rate > 5 ? '#f59e0b' : '#22c55e';
-              return `<div class="chart-bar-wrapper">
-                <div class="chart-value">${d.rate.toFixed(1)}%</div>
-                <div class="chart-bar" style="height:${height}px;background:${color};" title="${d.date}: ${d.rate.toFixed(2)}%"></div>
-                <div class="chart-label">${d.date}</div>
-              </div>`;
-            }).join('')}
-          </div>
-        </div>
-      </div>
-    </div>
-    ` : ''}
+<div class="container">
 
-    <!-- Most sensitive trains -->
-    ${trainFraudStats.length > 0 ? `
-    <div class="section">
-      <div class="section-header" onclick="toggleSection('sensitive-trains')">
-        <h2>⚠️ Trains les plus sensibles</h2>
-        <button class="section-toggle">Masquer</button>
-      </div>
-      <div class="section-body" id="sensitive-trains">
-        <div class="sensitive-list">
-          ${trainFraudStats.slice(0, 10).map(t => {
-            const cls = t.rate > 10 ? 'high' : t.rate > 5 ? 'medium' : 'low';
-            return `<div class="sensitive-item ${cls}">
-              <div>
-                <strong>${t.train}</strong>
-                <div style="font-size:12px;color:#64748b;">${t.passengers} voy. · ${t.controlCount} contrôle${t.controlCount > 1 ? 's' : ''}</div>
-              </div>
-              <div style="text-align:right;">
-                <div style="font-size:18px;font-weight:bold;${t.rate > 10 ? 'color:#ef4444' : t.rate > 5 ? 'color:#f59e0b' : 'color:#22c55e'}">${t.rate.toFixed(1)}%</div>
-                <div style="font-size:11px;color:#64748b;">${t.fraudCount} fraud.</div>
-              </div>
-            </div>`;
-          }).join('')}
+  <!-- ── HEADER ── -->
+  <div class="header">
+    <div class="header-inner">
+      <div>
+        <div class="header-title">🚂 SNCF Contrôles</div>
+        <div class="header-subtitle">${exportMode === 'simplified' ? 'Rapport Simplifié' : exportMode === 'both' ? 'Rapport Complet' : 'Rapport Détaillé'}</div>
+        <div class="header-meta">
+          <strong style="color:var(--gold-light)">${title}</strong><br>
+          Période : ${dateRange}<br>
+          Généré le ${format(new Date(), 'dd MMMM yyyy à HH:mm', { locale: fr })} &nbsp;·&nbsp;
+          ${controls.length} contrôle${controls.length > 1 ? 's' : ''} &nbsp;·&nbsp;
+          ${uniqueTrains} train${uniqueTrains > 1 ? 's' : ''} contrôlé${uniqueTrains > 1 ? 's' : ''}
         </div>
       </div>
-    </div>
-    ` : ''}
-
-    ${isDetailed ? `
-    <div class="section">
-      <div class="section-header" onclick="toggleSection('detail-ops')">
-        <h2>💶 Détail des opérations</h2>
-        <button class="section-toggle">Masquer</button>
+      <div class="header-badge">
+        <div class="header-badge-num">${controls.length}</div>
+        <div class="header-badge-lbl">Contrôles</div>
       </div>
-      <div class="section-body" id="detail-ops">
-        <div class="detail-grid">
-          <div>
-            <h3 style="color: #22c55e; margin-bottom: 12px;">Tarifs Contrôle (régularisations)</h3>
-            <table class="detail-table">
-              <tr><th>Type</th><th>Nombre</th><th>Montant</th></tr>
-              ${detailRow('STT 50€', stats.stt50, stats.totalAmounts.stt50)}
-              ${detailRow('RNV', stats.rnv, stats.totalAmounts.rnv)}
-              ${detailRow('Titre tiers', stats.tarifsControleDetails.titreTiers, stats.totalAmounts.titreTiers)}
-              ${detailRow('Date naissance', stats.tarifsControleDetails.docNaissance, stats.totalAmounts.docNaissance)}
-              ${detailRow('Autre tarif', stats.tarifsControleDetails.autre, stats.totalAmounts.autre)}
-              <tr class="total"><td>TOTAL</td><td><strong>${stats.tarifsControle}</strong></td><td><strong>${totalTarifsControle.toFixed(2)} €</strong></td></tr>
-            </table>
-          </div>
-          <div>
-            <h3 style="color: #ef4444; margin-bottom: 12px;">PV (procès-verbaux)</h3>
-            <table class="detail-table">
-              <tr><th>Type</th><th>Nombre</th><th>Montant</th></tr>
-              ${detailRow('STT 100€', stats.stt100, stats.totalAmounts.stt100)}
-              ${detailRow('Absence de titre', stats.pvBreakdown.stt100, stats.totalAmounts.pvStt100)}
-              ${detailRow('Titre invalide', stats.pvBreakdown.rnv, stats.totalAmounts.pvRnv)}
-              ${detailRow('Refus contrôle', stats.pvBreakdown.titreTiers, stats.totalAmounts.pvTitreTiers)}
-              ${detailRow('Autre PV', stats.pvBreakdown.autre, stats.totalAmounts.pvAutre)}
-              <tr class="total"><td>TOTAL</td><td><strong>${stats.pv}</strong></td><td><strong>${totalPV.toFixed(2)} €</strong></td></tr>
-            </table>
-          </div>
-          ${(stats.totalTarifsBord > 0 || stats.riPositive + stats.riNegative > 0) ? `
-          <div>
-            ${stats.totalTarifsBord > 0 ? `
-            <h3 style="color: #3b82f6; margin-bottom: 12px;">Tarifs à bord (ventes)</h3>
-            <table class="detail-table">
-              <tr><th>Type</th><th>Nombre</th></tr>
-              ${detailRow('STT 50€', stats.tarifsBord.stt50)}
-              ${detailRow('STT 100€', stats.tarifsBord.stt100)}
-              ${detailRow('RNV', stats.tarifsBord.rnv)}
-              ${detailRow('Titre tiers', stats.tarifsBord.titreTiers)}
-              ${detailRow('Date naissance', stats.tarifsBord.docNaissance)}
-              ${detailRow('Autre', stats.tarifsBord.autre)}
-              <tr class="total"><td>TOTAL</td><td><strong>${stats.totalTarifsBord}</strong></td></tr>
-            </table>
-            ` : ''}
-          </div>
-          <div>
-            ${(stats.riPositive + stats.riNegative > 0) ? `
-            <h3 style="color: #8b5cf6; margin-bottom: 12px;">Relevés d'identité (RI)</h3>
-            <table class="detail-table">
-              <tr><th>Type</th><th>Nombre</th></tr>
-              ${detailRow('RI Positive', stats.riPositive)}
-              ${detailRow('RI Négative', stats.riNegative)}
-              <tr class="total"><td>TOTAL</td><td><strong>${stats.riPositive + stats.riNegative}</strong></td></tr>
-            </table>
-            ` : ''}
-          </div>
-          ` : ''}
-        </div>
-      </div>
-    </div>
-    ` : ''}
-
-    ${isSimplified ? `
-    <div class="section">
-      <div class="section-header" onclick="toggleSection('synthese')">
-        <h2>📋 Synthèse</h2>
-        <button class="section-toggle">Masquer</button>
-      </div>
-      <div class="section-body" id="synthese">
-        <div class="stats-grid">
-          <div class="stat-card">
-            <div class="stat-value">${controls.length}</div>
-            <div class="stat-label">Contrôles</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-value">${stats.totalPassengers}</div>
-            <div class="stat-label">Voyageurs</div>
-          </div>
-          <div class="stat-card red">
-            <div class="stat-value">${formatFraudRate(stats.fraudRate)}</div>
-            <div class="stat-sub">${stats.fraudCount} fraudeur${stats.fraudCount > 1 ? 's' : ''}</div>
-            <div class="stat-label">Taux de fraude</div>
-          </div>
-          <div class="stat-card orange">
-            <div class="stat-value">${totalEncaisse.toFixed(0)} €</div>
-            <div class="stat-label">Total encaissé</div>
-          </div>
-          <div class="stat-card red">
-            <div class="stat-value">${totalPV.toFixed(0)} €</div>
-            <div class="stat-label">Montant total PV</div>
-          </div>
-        </div>
-        <table class="detail-table" style="margin-top: 16px;">
-          <tr><th>Catégorie</th><th>Nombre</th><th>Montant</th></tr>
-          <tr><td>Tarifs contrôle</td><td><strong>${stats.tarifsControle}</strong></td><td class="amount-highlight">${totalTarifsControle.toFixed(2)} €</td></tr>
-          <tr><td>Procès-verbaux</td><td><strong>${stats.pv}</strong></td><td class="amount-highlight">${totalPV.toFixed(2)} €</td></tr>
-          ${stats.totalTarifsBord > 0 ? `<tr><td>Tarifs à bord</td><td><strong>${stats.totalTarifsBord}</strong></td><td>-</td></tr>` : ''}
-          ${(stats.riPositive + stats.riNegative > 0) ? `<tr><td>Relevés d'identité (RI)</td><td><strong>${stats.riPositive}+ / ${stats.riNegative}-</strong></td><td>-</td></tr>` : ''}
-        </table>
-      </div>
-    </div>
-    ` : ''}
-    ` : ''}
-    
-    <div class="section">
-      <div class="section-header" onclick="toggleSection('detail-controls')">
-        <h2>📋 Détail des contrôles</h2>
-        <button class="section-toggle">Masquer</button>
-      </div>
-      <div class="section-body" id="detail-controls">
-        <!-- Toggles for columns -->
-        <div class="toggles" id="column-toggles">
-          <button class="toggle-btn active" onclick="event.stopPropagation();toggleColumn('col-stt')">STT</button>
-          <button class="toggle-btn active" onclick="event.stopPropagation();toggleColumn('col-rnv')">RNV</button>
-          <button class="toggle-btn active" onclick="event.stopPropagation();toggleColumn('col-pv')">PV</button>
-          <button class="toggle-btn active" onclick="event.stopPropagation();toggleColumn('col-ri')">RI</button>
-          <button class="toggle-btn active" onclick="event.stopPropagation();toggleColumn('col-tiers')">Titre tiers</button>
-          <button class="toggle-btn active" onclick="event.stopPropagation();toggleColumn('col-naiss')">Date naiss.</button>
-          <button class="toggle-btn active" onclick="event.stopPropagation();toggleColumn('col-bord')">Tarifs bord</button>
-        </div>
-
-        <div style="overflow-x: auto;">
-          <table class="controls-table" id="controls-table">
-            <thead>
-              <tr>
-                <th onclick="sortTable(0)">Date ↕</th>
-                <th onclick="sortTable(1)">Heure</th>
-                <th onclick="sortTable(2)">Type</th>
-                <th onclick="sortTable(3)">N° Train ↕</th>
-                <th onclick="sortTable(4)">Trajet ↕</th>
-                <th onclick="sortTable(5)">Voyageurs</th>
-                <th onclick="sortTable(6)">En règle</th>
-                <th class="col-stt" onclick="sortTable(7)">STT 50€</th>
-                <th class="col-stt" onclick="sortTable(8)">STT 100€</th>
-                <th class="col-rnv" onclick="sortTable(9)">RNV</th>
-                <th class="col-pv" onclick="sortTable(10)">PV</th>
-                <th class="col-tiers" onclick="sortTable(11)">T.Tiers</th>
-                <th class="col-naiss" onclick="sortTable(12)">D.Naiss</th>
-                <th class="col-ri" onclick="sortTable(13)">RI +/-</th>
-                <th class="col-bord" onclick="sortTable(14)">T.Bord</th>
-                <th onclick="sortTable(15)">Fraude ↕</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${controls.map(control => {
-                const details = getControlDetails(control);
-                const fraudClass = details.fraudRate > 10 ? 'fraud-high' : details.fraudRate > 5 ? 'fraud-medium' : 'fraud-low';
-                const badgeClass = control.location_type === 'train' ? 'badge-train' : control.location_type === 'gare' ? 'badge-gare' : 'badge-quai';
-                const typeLabel = control.location_type === 'train' ? '🚆' : control.location_type === 'gare' ? '🏢' : '🚉';
-                const tarifBordTotal = (control.tarif_bord_stt_50 || 0) + (control.tarif_bord_stt_100 || 0) + (control.tarif_bord_rnv || 0) + (control.tarif_bord_titre_tiers || 0) + (control.tarif_bord_doc_naissance || 0) + (control.tarif_bord_autre || 0);
-                const trainId = (control.train_number || control.location || 'Inconnu').replace(/\s/g, '-');
-                return `
-                <tr id="train-${trainId}">
-                  <td>${details.date}</td>
-                  <td>${details.time}</td>
-                  <td><span class="badge ${badgeClass}">${typeLabel} ${control.location_type}</span></td>
-                  <td>${control.location_type === 'train' ? details.trainNumber : details.location}</td>
-                  <td>${control.location_type === 'train' ? (details.origin + ' → ' + details.destination) : '-'}</td>
-                  <td><strong>${details.passengers}</strong></td>
-                  <td>${details.inRule}</td>
-                  <td class="col-stt">${details.stt50 || '-'}</td>
-                  <td class="col-stt">${details.stt100 || '-'}</td>
-                  <td class="col-rnv">${details.rnv || '-'}</td>
-                  <td class="col-pv">${details.pv ? '<strong>' + details.pv + '</strong>' : '-'}</td>
-                  <td class="col-tiers">${details.titreTiers || '-'}</td>
-                  <td class="col-naiss">${details.docNaissance || '-'}</td>
-                  <td class="col-ri">${(details.riPositive || details.riNegative) ? (details.riPositive + '/' + details.riNegative) : '-'}</td>
-                  <td class="col-bord">${tarifBordTotal || '-'}</td>
-                  <td class="${fraudClass}">${details.fraudRateFormatted}</td>
-                </tr>
-                `;
-              }).join('')}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-    
-    <div class="footer">
-      <p>© ${new Date().getFullYear()} SNCF Contrôles - Rapport généré automatiquement</p>
     </div>
   </div>
 
-  <script>
-    function toggleSection(id) {
-      const body = document.getElementById(id);
-      const btn = body.closest('.section').querySelector('.section-toggle');
-      if (body.classList.contains('hidden')) {
-        body.classList.remove('hidden');
-        btn.textContent = 'Masquer';
-      } else {
-        body.classList.add('hidden');
-        btn.textContent = 'Afficher';
-      }
-    }
+  <!-- ── TRAIN NAV ── -->
+  ${trainKeys.length > 1 ? `
+  <div class="section">
+    <div class="section-header" onclick="toggleSection('trains-nav')">
+      <h2><span class="icon">🚆</span> Trains dans cet export (${trainKeys.length})</h2>
+      <button class="section-toggle">Masquer</button>
+    </div>
+    <div class="section-body" id="trains-nav">
+      <div class="train-nav">
+        ${trainKeys.map(key => `
+          <a href="#train-${key.replace(/\s/g, '-')}" class="train-chip">
+            ${key}<span class="count">${trainGroups[key].length}</span>
+          </a>`).join('')}
+      </div>
+    </div>
+  </div>
+  ` : ''}
 
-    function toggleColumn(className) {
-      const cells = document.querySelectorAll('.' + className);
-      const btn = event.target;
-      const isHidden = cells[0]?.style.display === 'none';
-      cells.forEach(c => c.style.display = isHidden ? '' : 'none');
-      btn.classList.toggle('active', isHidden);
-    }
+  ${includeStats ? `
 
-    function sortTable(colIndex) {
-      const table = document.getElementById('controls-table');
-      const tbody = table.querySelector('tbody');
-      const rows = Array.from(tbody.querySelectorAll('tr'));
-      const dir = table.dataset['sortDir' + colIndex] === 'asc' ? 'desc' : 'asc';
-      table.dataset['sortDir' + colIndex] = dir;
-      
-      rows.sort((a, b) => {
-        let aVal = a.cells[colIndex]?.textContent.trim() || '';
-        let bVal = b.cells[colIndex]?.textContent.trim() || '';
-        const aNum = parseFloat(aVal.replace(/[^\\d.-]/g, ''));
-        const bNum = parseFloat(bVal.replace(/[^\\d.-]/g, ''));
-        if (!isNaN(aNum) && !isNaN(bNum)) {
-          return dir === 'asc' ? aNum - bNum : bNum - aNum;
-        }
-        return dir === 'asc' ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
-      });
-      rows.forEach(r => tbody.appendChild(r));
+  <!-- ── KPI OVERVIEW ── -->
+  <div class="section">
+    <div class="section-header" onclick="toggleSection('overview')">
+      <h2><span class="icon">📊</span> Vue d'ensemble</h2>
+      <button class="section-toggle">Masquer</button>
+    </div>
+    <div class="section-body" id="overview">
+      <div class="kpi-grid">
+        <div class="kpi-card navy">
+          <div class="kpi-value">${stats.totalPassengers}</div>
+          <div class="kpi-sub">${stats.passengersInRule} en règle</div>
+          <div class="kpi-label">Voyageurs contrôlés</div>
+        </div>
+        <div class="kpi-card red">
+          <div class="kpi-value">${formatFraudRate(stats.fraudRate)}</div>
+          <div class="kpi-sub">${stats.fraudCount} infraction${stats.fraudCount > 1 ? 's' : ''}</div>
+          <div class="kpi-label">Taux de fraude</div>
+        </div>
+        <div class="kpi-card green">
+          <div class="kpi-value">${stats.tarifsControle}</div>
+          <div class="kpi-sub">${totalTarifsControle.toFixed(0)} €</div>
+          <div class="kpi-label">Tarifs contrôle</div>
+        </div>
+        <div class="kpi-card red">
+          <div class="kpi-value">${stats.pv}</div>
+          <div class="kpi-sub">${totalPV.toFixed(0)} €</div>
+          <div class="kpi-label">Procès-verbaux</div>
+        </div>
+        <div class="kpi-card blue">
+          <div class="kpi-value">${uniqueTrains}</div>
+          <div class="kpi-sub">+ ${stats.byLocationType.gare.length} gare(s)</div>
+          <div class="kpi-label">Trains contrôlés</div>
+        </div>
+        <div class="kpi-card gold">
+          <div class="kpi-value">${totalEncaisse.toFixed(0)} €</div>
+          <div class="kpi-sub">hors PV</div>
+          <div class="kpi-label">Total encaissé</div>
+        </div>
+        <div class="kpi-card purple">
+          <div class="kpi-value">${stats.riPositive}+ / ${stats.riNegative}−</div>
+          <div class="kpi-sub">${stats.riPositive + stats.riNegative} total</div>
+          <div class="kpi-label">Relevés d'identité</div>
+        </div>
+        <div class="kpi-card teal">
+          <div class="kpi-value">${stats.totalTarifsBord}</div>
+          <div class="kpi-sub">ventes à bord</div>
+          <div class="kpi-label">Tarifs bord</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  ${chartData.length > 1 ? `
+  <!-- ── FRAUD CHART ── -->
+  <div class="section">
+    <div class="section-header" onclick="toggleSection('fraud-chart')">
+      <h2><span class="icon">📈</span> Évolution du taux de fraude</h2>
+      <button class="section-toggle">Masquer</button>
+    </div>
+    <div class="section-body" id="fraud-chart">
+      <div class="chart-wrap">
+        <div class="chart-bars">
+          ${(() => {
+            const maxRate = Math.max(...chartData.map(x => x.rate), 1);
+            return chartData.map(d => {
+              const height = Math.max((d.rate / maxRate) * 110, 6);
+              const color = d.rate > 10 ? 'var(--red)' : d.rate > 5 ? 'var(--amber)' : 'var(--green)';
+              return `<div class="bar-col">
+                <div class="bar-val">${d.rate.toFixed(1)}%</div>
+                <div class="bar" style="height:${height}px;background:${color}" title="${d.date} : ${d.rate.toFixed(2)}%"></div>
+                <div class="bar-lbl">${d.date}</div>
+              </div>`;
+            }).join('');
+          })()}
+        </div>
+      </div>
+      <div class="chart-legend">
+        <div class="legend-item"><div class="legend-dot" style="background:var(--green)"></div> &lt; 5% — Faible</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--amber)"></div> 5–10% — Modéré</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--red)"></div> &gt; 10% — Élevé</div>
+      </div>
+    </div>
+  </div>
+  ` : ''}
+
+  ${trainFraudStats.length > 0 ? `
+  <!-- ── SENSITIVE TRAINS ── -->
+  <div class="section">
+    <div class="section-header" onclick="toggleSection('sensitive-trains')">
+      <h2><span class="icon">⚠️</span> Trains les plus sensibles</h2>
+      <button class="section-toggle">Masquer</button>
+    </div>
+    <div class="section-body" id="sensitive-trains">
+      <div class="sensitive-grid">
+        ${trainFraudStats.slice(0, 12).map(t => {
+          const cls = t.rate > 10 ? 'high' : t.rate > 5 ? 'medium' : 'low';
+          return `<div class="sensitive-card ${cls}">
+            <div>
+              <div class="sensitive-name">${t.train}</div>
+              <div class="sensitive-info">${t.passengers} voy. · ${t.controlCount} contrôle${t.controlCount > 1 ? 's' : ''}</div>
+            </div>
+            <div>
+              <div class="sensitive-rate">${t.rate.toFixed(1)}%</div>
+              <div class="sensitive-count">${t.fraudCount} fraud.</div>
+            </div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>
+  </div>
+  ` : ''}
+
+  ${isDetailed ? `
+  <!-- ── OPS DETAIL ── -->
+  <div class="section">
+    <div class="section-header" onclick="toggleSection('detail-ops')">
+      <h2><span class="icon">💶</span> Détail des opérations</h2>
+      <button class="section-toggle">Masquer</button>
+    </div>
+    <div class="section-body" id="detail-ops">
+      <div class="ops-grid">
+        <div class="ops-block green">
+          <h3>Tarifs Contrôle — Régularisations</h3>
+          <table class="detail-table">
+            <tr><th>Type</th><th>Nbre</th><th>Montant</th></tr>
+            ${detailRow('STT 50€',      stats.stt50, stats.totalAmounts.stt50)}
+            ${detailRow('RNV',          stats.rnv,   stats.totalAmounts.rnv)}
+            ${detailRow('Titre tiers',  stats.tarifsControleDetails.titreTiers,   stats.totalAmounts.titreTiers)}
+            ${detailRow('Date naiss.',  stats.tarifsControleDetails.docNaissance, stats.totalAmounts.docNaissance)}
+            ${detailRow('Autre tarif',  stats.tarifsControleDetails.autre,        stats.totalAmounts.autre)}
+            <tr class="total"><td>TOTAL</td><td>${stats.tarifsControle}</td><td>${totalTarifsControle.toFixed(2)} €</td></tr>
+          </table>
+        </div>
+        <div class="ops-block red">
+          <h3>Procès-verbaux (PV)</h3>
+          <table class="detail-table">
+            <tr><th>Type</th><th>Nbre</th><th>Montant</th></tr>
+            ${detailRow('STT 100€',       stats.stt100,              stats.totalAmounts.stt100)}
+            ${detailRow('Absence titre',  stats.pvBreakdown.stt100,  stats.totalAmounts.pvStt100)}
+            ${detailRow('Titre invalide', stats.pvBreakdown.rnv,     stats.totalAmounts.pvRnv)}
+            ${detailRow('Refus contrôle', stats.pvBreakdown.titreTiers, stats.totalAmounts.pvTitreTiers)}
+            ${detailRow('Autre PV',       stats.pvBreakdown.autre,   stats.totalAmounts.pvAutre)}
+            <tr class="total"><td>TOTAL</td><td>${stats.pv}</td><td>${totalPV.toFixed(2)} €</td></tr>
+          </table>
+        </div>
+        ${stats.totalTarifsBord > 0 ? `
+        <div class="ops-block blue">
+          <h3>Tarifs à bord — Ventes</h3>
+          <table class="detail-table">
+            <tr><th>Type</th><th>Nbre</th></tr>
+            ${detailRow('STT 50€',     stats.tarifsBord.stt50)}
+            ${detailRow('STT 100€',    stats.tarifsBord.stt100)}
+            ${detailRow('RNV',         stats.tarifsBord.rnv)}
+            ${detailRow('Titre tiers', stats.tarifsBord.titreTiers)}
+            ${detailRow('Date naiss.', stats.tarifsBord.docNaissance)}
+            ${detailRow('Autre',       stats.tarifsBord.autre)}
+            <tr class="total"><td>TOTAL</td><td>${stats.totalTarifsBord}</td></tr>
+          </table>
+        </div>
+        ` : ''}
+        ${(stats.riPositive + stats.riNegative) > 0 ? `
+        <div class="ops-block purple">
+          <h3>Relevés d'identité (RI)</h3>
+          <table class="detail-table">
+            <tr><th>Type</th><th>Nbre</th></tr>
+            ${detailRow('RI Positive', stats.riPositive)}
+            ${detailRow('RI Négative', stats.riNegative)}
+            <tr class="total"><td>TOTAL</td><td>${stats.riPositive + stats.riNegative}</td></tr>
+          </table>
+        </div>
+        ` : ''}
+      </div>
+    </div>
+  </div>
+  ` : ''}
+
+  ${isSimplified ? `
+  <!-- ── SYNTHÈSE ── -->
+  <div class="section">
+    <div class="section-header" onclick="toggleSection('synthese')">
+      <h2><span class="icon">📋</span> Synthèse</h2>
+      <button class="section-toggle">Masquer</button>
+    </div>
+    <div class="section-body" id="synthese">
+      <div class="kpi-grid">
+        <div class="kpi-card navy">
+          <div class="kpi-value">${controls.length}</div>
+          <div class="kpi-label">Contrôles</div>
+        </div>
+        <div class="kpi-card navy">
+          <div class="kpi-value">${stats.totalPassengers}</div>
+          <div class="kpi-label">Voyageurs</div>
+        </div>
+        <div class="kpi-card red">
+          <div class="kpi-value">${formatFraudRate(stats.fraudRate)}</div>
+          <div class="kpi-sub">${stats.fraudCount} fraudeur${stats.fraudCount > 1 ? 's' : ''}</div>
+          <div class="kpi-label">Taux de fraude</div>
+        </div>
+        <div class="kpi-card gold">
+          <div class="kpi-value">${totalEncaisse.toFixed(0)} €</div>
+          <div class="kpi-label">Total encaissé</div>
+        </div>
+        <div class="kpi-card red">
+          <div class="kpi-value">${totalPV.toFixed(0)} €</div>
+          <div class="kpi-label">Montant PV</div>
+        </div>
+      </div>
+      <table class="synth-table" style="margin-top:16px;">
+        <tr><th>Catégorie</th><th>Nombre</th><th>Montant</th></tr>
+        <tr><td>Tarifs contrôle</td><td><strong>${stats.tarifsControle}</strong></td><td><span class="amount-badge">${totalTarifsControle.toFixed(2)} €</span></td></tr>
+        <tr><td>Procès-verbaux</td><td><strong>${stats.pv}</strong></td><td><span class="amount-badge">${totalPV.toFixed(2)} €</span></td></tr>
+        ${stats.totalTarifsBord > 0 ? `<tr><td>Tarifs à bord</td><td><strong>${stats.totalTarifsBord}</strong></td><td>—</td></tr>` : ''}
+        ${(stats.riPositive + stats.riNegative) > 0 ? `<tr><td>Relevés d'identité</td><td><strong>${stats.riPositive}+ / ${stats.riNegative}−</strong></td><td>—</td></tr>` : ''}
+      </table>
+    </div>
+  </div>
+  ` : ''}
+
+  ` : ''}
+
+  <!-- ── DETAIL TABLE ── -->
+  <div class="section">
+    <div class="section-header" onclick="toggleSection('detail-controls')">
+      <h2><span class="icon">📋</span> Détail des contrôles (${controls.length})</h2>
+      <button class="section-toggle">Masquer</button>
+    </div>
+    <div class="section-body" id="detail-controls">
+      <div class="toggles" id="column-toggles">
+        <span style="font-size:11px;color:var(--text-muted);font-weight:600;margin-right:4px;">Colonnes :</span>
+        <button class="toggle-btn active" onclick="event.stopPropagation();toggleColumn('col-stt')">STT</button>
+        <button class="toggle-btn active" onclick="event.stopPropagation();toggleColumn('col-rnv')">RNV</button>
+        <button class="toggle-btn active" onclick="event.stopPropagation();toggleColumn('col-pv')">PV</button>
+        <button class="toggle-btn active" onclick="event.stopPropagation();toggleColumn('col-ri')">RI</button>
+        <button class="toggle-btn active" onclick="event.stopPropagation();toggleColumn('col-tiers')">Titre tiers</button>
+        <button class="toggle-btn active" onclick="event.stopPropagation();toggleColumn('col-naiss')">Date naiss.</button>
+        <button class="toggle-btn active" onclick="event.stopPropagation();toggleColumn('col-bord')">T. bord</button>
+      </div>
+      <div class="table-wrap">
+        <table class="controls-table" id="controls-table">
+          <thead>
+            <tr>
+              <th onclick="sortTable(0)">Date</th>
+              <th onclick="sortTable(1)">Heure</th>
+              <th onclick="sortTable(2)">Type</th>
+              <th onclick="sortTable(3)">N° / Lieu</th>
+              <th onclick="sortTable(4)">Trajet</th>
+              <th class="col-num" onclick="sortTable(5)">Voy.</th>
+              <th class="col-num" onclick="sortTable(6)">OK</th>
+              <th class="col-stt col-num" onclick="sortTable(7)">STT 50€</th>
+              <th class="col-stt col-num" onclick="sortTable(8)">STT 100€</th>
+              <th class="col-rnv col-num" onclick="sortTable(9)">RNV</th>
+              <th class="col-pv col-num" onclick="sortTable(10)">PV</th>
+              <th class="col-tiers col-num" onclick="sortTable(11)">T.Tiers</th>
+              <th class="col-naiss col-num" onclick="sortTable(12)">D.Naiss.</th>
+              <th class="col-ri col-num" onclick="sortTable(13)">RI +/−</th>
+              <th class="col-bord col-num" onclick="sortTable(14)">T.Bord</th>
+              <th class="col-num" onclick="sortTable(15)">Fraude</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${controls.map(control => {
+              const d = getControlDetails(control);
+              const fraudClass = d.fraudRate > 10 ? 'fraud-high' : d.fraudRate > 5 ? 'fraud-medium' : 'fraud-low';
+              const badgeClass = control.location_type === 'train' ? 'badge-train' : control.location_type === 'gare' ? 'badge-gare' : 'badge-quai';
+              const typeIcon   = control.location_type === 'train' ? '🚆' : control.location_type === 'gare' ? '🏢' : '🚉';
+              const tarifBord  = d.tarifBordStt50 + d.tarifBordStt100 + d.tarifBordRnv + d.tarifBordTitreTiers + d.tarifBordDocNaissance + d.tarifBordAutre;
+              const trainId    = (control.train_number || control.location || 'Inconnu').replace(/\s/g, '-');
+              return `<tr id="train-${trainId}">
+                <td>${d.date}</td>
+                <td style="font-variant-numeric:tabular-nums">${d.time}</td>
+                <td><span class="badge ${badgeClass}">${typeIcon} ${control.location_type}</span></td>
+                <td><strong>${control.location_type === 'train' ? d.trainNumber : d.location}</strong></td>
+                <td style="color:var(--text-muted)">${control.location_type === 'train' ? `${d.origin} → ${d.destination}` : '—'}</td>
+                <td class="col-num"><strong>${d.passengers}</strong></td>
+                <td class="col-num">${d.inRule}</td>
+                <td class="col-stt col-num">${d.stt50 || '—'}</td>
+                <td class="col-stt col-num">${d.stt100 || '—'}</td>
+                <td class="col-rnv col-num">${d.rnv || '—'}</td>
+                <td class="col-pv col-num">${d.pv ? `<span class="pv-cell">${d.pv}</span>` : '—'}</td>
+                <td class="col-tiers col-num">${d.titreTiers || '—'}</td>
+                <td class="col-naiss col-num">${d.docNaissance || '—'}</td>
+                <td class="col-ri col-num">${(d.riPositive || d.riNegative) ? `${d.riPositive}/${d.riNegative}` : '—'}</td>
+                <td class="col-bord col-num">${tarifBord || '—'}</td>
+                <td class="col-num"><span class="${fraudClass}">${d.fraudRateFormatted}</span></td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="page-footer">
+    <strong>SNCF Contrôles</strong> &nbsp;·&nbsp; Document généré automatiquement le ${format(new Date(), 'dd MMMM yyyy à HH:mm', { locale: fr })} &nbsp;·&nbsp; Confidentiel
+  </div>
+</div>
+
+<script>
+  function toggleSection(id) {
+    const body = document.getElementById(id);
+    const btn  = body.closest('.section').querySelector('.section-toggle');
+    if (body.classList.contains('hidden')) {
+      body.classList.remove('hidden');
+      btn.textContent = 'Masquer';
+    } else {
+      body.classList.add('hidden');
+      btn.textContent = 'Afficher';
     }
-  </script>
+  }
+
+  function toggleColumn(cls) {
+    const cells = document.querySelectorAll('.' + cls);
+    const btn   = event.target;
+    const isHidden = cells[0]?.style.display === 'none';
+    cells.forEach(c => c.style.display = isHidden ? '' : 'none');
+    btn.classList.toggle('active', isHidden);
+  }
+
+  function sortTable(colIndex) {
+    const table = document.getElementById('controls-table');
+    const tbody = table.querySelector('tbody');
+    const rows  = Array.from(tbody.querySelectorAll('tr'));
+    const dir   = table.dataset['sortDir' + colIndex] === 'asc' ? 'desc' : 'asc';
+    table.dataset['sortDir' + colIndex] = dir;
+    rows.sort((a, b) => {
+      let aVal = a.cells[colIndex]?.textContent.trim() || '';
+      let bVal = b.cells[colIndex]?.textContent.trim() || '';
+      const aNum = parseFloat(aVal.replace(/[^\\d.,-]/g, '').replace(',', '.'));
+      const bNum = parseFloat(bVal.replace(/[^\\d.,-]/g, '').replace(',', '.'));
+      if (!isNaN(aNum) && !isNaN(bNum)) return dir === 'asc' ? aNum - bNum : bNum - aNum;
+      return dir === 'asc' ? aVal.localeCompare(bVal, 'fr') : bVal.localeCompare(aVal, 'fr');
+    });
+    rows.forEach(r => tbody.appendChild(r));
+  }
+</script>
 </body>
 </html>
   `.trim();
@@ -1061,11 +1568,12 @@ export function exportToHTML({ controls, title, dateRange, includeStats, exportM
   return html;
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
 export function downloadHTML(html: string, filename: string) {
   const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
-  const url = URL.createObjectURL(blob);
+  const url  = URL.createObjectURL(blob);
   const link = document.createElement('a');
-  link.href = url;
+  link.href     = url;
   link.download = filename;
   document.body.appendChild(link);
   link.click();
@@ -1073,112 +1581,114 @@ export function downloadHTML(html: string, filename: string) {
   URL.revokeObjectURL(url);
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+//  generateEmailContent  (unchanged logic, premium text formatting)
+// ─────────────────────────────────────────────────────────────────────────────
 export function generateEmailContent({ controls, title, dateRange, includeStats }: ExportOptions): { subject: string; body: string } {
   const stats = calculateExtendedStats(controls);
-  
+
   const subject = `[SNCF Contrôles] ${title} - ${dateRange}`;
-  
+
   let body = `════════════════════════════════════════\n`;
-  body += `     SNCF CONTRÔLES - RAPPORT\n`;
+  body += `     SNCF CONTRÔLES — RAPPORT\n`;
   body += `════════════════════════════════════════\n\n`;
   body += `📅 ${title}\n`;
-  body += `📆 Période: ${dateRange}\n`;
-  body += `🕐 Généré le: ${format(new Date(), 'dd/MM/yyyy à HH:mm', { locale: fr })}\n`;
-  body += `📊 Total: ${controls.length} contrôle${controls.length > 1 ? 's' : ''}\n\n`;
-  
+  body += `📆 Période : ${dateRange}\n`;
+  body += `🕐 Généré le : ${format(new Date(), 'dd/MM/yyyy à HH:mm', { locale: fr })}\n`;
+  body += `📊 Total : ${controls.length} contrôle${controls.length > 1 ? 's' : ''}\n\n`;
+
   if (includeStats) {
     body += `┌─────────────────────────────────────────┐\n`;
     body += `│         RÉSUMÉ STATISTIQUE              │\n`;
     body += `└─────────────────────────────────────────┘\n\n`;
-    
+
     body += `👥 VOYAGEURS\n`;
-    body += `   Total voyageurs: ${stats.totalPassengers}\n`;
-    body += `   En règle: ${stats.passengersInRule}\n`;
-    body += `   Taux de fraude: ${formatFraudRate(stats.fraudRate)}\n\n`;
-    
+    body += `   Total : ${stats.totalPassengers}\n`;
+    body += `   En règle : ${stats.passengersInRule}\n`;
+    body += `   Taux de fraude : ${formatFraudRate(stats.fraudRate)}\n\n`;
+
     body += `📍 RÉPARTITION PAR TYPE\n`;
-    body += `   🚆 Trains: ${stats.byLocationType.train.length}\n`;
-    body += `   🏢 Gares: ${stats.byLocationType.gare.length}\n`;
-    body += `   🚉 Quais: ${stats.byLocationType.quai.length}\n\n`;
-    
+    body += `   🚆 Trains : ${stats.byLocationType.train.length}\n`;
+    body += `   🏢 Gares  : ${stats.byLocationType.gare.length}\n`;
+    body += `   🚉 Quais  : ${stats.byLocationType.quai.length}\n\n`;
+
+    const totalTarifsAmt = stats.totalAmounts.stt50 + stats.totalAmounts.rnv
+      + stats.totalAmounts.titreTiers + stats.totalAmounts.docNaissance + stats.totalAmounts.autre;
     body += `💶 TARIFS CONTRÔLE (régularisations)\n`;
-    body += `   STT 50€: ${stats.stt50} (${stats.totalAmounts.stt50.toFixed(2)} €)\n`;
-    body += `   STT 100€: ${stats.stt100} (${stats.totalAmounts.stt100.toFixed(2)} €)\n`;
-    body += `   RNV: ${stats.rnv} (${stats.totalAmounts.rnv.toFixed(2)} €)\n`;
-    body += `   Titre tiers: ${stats.tarifsControleDetails.titreTiers} (${stats.totalAmounts.titreTiers.toFixed(2)} €)\n`;
-    body += `   Date naissance: ${stats.tarifsControleDetails.docNaissance} (${stats.totalAmounts.docNaissance.toFixed(2)} €)\n`;
-    body += `   Autre: ${stats.tarifsControleDetails.autre} (${stats.totalAmounts.autre.toFixed(2)} €)\n`;
-    body += `   ─────────────────────────────\n`;
-    body += `   TOTAL: ${stats.tarifsControle}\n\n`;
-    
-    body += `⚠️ PV (procès-verbaux)\n`;
-    body += `   Absence de titre: ${stats.pvBreakdown.stt100} (${stats.totalAmounts.pvStt100.toFixed(2)} €)\n`;
-    body += `   Titre invalide: ${stats.pvBreakdown.rnv} (${stats.totalAmounts.pvRnv.toFixed(2)} €)\n`;
-    body += `   Refus contrôle: ${stats.pvBreakdown.titreTiers} (${stats.totalAmounts.pvTitreTiers.toFixed(2)} €)\n`;
-    body += `   Autre PV: ${stats.pvBreakdown.autre} (${stats.totalAmounts.pvAutre.toFixed(2)} €)\n`;
-    body += `   ─────────────────────────────\n`;
-    body += `   TOTAL: ${stats.pv}\n\n`;
-    
+    body += `   STT 50€     : ${stats.stt50} (${stats.totalAmounts.stt50.toFixed(2)} €)\n`;
+    body += `   RNV         : ${stats.rnv}   (${stats.totalAmounts.rnv.toFixed(2)} €)\n`;
+    body += `   Titre tiers : ${stats.tarifsControleDetails.titreTiers} (${stats.totalAmounts.titreTiers.toFixed(2)} €)\n`;
+    body += `   Date naiss. : ${stats.tarifsControleDetails.docNaissance} (${stats.totalAmounts.docNaissance.toFixed(2)} €)\n`;
+    body += `   Autre       : ${stats.tarifsControleDetails.autre} (${stats.totalAmounts.autre.toFixed(2)} €)\n`;
+    body += `   ────────────────────────\n`;
+    body += `   TOTAL : ${stats.tarifsControle}  (${totalTarifsAmt.toFixed(2)} €)\n\n`;
+
+    const totalPVAmt = stats.totalAmounts.stt100 + stats.totalAmounts.pvStt100
+      + stats.totalAmounts.pvRnv + stats.totalAmounts.pvTitreTiers + stats.totalAmounts.pvAutre;
+    body += `⚠️  PV (procès-verbaux)\n`;
+    body += `   STT 100€        : ${stats.stt100} (${stats.totalAmounts.stt100.toFixed(2)} €)\n`;
+    body += `   Absence de titre : ${stats.pvBreakdown.stt100} (${stats.totalAmounts.pvStt100.toFixed(2)} €)\n`;
+    body += `   Titre invalide   : ${stats.pvBreakdown.rnv} (${stats.totalAmounts.pvRnv.toFixed(2)} €)\n`;
+    body += `   Refus contrôle   : ${stats.pvBreakdown.titreTiers} (${stats.totalAmounts.pvTitreTiers.toFixed(2)} €)\n`;
+    body += `   Autre PV         : ${stats.pvBreakdown.autre} (${stats.totalAmounts.pvAutre.toFixed(2)} €)\n`;
+    body += `   ────────────────────────\n`;
+    body += `   TOTAL : ${stats.pv}  (${totalPVAmt.toFixed(2)} €)\n\n`;
+
     body += `🎫 TARIFS À BORD (ventes)\n`;
-    body += `   STT 50€: ${stats.tarifsBord.stt50}\n`;
-    body += `   STT 100€: ${stats.tarifsBord.stt100}\n`;
-    body += `   RNV: ${stats.tarifsBord.rnv}\n`;
-    body += `   Titre tiers: ${stats.tarifsBord.titreTiers}\n`;
-    body += `   Date naissance: ${stats.tarifsBord.docNaissance}\n`;
-    body += `   Autre: ${stats.tarifsBord.autre}\n`;
-    body += `   ─────────────────────────────\n`;
-    body += `   TOTAL: ${stats.totalTarifsBord}\n\n`;
-    
-    body += `🔍 CONTRÔLES D'IDENTITÉ (RI)\n`;
-    body += `   RI Positive: ${stats.riPositive}\n`;
-    body += `   RI Négative: ${stats.riNegative}\n`;
-    body += `   ─────────────────────────────\n`;
-    body += `   TOTAL: ${stats.riPositive + stats.riNegative}\n\n`;
+    body += `   STT 50€     : ${stats.tarifsBord.stt50}\n`;
+    body += `   STT 100€    : ${stats.tarifsBord.stt100}\n`;
+    body += `   RNV         : ${stats.tarifsBord.rnv}\n`;
+    body += `   Titre tiers : ${stats.tarifsBord.titreTiers}\n`;
+    body += `   Date naiss. : ${stats.tarifsBord.docNaissance}\n`;
+    body += `   Autre       : ${stats.tarifsBord.autre}\n`;
+    body += `   ────────────────────────\n`;
+    body += `   TOTAL : ${stats.totalTarifsBord}\n\n`;
+
+    body += `🔍 RELEVÉS D'IDENTITÉ (RI)\n`;
+    body += `   RI Positive : ${stats.riPositive}\n`;
+    body += `   RI Négative : ${stats.riNegative}\n`;
+    body += `   ────────────────────────\n`;
+    body += `   TOTAL : ${stats.riPositive + stats.riNegative}\n\n`;
   }
-  
+
   body += `┌─────────────────────────────────────────┐\n`;
   body += `│         DÉTAIL DES CONTRÔLES            │\n`;
   body += `└─────────────────────────────────────────┘\n\n`;
-  
+
   controls.forEach((control, index) => {
-    const details = getControlDetails(control);
+    const details   = getControlDetails(control);
     const typeEmoji = control.location_type === 'train' ? '🚆' : control.location_type === 'gare' ? '🏢' : '🚉';
-    
+
     body += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
-    body += `${index + 1}. ${typeEmoji} ${control.location_type.toUpperCase()} - ${details.date} à ${details.time}\n`;
+    body += `${index + 1}. ${typeEmoji} ${control.location_type.toUpperCase()} — ${details.date} à ${details.time}\n`;
     body += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
-    
+
     if (control.location_type === 'train') {
-      body += `   N° Train: ${details.trainNumber}\n`;
-      body += `   Trajet: ${details.origin} → ${details.destination}\n`;
+      body += `   N° Train : ${details.trainNumber}\n`;
+      body += `   Trajet   : ${details.origin} → ${details.destination}\n`;
     } else {
-      body += `   Lieu: ${details.location}\n`;
-      if (control.platform_number) body += `   Quai: ${details.platformNumber}\n`;
+      body += `   Lieu : ${details.location}\n`;
+      if (control.platform_number) body += `   Quai : ${details.platformNumber}\n`;
     }
-    
-    body += `\n   👥 Voyageurs: ${details.passengers} | En règle: ${details.inRule}\n`;
-    body += `   📊 Taux de fraude: ${details.fraudRateFormatted}\n\n`;
-    
-    body += `   💶 Tarifs contrôle:\n`;
-    body += `      STT 50€: ${details.stt50} | STT 100€: ${details.stt100} | RNV: ${details.rnv}\n`;
-    body += `      Titre tiers: ${details.titreTiers} | Date naiss.: ${details.docNaissance} | Autre: ${details.autreTarif}\n`;
-    
-    body += `\n   ⚠️ PV: ${details.pv}\n`;
-    body += `      Absence: ${details.pvStt100} | Invalide: ${details.pvRnv} | Refus: ${details.pvTitreTiers} | Autre: ${details.pvAutre}\n`;
-    
-    body += `\n   🔍 RI: +${details.riPositive} / -${details.riNegative}\n`;
-    
-    if (details.notes) {
-      body += `\n   📝 Notes: ${details.notes}\n`;
-    }
-    
+
+    body += `\n   👥 Voyageurs : ${details.passengers}  |  En règle : ${details.inRule}\n`;
+    body += `   📊 Taux de fraude : ${details.fraudRateFormatted}\n\n`;
+
+    body += `   💶 Tarifs contrôle :\n`;
+    body += `      STT 50€ : ${details.stt50}  |  STT 100€ : ${details.stt100}  |  RNV : ${details.rnv}\n`;
+    body += `      Titre tiers : ${details.titreTiers}  |  Date naiss. : ${details.docNaissance}  |  Autre : ${details.autreTarif}\n`;
+    body += `\n   ⚠️  PV : ${details.pv}\n`;
+    body += `      Absence : ${details.pvStt100}  |  Invalide : ${details.pvRnv}  |  Refus : ${details.pvTitreTiers}  |  Autre : ${details.pvAutre}\n`;
+    body += `\n   🔍 RI : +${details.riPositive} / −${details.riNegative}\n`;
+
+    if (details.notes) body += `\n   📝 Notes : ${details.notes}\n`;
     body += `\n`;
   });
-  
+
   body += `════════════════════════════════════════\n`;
   body += `     Fin du rapport\n`;
   body += `════════════════════════════════════════\n`;
-  
+
   return { subject, body };
 }
 
