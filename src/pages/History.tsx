@@ -448,7 +448,8 @@ export default function HistoryPage() {
   }
 
   const handleControlClick = (control: Control) => {
-    navigate(`/control/${control.id}`);
+    setSelectedControl(control);
+    setDetailOpen(true);
   };
 
   const handleEdit = (control: Control) => {
