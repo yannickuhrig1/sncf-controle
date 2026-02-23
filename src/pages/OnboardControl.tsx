@@ -343,7 +343,8 @@ export default function OnboardControl() {
     } else if (duplicateId) {
       loadControl(duplicateId, true);
     }
-  }, [editId, duplicateId, controls, isLoading, profile, navigate, setSearchParams, toast, parisDate, parisTime]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editId, duplicateId, controls, isLoading, profile, navigate, setSearchParams]);
 
   // Cancel edit mode
   const handleCancelEdit = () => {
