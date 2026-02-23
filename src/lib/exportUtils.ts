@@ -222,7 +222,44 @@ export function exportToPDF({ controls, title, dateRange, includeStats, orientat
   const stats = calculateExtendedStats(controls);
   const pageW = doc.internal.pageSize.getWidth();
   const pageH = doc.internal.pageSize.getHeight();
+  const safeH = pageH - 16;
   let pageNumber = 1;
+  let y = 46;
+
+  // ── Données calculées (même que HTML) ─────────────────────────────────────
+  const uniqueTrains = new Set(controls.filter(c => c.location_type === 'train').map(c => c.train_number)).size;
+  const totalTarifsAmt = stats.totalAmounts.stt50 + stats.totalAmounts.rnv
+    + stats.totalAmounts.titreTiers + stats.totalAmounts.docNaissance + stats.totalAmounts.autre;
+  const totalPVAmt = stats.totalAmounts.stt100 + stats.totalAmounts.pvStt100
+    + stats.totalAmounts.pvRnv + stats.totalAmounts.pvTitreTiers + stats.totalAmounts.pvAutre;
+
+  const trainGroups: Record<string, Control[]> = {};
+  controls.forEach(c => {
+    const key = c.train_number || c.location || 'Inconnu';
+    if (!trainGroups[key]) trainGroups[key] = [];
+    trainGroups[key].push(c);
+  });
+  const trainFraudStats = Object.keys(trainGroups).map(key => {
+    const group = trainGroups[key];
+    const totalPax   = group.reduce((s, c) => s + c.nb_passagers, 0);
+    const totalFraud = group.reduce((s, c) => s + c.tarifs_controle + c.pv + c.ri_negative, 0);
+    const rate = totalPax > 0 ? (totalFraud / totalPax) * 100 : 0;
+    return { train: key, passengers: totalPax, fraudCount: totalFraud, rate, controlCount: group.length };
+  }).sort((a, b) => b.rate - a.rate);
+
+  const fraudByDate: Record<string, { pax: number; fraud: number }> = {};
+  controls.forEach(c => {
+    const d = c.control_date;
+    if (!fraudByDate[d]) fraudByDate[d] = { pax: 0, fraud: 0 };
+    fraudByDate[d].pax   += c.nb_passagers;
+    fraudByDate[d].fraud += c.tarifs_controle + c.pv + c.ri_negative;
+  });
+  const chartData = Object.keys(fraudByDate).sort().map(d => ({
+    date: format(new Date(d), 'dd/MM', { locale: fr }),
+    rate: fraudByDate[d].pax > 0 ? (fraudByDate[d].fraud / fraudByDate[d].pax * 100) : 0,
+  }));
+
+  const lastTableY = () => (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY;
 
   // ── Footer ────────────────────────────────────────────────────────────────
   const addFooter = () => {
@@ -236,16 +273,14 @@ export function exportToPDF({ controls, title, dateRange, includeStats, orientat
     doc.text(format(new Date(), 'dd/MM/yyyy HH:mm', { locale: fr }), pageW / 2, pageH - 5, { align: 'center' });
   };
 
-  // ── Premium Header ────────────────────────────────────────────────────────
-  // Navy background banner
+  const newPage = () => { addFooter(); doc.addPage(); pageNumber++; y = 16; };
+
+  // ── HEADER ────────────────────────────────────────────────────────────────
   fillRect(doc, 0, 0, pageW, 38, C.navy);
-  // Gold accent line bottom of header
   fillRect(doc, 0, 38, pageW, 1.5, C.gold);
-  // Diagonal gold stripe accent (simulate with thin rect)
   fillRect(doc, pageW - 40, 0, 40, 38, C.navyMid);
   fillRect(doc, pageW - 42, 0, 2, 38, C.gold);
 
-  // Title
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(22);
   doc.setTextColor(...C.white);
@@ -261,7 +296,6 @@ export function exportToPDF({ controls, title, dateRange, includeStats, orientat
   doc.text(title, 14, 30);
   doc.text(`Période : ${dateRange}  |  Généré le ${format(new Date(), 'dd MMMM yyyy à HH:mm', { locale: fr })}`, 14, 35.5);
 
-  // Right-side badge
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(11);
   doc.setTextColor(...C.gold);
@@ -271,39 +305,138 @@ export function exportToPDF({ controls, title, dateRange, includeStats, orientat
   doc.setFont('helvetica', 'normal');
   doc.text('CONTRÔLES', pageW - 20, 23, { align: 'center' });
 
-  let y = 46;
-
-  // ── KPI cards ─────────────────────────────────────────────────────────────
   if (includeStats) {
-    const totalTarifsControleAmt = stats.totalAmounts.stt50 + stats.totalAmounts.rnv
-      + stats.totalAmounts.titreTiers + stats.totalAmounts.docNaissance + stats.totalAmounts.autre;
-    const totalPVAmt = stats.totalAmounts.stt100 + stats.totalAmounts.pvStt100
-      + stats.totalAmounts.pvRnv + stats.totalAmounts.pvTitreTiers + stats.totalAmounts.pvAutre;
 
-    const cards = [
-      { label: 'Voyageurs',      value: stats.totalPassengers.toString(),        sub: `${stats.passengersInRule} en règle`, accent: C.navyLight },
-      { label: 'Taux de fraude', value: formatFraudRate(stats.fraudRate),        sub: `${stats.fraudCount} infractions`,   accent: C.red       },
-      { label: 'Tarifs contrôle',value: stats.tarifsControle.toString(),         sub: `${totalTarifsControleAmt.toFixed(0)} €`, accent: C.green  },
-      { label: 'PV',             value: stats.pv.toString(),                     sub: `${totalPVAmt.toFixed(0)} €`,        accent: C.red       },
-      { label: 'Trains contrôlés',value: stats.byLocationType.train.length.toString(), sub: `+ ${stats.byLocationType.gare.length} gare(s)`, accent: C.blue },
-      { label: 'RI',             value: `${stats.riPositive}+/${stats.riNegative}-`, sub: 'identités',                   accent: C.purple    },
+    // ── 1. VUE D'ENSEMBLE — 8 cartes KPI (même disposition que HTML) ─────
+    y = sectionBar(doc, "Vue d'ensemble", 0, y, pageW, C.navy);
+
+    const kpiItems = [
+      { label: 'Voyageurs',      value: stats.totalPassengers.toString(),        sub: `${stats.passengersInRule} en règle`,          accent: C.navyLight },
+      { label: 'Taux de fraude', value: formatFraudRate(stats.fraudRate),        sub: `${stats.fraudCount} infraction${stats.fraudCount > 1 ? 's' : ''}`, accent: C.red    },
+      { label: 'Tarifs contrôle',value: stats.tarifsControle.toString(),         sub: `${totalTarifsAmt.toFixed(0)} €`,              accent: C.green     },
+      { label: 'PV',             value: stats.pv.toString(),                     sub: `${totalPVAmt.toFixed(0)} €`,                  accent: C.red       },
+      { label: 'Trains',         value: uniqueTrains.toString(),                 sub: `+ ${stats.byLocationType.gare.length} gare(s)`, accent: C.blue    },
+      { label: 'Total encaissé', value: `${totalTarifsAmt.toFixed(0)} €`,       sub: 'hors PV',                                     accent: C.gold      },
+      { label: 'RI',             value: `${stats.riPositive}+/${stats.riNegative}−`, sub: `${stats.riPositive + stats.riNegative} total`, accent: C.purple },
+      { label: 'Tarifs bord',    value: stats.totalTarifsBord.toString(),        sub: 'ventes',                                      accent: C.teal      },
     ];
 
-    const cardW = (pageW - 28 - (cards.length - 1) * 4) / cards.length;
+    const cardW = (pageW - 28 - 7 * 3) / 8;
     const cardH = 22;
-    cards.forEach((card, i) => {
-      kpiCard(doc, 14 + i * (cardW + 4), y, cardW, cardH, card.label, card.value, card.sub, card.accent);
+    kpiItems.forEach((card, i) => {
+      kpiCard(doc, 14 + i * (cardW + 3), y, cardW, cardH, card.label, card.value, card.sub, card.accent);
     });
     y += cardH + 8;
 
-    // ── Tarifs + PV tables side by side ──────────────────────────────────
-    const halfW = (pageW - 28) / 2;
+    // ── 2. ÉVOLUTION DU TAUX DE FRAUDE — graphique barres (même que HTML) ─
+    if (chartData.length > 1) {
+      if (y + 58 > safeH) newPage();
+      y = sectionBar(doc, 'Évolution du taux de fraude', 0, y, pageW, C.navyMid);
 
-    y = sectionBar(doc, 'Tarifs Contrôle — Régularisations', 14, y, halfW, C.green);
+      const barAreaH  = 34;
+      const labelsH   = 9;
+      const chartLeft = 14;
+      const chartW    = pageW - 28;
+      const maxBars   = Math.min(chartData.length, 50);
+      const singleBarW = Math.max((chartW - (maxBars - 1) * 1.5) / maxBars, 3);
+      const gap        = Math.max((chartW - singleBarW * maxBars) / Math.max(maxBars - 1, 1), 1.5);
+      const maxRate    = Math.max(...chartData.slice(0, maxBars).map(d => d.rate), 1);
 
-    const totalTarifsAmount = stats.totalAmounts.stt50 + stats.totalAmounts.rnv
-      + stats.totalAmounts.titreTiers + stats.totalAmounts.docNaissance + stats.totalAmounts.autre;
+      // Fond
+      fillRect(doc, chartLeft - 2, y - 2, chartW + 4, barAreaH + labelsH + 6, C.gray50);
+      fillRect(doc, chartLeft - 2, y + barAreaH, chartW + 4, 0.5, C.gray200);
 
+      chartData.slice(0, maxBars).forEach((d, i) => {
+        const barH  = Math.max((d.rate / maxRate) * barAreaH, 1.5);
+        const bx    = chartLeft + i * (singleBarW + gap);
+        const by    = y + barAreaH - barH;
+        const color = d.rate > 10 ? C.red : d.rate > 5 ? C.amber : C.green;
+
+        fillRect(doc, bx, by, singleBarW, barH, color);
+
+        if (barH > 5 && singleBarW >= 5) {
+          doc.setFontSize(4.5);
+          doc.setFont('helvetica', 'bold');
+          doc.setTextColor(...C.gray800);
+          doc.text(d.rate.toFixed(1) + '%', bx + singleBarW / 2, by - 0.8, { align: 'center' });
+          doc.setFont('helvetica', 'normal');
+        }
+        if (singleBarW >= 4) {
+          doc.setFontSize(4.5);
+          doc.setTextColor(...C.gray600);
+          doc.text(d.date, bx + singleBarW / 2, y + barAreaH + labelsH - 1, { align: 'center' });
+        }
+      });
+
+      // Légende
+      [
+        { label: '< 5% — Faible',   color: C.green },
+        { label: '5–10% — Modéré',  color: C.amber },
+        { label: '> 10% — Élevé',   color: C.red   },
+      ].forEach((item, i) => {
+        const lx = pageW - 95 + i * 32;
+        const ly = y + barAreaH + labelsH + 3;
+        fillRect(doc, lx, ly - 2.5, 5, 3, item.color);
+        doc.setFontSize(5.5);
+        doc.setTextColor(...C.gray600);
+        doc.text(item.label, lx + 6.5, ly);
+      });
+
+      y += barAreaH + labelsH + 12;
+    }
+
+    // ── 3. TRAINS LES PLUS SENSIBLES (même que HTML) ──────────────────────
+    const maxSensitive = Math.min(trainFraudStats.length, 10);
+    if (maxSensitive > 0) {
+      const rowH    = 10;
+      const numRows = Math.ceil(maxSensitive / 2);
+      if (y + 9 + numRows * rowH + 8 > safeH) newPage();
+      y = sectionBar(doc, 'Trains les plus sensibles', 0, y, pageW, C.navyMid);
+
+      const colW = (pageW - 28 - 8) / 2;
+      trainFraudStats.slice(0, maxSensitive).forEach((t, i) => {
+        const col     = i % 2;
+        const row     = Math.floor(i / 2);
+        const cx      = 14 + col * (colW + 8);
+        const cy      = y + row * rowH;
+        const color   = t.rate > 10 ? C.red   : t.rate > 5 ? C.amber : C.green;
+        const bgColor = t.rate > 10 ? C.redLight : t.rate > 5 ? C.amberLight : C.greenLight;
+
+        fillRect(doc, cx, cy, colW, rowH - 1.5, bgColor);
+        fillRect(doc, cx, cy, 3.5, rowH - 1.5, color);
+
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(7.5);
+        doc.setTextColor(...C.gray800);
+        doc.text(t.train, cx + 6, cy + 4.5);
+
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(6);
+        doc.setTextColor(...C.gray600);
+        doc.text(`${t.passengers} voy. · ${t.controlCount} ctrl.`, cx + 6, cy + 7.5);
+
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(10);
+        doc.setTextColor(...color);
+        doc.text(t.rate.toFixed(1) + '%', cx + colW - 2, cy + 5, { align: 'right' });
+
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(5.5);
+        doc.setTextColor(...C.gray600);
+        doc.text(`${t.fraudCount} fraud.`, cx + colW - 2, cy + 8, { align: 'right' });
+      });
+
+      y += numRows * rowH + 8;
+    }
+
+    // ── 4. DÉTAIL DES OPÉRATIONS — 4 blocs (même que HTML) ───────────────
+    if (y + 80 > safeH) newPage();
+
+    const halfW = (pageW - 28 - 8) / 2;
+
+    // Ligne 1 : Tarifs contrôle (vert) | PV (rouge)
+    const opsStartY = y;
+    y = sectionBar(doc, 'Tarifs Contrôle — Régularisations', 14, opsStartY, halfW, C.green);
     autoTable(doc, {
       startY: y,
       head: [['Type', 'Nbre', 'Montant (€)']],
@@ -313,11 +446,11 @@ export function exportToPDF({ controls, title, dateRange, includeStats, orientat
         ['Titre tiers',  stats.tarifsControleDetails.titreTiers.toString(),   stats.totalAmounts.titreTiers.toFixed(2)],
         ['Date naiss.',  stats.tarifsControleDetails.docNaissance.toString(), stats.totalAmounts.docNaissance.toFixed(2)],
         ['Autre tarif',  stats.tarifsControleDetails.autre.toString(),        stats.totalAmounts.autre.toFixed(2)],
-        ['TOTAL',        stats.tarifsControle.toString(),                     totalTarifsAmount.toFixed(2)],
+        ['TOTAL',        stats.tarifsControle.toString(),                     totalTarifsAmt.toFixed(2)],
       ],
       theme: 'plain',
       headStyles: { fillColor: C.greenLight, textColor: C.green, fontSize: 7.5, fontStyle: 'bold', cellPadding: 2.5 },
-      bodyStyles: { fontSize: 7.5, cellPadding: 2.5, textColor: C.gray800 },
+      bodyStyles:  { fontSize: 7.5, cellPadding: 2.5, textColor: C.gray800 },
       alternateRowStyles: { fillColor: C.gray50 },
       didParseCell: (data) => {
         if (data.row.index === 5) {
@@ -329,27 +462,23 @@ export function exportToPDF({ controls, title, dateRange, includeStats, orientat
       margin: { left: 14, right: pageW - 14 - halfW },
       tableWidth: halfW,
     });
+    const leftFinalY = lastTableY();
 
-    const pvStartY = y;
-    y = sectionBar(doc, 'Procès-verbaux (PV)', 14 + halfW + 4, pvStartY, halfW, C.red);
-
-    const totalPVAmount = stats.totalAmounts.stt100 + stats.totalAmounts.pvStt100
-      + stats.totalAmounts.pvRnv + stats.totalAmounts.pvTitreTiers + stats.totalAmounts.pvAutre;
-
+    const pvBarY = sectionBar(doc, 'Procès-verbaux (PV)', 14 + halfW + 8, opsStartY, halfW, C.red);
     autoTable(doc, {
-      startY: pvStartY + (y - pvStartY),
+      startY: pvBarY,
       head: [['Type', 'Nbre', 'Montant (€)']],
       body: [
-        ['STT 100€',        stats.stt100.toString(),             stats.totalAmounts.stt100.toFixed(2)],
-        ['Absence de titre',stats.pvBreakdown.stt100.toString(), stats.totalAmounts.pvStt100.toFixed(2)],
-        ['Titre invalide',  stats.pvBreakdown.rnv.toString(),    stats.totalAmounts.pvRnv.toFixed(2)],
-        ['Refus contrôle',  stats.pvBreakdown.titreTiers.toString(), stats.totalAmounts.pvTitreTiers.toFixed(2)],
-        ['Autre PV',        stats.pvBreakdown.autre.toString(),  stats.totalAmounts.pvAutre.toFixed(2)],
-        ['TOTAL',           stats.pv.toString(),                 totalPVAmount.toFixed(2)],
+        ['STT 100€',         stats.stt100.toString(),              stats.totalAmounts.stt100.toFixed(2)],
+        ['Absence de titre', stats.pvBreakdown.stt100.toString(),  stats.totalAmounts.pvStt100.toFixed(2)],
+        ['Titre invalide',   stats.pvBreakdown.rnv.toString(),     stats.totalAmounts.pvRnv.toFixed(2)],
+        ['Refus contrôle',   stats.pvBreakdown.titreTiers.toString(), stats.totalAmounts.pvTitreTiers.toFixed(2)],
+        ['Autre PV',         stats.pvBreakdown.autre.toString(),   stats.totalAmounts.pvAutre.toFixed(2)],
+        ['TOTAL',            stats.pv.toString(),                  totalPVAmt.toFixed(2)],
       ],
       theme: 'plain',
       headStyles: { fillColor: C.redLight, textColor: C.red, fontSize: 7.5, fontStyle: 'bold', cellPadding: 2.5 },
-      bodyStyles: { fontSize: 7.5, cellPadding: 2.5, textColor: C.gray800 },
+      bodyStyles:  { fontSize: 7.5, cellPadding: 2.5, textColor: C.gray800 },
       alternateRowStyles: { fillColor: C.gray50 },
       didParseCell: (data) => {
         if (data.row.index === 5) {
@@ -358,35 +487,32 @@ export function exportToPDF({ controls, title, dateRange, includeStats, orientat
           data.cell.styles.fontStyle = 'bold';
         }
       },
-      margin: { left: 14 + halfW + 4, right: 14 },
+      margin: { left: 14 + halfW + 8, right: 14 },
       tableWidth: halfW,
     });
+    y = Math.max(leftFinalY, lastTableY()) + 6;
 
-    y = Math.max(
-      (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY,
-      y + 4
-    ) + 6;
+    // Ligne 2 : Tarifs bord (bleu) | RI (violet) | Répartition (teal)
+    if (y + 50 > safeH) newPage();
+    const thirdW    = (pageW - 28 - 16) / 3;
+    const row2StartY = y;
 
-    // ── Tarifs bord + RI ─────────────────────────────────────────────────
-    const thirdW = (pageW - 28 - 8) / 3;
-
-    y = sectionBar(doc, 'Tarifs à bord — Ventes', 14, y, thirdW, C.blue);
-
+    const bordBarY = sectionBar(doc, 'Tarifs à bord — Ventes', 14, row2StartY, thirdW, C.blue);
     autoTable(doc, {
-      startY: y,
+      startY: bordBarY,
       head: [['Type', 'Nbre']],
       body: [
-        ['STT 50€',      stats.tarifsBord.stt50.toString()],
-        ['STT 100€',     stats.tarifsBord.stt100.toString()],
-        ['RNV',          stats.tarifsBord.rnv.toString()],
-        ['Titre tiers',  stats.tarifsBord.titreTiers.toString()],
-        ['Date naiss.',  stats.tarifsBord.docNaissance.toString()],
-        ['Autre',        stats.tarifsBord.autre.toString()],
-        ['TOTAL',        stats.totalTarifsBord.toString()],
+        ['STT 50€',     stats.tarifsBord.stt50.toString()],
+        ['STT 100€',    stats.tarifsBord.stt100.toString()],
+        ['RNV',         stats.tarifsBord.rnv.toString()],
+        ['Titre tiers', stats.tarifsBord.titreTiers.toString()],
+        ['Date naiss.', stats.tarifsBord.docNaissance.toString()],
+        ['Autre',       stats.tarifsBord.autre.toString()],
+        ['TOTAL',       stats.totalTarifsBord.toString()],
       ],
       theme: 'plain',
       headStyles: { fillColor: C.blueLight, textColor: C.blue, fontSize: 7.5, fontStyle: 'bold', cellPadding: 2.5 },
-      bodyStyles: { fontSize: 7.5, cellPadding: 2.5, textColor: C.gray800 },
+      bodyStyles:  { fontSize: 7.5, cellPadding: 2.5, textColor: C.gray800 },
       alternateRowStyles: { fillColor: C.gray50 },
       didParseCell: (data) => {
         if (data.row.index === 6) {
@@ -399,11 +525,9 @@ export function exportToPDF({ controls, title, dateRange, includeStats, orientat
       tableWidth: thirdW,
     });
 
-    const riY = y - 9;
-    sectionBar(doc, 'Relevés d\'identité (RI)', 14 + thirdW + 4, riY, thirdW, C.purple);
-
+    const riBarY = sectionBar(doc, "Relevés d'identité (RI)", 14 + thirdW + 8, row2StartY, thirdW, C.purple);
     autoTable(doc, {
-      startY: riY + 9,
+      startY: riBarY,
       head: [['Type', 'Nbre']],
       body: [
         ['RI Positive', stats.riPositive.toString()],
@@ -412,7 +536,7 @@ export function exportToPDF({ controls, title, dateRange, includeStats, orientat
       ],
       theme: 'plain',
       headStyles: { fillColor: C.purpleLight, textColor: C.purple, fontSize: 7.5, fontStyle: 'bold', cellPadding: 2.5 },
-      bodyStyles: { fontSize: 7.5, cellPadding: 2.5, textColor: C.gray800 },
+      bodyStyles:  { fontSize: 7.5, cellPadding: 2.5, textColor: C.gray800 },
       alternateRowStyles: { fillColor: C.gray50 },
       didParseCell: (data) => {
         if (data.row.index === 2) {
@@ -421,16 +545,13 @@ export function exportToPDF({ controls, title, dateRange, includeStats, orientat
           data.cell.styles.fontStyle = 'bold';
         }
       },
-      margin: { left: 14 + thirdW + 4, right: pageW - 14 - 2 * (thirdW + 4) },
+      margin: { left: 14 + thirdW + 8, right: pageW - 14 - 2 * (thirdW + 8) },
       tableWidth: thirdW,
     });
 
-    // Répartition par type sur le 3e tiers
-    const typeY = riY;
-    sectionBar(doc, 'Répartition par type', 14 + 2 * (thirdW + 4), typeY, thirdW, C.teal);
-
+    const typeBarY = sectionBar(doc, 'Répartition par type', 14 + 2 * (thirdW + 8), row2StartY, thirdW, C.teal);
     autoTable(doc, {
-      startY: typeY + 9,
+      startY: typeBarY,
       head: [['Type', 'Contrôles']],
       body: [
         ['Trains', stats.byLocationType.train.length.toString()],
@@ -440,7 +561,7 @@ export function exportToPDF({ controls, title, dateRange, includeStats, orientat
       ],
       theme: 'plain',
       headStyles: { fillColor: C.tealLight, textColor: C.teal, fontSize: 7.5, fontStyle: 'bold', cellPadding: 2.5 },
-      bodyStyles: { fontSize: 7.5, cellPadding: 2.5, textColor: C.gray800 },
+      bodyStyles:  { fontSize: 7.5, cellPadding: 2.5, textColor: C.gray800 },
       alternateRowStyles: { fillColor: C.gray50 },
       didParseCell: (data) => {
         if (data.row.index === 3) {
@@ -449,54 +570,45 @@ export function exportToPDF({ controls, title, dateRange, includeStats, orientat
           data.cell.styles.fontStyle = 'bold';
         }
       },
-      margin: { left: 14 + 2 * (thirdW + 4), right: 14 },
+      margin: { left: 14 + 2 * (thirdW + 8), right: 14 },
       tableWidth: thirdW,
     });
-
-    y = Math.max(
-      (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY,
-      y + 4
-    ) + 10;
+    y = lastTableY() + 10;
   }
 
-  // ── New page if needed ────────────────────────────────────────────────────
-  if (y > pageH - 60) {
-    addFooter();
-    doc.addPage();
-    pageNumber++;
-    y = 20;
-  }
-
-  // ── Detail table ──────────────────────────────────────────────────────────
-  y = sectionBar(doc, 'Détail des contrôles', 0, y, pageW, C.navy);
+  // ── 5. DÉTAIL DES CONTRÔLES — 16 colonnes (même que HTML) ────────────────
+  if (y + 30 > safeH) newPage();
+  y = sectionBar(doc, `Détail des contrôles (${controls.length})`, 0, y, pageW, C.navy);
 
   const tableData = controls.map(control => {
-    const d = getControlDetails(control);
-    const locationInfo = control.location_type === 'train'
-      ? `Train ${d.trainNumber}`
-      : control.location_type === 'gare'
-        ? `Gare ${d.location}`
-        : `Quai ${d.platformNumber}`;
+    const d        = getControlDetails(control);
+    const typeLabel = control.location_type === 'train' ? 'Train' : control.location_type === 'gare' ? 'Gare' : 'Quai';
+    const numLieu   = control.location_type === 'train' ? d.trainNumber : d.location;
+    const trajet    = control.location_type === 'train' ? `${d.origin} → ${d.destination}` : '—';
+    const tarifBord = d.tarifBordStt50 + d.tarifBordStt100 + d.tarifBordRnv
+      + d.tarifBordTitreTiers + d.tarifBordDocNaissance + d.tarifBordAutre;
+    const ri = (d.riPositive || d.riNegative) ? `${d.riPositive}/${d.riNegative}` : '—';
     return [
-      d.date,
-      d.time,
-      locationInfo,
-      control.location_type === 'train' ? `${d.origin} → ${d.destination}` : d.location,
-      d.passengers.toString(),
-      d.inRule.toString(),
-      `${d.stt50}/${d.stt100}`,
-      d.rnv.toString(),
-      d.pv.toString(),
-      `${d.riPositive}/${d.riNegative}`,
+      d.date, d.time, typeLabel, numLieu, trajet,
+      d.passengers.toString(), d.inRule.toString(),
+      d.stt50     || '—',
+      d.stt100    || '—',
+      d.rnv       || '—',
+      d.pv        || '—',
+      d.titreTiers   || '—',
+      d.docNaissance || '—',
+      ri,
+      tarifBord   || '—',
       d.fraudRateFormatted,
-      d.fraudRate,   // hidden – used for coloring
+      d.fraudRate,   // index 16 — couleur uniquement
     ];
   });
 
   autoTable(doc, {
     startY: y,
-    head: [['Date','Heure','Type / N°','Lieu / Trajet','Voy.','OK','STT','RNV','PV','RI','Fraude']],
-    body: tableData.map(r => r.slice(0, 11)),
+    head: [['Date', 'Heure', 'Type', 'N° / Lieu', 'Trajet', 'Voy.', 'OK',
+            'STT 50€', 'STT 100€', 'RNV', 'PV', 'T.Tiers', 'D.Naiss.', 'RI +/−', 'T.Bord', 'Fraude']],
+    body: tableData.map(r => r.slice(0, 16)),
     theme: 'plain',
     headStyles: {
       fillColor: C.navyMid,
@@ -509,10 +621,14 @@ export function exportToPDF({ controls, title, dateRange, includeStats, orientat
     bodyStyles: { fontSize: 6, cellPadding: 2, textColor: C.gray800 },
     alternateRowStyles: { fillColor: C.gray50 },
     didParseCell: (data) => {
+      if (data.section === 'head') {
+        data.cell.styles.lineWidth = { bottom: 0.5 } as unknown as number;
+        data.cell.styles.lineColor = C.gold as unknown as string;
+      }
       if (data.section === 'body') {
-        const rate = tableData[data.row.index]?.[11] as number ?? 0;
-        if (data.column.index === 10) {
-          // Fraud rate cell
+        const rate = tableData[data.row.index]?.[16] as number ?? 0;
+        // Colonne Fraude (15)
+        if (data.column.index === 15) {
           if (rate > 10) {
             data.cell.styles.textColor = C.red as unknown as string;
             data.cell.styles.fontStyle = 'bold';
@@ -525,37 +641,44 @@ export function exportToPDF({ controls, title, dateRange, includeStats, orientat
             data.cell.styles.textColor = C.green as unknown as string;
           }
         }
-        if (data.column.index === 8 && data.cell.text[0] !== '0') {
-          // PV column
-          data.cell.styles.textColor = C.red as unknown as string;
-          data.cell.styles.fontStyle = 'bold';
+        // Colonne PV (10)
+        if (data.column.index === 10) {
+          const v = data.cell.text[0];
+          if (v && v !== '—' && v !== '0') {
+            data.cell.styles.textColor = C.red as unknown as string;
+            data.cell.styles.fontStyle = 'bold';
+          }
         }
-      }
-      // Gold header bottom border
-      if (data.section === 'head') {
-        data.cell.styles.lineWidth = { bottom: 0.5 } as unknown as number;
-        data.cell.styles.lineColor = C.gold as unknown as string;
+        // Colonnes STT (7, 8)
+        if (data.column.index === 7 || data.column.index === 8) {
+          const v = data.cell.text[0];
+          if (v && v !== '—' && v !== '0') {
+            data.cell.styles.textColor = C.green as unknown as string;
+          }
+        }
       }
     },
     columnStyles: {
-      0:  { cellWidth: 15, halign: 'center' },
-      1:  { cellWidth: 10, halign: 'center' },
-      2:  { cellWidth: 22 },
-      3:  { cellWidth: 34 },
-      4:  { cellWidth: 10, halign: 'center' },
-      5:  { cellWidth: 8,  halign: 'center' },
-      6:  { cellWidth: 12, halign: 'center' },
-      7:  { cellWidth: 8,  halign: 'center' },
-      8:  { cellWidth: 8,  halign: 'center' },
-      9:  { cellWidth: 12, halign: 'center' },
-      10: { cellWidth: 14, halign: 'center' },
+      0:  { cellWidth: 14, halign: 'center' },  // Date
+      1:  { cellWidth: 9,  halign: 'center' },  // Heure
+      2:  { cellWidth: 10, halign: 'center' },  // Type
+      3:  { cellWidth: 21 },                     // N°/Lieu
+      4:  { cellWidth: 33 },                     // Trajet
+      5:  { cellWidth: 8,  halign: 'center' },  // Voy.
+      6:  { cellWidth: 7,  halign: 'center' },  // OK
+      7:  { cellWidth: 11, halign: 'center' },  // STT50
+      8:  { cellWidth: 12, halign: 'center' },  // STT100
+      9:  { cellWidth: 8,  halign: 'center' },  // RNV
+      10: { cellWidth: 8,  halign: 'center' },  // PV
+      11: { cellWidth: 10, halign: 'center' },  // T.Tiers
+      12: { cellWidth: 10, halign: 'center' },  // D.Naiss.
+      13: { cellWidth: 10, halign: 'center' },  // RI
+      14: { cellWidth: 10, halign: 'center' },  // T.Bord
+      15: { cellWidth: 13, halign: 'center' },  // Fraude
     },
     margin: { left: 10, right: 10 },
     tableWidth: 'auto',
-    didDrawPage: () => {
-      addFooter();
-      pageNumber++;
-    },
+    didDrawPage: () => { addFooter(); pageNumber++; },
   });
 
   return doc;
