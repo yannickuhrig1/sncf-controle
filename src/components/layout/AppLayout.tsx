@@ -49,10 +49,10 @@ export function AppLayout({ children }: AppLayoutProps) {
   useEffect(() => {
     const handleOnline = () => setIsOnline(true);
     const handleOffline = () => setIsOnline(false);
-    
+
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
-    
+
     return () => {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
@@ -64,7 +64,7 @@ export function AppLayout({ children }: AppLayoutProps) {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 10);
     };
-    
+
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
@@ -106,7 +106,7 @@ export function AppLayout({ children }: AppLayoutProps) {
   const visiblePages = preferences?.visible_pages || DEFAULT_VISIBLE_PAGES;
   const bottomBarPages = preferences?.bottom_bar_pages || DEFAULT_BOTTOM_BAR_PAGES;
 
-  // Filter and order nav items for burger menu
+  // Filter and order nav items for burger menu / sidebar
   const burgerNavItems = (() => {
     const allowedItems = allNavItems.filter(item => {
       if (item.adminOnly && !isUserAdmin) return false;
@@ -154,8 +154,8 @@ export function AppLayout({ children }: AppLayoutProps) {
               onClick={() => setBurgerOpen(false)}
               className={cn(
                 'flex items-center gap-3 px-4 py-3 rounded-lg transition-colors',
-                isActive 
-                  ? 'bg-primary text-primary-foreground' 
+                isActive
+                  ? 'bg-primary text-primary-foreground'
                   : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
               )}
             >
@@ -168,6 +168,42 @@ export function AppLayout({ children }: AppLayoutProps) {
                 )}
               </div>
               <span className="font-medium">{item.label}</span>
+            </Link>
+          </motion.div>
+        );
+      })}
+    </>
+  );
+
+  const renderSidebarLinks = () => (
+    <>
+      {burgerNavItems.map((item) => {
+        const isActive = location.pathname === item.href;
+        return (
+          <motion.div
+            key={item.href}
+            whileHover={{ scale: 1.02, x: 2 }}
+            whileTap={{ scale: 0.98 }}
+            transition={{ duration: 0.15 }}
+          >
+            <Link
+              to={item.href}
+              className={cn(
+                'flex items-center gap-3 px-4 py-2.5 rounded-lg transition-colors',
+                isActive
+                  ? 'bg-white/20 text-white font-semibold'
+                  : 'text-white/75 hover:text-white hover:bg-white/10'
+              )}
+            >
+              <div className="relative shrink-0">
+                <item.icon className="h-5 w-5" />
+                {item.pageId === 'admin' && pendingApprovalCount > 0 && (
+                  <span className="absolute -top-1.5 -right-1.5 flex items-center justify-center h-4 min-w-4 px-0.5 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold">
+                    {pendingApprovalCount}
+                  </span>
+                )}
+              </div>
+              <span className="text-sm">{item.label}</span>
             </Link>
           </motion.div>
         );
@@ -191,7 +227,7 @@ export function AppLayout({ children }: AppLayoutProps) {
               to={item.href}
               className={cn(
                 'flex flex-col items-center justify-center gap-1 transition-all w-full h-full',
-                isActive 
+                isActive
                   ? 'text-primary'
                   : 'text-muted-foreground hover:text-foreground'
               )}
@@ -221,140 +257,181 @@ export function AppLayout({ children }: AppLayoutProps) {
     </>
   );
 
-  return (
-    <div className={cn('min-h-screen flex flex-col', showBottomBar && 'pb-20')}>
-      {/* Header - Glass Effect on Scroll */}
-      <header 
-        className={cn(
-          "sticky top-0 z-40 transition-all duration-300",
-          isScrolled 
-            ? "bg-primary/90 backdrop-blur-md shadow-lg dark:bg-primary/80" 
-            : "bg-primary",
-          "text-primary-foreground"
+  const connectionIndicator = (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <div className={cn(
+          "flex items-center gap-1.5 px-2 py-1 rounded-full bg-white/10",
+          (!isOnline || !user) && "animate-pulse"
+        )}>
+          {isOnline && user ? (
+            <>
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                className="h-2 w-2 rounded-full bg-green-400"
+              />
+              <Wifi className="h-3.5 w-3.5 text-green-400" />
+            </>
+          ) : isOnline && !user ? (
+            <>
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: [1, 1.2, 1] }}
+                transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+                className="h-2 w-2 rounded-full bg-yellow-400"
+              />
+              <Wifi className="h-3.5 w-3.5 text-yellow-400" />
+            </>
+          ) : (
+            <>
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: [1, 1.3, 1], opacity: [1, 0.5, 1] }}
+                transition={{ duration: 1, repeat: Infinity, ease: "easeInOut" }}
+                className="h-2 w-2 rounded-full bg-red-400"
+              />
+              <motion.div
+                animate={{ opacity: [1, 0.5, 1] }}
+                transition={{ duration: 1, repeat: Infinity, ease: "easeInOut" }}
+              >
+                <WifiOff className="h-3.5 w-3.5 text-red-400" />
+              </motion.div>
+            </>
+          )}
+        </div>
+      </TooltipTrigger>
+      <TooltipContent side="right">
+        {isOnline && user ? (
+          <p>Connecté à Supabase</p>
+        ) : isOnline && !user ? (
+          <p>En ligne - Non authentifié</p>
+        ) : (
+          <p>Hors ligne</p>
         )}
-      >
-        <div className="flex items-center justify-between px-4 py-3">
-          <div className="flex items-center gap-2">
-            <Train className="h-5 w-5" />
-            <span className="font-semibold">SNCF Contrôles</span>
-          </div>
-          
-          <div className="flex items-center gap-2">
-            {/* Connection Status Indicator */}
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <div className={cn(
-                  "flex items-center gap-1.5 px-2 py-1 rounded-full bg-white/10",
-                  (!isOnline || !user) && "animate-pulse"
-                )}>
-                  {isOnline && user ? (
-                    <>
-                      <motion.div
-                        initial={{ scale: 0 }}
-                        animate={{ scale: 1 }}
-                        className="h-2 w-2 rounded-full bg-green-400"
-                      />
-                      <Wifi className="h-3.5 w-3.5 text-green-400" />
-                    </>
-                  ) : isOnline && !user ? (
-                    <>
-                      <motion.div
-                        initial={{ scale: 0 }}
-                        animate={{ 
-                          scale: [1, 1.2, 1],
-                        }}
-                        transition={{
-                          duration: 1.5,
-                          repeat: Infinity,
-                          ease: "easeInOut"
-                        }}
-                        className="h-2 w-2 rounded-full bg-yellow-400"
-                      />
-                      <Wifi className="h-3.5 w-3.5 text-yellow-400" />
-                    </>
-                  ) : (
-                    <>
-                      <motion.div
-                        initial={{ scale: 0 }}
-                        animate={{ 
-                          scale: [1, 1.3, 1],
-                          opacity: [1, 0.5, 1]
-                        }}
-                        transition={{
-                          duration: 1,
-                          repeat: Infinity,
-                          ease: "easeInOut"
-                        }}
-                        className="h-2 w-2 rounded-full bg-red-400"
-                      />
-                      <motion.div
-                        animate={{ 
-                          opacity: [1, 0.5, 1]
-                        }}
-                        transition={{
-                          duration: 1,
-                          repeat: Infinity,
-                          ease: "easeInOut"
-                        }}
-                      >
-                        <WifiOff className="h-3.5 w-3.5 text-red-400" />
-                      </motion.div>
-                    </>
-                  )}
-                </div>
-              </TooltipTrigger>
-              <TooltipContent side="bottom">
-                {isOnline && user ? (
-                  <p>Connecté à Supabase</p>
-                ) : isOnline && !user ? (
-                  <p>En ligne - Non authentifié</p>
-                ) : (
-                  <p>Hors ligne</p>
-                )}
-              </TooltipContent>
-            </Tooltip>
+      </TooltipContent>
+    </Tooltip>
+  );
 
-            {/* Burger Menu Button - Always visible if enabled */}
-            {showBurgerMenu && (
-              <Sheet open={burgerOpen} onOpenChange={setBurgerOpen}>
-                <SheetTrigger asChild>
-                  <motion.div
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                  >
-                    <Button variant="ghost" size="icon" className="text-primary-foreground hover:bg-primary/90">
-                      <Menu className="h-5 w-5" />
-                    </Button>
-                  </motion.div>
-                </SheetTrigger>
-                <SheetContent side="right" className="w-72 p-0">
-                  <SheetHeader className="p-4 border-b">
-                    <SheetTitle className="flex items-center gap-2">
-                      <Train className="h-5 w-5 text-primary" />
-                      Navigation
-                    </SheetTitle>
-                  </SheetHeader>
-                  <nav className="flex flex-col gap-1 p-2">
-                    {renderBurgerLinks()}
-                  </nav>
-                  <div className="p-4 border-t mt-auto">
-                    <InstallAppButton variant="outline" className="w-full" />
-                  </div>
-                </SheetContent>
-              </Sheet>
-            )}
+  return (
+    <div className={cn('min-h-screen flex flex-col lg:flex-row', showBottomBar && 'pb-20 lg:pb-0')}>
+
+      {/* ── Sidebar — Desktop uniquement ─────────────────────────────────────── */}
+      <aside className="hidden lg:flex flex-col w-60 shrink-0 bg-primary text-primary-foreground sticky top-0 h-screen overflow-y-auto">
+        {/* Brand */}
+        <div className="flex items-center gap-2.5 px-4 py-4 border-b border-white/10">
+          <Train className="h-5 w-5 shrink-0" />
+          <span className="font-semibold text-base leading-tight">SNCF Contrôles</span>
+        </div>
+
+        {/* Navigation */}
+        <nav className="flex flex-col gap-0.5 p-2 flex-1 overflow-y-auto">
+          {renderSidebarLinks()}
+        </nav>
+
+        {/* Bas de sidebar : connexion + installer */}
+        <div className="p-3 border-t border-white/10 space-y-2">
+          <InstallAppButton
+            variant="ghost"
+            className="w-full justify-start text-white/80 hover:text-white hover:bg-white/10"
+          />
+          <div className="px-1">
+            {connectionIndicator}
           </div>
         </div>
-      </header>
+      </aside>
 
-      {/* Main Content */}
-      <main className="flex-1 px-4 py-6">
-        {children}
-      </main>
+      {/* ── Zone principale ──────────────────────────────────────────────────── */}
+      <div className="flex flex-col flex-1 min-w-0">
 
-      {/* Bottom Navigation - Glass Effect */}
+        {/* Header — Mobile uniquement */}
+        <header
+          className={cn(
+            "sticky top-0 z-40 transition-all duration-300 lg:hidden",
+            isScrolled
+              ? "bg-primary/90 backdrop-blur-md shadow-lg dark:bg-primary/80"
+              : "bg-primary",
+            "text-primary-foreground"
+          )}
+        >
+          <div className="flex items-center justify-between px-4 py-3">
+            <div className="flex items-center gap-2">
+              <Train className="h-5 w-5" />
+              <span className="font-semibold">SNCF Contrôles</span>
+            </div>
+
+            <div className="flex items-center gap-2">
+              {/* Connection Status */}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className={cn(
+                    "flex items-center gap-1.5 px-2 py-1 rounded-full bg-white/10",
+                    (!isOnline || !user) && "animate-pulse"
+                  )}>
+                    {isOnline && user ? (
+                      <>
+                        <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="h-2 w-2 rounded-full bg-green-400" />
+                        <Wifi className="h-3.5 w-3.5 text-green-400" />
+                      </>
+                    ) : isOnline && !user ? (
+                      <>
+                        <motion.div initial={{ scale: 0 }} animate={{ scale: [1, 1.2, 1] }} transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }} className="h-2 w-2 rounded-full bg-yellow-400" />
+                        <Wifi className="h-3.5 w-3.5 text-yellow-400" />
+                      </>
+                    ) : (
+                      <>
+                        <motion.div initial={{ scale: 0 }} animate={{ scale: [1, 1.3, 1], opacity: [1, 0.5, 1] }} transition={{ duration: 1, repeat: Infinity, ease: "easeInOut" }} className="h-2 w-2 rounded-full bg-red-400" />
+                        <motion.div animate={{ opacity: [1, 0.5, 1] }} transition={{ duration: 1, repeat: Infinity, ease: "easeInOut" }}>
+                          <WifiOff className="h-3.5 w-3.5 text-red-400" />
+                        </motion.div>
+                      </>
+                    )}
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">
+                  {isOnline && user ? <p>Connecté à Supabase</p> : isOnline && !user ? <p>En ligne - Non authentifié</p> : <p>Hors ligne</p>}
+                </TooltipContent>
+              </Tooltip>
+
+              {/* Burger Menu */}
+              {showBurgerMenu && (
+                <Sheet open={burgerOpen} onOpenChange={setBurgerOpen}>
+                  <SheetTrigger asChild>
+                    <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                      <Button variant="ghost" size="icon" className="text-primary-foreground hover:bg-primary/90">
+                        <Menu className="h-5 w-5" />
+                      </Button>
+                    </motion.div>
+                  </SheetTrigger>
+                  <SheetContent side="right" className="w-72 p-0">
+                    <SheetHeader className="p-4 border-b">
+                      <SheetTitle className="flex items-center gap-2">
+                        <Train className="h-5 w-5 text-primary" />
+                        Navigation
+                      </SheetTitle>
+                    </SheetHeader>
+                    <nav className="flex flex-col gap-1 p-2">
+                      {renderBurgerLinks()}
+                    </nav>
+                    <div className="p-4 border-t mt-auto">
+                      <InstallAppButton variant="outline" className="w-full" />
+                    </div>
+                  </SheetContent>
+                </Sheet>
+              )}
+            </div>
+          </div>
+        </header>
+
+        {/* Contenu principal */}
+        <main className="flex-1 px-4 py-6 lg:px-8 lg:py-8">
+          {children}
+        </main>
+      </div>
+
+      {/* ── Bottom Navigation — Mobile uniquement ────────────────────────────── */}
       {showBottomBar && (
-        <nav className="fixed bottom-0 left-0 right-0 z-50 glass-frosted border-t border-border/50 dark:border-white/10 safe-area-inset-bottom">
+        <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 glass-frosted border-t border-border/50 dark:border-white/10 safe-area-inset-bottom">
           <div className="flex justify-around items-center h-16">
             {renderBottomNavLinks()}
           </div>
