@@ -1,4 +1,5 @@
 import { Navigate } from 'react-router-dom';
+import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserPreferences, PageId, DEFAULT_VISIBLE_PAGES, DEFAULT_BOTTOM_BAR_PAGES } from '@/hooks/useUserPreferences';
 import { AppLayout } from '@/components/layout/AppLayout';
@@ -235,36 +236,87 @@ export default function Settings() {
               <CardContent className="space-y-4">
                 <div className="space-y-2">
                   <Label>Style de thème</Label>
-                  <Select
-                    value={preferences?.theme_variant || 'sncf'}
-                    onValueChange={(value: 'sncf' | 'colore') => {
-                      const root = document.documentElement;
-                      root.classList.remove('theme-colore');
-                      if (value === 'colore') {
-                        root.classList.add('theme-colore');
-                      }
-                      updatePreferences({ theme_variant: value });
-                    }}
-                    disabled={isUpdating}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="sncf">
-                        <div className="flex items-center gap-2">
-                          <div className="h-4 w-4 rounded-full bg-[hsl(343,100%,38%)]" />
-                          SNCF Classique
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="colore">
-                        <div className="flex items-center gap-2">
-                          <div className="h-4 w-4 rounded-full bg-[hsl(180,45%,45%)]" />
-                          Coloré
-                        </div>
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <div className="grid grid-cols-2 gap-2">
+                    {[
+                      {
+                        value: 'sncf',
+                        label: 'SNCF Classique',
+                        primary: 'hsl(343,100%,38%)',
+                        bg: 'hsl(220,20%,97%)',
+                        card: '#fff',
+                        desc: 'Rouge officiel',
+                      },
+                      {
+                        value: 'colore',
+                        label: 'Coloré',
+                        primary: 'hsl(180,45%,45%)',
+                        bg: 'hsl(210,20%,96%)',
+                        card: '#fff',
+                        desc: 'Teal pastel',
+                      },
+                      {
+                        value: 'pro',
+                        label: 'Professionnel',
+                        primary: 'hsl(214,90%,42%)',
+                        bg: 'hsl(214,18%,93%)',
+                        card: '#fff',
+                        desc: 'Acier électrique',
+                      },
+                      {
+                        value: 'moderne',
+                        label: 'Moderne',
+                        primary: 'hsl(239,68%,60%)',
+                        bg: 'hsl(240,15%,97%)',
+                        card: '#fff',
+                        desc: 'Violet vibrant',
+                      },
+                    ].map((t) => {
+                      const isSelected = (preferences?.theme_variant || 'sncf') === t.value;
+                      return (
+                        <button
+                          key={t.value}
+                          type="button"
+                          disabled={isUpdating}
+                          onClick={() => {
+                            const root = document.documentElement;
+                            root.classList.remove('theme-colore', 'theme-pro', 'theme-moderne');
+                            if (t.value === 'colore') root.classList.add('theme-colore');
+                            else if (t.value === 'pro') root.classList.add('theme-pro');
+                            else if (t.value === 'moderne') root.classList.add('theme-moderne');
+                            updatePreferences({ theme_variant: t.value as 'sncf' | 'colore' | 'pro' | 'moderne' });
+                          }}
+                          className={cn(
+                            'relative flex flex-col items-start rounded-xl border-2 p-3 text-left transition-all',
+                            isSelected
+                              ? 'border-primary bg-primary/5 shadow-sm'
+                              : 'border-border hover:border-muted-foreground/30'
+                          )}
+                        >
+                          {/* Mini preview */}
+                          <div
+                            className="w-full h-8 rounded-md mb-2 flex items-center px-2 gap-1.5"
+                            style={{ background: t.bg }}
+                          >
+                            <div className="w-3 h-3 rounded-full" style={{ background: t.primary }} />
+                            <div className="flex-1 h-1.5 rounded-full bg-black/8" />
+                            <div className="w-4 h-2 rounded" style={{ background: t.primary, opacity: 0.7 }} />
+                          </div>
+                          <span className="text-xs font-semibold leading-tight">{t.label}</span>
+                          <span className="text-[10px] text-muted-foreground">{t.desc}</span>
+                          {isSelected && (
+                            <div
+                              className="absolute top-2 right-2 w-4 h-4 rounded-full flex items-center justify-center"
+                              style={{ background: t.primary }}
+                            >
+                              <svg width="8" height="8" viewBox="0 0 8 8" fill="none">
+                                <path d="M1.5 4L3 5.5L6.5 2.5" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                              </svg>
+                            </div>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
 
                 <Separator />

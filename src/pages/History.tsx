@@ -121,66 +121,35 @@ function ControlRow({ control, onClick }: ControlRowProps) {
               </span>
             </div>
 
-            {/* Line 3: fraud badges */}
-            {fraudCount > 0 && (
-              <div className="flex flex-wrap gap-1 mt-2">
-                {control.tarifs_controle > 0 && (
-                  <Badge className="text-[10px] px-1.5 py-0 bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 hover:bg-amber-100">
-                    TC: {control.tarifs_controle}
-                  </Badge>
-                )}
-                {control.pv > 0 && (
-                  <Badge variant="destructive" className="text-[10px] px-1.5 py-0">
-                    PV: {control.pv}
-                  </Badge>
-                )}
-                {(control.stt_50 || 0) > 0 && (
-                  <Badge variant="outline" className="text-[10px] px-1.5 py-0 text-amber-600 border-amber-200">
-                    STT50: {control.stt_50}
-                  </Badge>
-                )}
-                {(control.pv_stt100 || 0) > 0 && (
-                  <Badge variant="outline" className="text-[10px] px-1.5 py-0 text-red-600 border-red-200">
-                    STT100: {control.pv_stt100}
-                  </Badge>
-                )}
-                {(control.pv_rnv || 0) > 0 && (
-                  <Badge variant="outline" className="text-[10px] px-1.5 py-0 text-red-600 border-red-200">
-                    RNV: {control.pv_rnv}
-                  </Badge>
-                )}
-                {(control.pv_titre_tiers || 0) > 0 && (
-                  <Badge variant="outline" className="text-[10px] px-1.5 py-0 text-red-600 border-red-200">
-                    T.Tiers: {control.pv_titre_tiers}
-                  </Badge>
-                )}
-                {(control.pv_doc_naissance || 0) > 0 && (
-                  <Badge variant="outline" className="text-[10px] px-1.5 py-0 text-red-600 border-red-200">
-                    D.Naiss: {control.pv_doc_naissance}
-                  </Badge>
-                )}
-                {(control.pv_autre || 0) > 0 && (
-                  <Badge variant="outline" className="text-[10px] px-1.5 py-0 text-red-600 border-red-200">
-                    Autre PV: {control.pv_autre}
-                  </Badge>
-                )}
-                {control.rnv > 0 && (
-                  <Badge variant="outline" className="text-[10px] px-1.5 py-0">
-                    RNV: {control.rnv}
-                  </Badge>
-                )}
-                {(control.titre_tiers || 0) > 0 && (
-                  <Badge variant="outline" className="text-[10px] px-1.5 py-0">
-                    T.Tiers: {control.titre_tiers}
-                  </Badge>
-                )}
-                {(control.doc_naissance || 0) > 0 && (
-                  <Badge variant="outline" className="text-[10px] px-1.5 py-0">
-                    D.Naiss: {control.doc_naissance}
-                  </Badge>
-                )}
-              </div>
-            )}
+            {/* Line 3: fraud badges — simplified, max 4 */}
+            {fraudCount > 0 && (() => {
+              const badges = [
+                control.tarifs_controle > 0 && { label: `TC: ${control.tarifs_controle}`, cls: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 hover:bg-amber-100 border-0' },
+                control.pv > 0 && { label: `PV: ${control.pv}`, cls: 'bg-red-500 text-white hover:bg-red-500 border-0' },
+                control.rnv > 0 && { label: `RNV: ${control.rnv}`, cls: '' },
+                ((control.stt_50 || 0) + (control.stt_100 || 0)) > 0 && { label: `STT: ${(control.stt_50 || 0) + (control.stt_100 || 0)}`, cls: 'text-orange-600 border-orange-200' },
+                (control.titre_tiers || 0) > 0 && { label: `T.Tiers: ${control.titre_tiers}`, cls: '' },
+                (control.doc_naissance || 0) > 0 && { label: `D.Naiss: ${control.doc_naissance}`, cls: '' },
+              ].filter(Boolean) as { label: string; cls: string }[];
+
+              const visible = badges.slice(0, 3);
+              const extra = badges.length - 3;
+
+              return (
+                <div className="flex flex-wrap gap-1 mt-2">
+                  {visible.map((b, i) => (
+                    <Badge key={i} variant="outline" className={`text-[10px] px-1.5 py-0 ${b.cls}`}>
+                      {b.label}
+                    </Badge>
+                  ))}
+                  {extra > 0 && (
+                    <Badge variant="outline" className="text-[10px] px-1.5 py-0 text-muted-foreground">
+                      +{extra}
+                    </Badge>
+                  )}
+                </div>
+              );
+            })()}
           </div>
           
           {/* Fraud rate — always visible */}

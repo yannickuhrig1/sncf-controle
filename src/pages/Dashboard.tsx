@@ -118,27 +118,27 @@ export default function Dashboard() {
         <PendingControlsPanel />
 
         {/* Quick Actions */}
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 gap-3">
           <Link
             to="/onboard"
             className={cn(
               buttonVariants({ size: 'lg' }),
-              'h-auto py-4 flex flex-col gap-2'
+              'h-auto py-5 flex flex-col gap-2 rounded-xl shadow-md hover:shadow-lg transition-shadow'
             )}
           >
-            <Train className="h-6 w-6" />
-            <span>Contrôle à bord</span>
+            <Train className="h-7 w-7" />
+            <span className="font-semibold">Contrôle à bord</span>
           </Link>
 
           <Link
             to="/station"
             className={cn(
               buttonVariants({ variant: 'outline', size: 'lg' }),
-              'h-auto py-4 flex flex-col gap-2'
+              'h-auto py-5 flex flex-col gap-2 rounded-xl border-2 hover:shadow-md transition-shadow'
             )}
           >
-            <Building2 className="h-6 w-6" />
-            <span>Contrôle en gare</span>
+            <Building2 className="h-7 w-7" />
+            <span className="font-semibold">Contrôle en gare</span>
           </Link>
         </div>
 
@@ -154,48 +154,59 @@ export default function Dashboard() {
             </div>
           ) : (
             <div className="grid grid-cols-2 gap-4">
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                    <Users className="h-4 w-4" />
+              <Card className="border-0 shadow-sm bg-card">
+                <CardHeader className="pb-1 pt-4 px-4">
+                  <CardTitle className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+                    <div className="p-1 rounded-md bg-blue-100 dark:bg-blue-900/30">
+                      <Users className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
+                    </div>
                     Voyageurs
                   </CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{stats.totalPassengers}</div>
-                  <p className="text-xs text-muted-foreground">
+                <CardContent className="px-4 pb-4">
+                  <div className="text-3xl font-bold tracking-tight">{stats.totalPassengers}</div>
+                  <p className="text-xs text-muted-foreground mt-1">
                     {stats.controlCount} contrôle{stats.controlCount > 1 ? 's' : ''}
                   </p>
                 </CardContent>
               </Card>
 
-              <Card className={getFraudRateBgColor(stats.fraudRate)}>
-                <CardHeader className="pb-2">
-                  <CardTitle className={`text-sm font-medium flex items-center gap-2 ${getFraudRateColor(stats.fraudRate)}`}>
-                    <AlertTriangle className="h-4 w-4" />
+              <Card className={cn("border-0 shadow-sm", getFraudRateBgColor(stats.fraudRate))}>
+                <CardHeader className="pb-1 pt-4 px-4">
+                  <CardTitle className={`text-xs font-medium flex items-center gap-1.5 ${getFraudRateColor(stats.fraudRate)}`}>
+                    <div className={cn(
+                      "p-1 rounded-md",
+                      stats.fraudRate >= 10 ? "bg-red-100 dark:bg-red-900/30" :
+                      stats.fraudRate >= 5 ? "bg-yellow-100 dark:bg-yellow-900/30" :
+                      "bg-green-100 dark:bg-green-900/30"
+                    )}>
+                      <AlertTriangle className="h-3.5 w-3.5" />
+                    </div>
                     Taux de fraude
                   </CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <div className={`text-2xl font-bold ${getFraudRateColor(stats.fraudRate)}`}>
+                <CardContent className="px-4 pb-4">
+                  <div className={`text-3xl font-bold tracking-tight ${getFraudRateColor(stats.fraudRate)}`}>
                     {formatFraudRate(stats.fraudRate)}
                   </div>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-xs text-muted-foreground mt-1">
                     {stats.fraudCount} fraude{stats.fraudCount > 1 ? 's' : ''}
                   </p>
                 </CardContent>
               </Card>
 
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                    <CheckCircle2 className="h-4 w-4" />
+              <Card className="border-0 shadow-sm bg-card">
+                <CardHeader className="pb-1 pt-4 px-4">
+                  <CardTitle className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+                    <div className="p-1 rounded-md bg-green-100 dark:bg-green-900/30">
+                      <CheckCircle2 className="h-3.5 w-3.5 text-green-600 dark:text-green-400" />
+                    </div>
                     En règle
                   </CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-green-600">{stats.passengersInRule}</div>
-                  <p className="text-xs text-muted-foreground">
+                <CardContent className="px-4 pb-4">
+                  <div className="text-3xl font-bold tracking-tight text-green-600 dark:text-green-400">{stats.passengersInRule}</div>
+                  <p className="text-xs text-muted-foreground mt-1">
                     {stats.totalPassengers > 0 
                       ? `${((stats.passengersInRule / stats.totalPassengers) * 100).toFixed(1)}%`
                       : '0%'
@@ -204,7 +215,7 @@ export default function Dashboard() {
                 </CardContent>
               </Card>
 
-              <Card>
+              <Card className="border-0 shadow-sm bg-card">
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                     PV

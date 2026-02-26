@@ -15,7 +15,7 @@ export interface UserPreferences {
   id: string;
   user_id: string;
   theme: 'light' | 'dark' | 'system';
-  theme_variant: 'sncf' | 'colore';
+  theme_variant: 'sncf' | 'colore' | 'pro' | 'moderne';
   navigation_style: NavigationStyle;
   visible_pages: PageId[];
   show_bottom_bar: boolean;
@@ -120,9 +120,13 @@ export function useUserPreferences() {
     }
 
     // Apply theme variant
-    root.classList.remove('theme-colore');
+    root.classList.remove('theme-colore', 'theme-pro', 'theme-moderne');
     if (prefs.theme_variant === 'colore') {
       root.classList.add('theme-colore');
+    } else if (prefs.theme_variant === 'pro') {
+      root.classList.add('theme-pro');
+    } else if (prefs.theme_variant === 'moderne') {
+      root.classList.add('theme-moderne');
     }
 
     // Cache preferences for initial load
