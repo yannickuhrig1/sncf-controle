@@ -49,7 +49,7 @@ export function HistoryTableView({ controls, onControlClick }: HistoryTableViewP
   const [sortDirection, setSortDirection] = useState<SortDirection>(null);
 
   const getFraudRate = (control: Control) => {
-    const fraudCount = control.tarifs_controle + control.pv;
+    const fraudCount = control.tarifs_controle + control.pv + control.ri_negative;
     return control.nb_passagers > 0 ? (fraudCount / control.nb_passagers) * 100 : 0;
   };
 
