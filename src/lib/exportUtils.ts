@@ -49,7 +49,7 @@ const C = {
 };
 
 function getControlDetails(control: Control) {
-  const fraudCount = control.tarifs_controle + control.pv;
+  const fraudCount = control.tarifs_controle + control.pv + control.ri_negative;
   return {
     date: format(new Date(control.control_date), 'dd/MM/yyyy', { locale: fr }),
     time: control.control_time.slice(0, 5),
@@ -114,19 +114,21 @@ function calculateExtendedStats(controls: Control[]) {
     titreTiers:  acc.titreTiers  + (c.titre_tiers_amount || 0),
     docNaissance:acc.docNaissance+ (c.doc_naissance_amount || 0),
     autre:       acc.autre       + (c.autre_tarif_amount || 0),
-    pvStt100:    acc.pvStt100    + ((c.pv_stt100_amount || 0) > 0 ? c.pv_stt100_amount! : (c.pv_stt100 || 0) * 100),
-    pvRnv:       acc.pvRnv       + ((c.pv_rnv_amount    || 0) > 0 ? c.pv_rnv_amount!   : (c.pv_rnv    || 0) * 100),
-    pvTitreTiers:acc.pvTitreTiers+ ((c.pv_titre_tiers_amount || 0) > 0 ? c.pv_titre_tiers_amount! : (c.pv_titre_tiers || 0) * 100),
-    pvAutre:     acc.pvAutre     + (c.pv_autre_amount   || 0),
+    pvStt100:      acc.pvStt100      + ((c.pv_stt100_amount || 0) > 0 ? c.pv_stt100_amount! : (c.pv_stt100 || 0) * 100),
+    pvRnv:         acc.pvRnv         + ((c.pv_rnv_amount    || 0) > 0 ? c.pv_rnv_amount!   : (c.pv_rnv    || 0) * 100),
+    pvTitreTiers:  acc.pvTitreTiers  + ((c.pv_titre_tiers_amount || 0) > 0 ? c.pv_titre_tiers_amount! : (c.pv_titre_tiers || 0) * 100),
+    pvDocNaissance:acc.pvDocNaissance+ (c.pv_doc_naissance_amount || 0),
+    pvAutre:       acc.pvAutre       + (c.pv_autre_amount   || 0),
   }), { stt50: 0, stt100: 0, rnv: 0, titreTiers: 0, docNaissance: 0, autre: 0,
-        pvStt100: 0, pvRnv: 0, pvTitreTiers: 0, pvAutre: 0 });
+        pvStt100: 0, pvRnv: 0, pvTitreTiers: 0, pvDocNaissance: 0, pvAutre: 0 });
 
   const pvBreakdown = controls.reduce((acc, c) => ({
-    stt100:     acc.stt100     + (c.pv_stt100      || 0),
-    rnv:        acc.rnv        + (c.pv_rnv         || 0),
-    titreTiers: acc.titreTiers + (c.pv_titre_tiers || 0),
-    autre:      acc.autre      + (c.pv_autre       || 0),
-  }), { stt100: 0, rnv: 0, titreTiers: 0, autre: 0 });
+    stt100:      acc.stt100      + (c.pv_stt100        || 0),
+    rnv:         acc.rnv         + (c.pv_rnv           || 0),
+    titreTiers:  acc.titreTiers  + (c.pv_titre_tiers   || 0),
+    docNaissance:acc.docNaissance+ (c.pv_doc_naissance || 0),
+    autre:       acc.autre       + (c.pv_autre         || 0),
+  }), { stt100: 0, rnv: 0, titreTiers: 0, docNaissance: 0, autre: 0 });
 
   const tarifsBord = controls.reduce((acc, c) => ({
     stt50:       acc.stt50       + (c.tarif_bord_stt_50        || 0),
@@ -231,7 +233,8 @@ export function exportToPDF({ controls, title, dateRange, includeStats, orientat
   const totalTarifsAmt = stats.totalAmounts.stt50 + stats.totalAmounts.rnv
     + stats.totalAmounts.titreTiers + stats.totalAmounts.docNaissance + stats.totalAmounts.autre;
   const totalPVAmt = stats.totalAmounts.stt100 + stats.totalAmounts.pvStt100
-    + stats.totalAmounts.pvRnv + stats.totalAmounts.pvTitreTiers + stats.totalAmounts.pvAutre;
+    + stats.totalAmounts.pvRnv + stats.totalAmounts.pvTitreTiers
+    + stats.totalAmounts.pvDocNaissance + stats.totalAmounts.pvAutre;
 
   const trainGroups: Record<string, Control[]> = {};
   controls.forEach(c => {
@@ -469,19 +472,20 @@ export function exportToPDF({ controls, title, dateRange, includeStats, orientat
       startY: pvBarY,
       head: [['Type', 'Nbre', 'Montant (€)']],
       body: [
-        ['STT 100€',         stats.stt100.toString(),              stats.totalAmounts.stt100.toFixed(2)],
-        ['Absence de titre', stats.pvBreakdown.stt100.toString(),  stats.totalAmounts.pvStt100.toFixed(2)],
-        ['Titre invalide',   stats.pvBreakdown.rnv.toString(),     stats.totalAmounts.pvRnv.toFixed(2)],
-        ['Refus contrôle',   stats.pvBreakdown.titreTiers.toString(), stats.totalAmounts.pvTitreTiers.toFixed(2)],
-        ['Autre PV',         stats.pvBreakdown.autre.toString(),   stats.totalAmounts.pvAutre.toFixed(2)],
-        ['TOTAL',            stats.pv.toString(),                  totalPVAmt.toFixed(2)],
+        ['STT 100€',    stats.stt100.toString(),                    stats.totalAmounts.stt100.toFixed(2)],
+        ['STT100',      stats.pvBreakdown.stt100.toString(),        stats.totalAmounts.pvStt100.toFixed(2)],
+        ['RNV',         stats.pvBreakdown.rnv.toString(),           stats.totalAmounts.pvRnv.toFixed(2)],
+        ['Titre tiers', stats.pvBreakdown.titreTiers.toString(),    stats.totalAmounts.pvTitreTiers.toFixed(2)],
+        ['D. naissance',stats.pvBreakdown.docNaissance.toString(),  stats.totalAmounts.pvDocNaissance.toFixed(2)],
+        ['Autre',       stats.pvBreakdown.autre.toString(),         stats.totalAmounts.pvAutre.toFixed(2)],
+        ['TOTAL',       stats.pv.toString(),                        totalPVAmt.toFixed(2)],
       ],
       theme: 'plain',
       headStyles: { fillColor: C.redLight, textColor: C.red, fontSize: 7.5, fontStyle: 'bold', cellPadding: 2.5 },
       bodyStyles:  { fontSize: 7.5, cellPadding: 2.5, textColor: C.gray800 },
       alternateRowStyles: { fillColor: C.gray50 },
       didParseCell: (data) => {
-        if (data.row.index === 5) {
+        if (data.row.index === 6) {
           data.cell.styles.fillColor = C.red as unknown as string;
           data.cell.styles.textColor = C.white as unknown as string;
           data.cell.styles.fontStyle = 'bold';
@@ -763,7 +767,7 @@ export function exportTableToPDF({ controls, title, dateRange }: TableExportOpti
     doc.text('CONTRÔLES', pageW - 15, 18, { align: 'center' });
 
     const tableData = controls.map(control => {
-      const fraudCount = control.tarifs_controle + control.pv;
+      const fraudCount = control.tarifs_controle + control.pv + control.ri_negative;
       const fraudRate = control.nb_passagers > 0
         ? ((fraudCount / control.nb_passagers) * 100).toFixed(1) + '%'
         : '0.0%';
@@ -913,7 +917,8 @@ export function exportToHTML({ controls, title, dateRange, includeStats, exportM
   const totalTarifsControle = stats.totalAmounts.stt50 + stats.totalAmounts.rnv
     + stats.totalAmounts.titreTiers + stats.totalAmounts.docNaissance + stats.totalAmounts.autre;
   const totalPV = stats.totalAmounts.stt100 + stats.totalAmounts.pvStt100
-    + stats.totalAmounts.pvRnv + stats.totalAmounts.pvTitreTiers + stats.totalAmounts.pvAutre;
+    + stats.totalAmounts.pvRnv + stats.totalAmounts.pvTitreTiers
+    + stats.totalAmounts.pvDocNaissance + stats.totalAmounts.pvAutre;
   const totalEncaisse = totalTarifsControle;
 
   const trainFraudStats = trainKeys.map(key => {
@@ -1487,10 +1492,11 @@ export function exportToHTML({ controls, title, dateRange, includeStats, exportM
           <table class="detail-table">
             <tr><th>Type</th><th>Nbre</th><th>Montant</th></tr>
             ${detailRow('STT 100€',       stats.stt100,              stats.totalAmounts.stt100)}
-            ${detailRow('Absence titre',  stats.pvBreakdown.stt100,  stats.totalAmounts.pvStt100)}
-            ${detailRow('Titre invalide', stats.pvBreakdown.rnv,     stats.totalAmounts.pvRnv)}
-            ${detailRow('Refus contrôle', stats.pvBreakdown.titreTiers, stats.totalAmounts.pvTitreTiers)}
-            ${detailRow('Autre PV',       stats.pvBreakdown.autre,   stats.totalAmounts.pvAutre)}
+            ${detailRow('STT100',      stats.pvBreakdown.stt100,       stats.totalAmounts.pvStt100)}
+            ${detailRow('RNV',         stats.pvBreakdown.rnv,          stats.totalAmounts.pvRnv)}
+            ${detailRow('Titre tiers', stats.pvBreakdown.titreTiers,   stats.totalAmounts.pvTitreTiers)}
+            ${detailRow('D. naissance',stats.pvBreakdown.docNaissance, stats.totalAmounts.pvDocNaissance)}
+            ${detailRow('Autre',       stats.pvBreakdown.autre,        stats.totalAmounts.pvAutre)}
             <tr class="total"><td>TOTAL</td><td>${stats.pv}</td><td>${totalPV.toFixed(2)} €</td></tr>
           </table>
         </div>
@@ -1747,13 +1753,15 @@ export function generateEmailContent({ controls, title, dateRange, includeStats 
     body += `   TOTAL : ${stats.tarifsControle}  (${totalTarifsAmt.toFixed(2)} €)\n\n`;
 
     const totalPVAmt = stats.totalAmounts.stt100 + stats.totalAmounts.pvStt100
-      + stats.totalAmounts.pvRnv + stats.totalAmounts.pvTitreTiers + stats.totalAmounts.pvAutre;
+      + stats.totalAmounts.pvRnv + stats.totalAmounts.pvTitreTiers
+      + stats.totalAmounts.pvDocNaissance + stats.totalAmounts.pvAutre;
     body += `⚠️  PV (procès-verbaux)\n`;
-    body += `   STT 100€        : ${stats.stt100} (${stats.totalAmounts.stt100.toFixed(2)} €)\n`;
-    body += `   Absence de titre : ${stats.pvBreakdown.stt100} (${stats.totalAmounts.pvStt100.toFixed(2)} €)\n`;
-    body += `   Titre invalide   : ${stats.pvBreakdown.rnv} (${stats.totalAmounts.pvRnv.toFixed(2)} €)\n`;
-    body += `   Refus contrôle   : ${stats.pvBreakdown.titreTiers} (${stats.totalAmounts.pvTitreTiers.toFixed(2)} €)\n`;
-    body += `   Autre PV         : ${stats.pvBreakdown.autre} (${stats.totalAmounts.pvAutre.toFixed(2)} €)\n`;
+    body += `   STT 100€     : ${stats.stt100} (${stats.totalAmounts.stt100.toFixed(2)} €)\n`;
+    body += `   STT100       : ${stats.pvBreakdown.stt100} (${stats.totalAmounts.pvStt100.toFixed(2)} €)\n`;
+    body += `   RNV          : ${stats.pvBreakdown.rnv} (${stats.totalAmounts.pvRnv.toFixed(2)} €)\n`;
+    body += `   Titre tiers  : ${stats.pvBreakdown.titreTiers} (${stats.totalAmounts.pvTitreTiers.toFixed(2)} €)\n`;
+    body += `   D. naissance : ${stats.pvBreakdown.docNaissance} (${stats.totalAmounts.pvDocNaissance.toFixed(2)} €)\n`;
+    body += `   Autre        : ${stats.pvBreakdown.autre} (${stats.totalAmounts.pvAutre.toFixed(2)} €)\n`;
     body += `   ────────────────────────\n`;
     body += `   TOTAL : ${stats.pv}  (${totalPVAmt.toFixed(2)} €)\n\n`;
 

@@ -130,10 +130,10 @@ export default function StationControl() {
   const fraudStats = useMemo(() => {
     const tarifsControleCount = stt50.count + stt100.count + rnv.count + titreTiers.count + docNaissance.count + autreTarif.count;
     const pvCount = pvStt100.count + pvRnv.count + pvTitreTiers.count + pvDocNaissance.count + pvAutre.count;
-    const fraudCount = tarifsControleCount + pvCount;
+    const fraudCount = tarifsControleCount + pvCount + riNegative;
     const fraudRate = nbPassagers > 0 ? (fraudCount / nbPassagers) * 100 : 0;
     return { fraudCount, fraudRate, tarifsControleCount, pvCount };
-  }, [nbPassagers, stt50, stt100, rnv, titreTiers, docNaissance, autreTarif, pvStt100, pvRnv, pvTitreTiers, pvDocNaissance, pvAutre]);
+  }, [nbPassagers, stt50, stt100, rnv, titreTiers, docNaissance, autreTarif, pvStt100, pvRnv, pvTitreTiers, pvDocNaissance, pvAutre, riNegative]);
 
   // Load control for editing or duplicating
   useEffect(() => {

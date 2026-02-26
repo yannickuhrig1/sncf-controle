@@ -370,8 +370,8 @@ export default function OnboardControl() {
   }, [formState.tarifsControle, formState.stt50Count, formState.pvList, formState.stt100Count, formState.passengers, formState.riNegatif]);
 
   // Helper to calculate fraud rate (works with both Control and OnboardControlType)
-  const getFraudRate = (control: { tarifs_controle: number; pv: number; nb_passagers: number }) => {
-    const fraudCount = control.tarifs_controle + control.pv;
+  const getFraudRate = (control: { tarifs_controle: number; pv: number; nb_passagers: number; ri_negative: number }) => {
+    const fraudCount = control.tarifs_controle + control.pv + control.ri_negative;
     return control.nb_passagers > 0 ? (fraudCount / control.nb_passagers) * 100 : 0;
   };
 
