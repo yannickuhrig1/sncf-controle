@@ -66,49 +66,85 @@ interface DashboardShareData {
 }
 
 function buildDashboardText({ stats, detailedStats, periodLabel, dateRangeLabel, locationLabel }: DashboardShareData): string {
-  const line = '─'.repeat(40);
-  let t = `📊 SNCF Contrôles — Tableau de bord\n`;
-  t += `Période  : ${periodLabel} (${dateRangeLabel})\n`;
-  if (locationLabel !== 'Tous') t += `Lieu     : ${locationLabel}\n`;
-  t += `${line}\n`;
-  t += `Voyageurs      : ${stats.totalPassengers}  (${stats.controlCount} contrôle${stats.controlCount > 1 ? 's' : ''})\n`;
-  t += `Taux de fraude : ${formatFraudRate(stats.fraudRate)}  (${stats.fraudCount} fraude${stats.fraudCount !== 1 ? 's' : ''})\n`;
-  const pct = stats.totalPassengers > 0 ? ` (${((stats.passengersInRule / stats.totalPassengers) * 100).toFixed(1)}%)` : '';
-  t += `En règle       : ${stats.passengersInRule}${pct}\n`;
-  t += `Procès-verbaux : ${stats.pv}\n`;
+  const sep  = '━'.repeat(42);
+  const thin = '─'.repeat(42);
+  const row  = (label: string, value: number) =>
+    value === 0 ? '' : `   ▸  ${label.padEnd(22)}${value}\n`;
+  const inRulePct = stats.totalPassengers > 0
+    ? ` (${((stats.passengersInRule / stats.totalPassengers) * 100).toFixed(1)}%)`
+    : '';
+  const generatedAt = new Date().toLocaleDateString('fr-FR', {
+    day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit',
+  });
+
+  let t = '';
+  t += `${sep}\n`;
+  t += `  🚆 SNCF CONTRÔLES — Tableau de bord\n`;
+  t += `${sep}\n`;
+  t += `  📅 Période  :  ${periodLabel}\n`;
+  t += `  📆 Dates    :  ${dateRangeLabel}\n`;
+  if (locationLabel !== 'Tous') t += `  📍 Lieu     :  ${locationLabel}\n`;
+  t += `\n`;
+
+  t += `${sep}\n`;
+  t += `  CHIFFRES CLÉS\n`;
+  t += `${thin}\n`;
+  t += `  👥  Voyageurs       ${String(stats.totalPassengers).padStart(5)}   (${stats.controlCount} contrôle${stats.controlCount > 1 ? 's' : ''})\n`;
+  t += `  📊  Taux fraude     ${String(formatFraudRate(stats.fraudRate)).padStart(5)}   (${stats.fraudCount} fraude${stats.fraudCount !== 1 ? 's' : ''})\n`;
+  t += `  ✅  En règle        ${String(stats.passengersInRule).padStart(5)}${inRulePct}\n`;
+  t += `  📋  Procès-verbaux  ${String(stats.pv).padStart(5)}\n`;
+  t += `\n`;
 
   if (stats.tarifsControle > 0) {
-    t += `\nTarifs contrôle : ${stats.tarifsControle}\n`;
-    if (detailedStats.tarifsControle.stt50 > 0)       t += `  STT 50€       : ${detailedStats.tarifsControle.stt50}\n`;
-    if (detailedStats.tarifsControle.rnv > 0)         t += `  RNV           : ${detailedStats.tarifsControle.rnv}\n`;
-    if (detailedStats.tarifsControle.titreTiers > 0)  t += `  Titre tiers   : ${detailedStats.tarifsControle.titreTiers}\n`;
-    if (detailedStats.tarifsControle.docNaissance > 0)t += `  D.naissance   : ${detailedStats.tarifsControle.docNaissance}\n`;
-    if (detailedStats.tarifsControle.autre > 0)       t += `  Autre         : ${detailedStats.tarifsControle.autre}\n`;
+    t += `${sep}\n`;
+    t += `  TARIFS CONTRÔLE  ·  Total : ${stats.tarifsControle}\n`;
+    t += `${thin}\n`;
+    t += row('STT 50€',     detailedStats.tarifsControle.stt50);
+    t += row('RNV',         detailedStats.tarifsControle.rnv);
+    t += row('Titre tiers', detailedStats.tarifsControle.titreTiers);
+    t += row('D.naissance', detailedStats.tarifsControle.docNaissance);
+    t += row('Autre',       detailedStats.tarifsControle.autre);
+    t += `\n`;
   }
 
   if (stats.pv > 0) {
-    t += `\nProcès-verbaux détail :\n`;
-    if (stats.stt100 > 0)       t += `  STT 100€           : ${stats.stt100}\n`;
-    if (stats.pvStt100 > 0)     t += `  STT autre montant  : ${stats.pvStt100}\n`;
-    if (stats.pvRnv > 0)        t += `  RNV                : ${stats.pvRnv}\n`;
-    if (stats.pvTitreTiers > 0) t += `  Titre tiers        : ${stats.pvTitreTiers}\n`;
-    if (stats.pvDocNaissance > 0)t += `  D.naissance        : ${stats.pvDocNaissance}\n`;
-    if (stats.pvAutre > 0)      t += `  Autre              : ${stats.pvAutre}\n`;
+    t += `${sep}\n`;
+    t += `  PROCÈS-VERBAUX  ·  Total : ${stats.pv}\n`;
+    t += `${thin}\n`;
+    t += row('STT 100€',          stats.stt100);
+    t += row('STT autre montant', stats.pvStt100);
+    t += row('RNV',               stats.pvRnv);
+    t += row('Titre tiers',       stats.pvTitreTiers);
+    t += row('D.naissance',       stats.pvDocNaissance);
+    t += row('Autre',             stats.pvAutre);
+    t += `\n`;
   }
 
   if (detailedStats.totalBord > 0) {
-    t += `\nTarifs à bord / exceptionnel : ${detailedStats.totalBord}\n`;
-    if (detailedStats.tarifsBord.stt50 > 0)        t += `  Tarif bord         : ${detailedStats.tarifsBord.stt50}\n`;
-    if (detailedStats.tarifsBord.stt100 > 0)       t += `  Tarif exceptionnel : ${detailedStats.tarifsBord.stt100}\n`;
-    if (detailedStats.tarifsBord.rnv > 0)          t += `  RNV                : ${detailedStats.tarifsBord.rnv}\n`;
-    if (detailedStats.tarifsBord.titreTiers > 0)   t += `  Titre tiers        : ${detailedStats.tarifsBord.titreTiers}\n`;
-    if (detailedStats.tarifsBord.docNaissance > 0) t += `  D.naissance        : ${detailedStats.tarifsBord.docNaissance}\n`;
-    if (detailedStats.tarifsBord.autre > 0)        t += `  Autre              : ${detailedStats.tarifsBord.autre}\n`;
+    t += `${sep}\n`;
+    t += `  TARIFS À BORD  ·  Total : ${detailedStats.totalBord}\n`;
+    t += `${thin}\n`;
+    t += row('Tarif bord',         detailedStats.tarifsBord.stt50);
+    t += row('Tarif exceptionnel', detailedStats.tarifsBord.stt100);
+    t += row('RNV',                detailedStats.tarifsBord.rnv);
+    t += row('Titre tiers',        detailedStats.tarifsBord.titreTiers);
+    t += row('D.naissance',        detailedStats.tarifsBord.docNaissance);
+    t += row('Autre',              detailedStats.tarifsBord.autre);
+    t += `\n`;
   }
 
   if (stats.riPositive > 0 || stats.riNegative > 0) {
-    t += `\nRelevés d'identité : RI+ ${stats.riPositive}   RI− ${stats.riNegative}\n`;
+    t += `${sep}\n`;
+    t += `  RELEVÉS D'IDENTITÉ\n`;
+    t += `${thin}\n`;
+    t += `   ▸  RI Positif              ${stats.riPositive}\n`;
+    t += `   ▸  RI Négatif              ${stats.riNegative}\n`;
+    t += `\n`;
   }
+
+  t += `${sep}\n`;
+  t += `  Généré le ${generatedAt}  ·  SNCF Contrôles\n`;
+  t += `${sep}\n`;
 
   return t;
 }
