@@ -163,7 +163,6 @@ export function HistoryTableView({ controls, onControlClick }: HistoryTableViewP
               <SortableHeader columnKey="date" className="w-[100px]">Date</SortableHeader>
               <SortableHeader columnKey="time" className="w-[70px]">Heure</SortableHeader>
               <SortableHeader columnKey="type" className="w-[80px]">Type</SortableHeader>
-              <SortableHeader columnKey="location">Lieu</SortableHeader>
               <SortableHeader columnKey="train" className="w-[80px]">Train</SortableHeader>
               <TableHead>Trajet</TableHead>
               <SortableHeader columnKey="passengers" className="w-[80px] text-center">Voyageurs</SortableHeader>
@@ -206,9 +205,6 @@ export function HistoryTableView({ controls, onControlClick }: HistoryTableViewP
                       <Icon className="h-3.5 w-3.5 text-muted-foreground" />
                       <span className="text-xs">{locationLabels[control.location_type]}</span>
                     </div>
-                  </TableCell>
-                  <TableCell className="max-w-[150px] truncate text-sm">
-                    {control.location}
                   </TableCell>
                   <TableCell className="text-sm">
                     {control.train_number || '-'}
