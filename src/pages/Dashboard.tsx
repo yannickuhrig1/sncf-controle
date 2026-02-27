@@ -29,9 +29,8 @@ import { DashboardDatePicker } from '@/components/dashboard/DashboardDatePicker'
 import { PeriodSelector } from '@/components/dashboard/PeriodSelector';
 import { ViewModeToggle } from '@/components/dashboard/ViewModeToggle';
 import { calculateStats, formatFraudRate } from '@/lib/stats';
-
-import { Badge } from '@/components/ui/badge';
 import jsPDF from 'jspdf';
+import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import {
@@ -50,8 +49,6 @@ import {
 
 type LocationFilter = 'all' | 'train' | 'station';
 type EmailFormat = 'text' | 'html' | 'pdf';
-
-// ── Helpers partage résumé ─────────────────────────────────────────────────
 
 interface DashboardShareData {
   stats: ReturnType<typeof calculateStats>;
