@@ -2,7 +2,7 @@ import { useState, useMemo, useCallback } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button, buttonVariants } from '@/components/ui/button';
+import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -28,7 +28,9 @@ import { PendingControlsPanel } from '@/components/controls/PendingControlsPanel
 import { DashboardDatePicker } from '@/components/dashboard/DashboardDatePicker';
 import { PeriodSelector } from '@/components/dashboard/PeriodSelector';
 import { ViewModeToggle } from '@/components/dashboard/ViewModeToggle';
-import { calculateStats, formatFraudRate, getFraudRateBgColor, getFraudRateColor } from '@/lib/stats';
+import { calculateStats, formatFraudRate } from '@/lib/stats';
+
+import { Badge } from '@/components/ui/badge';
 import jsPDF from 'jspdf';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -156,9 +158,9 @@ function buildDashboardPDF(data: DashboardShareData): jsPDF {
 function StatRow({ label, value }: { label: string; value: number }) {
   if (value === 0) return null;
   return (
-    <div className="flex justify-between items-center py-0.5">
+    <div className="flex justify-between items-center px-2 py-1 rounded-md hover:bg-muted/50 transition-colors">
       <span className="text-xs text-muted-foreground">{label}</span>
-      <span className="text-sm font-semibold">{value}</span>
+      <span className="text-xs font-bold bg-muted px-1.5 py-0.5 rounded-md min-w-[1.5rem] text-center">{value}</span>
     </div>
   );
 }
@@ -417,37 +419,45 @@ export default function Dashboard() {
         <div className="grid grid-cols-2 gap-3">
           <Link
             to="/onboard"
-            className={cn(
-              buttonVariants({ size: 'lg' }),
-              'h-auto py-4 lg:py-3 flex flex-col lg:flex-row gap-2 rounded-xl shadow-md hover:shadow-lg transition-shadow'
-            )}
+            className="group relative overflow-hidden rounded-xl bg-primary p-4 shadow-md hover:shadow-lg transition-all hover:scale-[1.01] text-primary-foreground flex flex-col gap-1.5"
           >
-            <Train className="h-6 w-6 lg:h-5 lg:w-5" />
-            <span className="font-semibold">Contrôle à bord</span>
+            <div className="absolute right-2 top-2 opacity-10 group-hover:opacity-20 transition-opacity pointer-events-none">
+              <Train className="h-16 w-16" />
+            </div>
+            <div className="p-2 rounded-lg bg-white/20 w-fit">
+              <Train className="h-4 w-4" />
+            </div>
+            <span className="font-semibold text-sm mt-1">Contrôle à bord</span>
+            <span className="text-xs text-white/60">Nouveau contrôle en train</span>
           </Link>
 
           <Link
             to="/station"
-            className={cn(
-              buttonVariants({ variant: 'outline', size: 'lg' }),
-              'h-auto py-4 lg:py-3 flex flex-col lg:flex-row gap-2 rounded-xl border-2 hover:shadow-md transition-shadow'
-            )}
+            className="group relative overflow-hidden rounded-xl border-2 border-primary/15 bg-card p-4 shadow-sm hover:shadow-md transition-all hover:scale-[1.01] flex flex-col gap-1.5"
           >
-            <Building2 className="h-6 w-6 lg:h-5 lg:w-5" />
-            <span className="font-semibold">Contrôle en gare</span>
+            <div className="absolute right-2 top-2 opacity-5 group-hover:opacity-10 transition-opacity pointer-events-none">
+              <Building2 className="h-16 w-16 text-primary" />
+            </div>
+            <div className="p-2 rounded-lg bg-primary/10 w-fit">
+              <Building2 className="h-4 w-4 text-primary" />
+            </div>
+            <span className="font-semibold text-sm mt-1">Contrôle en gare</span>
+            <span className="text-xs text-muted-foreground">Nouveau contrôle en gare</span>
           </Link>
         </div>
 
         {/* KPIs principaux */}
         <div className="space-y-2">
-          <h2 className="text-base font-semibold">
-            {viewMode === 'my-data' ? 'Mes contrôles' : 'Tous les contrôles'}
+          <div className="flex items-center gap-2">
+            <h2 className="text-base font-semibold">
+              {viewMode === 'my-data' ? 'Mes contrôles' : 'Tous les contrôles'}
+            </h2>
             {locationFilter !== 'all' && (
-              <span className="ml-2 text-sm font-normal text-muted-foreground">
-                — {locationFilter === 'train' ? 'À bord' : 'En gare'}
-              </span>
+              <Badge variant="secondary" className="text-xs">
+                {locationFilter === 'train' ? 'À bord' : 'En gare'}
+              </Badge>
             )}
-          </h2>
+          </div>
 
           {isLoading ? (
             <div className="flex justify-center py-8">
@@ -457,77 +467,80 @@ export default function Dashboard() {
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
 
               {/* Voyageurs */}
-              <Card className="border-0 shadow-sm bg-card">
-                <CardContent className="p-3 lg:p-4">
-                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1.5">
-                    <div className="p-1 rounded-md bg-blue-100 dark:bg-blue-900/30">
-                      <Users className="h-3 w-3 text-blue-600 dark:text-blue-400" />
+              <Card className="border-0 shadow-md overflow-hidden bg-gradient-to-br from-blue-500 to-blue-600 text-white">
+                <CardContent className="p-4">
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="p-2 rounded-xl bg-white/20">
+                      <Users className="h-4 w-4" />
                     </div>
-                    Voyageurs
+                    <span className="text-[10px] font-medium text-white/60 uppercase tracking-wide">voyageurs</span>
                   </div>
-                  <div className="text-2xl font-bold tracking-tight">{stats.totalPassengers}</div>
-                  <p className="text-xs text-muted-foreground mt-0.5">
+                  <div className="text-3xl font-bold tracking-tight">{stats.totalPassengers}</div>
+                  <p className="text-xs text-white/65 mt-1">
                     {stats.controlCount} contrôle{stats.controlCount > 1 ? 's' : ''}
                   </p>
                 </CardContent>
               </Card>
 
               {/* Taux de fraude */}
-              <Card className={cn("border-0 shadow-sm", getFraudRateBgColor(stats.fraudRate))}>
-                <CardContent className="p-3 lg:p-4">
-                  <div className={cn("flex items-center gap-1.5 text-xs mb-1.5", getFraudRateColor(stats.fraudRate))}>
-                    <div className={cn(
-                      "p-1 rounded-md",
-                      stats.fraudRate >= 10 ? "bg-red-100 dark:bg-red-900/30" :
-                      stats.fraudRate >= 5  ? "bg-yellow-100 dark:bg-yellow-900/30" :
-                      "bg-green-100 dark:bg-green-900/30"
-                    )}>
-                      <AlertTriangle className="h-3 w-3" />
+              <Card className={cn(
+                "border-0 shadow-md overflow-hidden text-white",
+                stats.fraudRate >= 10 ? "bg-gradient-to-br from-red-500 to-rose-600" :
+                stats.fraudRate >= 5  ? "bg-gradient-to-br from-amber-500 to-orange-500" :
+                "bg-gradient-to-br from-emerald-500 to-green-600"
+              )}>
+                <CardContent className="p-4">
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="p-2 rounded-xl bg-white/20">
+                      <AlertTriangle className="h-4 w-4" />
                     </div>
-                    Taux de fraude
+                    <span className="text-[10px] font-medium text-white/60 uppercase tracking-wide">fraude</span>
                   </div>
-                  <div className={cn("text-2xl font-bold tracking-tight", getFraudRateColor(stats.fraudRate))}>
-                    {formatFraudRate(stats.fraudRate)}
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    {stats.fraudCount} fraude{stats.fraudCount > 1 ? 's' : ''}
+                  <div className="text-3xl font-bold tracking-tight">{formatFraudRate(stats.fraudRate)}</div>
+                  <p className="text-xs text-white/65 mt-1">
+                    {stats.fraudCount} fraude{stats.fraudCount !== 1 ? 's' : ''}
                   </p>
+                  <div className="mt-2.5 h-1.5 bg-white/20 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-white/50 rounded-full transition-all duration-500"
+                      style={{ width: `${Math.min(stats.fraudRate * 5, 100)}%` }}
+                    />
+                  </div>
                 </CardContent>
               </Card>
 
               {/* En règle */}
-              <Card className="border-0 shadow-sm bg-card">
-                <CardContent className="p-3 lg:p-4">
-                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1.5">
-                    <div className="p-1 rounded-md bg-green-100 dark:bg-green-900/30">
-                      <CheckCircle2 className="h-3 w-3 text-green-600 dark:text-green-400" />
+              <Card className="border-0 shadow-md overflow-hidden bg-gradient-to-br from-emerald-500 to-teal-600 text-white">
+                <CardContent className="p-4">
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="p-2 rounded-xl bg-white/20">
+                      <CheckCircle2 className="h-4 w-4" />
                     </div>
-                    En règle
+                    <span className="text-[10px] font-medium text-white/60 uppercase tracking-wide">en règle</span>
                   </div>
-                  <div className="text-2xl font-bold tracking-tight text-green-600 dark:text-green-400">
-                    {stats.passengersInRule}
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-0.5">
+                  <div className="text-3xl font-bold tracking-tight">{stats.passengersInRule}</div>
+                  <p className="text-xs text-white/65 mt-1">
                     {stats.totalPassengers > 0
-                      ? `${((stats.passengersInRule / stats.totalPassengers) * 100).toFixed(1)}%`
+                      ? `${((stats.passengersInRule / stats.totalPassengers) * 100).toFixed(1)}% des voyageurs`
                       : '0%'}
                   </p>
                 </CardContent>
               </Card>
 
               {/* PV */}
-              <Card className="border-0 shadow-sm bg-card">
-                <CardContent className="p-3 lg:p-4">
-                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1.5">
-                    <div className="p-1 rounded-md bg-red-100 dark:bg-red-900/30">
-                      <AlertTriangle className="h-3 w-3 text-red-600 dark:text-red-400" />
+              <Card className={cn(
+                "border-0 shadow-md overflow-hidden text-white",
+                stats.pv > 0 ? "bg-gradient-to-br from-rose-500 to-red-600" : "bg-gradient-to-br from-slate-400 to-slate-500"
+              )}>
+                <CardContent className="p-4">
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="p-2 rounded-xl bg-white/20">
+                      <AlertTriangle className="h-4 w-4" />
                     </div>
-                    Procès-verbaux
+                    <span className="text-[10px] font-medium text-white/60 uppercase tracking-wide">PV</span>
                   </div>
-                  <div className="text-2xl font-bold tracking-tight text-red-600 dark:text-red-400">
-                    {stats.pv}
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-0.5">PV</p>
+                  <div className="text-3xl font-bold tracking-tight">{stats.pv}</div>
+                  <p className="text-xs text-white/65 mt-1">Procès-verbaux</p>
                 </CardContent>
               </Card>
 
@@ -543,36 +556,46 @@ export default function Dashboard() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
 
               {/* Tarifs contrôle */}
-              <Card className="border-0 shadow-sm">
+              <Card className="border-0 shadow-sm overflow-hidden">
+                <div className="h-1 bg-gradient-to-r from-green-400 to-emerald-500" />
                 <CardHeader className="py-3 px-4 pb-2">
-                  <CardTitle className="text-sm font-semibold flex items-center gap-2 text-green-600 dark:text-green-400">
-                    <UserCheck className="h-4 w-4" />
+                  <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                    <div className="p-1.5 rounded-lg bg-green-100 dark:bg-green-900/30">
+                      <UserCheck className="h-3.5 w-3.5 text-green-600 dark:text-green-400" />
+                    </div>
                     Tarifs contrôle
-                    <span className="ml-auto text-muted-foreground font-normal text-xs">{stats.tarifsControle}</span>
+                    <Badge className="ml-auto bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 hover:bg-green-100 text-xs">
+                      {stats.tarifsControle}
+                    </Badge>
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="px-4 pb-3 space-y-0.5">
+                <CardContent className="px-3 pb-3 space-y-0.5">
                   <StatRow label="STT 50€"     value={detailedStats.tarifsControle.stt50} />
                   <StatRow label="RNV"         value={detailedStats.tarifsControle.rnv} />
                   <StatRow label="Titre tiers" value={detailedStats.tarifsControle.titreTiers} />
                   <StatRow label="D.naissance" value={detailedStats.tarifsControle.docNaissance} />
                   <StatRow label="Autre"       value={detailedStats.tarifsControle.autre} />
                   {stats.tarifsControle === 0 && (
-                    <p className="text-xs text-muted-foreground italic">Aucun</p>
+                    <p className="text-xs text-muted-foreground italic px-2">Aucun</p>
                   )}
                 </CardContent>
               </Card>
 
               {/* Procès-verbaux */}
-              <Card className="border-0 shadow-sm">
+              <Card className="border-0 shadow-sm overflow-hidden">
+                <div className="h-1 bg-gradient-to-r from-red-400 to-rose-500" />
                 <CardHeader className="py-3 px-4 pb-2">
-                  <CardTitle className="text-sm font-semibold flex items-center gap-2 text-red-600 dark:text-red-400">
-                    <AlertTriangle className="h-4 w-4" />
+                  <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                    <div className="p-1.5 rounded-lg bg-red-100 dark:bg-red-900/30">
+                      <AlertTriangle className="h-3.5 w-3.5 text-red-600 dark:text-red-400" />
+                    </div>
                     Procès-verbaux
-                    <span className="ml-auto text-muted-foreground font-normal text-xs">{stats.pv}</span>
+                    <Badge className="ml-auto bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 hover:bg-red-100 text-xs">
+                      {stats.pv}
+                    </Badge>
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="px-4 pb-3 space-y-0.5">
+                <CardContent className="px-3 pb-3 space-y-0.5">
                   <StatRow label="STT 100€"          value={stats.stt100} />
                   <StatRow label="STT autre montant" value={stats.pvStt100} />
                   <StatRow label="RNV"               value={stats.pvRnv} />
@@ -580,22 +603,27 @@ export default function Dashboard() {
                   <StatRow label="D.naissance"       value={stats.pvDocNaissance} />
                   <StatRow label="Autre"             value={stats.pvAutre} />
                   {stats.pv === 0 && (
-                    <p className="text-xs text-muted-foreground italic">Aucun</p>
+                    <p className="text-xs text-muted-foreground italic px-2">Aucun</p>
                   )}
                 </CardContent>
               </Card>
 
               {/* Tarifs à bord + RI */}
               <div className="space-y-3">
-                <Card className="border-0 shadow-sm">
+                <Card className="border-0 shadow-sm overflow-hidden">
+                  <div className="h-1 bg-gradient-to-r from-blue-400 to-indigo-500" />
                   <CardHeader className="py-3 px-4 pb-2">
-                    <CardTitle className="text-sm font-semibold flex items-center gap-2 text-blue-600 dark:text-blue-400">
-                      <CreditCard className="h-4 w-4" />
-                      Tarifs à bord / exceptionnel
-                      <span className="ml-auto text-muted-foreground font-normal text-xs">{detailedStats.totalBord}</span>
+                    <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                      <div className="p-1.5 rounded-lg bg-blue-100 dark:bg-blue-900/30">
+                        <CreditCard className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
+                      </div>
+                      Tarifs à bord
+                      <Badge className="ml-auto bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 hover:bg-blue-100 text-xs">
+                        {detailedStats.totalBord}
+                      </Badge>
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="px-4 pb-3 space-y-0.5">
+                  <CardContent className="px-3 pb-3 space-y-0.5">
                     <StatRow label="Tarif bord"         value={detailedStats.tarifsBord.stt50} />
                     <StatRow label="Tarif exceptionnel" value={detailedStats.tarifsBord.stt100} />
                     <StatRow label="RNV"                value={detailedStats.tarifsBord.rnv} />
@@ -603,26 +631,29 @@ export default function Dashboard() {
                     <StatRow label="D.naissance"        value={detailedStats.tarifsBord.docNaissance} />
                     <StatRow label="Autre"              value={detailedStats.tarifsBord.autre} />
                     {detailedStats.totalBord === 0 && (
-                      <p className="text-xs text-muted-foreground italic">Aucun</p>
+                      <p className="text-xs text-muted-foreground italic px-2">Aucun</p>
                     )}
                   </CardContent>
                 </Card>
 
-                <Card className="border-0 shadow-sm">
+                <Card className="border-0 shadow-sm overflow-hidden">
+                  <div className="h-1 bg-gradient-to-r from-purple-400 to-violet-500" />
                   <CardHeader className="py-3 px-4 pb-2">
-                    <CardTitle className="text-sm font-semibold flex items-center gap-2 text-purple-600 dark:text-purple-400">
-                      <IdCard className="h-4 w-4" />
+                    <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                      <div className="p-1.5 rounded-lg bg-purple-100 dark:bg-purple-900/30">
+                        <IdCard className="h-3.5 w-3.5 text-purple-600 dark:text-purple-400" />
+                      </div>
                       Relevés d'identité
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="px-4 pb-3 flex gap-6">
-                    <div className="text-center flex-1">
-                      <div className="text-xl font-bold text-green-600">{stats.riPositive}</div>
-                      <div className="text-xs text-muted-foreground">RI+</div>
+                  <CardContent className="px-4 pb-4 grid grid-cols-2 gap-3">
+                    <div className="flex flex-col items-center justify-center rounded-lg bg-green-50 dark:bg-green-900/20 py-3">
+                      <div className="text-2xl font-bold text-green-600 dark:text-green-400">{stats.riPositive}</div>
+                      <div className="text-xs text-green-600/70 dark:text-green-400/70 font-medium mt-0.5">RI+</div>
                     </div>
-                    <div className="text-center flex-1">
-                      <div className="text-xl font-bold text-red-600">{stats.riNegative}</div>
-                      <div className="text-xs text-muted-foreground">RI−</div>
+                    <div className="flex flex-col items-center justify-center rounded-lg bg-red-50 dark:bg-red-900/20 py-3">
+                      <div className="text-2xl font-bold text-red-600 dark:text-red-400">{stats.riNegative}</div>
+                      <div className="text-xs text-red-600/70 dark:text-red-400/70 font-medium mt-0.5">RI−</div>
                     </div>
                   </CardContent>
                 </Card>
