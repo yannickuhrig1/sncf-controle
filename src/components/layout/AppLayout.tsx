@@ -321,7 +321,10 @@ export function AppLayout({ children }: AppLayoutProps) {
         {/* Brand */}
         <div className="flex items-center gap-2.5 px-4 py-4 border-b border-white/10">
           <Train className="h-5 w-5 shrink-0" />
-          <span className="font-semibold text-base leading-tight">SNCF Contrôles</span>
+          <div>
+            <div className="font-semibold text-base leading-tight">SNCF Contrôles</div>
+            <div className="text-[10px] text-white/50 leading-tight">v{__APP_VERSION__} · {__BUILD_DATE__}</div>
+          </div>
         </div>
 
         {/* Navigation */}
@@ -357,7 +360,10 @@ export function AppLayout({ children }: AppLayoutProps) {
           <div className="flex items-center justify-between px-4 py-3">
             <div className="flex items-center gap-2">
               <Train className="h-5 w-5" />
-              <span className="font-semibold">SNCF Contrôles</span>
+              <div>
+                <div className="font-semibold leading-tight">SNCF Contrôles</div>
+                <div className="text-[10px] text-white/60 leading-tight">v{__APP_VERSION__} · {__BUILD_DATE__}</div>
+              </div>
             </div>
 
             <div className="flex items-center gap-2">
