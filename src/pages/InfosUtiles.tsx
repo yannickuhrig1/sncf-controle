@@ -53,24 +53,29 @@ export default function InfosUtilesPage() {
 
   return (
     <AppLayout>
-      <div className="space-y-6 max-w-4xl mx-auto">
+      <div className="space-y-5 max-w-4xl">
         {/* Header */}
-        <div className="flex flex-col gap-2">
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <Info className="h-6 w-6 text-primary" />
-            Infos utiles
-          </h1>
-          <p className="text-muted-foreground">
-            Guides, procédures et informations pour les contrôleurs
-          </p>
+        <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-1">
+            <h1 className="text-xl font-bold flex items-center gap-2">
+              <Info className="h-5 w-5 text-primary" />
+              Infos utiles
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              Guides, procédures et informations pour les contrôleurs
+            </p>
+          </div>
         </div>
 
         {/* Quick Reference Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base flex items-center gap-2">
-                <Calculator className="h-4 w-4 text-primary" />
+          <Card className="border-0 shadow-sm overflow-hidden">
+            <div className="h-1 bg-gradient-to-r from-blue-400 to-indigo-500" />
+            <CardHeader className="pb-3 py-3 px-4">
+              <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                <div className="p-1.5 rounded-lg bg-blue-100 dark:bg-blue-900/30">
+                  <Calculator className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
+                </div>
                 Calcul du taux de fraude
               </CardTitle>
             </CardHeader>
@@ -87,10 +92,13 @@ export default function InfosUtilesPage() {
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base flex items-center gap-2">
-                <Clock className="h-4 w-4 text-primary" />
+          <Card className="border-0 shadow-sm overflow-hidden">
+            <div className="h-1 bg-gradient-to-r from-emerald-400 to-teal-500" />
+            <CardHeader className="pb-3 py-3 px-4">
+              <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                <div className="p-1.5 rounded-lg bg-emerald-100 dark:bg-emerald-900/30">
+                  <Clock className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+                </div>
                 Horaires de service
               </CardTitle>
             </CardHeader>
@@ -112,13 +120,16 @@ export default function InfosUtilesPage() {
         </div>
 
         {/* Tarif Types Reference */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Ticket className="h-5 w-5 text-primary" />
+        <Card className="border-0 shadow-sm overflow-hidden">
+          <div className="h-1 bg-gradient-to-r from-amber-400 to-orange-500" />
+          <CardHeader className="py-3 px-4 pb-2">
+            <CardTitle className="text-sm font-semibold flex items-center gap-2">
+              <div className="p-1.5 rounded-lg bg-amber-100 dark:bg-amber-900/30">
+                <Ticket className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
+              </div>
               Types de tarification
             </CardTitle>
-            <CardDescription>
+            <CardDescription className="text-xs pl-8">
               Référence des différents types de tarifs applicables
             </CardDescription>
           </CardHeader>
@@ -176,10 +187,13 @@ export default function InfosUtilesPage() {
         </Card>
 
         {/* FAQ Section */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <HelpCircle className="h-5 w-5 text-primary" />
+        <Card className="border-0 shadow-sm overflow-hidden">
+          <div className="h-1 bg-gradient-to-r from-violet-400 to-purple-500" />
+          <CardHeader className="py-3 px-4 pb-2">
+            <CardTitle className="text-sm font-semibold flex items-center gap-2">
+              <div className="p-1.5 rounded-lg bg-violet-100 dark:bg-violet-900/30">
+                <HelpCircle className="h-3.5 w-3.5 text-violet-600 dark:text-violet-400" />
+              </div>
               Questions fréquentes
             </CardTitle>
           </CardHeader>
@@ -246,13 +260,16 @@ export default function InfosUtilesPage() {
         </Card>
 
         {/* Contact Section */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Phone className="h-5 w-5 text-primary" />
+        <Card className="border-0 shadow-sm overflow-hidden">
+          <div className="h-1 bg-gradient-to-r from-green-400 to-emerald-500" />
+          <CardHeader className="py-3 px-4 pb-2">
+            <CardTitle className="text-sm font-semibold flex items-center gap-2">
+              <div className="p-1.5 rounded-lg bg-green-100 dark:bg-green-900/30">
+                <Phone className="h-3.5 w-3.5 text-green-600 dark:text-green-400" />
+              </div>
               Contacts utiles
             </CardTitle>
-            <CardDescription>
+            <CardDescription className="text-xs pl-8">
               Numéros publics SNCF et contacts internes
             </CardDescription>
           </CardHeader>

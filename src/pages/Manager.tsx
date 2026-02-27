@@ -14,9 +14,10 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { 
-  Loader2, 
-  Users, 
+import { cn } from '@/lib/utils';
+import {
+  Loader2,
+  Users,
   UserCheck,
   BarChart3,
   TrendingUp,
@@ -110,54 +111,71 @@ export default function ManagerPage() {
 
   return (
     <AppLayout>
-      <div className="space-y-6">
+      <div className="space-y-5 max-w-5xl">
         {/* Header */}
-        <div className="flex flex-col gap-2">
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <UserCheck className="h-6 w-6 text-primary" />
-            Espace Manager
-          </h1>
-          <p className="text-muted-foreground">
-            Suivez les performances de votre équipe
-          </p>
+        <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-1">
+            <h1 className="text-xl font-bold flex items-center gap-2">
+              <UserCheck className="h-5 w-5 text-primary" />
+              Espace Manager
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              Suivez les performances de votre équipe
+            </p>
+          </div>
         </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <Card>
-            <CardContent className="pt-4">
-              <div className="flex items-center gap-2">
-                <Users className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm text-muted-foreground">Équipe</span>
+        {/* KPI Cards */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <Card className="border-0 shadow-md overflow-hidden bg-gradient-to-br from-blue-500 to-blue-600 text-white">
+            <CardContent className="p-4">
+              <div className="flex items-start justify-between mb-3">
+                <div className="p-2 rounded-xl bg-white/20"><Users className="h-4 w-4" /></div>
+                <span className="text-[10px] font-medium text-white/60 uppercase tracking-wide">équipe</span>
               </div>
-              <p className="text-2xl font-bold">{teamMembers.length}</p>
+              <div className="text-3xl font-bold tracking-tight">{teamMembers.length}</div>
+              <p className="text-xs text-white/65 mt-1">membres actifs</p>
             </CardContent>
           </Card>
-          <Card>
-            <CardContent className="pt-4">
-              <div className="flex items-center gap-2">
-                <BarChart3 className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm text-muted-foreground">Contrôles aujourd'hui</span>
+
+          <Card className="border-0 shadow-md overflow-hidden bg-gradient-to-br from-violet-500 to-purple-600 text-white">
+            <CardContent className="p-4">
+              <div className="flex items-start justify-between mb-3">
+                <div className="p-2 rounded-xl bg-white/20"><BarChart3 className="h-4 w-4" /></div>
+                <span className="text-[10px] font-medium text-white/60 uppercase tracking-wide">contrôles</span>
               </div>
-              <p className="text-2xl font-bold">{todayControls.length}</p>
+              <div className="text-3xl font-bold tracking-tight">{todayControls.length}</div>
+              <p className="text-xs text-white/65 mt-1">aujourd'hui</p>
             </CardContent>
           </Card>
-          <Card>
-            <CardContent className="pt-4">
-              <div className="flex items-center gap-2">
-                <TrendingUp className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm text-muted-foreground">Passagers</span>
+
+          <Card className="border-0 shadow-md overflow-hidden bg-gradient-to-br from-emerald-500 to-teal-600 text-white">
+            <CardContent className="p-4">
+              <div className="flex items-start justify-between mb-3">
+                <div className="p-2 rounded-xl bg-white/20"><TrendingUp className="h-4 w-4" /></div>
+                <span className="text-[10px] font-medium text-white/60 uppercase tracking-wide">passagers</span>
               </div>
-              <p className="text-2xl font-bold">{totalPassengers}</p>
+              <div className="text-3xl font-bold tracking-tight">{totalPassengers}</div>
+              <p className="text-xs text-white/65 mt-1">contrôlés aujourd'hui</p>
             </CardContent>
           </Card>
-          <Card>
-            <CardContent className="pt-4">
-              <div className="flex items-center gap-2">
-                <AlertTriangle className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm text-muted-foreground">Taux fraude</span>
+
+          <Card className={cn(
+            "border-0 shadow-md overflow-hidden text-white",
+            parseFloat(fraudRate) >= 10 ? "bg-gradient-to-br from-red-500 to-rose-600"
+              : parseFloat(fraudRate) >= 5  ? "bg-gradient-to-br from-amber-500 to-orange-500"
+              : "bg-gradient-to-br from-emerald-500 to-green-600"
+          )}>
+            <CardContent className="p-4">
+              <div className="flex items-start justify-between mb-3">
+                <div className="p-2 rounded-xl bg-white/20"><AlertTriangle className="h-4 w-4" /></div>
+                <span className="text-[10px] font-medium text-white/60 uppercase tracking-wide">fraude</span>
               </div>
-              <p className="text-2xl font-bold">{fraudRate}%</p>
+              <div className="text-3xl font-bold tracking-tight">{fraudRate}%</div>
+              <p className="text-xs text-white/65 mt-1">taux du jour</p>
+              <div className="mt-2.5 h-1.5 bg-white/20 rounded-full overflow-hidden">
+                <div className="h-full bg-white/50 rounded-full" style={{ width: `${Math.min(parseFloat(fraudRate) * 5, 100)}%` }} />
+              </div>
             </CardContent>
           </Card>
         </div>
@@ -175,13 +193,19 @@ export default function ManagerPage() {
             <AgentRanking controls={todayControls} members={teamMembers} />
 
             {/* Team Members */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Users className="h-5 w-5" />
+            <Card className="border-0 shadow-sm overflow-hidden">
+              <div className="h-1 bg-gradient-to-r from-blue-400 to-indigo-500" />
+              <CardHeader className="py-3 px-4 pb-2">
+                <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                  <div className="p-1.5 rounded-lg bg-blue-100 dark:bg-blue-900/30">
+                    <Users className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
+                  </div>
                   Membres de l'équipe
+                  <Badge className="ml-auto bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 hover:bg-blue-100 text-xs">
+                    {teamMembers.length}
+                  </Badge>
                 </CardTitle>
-                <CardDescription>
+                <CardDescription className="text-xs pl-8">
                   {isAdmin() ? 'Tous les agents' : 'Agents de votre équipe'}
                 </CardDescription>
               </CardHeader>
@@ -233,11 +257,17 @@ export default function ManagerPage() {
             </Card>
 
             {/* Today's Controls */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <BarChart3 className="h-5 w-5" />
+            <Card className="border-0 shadow-sm overflow-hidden">
+              <div className="h-1 bg-gradient-to-r from-violet-400 to-purple-500" />
+              <CardHeader className="py-3 px-4 pb-2">
+                <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                  <div className="p-1.5 rounded-lg bg-violet-100 dark:bg-violet-900/30">
+                    <BarChart3 className="h-3.5 w-3.5 text-violet-600 dark:text-violet-400" />
+                  </div>
                   Contrôles du jour
+                  <Badge className="ml-auto bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400 hover:bg-violet-100 text-xs">
+                    {todayControls.length}
+                  </Badge>
                 </CardTitle>
               </CardHeader>
               <CardContent>

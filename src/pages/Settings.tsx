@@ -207,12 +207,14 @@ export default function Settings() {
 
   return (
     <AppLayout>
-      <div className="space-y-4 max-w-2xl mx-auto">
+      <div className="space-y-5 max-w-2xl">
         {/* Header */}
-        <div className="flex items-center gap-3">
-          <SettingsIcon className="h-6 w-6 text-primary" />
-          <div>
-            <h1 className="text-2xl font-bold">Paramètres</h1>
+        <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-1">
+            <h1 className="text-xl font-bold flex items-center gap-2">
+              <SettingsIcon className="h-5 w-5 text-primary" />
+              Paramètres
+            </h1>
             <p className="text-sm text-muted-foreground">
               Personnalisez l'application selon vos préférences
             </p>

@@ -407,16 +407,18 @@ export default function AdminPage() {
 
   return (
     <AppLayout>
-      <div className="space-y-6">
+      <div className="space-y-5 max-w-5xl">
         {/* Header */}
-        <div className="flex flex-col gap-2">
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <Settings className="h-6 w-6 text-primary" />
-            Administration
-          </h1>
-          <p className="text-muted-foreground">
-            Gérez les utilisateurs et les équipes
-          </p>
+        <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-1">
+            <h1 className="text-xl font-bold flex items-center gap-2">
+              <Settings className="h-5 w-5 text-primary" />
+              Administration
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              Gérez les utilisateurs et les équipes
+            </p>
+          </div>
         </div>
 
         {/* Tabs */}

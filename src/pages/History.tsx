@@ -481,18 +481,21 @@ export default function HistoryPage() {
   };
   return (
     <AppLayout>
-      <div className="space-y-6">
+      <div className="space-y-5">
         {/* Header */}
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-3">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <History className="h-6 w-6 text-primary" />
-              <h1 className="text-2xl font-bold">Historique</h1>
-              {totalCount > 0 && (
-                <Badge variant="secondary" className="text-xs">
-                  {totalCount}
-                </Badge>
-              )}
+            <div className="flex flex-col gap-1">
+              <h1 className="text-xl font-bold flex items-center gap-2">
+                <History className="h-5 w-5 text-primary" />
+                Historique
+                {totalCount > 0 && (
+                  <Badge variant="secondary" className="text-xs">
+                    {totalCount}
+                  </Badge>
+                )}
+              </h1>
+              <p className="text-sm text-muted-foreground">Consultez et filtrez tous vos contrôles</p>
             </div>
             <div className="flex items-center gap-2">
               {/* View mode toggle — desktop only (mobile always uses list) */}

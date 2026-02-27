@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
 import { Loader2, User, BadgeCheck, Shield, LogOut, Save } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
@@ -97,28 +98,38 @@ export default function ProfilePage() {
 
   const initials = `${profile.first_name[0]}${profile.last_name[0]}`.toUpperCase();
 
+  const roleGradients = {
+    agent:   'from-blue-500 to-blue-600',
+    manager: 'from-violet-500 to-purple-600',
+    admin:   'from-red-500 to-rose-600',
+  };
+
   return (
     <AppLayout>
-      <div className="space-y-6">
+      <div className="space-y-5 max-w-xl">
         {/* Header */}
-        <div className="flex items-center gap-3">
-          <User className="h-6 w-6 text-primary" />
-          <h1 className="text-2xl font-bold">Mon profil</h1>
+        <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-1">
+            <h1 className="text-xl font-bold flex items-center gap-2">
+              <User className="h-5 w-5 text-primary" />
+              Mon profil
+            </h1>
+            <p className="text-sm text-muted-foreground">Gérez vos informations personnelles</p>
+          </div>
         </div>
 
-        {/* Profile Card */}
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex flex-col items-center text-center">
-              <Avatar className="h-20 w-20 mb-4">
+        {/* Profile Hero Card */}
+        <Card className="border-0 shadow-md overflow-hidden">
+          <div className={cn("h-20 bg-gradient-to-br", roleGradients[profile.role])} />
+          <CardContent className="pt-0 pb-5 px-5">
+            <div className="flex flex-col items-center text-center -mt-10">
+              <Avatar className="h-20 w-20 ring-4 ring-background shadow-lg mb-3">
                 <AvatarImage src={profile.avatar_url ?? undefined} />
-                <AvatarFallback className="text-lg bg-primary text-primary-foreground">
+                <AvatarFallback className={cn("text-lg text-white bg-gradient-to-br", roleGradients[profile.role])}>
                   {initials}
                 </AvatarFallback>
               </Avatar>
-              <h2 className="text-xl font-semibold">
-                {profile.first_name} {profile.last_name}
-              </h2>
+              <h2 className="text-lg font-bold">{profile.first_name} {profile.last_name}</h2>
               <p className="text-sm text-muted-foreground">{user.email}</p>
               <div className="flex gap-2 mt-3">
                 <Badge className={roleColors[profile.role]}>
@@ -137,10 +148,11 @@ export default function ProfilePage() {
         </Card>
 
         {/* Edit Form */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Informations personnelles</CardTitle>
-            <CardDescription>
+        <Card className="border-0 shadow-sm overflow-hidden">
+          <div className="h-1 bg-gradient-to-r from-blue-400 to-indigo-500" />
+          <CardHeader className="py-3 px-4 pb-2">
+            <CardTitle className="text-sm font-semibold">Informations personnelles</CardTitle>
+            <CardDescription className="text-xs">
               Modifiez vos informations de profil
             </CardDescription>
           </CardHeader>
@@ -219,7 +231,7 @@ export default function ProfilePage() {
         {/* Sign Out */}
         <Button
           variant="outline"
-          className="w-full text-destructive hover:text-destructive"
+          className="w-full text-destructive hover:text-destructive border-destructive/30 hover:bg-destructive/5"
           onClick={handleSignOut}
         >
           <LogOut className="mr-2 h-4 w-4" />
