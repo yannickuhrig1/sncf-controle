@@ -29,14 +29,7 @@ import { DashboardDatePicker } from '@/components/dashboard/DashboardDatePicker'
 import { PeriodSelector } from '@/components/dashboard/PeriodSelector';
 import { ViewModeToggle } from '@/components/dashboard/ViewModeToggle';
 import { calculateStats, formatFraudRate, getFraudRateBgColor, getFraudRateColor } from '@/lib/stats';
-import {
-  exportToPDF,
-  downloadPDF,
-  exportToHTML,
-  downloadHTML,
-  generateEmailContent,
-  openMailClient,
-} from '@/lib/exportUtils';
+import jsPDF from 'jspdf';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import {
@@ -55,6 +48,109 @@ import {
 
 type LocationFilter = 'all' | 'train' | 'station';
 type EmailFormat = 'text' | 'html' | 'pdf';
+
+// ── Helpers partage résumé ─────────────────────────────────────────────────
+
+interface DashboardShareData {
+  stats: ReturnType<typeof calculateStats>;
+  detailedStats: {
+    tarifsControle: { stt50: number; rnv: number; titreTiers: number; docNaissance: number; autre: number };
+    tarifsBord: { stt50: number; stt100: number; rnv: number; titreTiers: number; docNaissance: number; autre: number };
+    totalBord: number;
+  };
+  periodLabel: string;
+  dateRangeLabel: string;
+  locationLabel: string;
+}
+
+function buildDashboardText({ stats, detailedStats, periodLabel, dateRangeLabel, locationLabel }: DashboardShareData): string {
+  const line = '─'.repeat(40);
+  let t = `📊 SNCF Contrôles — Tableau de bord\n`;
+  t += `Période  : ${periodLabel} (${dateRangeLabel})\n`;
+  if (locationLabel !== 'Tous') t += `Lieu     : ${locationLabel}\n`;
+  t += `${line}\n`;
+  t += `Voyageurs      : ${stats.totalPassengers}  (${stats.controlCount} contrôle${stats.controlCount > 1 ? 's' : ''})\n`;
+  t += `Taux de fraude : ${formatFraudRate(stats.fraudRate)}  (${stats.fraudCount} fraude${stats.fraudCount !== 1 ? 's' : ''})\n`;
+  const pct = stats.totalPassengers > 0 ? ` (${((stats.passengersInRule / stats.totalPassengers) * 100).toFixed(1)}%)` : '';
+  t += `En règle       : ${stats.passengersInRule}${pct}\n`;
+  t += `Procès-verbaux : ${stats.pv}\n`;
+
+  if (stats.tarifsControle > 0) {
+    t += `\nTarifs contrôle : ${stats.tarifsControle}\n`;
+    if (detailedStats.tarifsControle.stt50 > 0)       t += `  STT 50€       : ${detailedStats.tarifsControle.stt50}\n`;
+    if (detailedStats.tarifsControle.rnv > 0)         t += `  RNV           : ${detailedStats.tarifsControle.rnv}\n`;
+    if (detailedStats.tarifsControle.titreTiers > 0)  t += `  Titre tiers   : ${detailedStats.tarifsControle.titreTiers}\n`;
+    if (detailedStats.tarifsControle.docNaissance > 0)t += `  D.naissance   : ${detailedStats.tarifsControle.docNaissance}\n`;
+    if (detailedStats.tarifsControle.autre > 0)       t += `  Autre         : ${detailedStats.tarifsControle.autre}\n`;
+  }
+
+  if (stats.pv > 0) {
+    t += `\nProcès-verbaux détail :\n`;
+    if (stats.stt100 > 0)       t += `  STT 100€           : ${stats.stt100}\n`;
+    if (stats.pvStt100 > 0)     t += `  STT autre montant  : ${stats.pvStt100}\n`;
+    if (stats.pvRnv > 0)        t += `  RNV                : ${stats.pvRnv}\n`;
+    if (stats.pvTitreTiers > 0) t += `  Titre tiers        : ${stats.pvTitreTiers}\n`;
+    if (stats.pvDocNaissance > 0)t += `  D.naissance        : ${stats.pvDocNaissance}\n`;
+    if (stats.pvAutre > 0)      t += `  Autre              : ${stats.pvAutre}\n`;
+  }
+
+  if (detailedStats.totalBord > 0) {
+    t += `\nTarifs à bord / exceptionnel : ${detailedStats.totalBord}\n`;
+    if (detailedStats.tarifsBord.stt50 > 0)        t += `  Tarif bord         : ${detailedStats.tarifsBord.stt50}\n`;
+    if (detailedStats.tarifsBord.stt100 > 0)       t += `  Tarif exceptionnel : ${detailedStats.tarifsBord.stt100}\n`;
+    if (detailedStats.tarifsBord.rnv > 0)          t += `  RNV                : ${detailedStats.tarifsBord.rnv}\n`;
+    if (detailedStats.tarifsBord.titreTiers > 0)   t += `  Titre tiers        : ${detailedStats.tarifsBord.titreTiers}\n`;
+    if (detailedStats.tarifsBord.docNaissance > 0) t += `  D.naissance        : ${detailedStats.tarifsBord.docNaissance}\n`;
+    if (detailedStats.tarifsBord.autre > 0)        t += `  Autre              : ${detailedStats.tarifsBord.autre}\n`;
+  }
+
+  if (stats.riPositive > 0 || stats.riNegative > 0) {
+    t += `\nRelevés d'identité : RI+ ${stats.riPositive}   RI− ${stats.riNegative}\n`;
+  }
+
+  return t;
+}
+
+function buildDashboardHTML(data: DashboardShareData): string {
+  const text = buildDashboardText(data);
+  return `<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8">
+<title>Tableau de bord SNCF Contrôles</title>
+<style>
+  body{font-family:system-ui,sans-serif;max-width:600px;margin:2rem auto;padding:1rem;background:#f9fafb;color:#111}
+  h1{font-size:1.1rem;font-weight:700;margin-bottom:.5rem}
+  pre{background:#fff;border:1px solid #e5e7eb;border-radius:.5rem;padding:1.25rem;white-space:pre-wrap;font-size:.875rem;line-height:1.6}
+  p{color:#6b7280;font-size:.75rem;margin-top:1rem}
+</style></head><body>
+<h1>📊 SNCF Contrôles — Tableau de bord</h1>
+<pre>${text.replace(/</g, '&lt;')}</pre>
+<p>Généré le ${new Date().toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
+</body></html>`;
+}
+
+function buildDashboardPDF(data: DashboardShareData): jsPDF {
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+  const text = buildDashboardText(data);
+  const lines = text.split('\n');
+  let y = 20;
+  doc.setFontSize(10);
+  for (const line of lines) {
+    if (y > 270) { doc.addPage(); y = 20; }
+    if (line.startsWith('📊')) {
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(12);
+      doc.text(line.replace('📊 ', ''), 15, y);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(10);
+    } else if (line.startsWith('─')) {
+      doc.setDrawColor(200, 200, 200);
+      doc.line(15, y, 195, y);
+    } else {
+      doc.text(line.replace(/[📊]/g, ''), 15, y);
+    }
+    y += 6;
+  }
+  return doc;
+}
 
 // Ligne compacte label / valeur pour les sections détail
 function StatRow({ label, value }: { label: string; value: number }) {
@@ -143,57 +239,67 @@ export default function Dashboard() {
     return { tarifsControle, tarifsBord, totalBord, totalPV };
   }, [filteredByLocation, stats]);
 
-  // Partager — fonctions export
-  const exportOptions = useMemo(() => ({
-    controls: filteredByLocation,
-    title: viewMode === 'my-data' ? `Mes contrôles` : 'Tous les contrôles',
-    dateRange: startDate === endDate ? startDate : `${startDate} → ${endDate}`,
-    includeStats: true,
-  }), [filteredByLocation, viewMode, startDate, endDate]);
+  // Partager — données résumé visible
+  const periodLabels: Record<Period, string> = { day: 'Jour', week: 'Semaine', month: 'Mois', year: 'Année', custom: 'Personnalisée' };
+  const locationLabels: Record<LocationFilter, string> = { all: 'Tous', train: 'À bord', station: 'En gare' };
+
+  const shareData: DashboardShareData = useMemo(() => ({
+    stats,
+    detailedStats,
+    periodLabel: periodLabels[period],
+    dateRangeLabel: startDate === endDate ? startDate : `${startDate} → ${endDate}`,
+    locationLabel: locationLabels[locationFilter],
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }), [stats, detailedStats, period, startDate, endDate, locationFilter]);
+
+  const filenameSuffix = startDate === endDate ? startDate : `${startDate}-${endDate}`;
 
   const handleExportHTML = useCallback(() => {
     try {
-      const html = exportToHTML(exportOptions);
-      const filename = `controles-${startDate}${startDate !== endDate ? `-${endDate}` : ''}.html`;
-      downloadHTML(html, filename);
+      const html = buildDashboardHTML(shareData);
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(new Blob([html], { type: 'text/html' }));
+      a.download = `tableau-bord-${filenameSuffix}.html`;
+      a.click();
       toast.success('Export HTML téléchargé');
     } catch {
       toast.error('Erreur lors de l\'export HTML');
     }
-  }, [exportOptions, startDate, endDate]);
+  }, [shareData, filenameSuffix]);
 
   const handleExportPDF = useCallback(() => {
     try {
-      const doc = exportToPDF(exportOptions);
-      const filename = `controles-${startDate}${startDate !== endDate ? `-${endDate}` : ''}.pdf`;
-      downloadPDF(doc, filename);
+      const doc = buildDashboardPDF(shareData);
+      doc.save(`tableau-bord-${filenameSuffix}.pdf`);
       toast.success('Export PDF téléchargé');
     } catch {
       toast.error('Erreur lors de l\'export PDF');
     }
-  }, [exportOptions, startDate, endDate]);
+  }, [shareData, filenameSuffix]);
 
   const handleEmailExport = useCallback(() => {
     try {
       if (emailFormat === 'text') {
-        const email = generateEmailContent(exportOptions);
-        openMailClient(email);
+        const body = buildDashboardText(shareData);
+        const subject = `Tableau de bord SNCF — ${shareData.periodLabel} ${shareData.dateRangeLabel}`;
+        window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
       } else if (emailFormat === 'html') {
-        const html = exportToHTML(exportOptions);
-        const filename = `controles-${startDate}${startDate !== endDate ? `-${endDate}` : ''}.html`;
-        downloadHTML(html, filename);
+        const html = buildDashboardHTML(shareData);
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(new Blob([html], { type: 'text/html' }));
+        a.download = `tableau-bord-${filenameSuffix}.html`;
+        a.click();
         toast.success('Fichier HTML téléchargé — vous pouvez l\'envoyer en pièce jointe');
       } else {
-        const doc = exportToPDF(exportOptions);
-        const filename = `controles-${startDate}${startDate !== endDate ? `-${endDate}` : ''}.pdf`;
-        downloadPDF(doc, filename);
+        const doc = buildDashboardPDF(shareData);
+        doc.save(`tableau-bord-${filenameSuffix}.pdf`);
         toast.success('Fichier PDF téléchargé — vous pouvez l\'envoyer en pièce jointe');
       }
       setEmailDialogOpen(false);
     } catch {
       toast.error('Erreur lors de l\'export');
     }
-  }, [emailFormat, exportOptions, startDate, endDate]);
+  }, [emailFormat, shareData, filenameSuffix]);
 
   if (authLoading) {
     return (
