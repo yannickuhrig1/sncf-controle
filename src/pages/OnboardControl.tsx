@@ -727,21 +727,17 @@ export default function OnboardControl() {
 
   return (
     <AppLayout>
-      <div className="space-y-6">
+      <div className="space-y-5">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-2">
-              <Train className="h-6 w-6 text-primary" />
-              <h1 className="text-2xl font-bold">
-                {isEditMode ? 'Modifier le contrôle' : 'Contrôle à bord'}
-              </h1>
-              {isEditMode && (
-                <Badge variant="secondary">Mode édition</Badge>
-              )}
-            </div>
-            <p className="text-sm text-muted-foreground mt-1">
-              {isEditMode 
+          <div className="flex flex-col gap-1">
+            <h1 className="text-xl font-bold flex items-center gap-2">
+              <Train className="h-5 w-5 text-primary" />
+              {isEditMode ? 'Modifier le contrôle' : 'Contrôle à bord'}
+              {isEditMode && <Badge variant="secondary">Mode édition</Badge>}
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              {isEditMode
                 ? 'Modifiez les données du contrôle sélectionné'
                 : 'Saisissez les données du contrôle et consultez l\'historique'
               }
@@ -1011,10 +1007,13 @@ export default function OnboardControl() {
               /* === EXTENDED MODE (original layout) === */
               <>
                 {/* Card 1: Train Info */}
-                <Card className="bg-card-cyan text-card-cyan-foreground border-card-cyan">
+                <Card className="border-0 shadow-sm overflow-hidden">
+                  <div className="h-1 bg-gradient-to-r from-cyan-400 to-teal-500" />
                   <CardHeader className="pb-3">
                     <CardTitle className="text-base flex items-center gap-2">
-                      <Train className="h-4 w-4" />
+                      <div className="p-1.5 rounded-lg bg-cyan-100 dark:bg-cyan-900/30">
+                        <Train className="h-3.5 w-3.5 text-cyan-600 dark:text-cyan-400" />
+                      </div>
                       Informations du contrôle
                     </CardTitle>
                   </CardHeader>
@@ -1098,10 +1097,13 @@ export default function OnboardControl() {
                 </Card>
 
                 {/* Card 1b: STT 50€ and PV 100€ */}
-                <Card>
+                <Card className="border-0 shadow-sm overflow-hidden">
+                  <div className="h-1 bg-gradient-to-r from-amber-400 to-orange-500" />
                   <CardHeader className="pb-3">
                     <CardTitle className="text-base flex items-center gap-2">
-                      <Ticket className="h-4 w-4" />
+                      <div className="p-1.5 rounded-lg bg-amber-100 dark:bg-amber-900/30">
+                        <Ticket className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
+                      </div>
                       Suppléments rapides
                     </CardTitle>
                   </CardHeader>
@@ -1131,13 +1133,16 @@ export default function OnboardControl() {
                 </Card>
 
                 {/* Card 2: Tarifs contrôle */}
-                <Card className="bg-card-amber text-card-amber-foreground border-card-amber">
+                <Card className="border-0 shadow-sm overflow-hidden">
+                  <div className="h-1 bg-gradient-to-r from-amber-400 to-orange-500" />
                   <CardHeader className="pb-3">
                     <CardTitle className="text-base flex items-center gap-2">
-                      <FileText className="h-4 w-4" />
+                      <div className="p-1.5 rounded-lg bg-amber-100 dark:bg-amber-900/30">
+                        <FileText className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
+                      </div>
                       Tarif contrôle
                     </CardTitle>
-                    <CardDescription className="text-card-amber-foreground/70">Infractions régularisées sur place</CardDescription>
+                    <CardDescription className="text-xs pl-8">Infractions régularisées sur place</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <TarifTypeToggle types={TARIF_TYPES} value={controleTarifType} onChange={setControleTarifType} />
@@ -1178,13 +1183,16 @@ export default function OnboardControl() {
                 </Card>
 
                 {/* Card 3: PV */}
-                <Card className="bg-card-rose text-card-rose-foreground border-card-rose">
+                <Card className="border-0 shadow-sm overflow-hidden">
+                  <div className="h-1 bg-gradient-to-r from-rose-400 to-red-500" />
                   <CardHeader className="pb-3">
                     <CardTitle className="text-base flex items-center gap-2">
-                      <AlertTriangle className="h-4 w-4" />
+                      <div className="p-1.5 rounded-lg bg-rose-100 dark:bg-rose-900/30">
+                        <AlertTriangle className="h-3.5 w-3.5 text-rose-600 dark:text-rose-400" />
+                      </div>
                       Procès-verbaux (PV)
                     </CardTitle>
-                    <CardDescription className="text-card-rose-foreground/70">Infractions verbalisées</CardDescription>
+                    <CardDescription className="text-xs pl-8">Infractions verbalisées</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <TarifTypeToggle types={PV_TYPES} value={pvTarifType} onChange={setPvTarifType} />
@@ -1224,13 +1232,16 @@ export default function OnboardControl() {
                 </Card>
 
                 {/* Card 4: Tarifs à bord */}
-                <Card className="bg-card-mint text-card-mint-foreground border-card-mint">
+                <Card className="border-0 shadow-sm overflow-hidden">
+                  <div className="h-1 bg-gradient-to-r from-teal-400 to-green-500" />
                   <CardHeader className="pb-3">
                     <CardTitle className="text-base flex items-center gap-2">
-                      <Ticket className="h-4 w-4" />
+                      <div className="p-1.5 rounded-lg bg-teal-100 dark:bg-teal-900/30">
+                        <Ticket className="h-3.5 w-3.5 text-teal-600 dark:text-teal-400" />
+                      </div>
                       Tarif à bord / exceptionnel
                     </CardTitle>
-                    <CardDescription className="text-card-mint-foreground/70">Ces tarifs ne comptent PAS dans le taux de fraude</CardDescription>
+                    <CardDescription className="text-xs pl-8">Ces tarifs ne comptent PAS dans le taux de fraude</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="flex gap-2">
@@ -1250,10 +1261,13 @@ export default function OnboardControl() {
                 </Card>
 
                 {/* Card 5: RI */}
-                <Card className="bg-card-violet text-card-violet-foreground border-card-violet">
+                <Card className="border-0 shadow-sm overflow-hidden">
+                  <div className="h-1 bg-gradient-to-r from-violet-400 to-purple-500" />
                   <CardHeader className="pb-3">
                     <CardTitle className="text-base flex items-center gap-2">
-                      <User className="h-4 w-4" />
+                      <div className="p-1.5 rounded-lg bg-violet-100 dark:bg-violet-900/30">
+                        <User className="h-3.5 w-3.5 text-violet-600 dark:text-violet-400" />
+                      </div>
                       Relevés d'identité (RI)
                     </CardTitle>
                   </CardHeader>
@@ -1266,10 +1280,13 @@ export default function OnboardControl() {
                 </Card>
 
                 {/* Card 6: Commentaires */}
-                <Card>
+                <Card className="border-0 shadow-sm overflow-hidden">
+                  <div className="h-1 bg-gradient-to-r from-slate-300 to-gray-400" />
                   <CardHeader className="pb-3">
                     <CardTitle className="text-base flex items-center gap-2">
-                      <MessageSquare className="h-4 w-4" />
+                      <div className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800/50">
+                        <MessageSquare className="h-3.5 w-3.5 text-slate-600 dark:text-slate-400" />
+                      </div>
                       Commentaires
                     </CardTitle>
                   </CardHeader>
@@ -1318,11 +1335,11 @@ export default function OnboardControl() {
         </div>
 
         {/* History Section */}
-        <div className="mt-8 space-y-4">
+        <div className="mt-6 space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <button
               onClick={() => setHistoryExpanded(!historyExpanded)}
-              className="text-lg font-semibold flex items-center gap-2 hover:text-primary transition-colors text-left"
+              className="text-base font-semibold flex items-center gap-2 hover:text-primary transition-colors text-left"
             >
               {historyExpanded ? (
                 <ChevronDown className="h-5 w-5 text-primary" />

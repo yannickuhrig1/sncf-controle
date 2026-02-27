@@ -20,25 +20,23 @@ interface TarifSectionProps {
   variant?: 'default' | 'mint' | 'amber' | 'rose' | 'violet' | 'cyan';
 }
 
-const variantClasses = {
-  default: '',
-  mint: 'bg-card-mint text-card-mint-foreground border-card-mint',
-  amber: 'bg-card-amber text-card-amber-foreground border-card-amber',
-  rose: 'bg-card-rose text-card-rose-foreground border-card-rose',
-  violet: 'bg-card-violet text-card-violet-foreground border-card-violet',
-  cyan: 'bg-card-cyan text-card-cyan-foreground border-card-cyan',
+const accentBar = {
+  default: 'from-slate-300 to-gray-400',
+  mint:    'from-teal-400 to-green-500',
+  amber:   'from-amber-400 to-orange-500',
+  rose:    'from-rose-400 to-red-500',
+  violet:  'from-violet-400 to-purple-500',
+  cyan:    'from-cyan-400 to-teal-500',
 };
 
 export function TarifSection({ title, description, items, variant = 'default' }: TarifSectionProps) {
   return (
-    <Card className={cn(variantClasses[variant])}>
+    <Card className="border-0 shadow-sm overflow-hidden">
+      <div className={cn('h-1 bg-gradient-to-r', accentBar[variant])} />
       <CardHeader className="pb-3">
         <CardTitle className="text-base">{title}</CardTitle>
         {description && (
-          <p className={cn(
-            "text-sm",
-            variant === 'default' ? 'text-muted-foreground' : 'opacity-70'
-          )}>{description}</p>
+          <p className="text-sm text-muted-foreground">{description}</p>
         )}
       </CardHeader>
       <CardContent className="space-y-4">
@@ -47,10 +45,7 @@ export function TarifSection({ title, description, items, variant = 'default' }:
             <Label className="text-sm font-medium">{item.label}</Label>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
-                <span className={cn(
-                  "text-xs",
-                  variant === 'default' ? 'text-muted-foreground' : 'opacity-70'
-                )}>Nombre</span>
+                <span className="text-xs text-muted-foreground">Nombre</span>
                 <Input
                   type="number"
                   min="0"
@@ -60,10 +55,7 @@ export function TarifSection({ title, description, items, variant = 'default' }:
                 />
               </div>
               <div className="space-y-1">
-                <span className={cn(
-                  "text-xs",
-                  variant === 'default' ? 'text-muted-foreground' : 'opacity-70'
-                )}>Montant (€)</span>
+                <span className="text-xs text-muted-foreground">Montant (€)</span>
                 <Input
                   type="number"
                   min="0"

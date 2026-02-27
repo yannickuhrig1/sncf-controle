@@ -18,11 +18,11 @@ import { OfflineIndicator } from '@/components/controls/OfflineIndicator';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { Loader2, Building2, ArrowLeft, Save, ArrowRight, X, Clock, Calendar, ArrowDownToLine, ArrowUpFromLine } from 'lucide-react';
+import { Loader2, Building2, ArrowLeft, Save, ArrowRight, X, Clock, Calendar, ArrowDownToLine, ArrowUpFromLine, Users, UserCheck, MessageSquare } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 // Liste des gares principales
@@ -438,19 +438,22 @@ export default function StationControl() {
 
   return (
     <AppLayout>
-      <div className="space-y-6">
+      <div className="space-y-5">
         {/* Header */}
         <div className="flex items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" onClick={() => isEditMode ? handleCancelEdit() : navigate(-1)}>
+          <div className="flex items-center gap-3">
+            <Button variant="ghost" size="icon" className="shrink-0" onClick={() => isEditMode ? handleCancelEdit() : navigate(-1)}>
               {isEditMode ? <X className="h-5 w-5" /> : <ArrowLeft className="h-5 w-5" />}
             </Button>
-            <div className="flex items-center gap-2">
-              <Building2 className="h-5 w-5 text-primary" />
-              <h1 className="text-xl font-bold">
+            <div className="flex flex-col gap-0.5">
+              <h1 className="text-xl font-bold flex items-center gap-2">
+                <Building2 className="h-5 w-5 text-primary" />
                 {isEditMode ? 'Modifier le contrôle' : 'Contrôle en gare'}
+                {isEditMode && <Badge variant="secondary">Mode édition</Badge>}
               </h1>
-              {isEditMode && <Badge variant="secondary">Mode édition</Badge>}
+              <p className="text-sm text-muted-foreground">
+                {isEditMode ? 'Modifiez les données du contrôle' : 'Saisissez les données du contrôle en gare'}
+              </p>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -540,9 +543,15 @@ export default function StationControl() {
 
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Station Info */}
-              <Card className="bg-card-cyan text-card-cyan-foreground border-card-cyan">
-                <CardHeader>
-                  <CardTitle className="text-base">Informations gare & train</CardTitle>
+              <Card className="border-0 shadow-sm overflow-hidden">
+                <div className="h-1 bg-gradient-to-r from-cyan-400 to-teal-500" />
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <div className="p-1.5 rounded-lg bg-cyan-100 dark:bg-cyan-900/30">
+                      <Building2 className="h-3.5 w-3.5 text-cyan-600 dark:text-cyan-400" />
+                    </div>
+                    Informations gare & train
+                  </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
@@ -634,9 +643,15 @@ export default function StationControl() {
               </Card>
 
               {/* Passengers */}
-              <Card className="bg-card-mint text-card-mint-foreground border-card-mint">
-                <CardHeader>
-                  <CardTitle className="text-base">Voyageurs</CardTitle>
+              <Card className="border-0 shadow-sm overflow-hidden">
+                <div className="h-1 bg-gradient-to-r from-teal-400 to-green-500" />
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <div className="p-1.5 rounded-lg bg-teal-100 dark:bg-teal-900/30">
+                      <Users className="h-3.5 w-3.5 text-teal-600 dark:text-teal-400" />
+                    </div>
+                    Voyageurs
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-2 gap-4">
@@ -689,14 +704,20 @@ export default function StationControl() {
               />
 
               {/* RI */}
-              <Card className="bg-card-violet text-card-violet-foreground border-card-violet">
-                <CardHeader>
-                  <CardTitle className="text-base">Relevés d'Identité (RI)</CardTitle>
+              <Card className="border-0 shadow-sm overflow-hidden">
+                <div className="h-1 bg-gradient-to-r from-violet-400 to-purple-500" />
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <div className="p-1.5 rounded-lg bg-violet-100 dark:bg-violet-900/30">
+                      <UserCheck className="h-3.5 w-3.5 text-violet-600 dark:text-violet-400" />
+                    </div>
+                    Relevés d'Identité (RI)
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="riPositive" className="text-success">RI Positive</Label>
+                      <Label htmlFor="riPositive" className="text-success font-medium">RI Positive</Label>
                       <p className="text-xs text-muted-foreground">Identité vérifiée</p>
                       <Input
                         id="riPositive"
@@ -707,7 +728,7 @@ export default function StationControl() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="riNegative" className="text-destructive">RI Négative</Label>
+                      <Label htmlFor="riNegative" className="text-destructive font-medium">RI Négative</Label>
                       <p className="text-xs text-muted-foreground">Identité non vérifiable</p>
                       <Input
                         id="riNegative"
@@ -722,9 +743,15 @@ export default function StationControl() {
               </Card>
 
               {/* Notes */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-base">Commentaire</CardTitle>
+              <Card className="border-0 shadow-sm overflow-hidden">
+                <div className="h-1 bg-gradient-to-r from-slate-300 to-gray-400" />
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <div className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800/50">
+                      <MessageSquare className="h-3.5 w-3.5 text-slate-600 dark:text-slate-400" />
+                    </div>
+                    Commentaire
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <Textarea

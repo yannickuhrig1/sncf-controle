@@ -402,7 +402,8 @@ export default function StatisticsPage() {
                 <CardContent>
                   {(() => {
                     const pvData = [
-                      { name: 'STT 100€',    value: stats.pvStt100,      color: '#ef4444' },
+                      { name: 'STT 100€',    value: stats.stt100,        color: '#dc2626' },
+                      { name: 'STT autre',   value: stats.pvStt100,      color: '#ef4444' },
                       { name: 'RNV',         value: stats.pvRnv,         color: '#f97316' },
                       { name: 'T.Tiers',     value: stats.pvTitreTiers,  color: '#eab308' },
                       { name: 'D.Naiss',     value: stats.pvDocNaissance,color: '#8b5cf6' },
@@ -429,7 +430,8 @@ export default function StatisticsPage() {
                         </ResponsiveContainer>
                         <div className="grid grid-cols-2 gap-x-6 gap-y-2">
                           {[
-                            { label: 'STT 100 €',    value: stats.pvStt100,      color: 'bg-red-500' },
+                            { label: 'STT 100 €',    value: stats.stt100,        color: 'bg-red-700' },
+                            { label: 'STT autre',    value: stats.pvStt100,      color: 'bg-red-500' },
                             { label: 'RNV',          value: stats.pvRnv,         color: 'bg-orange-500' },
                             { label: 'Titre tiers',  value: stats.pvTitreTiers,  color: 'bg-yellow-500' },
                             { label: 'D. naissance', value: stats.pvDocNaissance,color: 'bg-violet-500' },
