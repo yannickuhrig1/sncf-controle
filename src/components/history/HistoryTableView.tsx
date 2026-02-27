@@ -156,9 +156,8 @@ export function HistoryTableView({ controls, onControlClick }: HistoryTableViewP
   );
 
   return (
-    <div className="rounded-lg border overflow-hidden">
-      <div className="overflow-x-auto">
-        <Table>
+    <div className="rounded-lg border overflow-x-auto">
+      <Table>
           <TableHeader>
             <TableRow className="bg-muted/50">
               <SortableHeader columnKey="date" className="w-[100px]">Date</SortableHeader>
@@ -284,7 +283,6 @@ export function HistoryTableView({ controls, onControlClick }: HistoryTableViewP
             })}
           </TableBody>
         </Table>
-      </div>
     </div>
   );
 }

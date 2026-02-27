@@ -72,8 +72,8 @@ interface ControlRowProps {
 
 function ControlRow({ control, onClick }: ControlRowProps) {
   const Icon = locationIcons[control.location_type];
-  const fraudCount = control.tarifs_controle + control.pv;
-  const fraudRate = control.nb_passagers > 0 
+  const fraudCount = control.tarifs_controle + control.pv + control.ri_negative;
+  const fraudRate = control.nb_passagers > 0
     ? ((fraudCount / control.nb_passagers) * 100)
     : 0;
 
@@ -248,7 +248,7 @@ export default function HistoryPage() {
 
   // Helper to calculate fraud rate
   const getFraudRate = useCallback((control: Control) => {
-    const fraudCount = control.tarifs_controle + control.pv;
+    const fraudCount = control.tarifs_controle + control.pv + control.ri_negative;
     return control.nb_passagers > 0 ? (fraudCount / control.nb_passagers) * 100 : 0;
   }, []);
 
