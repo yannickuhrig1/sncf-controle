@@ -424,7 +424,7 @@ export function AppLayout({ children }: AppLayoutProps) {
         </header>
 
         {/* Contenu principal */}
-        <main className="flex-1 px-4 py-6 lg:px-8 lg:py-8">
+        <main className="flex-1 px-4 py-6 lg:px-8 lg:py-8 lg:max-w-screen-xl lg:mx-auto lg:w-full">
           {children}
         </main>
       </div>
