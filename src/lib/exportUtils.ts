@@ -67,6 +67,7 @@ function getControlDetails(control: Control) {
     pvRnv: control.pv_rnv || 0,
     pvTitreTiers: control.pv_titre_tiers || 0,
     pvAutre: control.pv_autre || 0,
+    pvDocNaissance: control.pv_doc_naissance || 0,
     stt50: control.stt_50,
     stt50Amount: control.stt_50_amount || 0,
     stt100: control.stt_100,
@@ -131,13 +132,21 @@ function calculateExtendedStats(controls: Control[]) {
   }), { stt100: 0, rnv: 0, titreTiers: 0, docNaissance: 0, autre: 0 });
 
   const tarifsBord = controls.reduce((acc, c) => ({
-    stt50:       acc.stt50       + (c.tarif_bord_stt_50        || 0),
-    stt100:      acc.stt100      + (c.tarif_bord_stt_100       || 0),
-    rnv:         acc.rnv         + (c.tarif_bord_rnv           || 0),
-    titreTiers:  acc.titreTiers  + (c.tarif_bord_titre_tiers   || 0),
-    docNaissance:acc.docNaissance+ (c.tarif_bord_doc_naissance || 0),
-    autre:       acc.autre       + (c.tarif_bord_autre         || 0),
-  }), { stt50: 0, stt100: 0, rnv: 0, titreTiers: 0, docNaissance: 0, autre: 0 });
+    stt50:              acc.stt50              + (c.tarif_bord_stt_50                  || 0),
+    stt50Amount:        acc.stt50Amount        + (c.tarif_bord_stt_50_amount           || 0),
+    stt100:             acc.stt100             + (c.tarif_bord_stt_100                 || 0),
+    stt100Amount:       acc.stt100Amount       + (c.tarif_bord_stt_100_amount          || 0),
+    rnv:                acc.rnv                + (c.tarif_bord_rnv                     || 0),
+    rnvAmount:          acc.rnvAmount          + (c.tarif_bord_rnv_amount              || 0),
+    titreTiers:         acc.titreTiers         + (c.tarif_bord_titre_tiers             || 0),
+    titreTiersAmount:   acc.titreTiersAmount   + (c.tarif_bord_titre_tiers_amount      || 0),
+    docNaissance:       acc.docNaissance       + (c.tarif_bord_doc_naissance           || 0),
+    docNaissanceAmount: acc.docNaissanceAmount + (c.tarif_bord_doc_naissance_amount    || 0),
+    autre:              acc.autre              + (c.tarif_bord_autre                   || 0),
+    autreAmount:        acc.autreAmount        + (c.tarif_bord_autre_amount            || 0),
+  }), { stt50: 0, stt50Amount: 0, stt100: 0, stt100Amount: 0, rnv: 0, rnvAmount: 0,
+        titreTiers: 0, titreTiersAmount: 0, docNaissance: 0, docNaissanceAmount: 0,
+        autre: 0, autreAmount: 0 });
 
   const tarifsControleDetails = controls.reduce((acc, c) => ({
     titreTiers:  acc.titreTiers  + (c.titre_tiers  || 0),
@@ -154,6 +163,8 @@ function calculateExtendedStats(controls: Control[]) {
     tarifsControleDetails,
     totalTarifsBord: tarifsBord.stt50 + tarifsBord.stt100 + tarifsBord.rnv
       + tarifsBord.titreTiers + tarifsBord.docNaissance + tarifsBord.autre,
+    totalTarifsBordAmount: tarifsBord.stt50Amount + tarifsBord.stt100Amount + tarifsBord.rnvAmount
+      + tarifsBord.titreTiersAmount + tarifsBord.docNaissanceAmount + tarifsBord.autreAmount,
   };
 }
 
@@ -1502,16 +1513,16 @@ export function exportToHTML({ controls, title, dateRange, includeStats, exportM
         </div>
         ${stats.totalTarifsBord > 0 ? `
         <div class="ops-block blue">
-          <h3>Tarifs à bord — Ventes</h3>
+          <h3>Tarifs à bord / exceptionnel — Ventes</h3>
           <table class="detail-table">
-            <tr><th>Type</th><th>Nbre</th></tr>
-            ${detailRow('STT 50€',     stats.tarifsBord.stt50)}
-            ${detailRow('STT 100€',    stats.tarifsBord.stt100)}
-            ${detailRow('RNV',         stats.tarifsBord.rnv)}
-            ${detailRow('Titre tiers', stats.tarifsBord.titreTiers)}
-            ${detailRow('Date naiss.', stats.tarifsBord.docNaissance)}
-            ${detailRow('Autre',       stats.tarifsBord.autre)}
-            <tr class="total"><td>TOTAL</td><td>${stats.totalTarifsBord}</td></tr>
+            <tr><th>Type</th><th>Nbre</th><th>Montant</th></tr>
+            ${detailRow('Tarif bord',         stats.tarifsBord.stt50,        stats.tarifsBord.stt50Amount)}
+            ${detailRow('Tarif exceptionnel', stats.tarifsBord.stt100,       stats.tarifsBord.stt100Amount)}
+            ${detailRow('RNV',               stats.tarifsBord.rnv,          stats.tarifsBord.rnvAmount)}
+            ${detailRow('Titre tiers',        stats.tarifsBord.titreTiers,   stats.tarifsBord.titreTiersAmount)}
+            ${detailRow('Date naiss.',        stats.tarifsBord.docNaissance, stats.tarifsBord.docNaissanceAmount)}
+            ${detailRow('Autre',              stats.tarifsBord.autre,        stats.tarifsBord.autreAmount)}
+            <tr class="total"><td>TOTAL</td><td>${stats.totalTarifsBord}</td><td>${stats.totalTarifsBordAmount.toFixed(2)} €</td></tr>
           </table>
         </div>
         ` : ''}
@@ -1744,11 +1755,11 @@ export function generateEmailContent({ controls, title, dateRange, includeStats 
     const totalTarifsAmt = stats.totalAmounts.stt50 + stats.totalAmounts.rnv
       + stats.totalAmounts.titreTiers + stats.totalAmounts.docNaissance + stats.totalAmounts.autre;
     body += `💶 TARIFS CONTRÔLE (régularisations)\n`;
-    body += `   STT 50€     : ${stats.stt50} (${stats.totalAmounts.stt50.toFixed(2)} €)\n`;
-    body += `   RNV         : ${stats.rnv}   (${stats.totalAmounts.rnv.toFixed(2)} €)\n`;
-    body += `   Titre tiers : ${stats.tarifsControleDetails.titreTiers} (${stats.totalAmounts.titreTiers.toFixed(2)} €)\n`;
-    body += `   Date naiss. : ${stats.tarifsControleDetails.docNaissance} (${stats.totalAmounts.docNaissance.toFixed(2)} €)\n`;
-    body += `   Autre       : ${stats.tarifsControleDetails.autre} (${stats.totalAmounts.autre.toFixed(2)} €)\n`;
+    if (stats.stt50 > 0) body += `   STT 50€     : ${stats.stt50} (${stats.totalAmounts.stt50.toFixed(2)} €)\n`;
+    if (stats.rnv > 0) body += `   RNV         : ${stats.rnv} (${stats.totalAmounts.rnv.toFixed(2)} €)\n`;
+    if (stats.tarifsControleDetails.titreTiers > 0) body += `   Titre tiers : ${stats.tarifsControleDetails.titreTiers} (${stats.totalAmounts.titreTiers.toFixed(2)} €)\n`;
+    if (stats.tarifsControleDetails.docNaissance > 0) body += `   Date naiss. : ${stats.tarifsControleDetails.docNaissance} (${stats.totalAmounts.docNaissance.toFixed(2)} €)\n`;
+    if (stats.tarifsControleDetails.autre > 0) body += `   Autre       : ${stats.tarifsControleDetails.autre} (${stats.totalAmounts.autre.toFixed(2)} €)\n`;
     body += `   ────────────────────────\n`;
     body += `   TOTAL : ${stats.tarifsControle}  (${totalTarifsAmt.toFixed(2)} €)\n\n`;
 
@@ -1756,24 +1767,26 @@ export function generateEmailContent({ controls, title, dateRange, includeStats 
       + stats.totalAmounts.pvRnv + stats.totalAmounts.pvTitreTiers
       + stats.totalAmounts.pvDocNaissance + stats.totalAmounts.pvAutre;
     body += `⚠️  PV (procès-verbaux)\n`;
-    body += `   STT 100€     : ${stats.stt100} (${stats.totalAmounts.stt100.toFixed(2)} €)\n`;
-    body += `   STT100       : ${stats.pvBreakdown.stt100} (${stats.totalAmounts.pvStt100.toFixed(2)} €)\n`;
-    body += `   RNV          : ${stats.pvBreakdown.rnv} (${stats.totalAmounts.pvRnv.toFixed(2)} €)\n`;
-    body += `   Titre tiers  : ${stats.pvBreakdown.titreTiers} (${stats.totalAmounts.pvTitreTiers.toFixed(2)} €)\n`;
-    body += `   D. naissance : ${stats.pvBreakdown.docNaissance} (${stats.totalAmounts.pvDocNaissance.toFixed(2)} €)\n`;
-    body += `   Autre        : ${stats.pvBreakdown.autre} (${stats.totalAmounts.pvAutre.toFixed(2)} €)\n`;
+    if (stats.stt100 > 0) body += `   STT 100€         : ${stats.stt100} (${stats.totalAmounts.stt100.toFixed(2)} €)\n`;
+    if (stats.pvBreakdown.stt100 > 0) body += `   STT autre montant: ${stats.pvBreakdown.stt100} (${stats.totalAmounts.pvStt100.toFixed(2)} €)\n`;
+    if (stats.pvBreakdown.rnv > 0) body += `   RNV              : ${stats.pvBreakdown.rnv} (${stats.totalAmounts.pvRnv.toFixed(2)} €)\n`;
+    if (stats.pvBreakdown.titreTiers > 0) body += `   Titre tiers      : ${stats.pvBreakdown.titreTiers} (${stats.totalAmounts.pvTitreTiers.toFixed(2)} €)\n`;
+    if (stats.pvBreakdown.docNaissance > 0) body += `   D. naissance     : ${stats.pvBreakdown.docNaissance} (${stats.totalAmounts.pvDocNaissance.toFixed(2)} €)\n`;
+    if (stats.pvBreakdown.autre > 0) body += `   Autre            : ${stats.pvBreakdown.autre} (${stats.totalAmounts.pvAutre.toFixed(2)} €)\n`;
     body += `   ────────────────────────\n`;
     body += `   TOTAL : ${stats.pv}  (${totalPVAmt.toFixed(2)} €)\n\n`;
 
-    body += `🎫 TARIFS À BORD (ventes)\n`;
-    body += `   STT 50€     : ${stats.tarifsBord.stt50}\n`;
-    body += `   STT 100€    : ${stats.tarifsBord.stt100}\n`;
-    body += `   RNV         : ${stats.tarifsBord.rnv}\n`;
-    body += `   Titre tiers : ${stats.tarifsBord.titreTiers}\n`;
-    body += `   Date naiss. : ${stats.tarifsBord.docNaissance}\n`;
-    body += `   Autre       : ${stats.tarifsBord.autre}\n`;
-    body += `   ────────────────────────\n`;
-    body += `   TOTAL : ${stats.totalTarifsBord}\n\n`;
+    if (stats.totalTarifsBord > 0) {
+      body += `🎫 TARIFS À BORD (ventes)\n`;
+      if (stats.tarifsBord.stt50 > 0) body += `   Bord         : ${stats.tarifsBord.stt50} (${stats.tarifsBord.stt50Amount.toFixed(2)} €)\n`;
+      if (stats.tarifsBord.stt100 > 0) body += `   Exceptionnel : ${stats.tarifsBord.stt100} (${stats.tarifsBord.stt100Amount.toFixed(2)} €)\n`;
+      if (stats.tarifsBord.rnv > 0) body += `   RNV          : ${stats.tarifsBord.rnv} (${stats.tarifsBord.rnvAmount.toFixed(2)} €)\n`;
+      if (stats.tarifsBord.titreTiers > 0) body += `   Titre tiers  : ${stats.tarifsBord.titreTiers} (${stats.tarifsBord.titreTiersAmount.toFixed(2)} €)\n`;
+      if (stats.tarifsBord.docNaissance > 0) body += `   Date naiss.  : ${stats.tarifsBord.docNaissance} (${stats.tarifsBord.docNaissanceAmount.toFixed(2)} €)\n`;
+      if (stats.tarifsBord.autre > 0) body += `   Autre        : ${stats.tarifsBord.autre} (${stats.tarifsBord.autreAmount.toFixed(2)} €)\n`;
+      body += `   ────────────────────────\n`;
+      body += `   TOTAL : ${stats.totalTarifsBord}\n\n`;
+    }
 
     body += `🔍 RELEVÉS D'IDENTITÉ (RI)\n`;
     body += `   RI Positif : ${stats.riPositive}\n`;
@@ -1805,11 +1818,26 @@ export function generateEmailContent({ controls, title, dateRange, includeStats 
     body += `\n   👥 Voyageurs : ${details.passengers}  |  En règle : ${details.inRule}\n`;
     body += `   📊 Taux de fraude : ${details.fraudRateFormatted}\n\n`;
 
-    body += `   💶 Tarifs contrôle :\n`;
-    body += `      STT 50€ : ${details.stt50}  |  STT 100€ : ${details.stt100}  |  RNV : ${details.rnv}\n`;
-    body += `      Titre tiers : ${details.titreTiers}  |  Date naiss. : ${details.docNaissance}  |  Autre : ${details.autreTarif}\n`;
-    body += `\n   ⚠️  PV : ${details.pv}\n`;
-    body += `      Absence : ${details.pvStt100}  |  Invalide : ${details.pvRnv}  |  Refus : ${details.pvTitreTiers}  |  Autre : ${details.pvAutre}\n`;
+    if (details.tarifsControle > 0) {
+      const tcParts: string[] = [];
+      if (details.stt50 > 0) tcParts.push(`STT 50€: ${details.stt50}`);
+      if (details.stt100 > 0) tcParts.push(`STT 100€: ${details.stt100}`);
+      if (details.rnv > 0) tcParts.push(`RNV: ${details.rnv}`);
+      if (details.titreTiers > 0) tcParts.push(`T.Tiers: ${details.titreTiers}`);
+      if (details.docNaissance > 0) tcParts.push(`D.Naiss.: ${details.docNaissance}`);
+      if (details.autreTarif > 0) tcParts.push(`Autre: ${details.autreTarif}`);
+      body += `   💶 Tarifs contrôle : ${tcParts.join('  |  ')}\n`;
+    }
+    if (details.pv > 0) {
+      body += `\n   ⚠️  PV : ${details.pv}\n`;
+      const pvParts: string[] = [];
+      if (details.pvStt100 > 0) pvParts.push(`STT100: ${details.pvStt100}`);
+      if (details.pvRnv > 0) pvParts.push(`RNV: ${details.pvRnv}`);
+      if (details.pvTitreTiers > 0) pvParts.push(`T.Tiers: ${details.pvTitreTiers}`);
+      if (details.pvDocNaissance > 0) pvParts.push(`D.Naiss.: ${details.pvDocNaissance}`);
+      if (details.pvAutre > 0) pvParts.push(`Autre: ${details.pvAutre}`);
+      if (pvParts.length > 0) body += `      ${pvParts.join('  |  ')}\n`;
+    }
     body += `\n   🔍 RI : +${details.riPositive} / −${details.riNegative}\n`;
 
     if (details.notes) body += `\n   📝 Notes : ${details.notes}\n`;

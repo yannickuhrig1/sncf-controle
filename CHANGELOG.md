@@ -5,6 +5,22 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/),
 et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.8.2] - 2026-02-27
+
+### Corrigé
+- **Taux de fraude** : Formule corrigée dans la vue liste et la vue tableau de l'historique — les RI négatifs étaient absents du calcul
+- **Tableau historique** : Colonnes ne se tronquaient plus (overflow-hidden bloquait le scroll horizontal)
+- **Export email** : Les lignes à 0 ne sont plus affichées (tarifs contrôle, PV, tarifs à bord)
+- **Export email** : Suppression des traces "Absence : 0 | Invalide : 0 | Refus : 0" dans le détail par contrôle
+- **Export email / HTML** : "STT100 PV" renommé en "STT autre montant" dans la section Procès-verbaux
+- **Export HTML** : Section "Tarifs à bord — Ventes" affiche maintenant "Tarif bord" vs "Tarif exceptionnel" avec les montants
+
+### Modifié
+- **Dashboard — Tarifs contrôle** : STT 100€ retiré de cette section (ce sont des PV, pas des tarifs contrôle)
+- **Dashboard — Procès-verbaux** : "STT100 PV" renommé en "STT autre montant"
+- **Dashboard — Tarifs à bord** : Carte renommée "Tarifs à bord / exceptionnel", lignes "STT 50€" → "Tarif bord" et "STT 100€" → "Tarif exceptionnel"
+- **Export HTML — Tarifs à bord** : Section renommée "Tarifs à bord / exceptionnel — Ventes", colonne Montant ajoutée
+
 ## [1.8.1] - 2026-02-10
 
 ### Ajouté

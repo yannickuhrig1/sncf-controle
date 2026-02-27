@@ -294,7 +294,6 @@ export default function Dashboard() {
                 </CardHeader>
                 <CardContent className="px-4 pb-3 space-y-0.5">
                   <StatRow label="STT 50€"     value={detailedStats.tarifsControle.stt50} />
-                  <StatRow label="STT 100€"    value={detailedStats.tarifsControle.stt100} />
                   <StatRow label="RNV"         value={detailedStats.tarifsControle.rnv} />
                   <StatRow label="Titre tiers" value={detailedStats.tarifsControle.titreTiers} />
                   <StatRow label="D.naissance" value={detailedStats.tarifsControle.docNaissance} />
@@ -316,7 +315,7 @@ export default function Dashboard() {
                 </CardHeader>
                 <CardContent className="px-4 pb-3 space-y-0.5">
                   <StatRow label="STT 100€"    value={stats.stt100} />
-                  <StatRow label="STT100 PV"   value={stats.pvStt100} />
+                  <StatRow label="STT autre montant" value={stats.pvStt100} />
                   <StatRow label="RNV"         value={stats.pvRnv} />
                   <StatRow label="Titre tiers" value={stats.pvTitreTiers} />
                   <StatRow label="D.naissance" value={stats.pvDocNaissance} />
@@ -333,13 +332,13 @@ export default function Dashboard() {
                   <CardHeader className="py-3 px-4 pb-2">
                     <CardTitle className="text-sm font-semibold flex items-center gap-2 text-blue-600 dark:text-blue-400">
                       <CreditCard className="h-4 w-4" />
-                      Tarifs à bord
+                      Tarifs à bord / exceptionnel
                       <span className="ml-auto text-muted-foreground font-normal text-xs">{detailedStats.totalBord}</span>
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="px-4 pb-3 space-y-0.5">
-                    <StatRow label="STT 50€"     value={detailedStats.tarifsBord.stt50} />
-                    <StatRow label="STT 100€"    value={detailedStats.tarifsBord.stt100} />
+                    <StatRow label="Tarif bord"        value={detailedStats.tarifsBord.stt50} />
+                    <StatRow label="Tarif exceptionnel" value={detailedStats.tarifsBord.stt100} />
                     <StatRow label="RNV"         value={detailedStats.tarifsBord.rnv} />
                     <StatRow label="Titre tiers" value={detailedStats.tarifsBord.titreTiers} />
                     <StatRow label="D.naissance" value={detailedStats.tarifsBord.docNaissance} />
