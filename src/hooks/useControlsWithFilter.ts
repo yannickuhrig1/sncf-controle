@@ -7,12 +7,14 @@ import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYea
 type Control = Database['public']['Tables']['controls']['Row'];
 
 export type ViewMode = 'my-data' | 'all-data';
-export type Period = 'day' | 'week' | 'month' | 'year';
+export type Period = 'day' | 'week' | 'month' | 'year' | 'custom';
 
 interface UseControlsWithFilterOptions {
   date?: Date | null;
   viewMode?: ViewMode;
   period?: Period;
+  customStart?: string | null;
+  customEnd?: string | null;
 }
 
 // Get date string in Paris timezone
@@ -26,7 +28,7 @@ function getTodayParisDateString(): string {
 }
 
 // Get date range based on period
-function getDateRange(date: Date, period: Period): { startDate: string; endDate: string } {
+function getDateRange(date: Date, period: Exclude<Period, 'custom'>): { startDate: string; endDate: string } {
   let start: Date;
   let end: Date;
 
@@ -56,12 +58,24 @@ function getDateRange(date: Date, period: Period): { startDate: string; endDate:
   };
 }
 
-export function useControlsWithFilter({ date, viewMode = 'my-data', period = 'day' }: UseControlsWithFilterOptions = {}) {
+export function useControlsWithFilter({
+  date,
+  viewMode = 'my-data',
+  period = 'day',
+  customStart,
+  customEnd,
+}: UseControlsWithFilterOptions = {}) {
   const { profile } = useAuth();
   const queryClient = useQueryClient();
 
   const baseDate = date || new Date();
-  const { startDate, endDate } = getDateRange(baseDate, period);
+
+  // For custom period, use provided dates; otherwise compute from period
+  const isCustom = period === 'custom';
+  const hasCustomDates = isCustom && !!customStart && !!customEnd;
+  const { startDate, endDate } = isCustom
+    ? { startDate: customStart || '', endDate: customEnd || '' }
+    : getDateRange(baseDate, period as Exclude<Period, 'custom'>);
 
   const controlsQuery = useQuery({
     queryKey: ['controls', 'filtered', startDate, endDate, period, viewMode, profile?.id],
@@ -89,7 +103,7 @@ export function useControlsWithFilter({ date, viewMode = 'my-data', period = 'da
       if (error) throw error;
       return data as Control[];
     },
-    enabled: !!profile,
+    enabled: !!profile && (!isCustom || hasCustomDates),
     // Refetch every minute to keep data fresh
     refetchInterval: 60000,
     // Refetch when window gains focus
@@ -112,4 +126,3 @@ export function useControlsWithFilter({ date, viewMode = 'my-data', period = 'da
 }
 
 export { getTodayParisDateString, getParisDateString };
-

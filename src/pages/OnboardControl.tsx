@@ -84,7 +84,7 @@ const TARIF_TYPES = [
 ];
 
 const PV_TYPES = [
-  { value: 'pv_stt100', label: 'STT100' },
+  { value: 'pv_stt100', label: 'STT' },
   { value: 'pv_rnv', label: 'RNV' },
   { value: 'pv_titre_tiers', label: 'Titre tiers' },
   { value: 'pv_doc_naissance', label: 'D. naissance' },
@@ -249,7 +249,7 @@ export default function OnboardControl() {
             });
           }
         };
-        addEntries(data.pv_stt100 || 0, 'pv_stt100', 'STT100', data.pv_stt100_amount || 0);
+        addEntries(data.pv_stt100 || 0, 'pv_stt100', 'STT', data.pv_stt100_amount || 0);
         addEntries(data.pv_rnv || 0, 'pv_rnv', 'RNV', data.pv_rnv_amount || 0);
         addEntries(data.pv_titre_tiers || 0, 'pv_titre_tiers', 'Titre tiers', data.pv_titre_tiers_amount || 0);
         addEntries(data.pv_doc_naissance || 0, 'pv_doc_naissance', 'D. naissance', data.pv_doc_naissance_amount || 0);

@@ -2,7 +2,22 @@ import { useState, useMemo, useCallback } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { buttonVariants } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Label } from '@/components/ui/label';
 import { useAuth } from '@/hooks/useAuth';
 import { useControlsWithFilter, ViewMode, Period } from '@/hooks/useControlsWithFilter';
 import { useLastSync } from '@/hooks/useLastSync';
@@ -14,6 +29,14 @@ import { DashboardDatePicker } from '@/components/dashboard/DashboardDatePicker'
 import { PeriodSelector } from '@/components/dashboard/PeriodSelector';
 import { ViewModeToggle } from '@/components/dashboard/ViewModeToggle';
 import { calculateStats, formatFraudRate, getFraudRateBgColor, getFraudRateColor } from '@/lib/stats';
+import {
+  exportToPDF,
+  downloadPDF,
+  exportToHTML,
+  downloadHTML,
+  generateEmailContent,
+  openMailClient,
+} from '@/lib/exportUtils';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import {
@@ -24,10 +47,14 @@ import {
   IdCard,
   LayoutDashboard,
   Loader2,
+  Share2,
   Train,
   UserCheck,
   Users,
 } from 'lucide-react';
+
+type LocationFilter = 'all' | 'train' | 'station';
+type EmailFormat = 'text' | 'html' | 'pdf';
 
 // Ligne compacte label / valeur pour les sections détail
 function StatRow({ label, value }: { label: string; value: number }) {
@@ -40,16 +67,31 @@ function StatRow({ label, value }: { label: string; value: number }) {
   );
 }
 
+const locationButtons: { value: LocationFilter; label: string; icon: React.ElementType }[] = [
+  { value: 'all',     label: 'Tous',     icon: LayoutDashboard },
+  { value: 'train',   label: 'À bord',   icon: Train },
+  { value: 'station', label: 'En gare',  icon: Building2 },
+];
+
 export default function Dashboard() {
   const { user, profile, loading: authLoading } = useAuth();
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [viewMode, setViewMode] = useState<ViewMode>('my-data');
   const [period, setPeriod] = useState<Period>('day');
+  const [customStart, setCustomStart] = useState('');
+  const [customEnd, setCustomEnd] = useState('');
+  const [locationFilter, setLocationFilter] = useState<LocationFilter>('all');
 
-  const { controls, isLoading: controlsLoading, isFetching, refetch } = useControlsWithFilter({
+  // Email share dialog
+  const [emailDialogOpen, setEmailDialogOpen] = useState(false);
+  const [emailFormat, setEmailFormat] = useState<EmailFormat>('text');
+
+  const { controls, isLoading: controlsLoading, isFetching, refetch, startDate, endDate } = useControlsWithFilter({
     date: selectedDate,
     viewMode,
     period,
+    customStart: period === 'custom' ? customStart : null,
+    customEnd:   period === 'custom' ? customEnd   : null,
   });
 
   const { formattedLastSync, updateLastSync } = useLastSync();
@@ -61,11 +103,20 @@ export default function Dashboard() {
     toast.success('Données synchronisées');
   }, [refetch, updateLastSync]);
 
-  const stats = useMemo(() => calculateStats(controls), [controls]);
+  // Filtrage par lieu (client-side)
+  const filteredByLocation = useMemo(() => {
+    if (locationFilter === 'train')
+      return controls.filter(c => c.location_type === 'train');
+    if (locationFilter === 'station')
+      return controls.filter(c => c.location_type === 'gare' || c.location_type === 'quai');
+    return controls;
+  }, [controls, locationFilter]);
+
+  const stats = useMemo(() => calculateStats(filteredByLocation), [filteredByLocation]);
 
   // Calculs détaillés non présents dans calculateStats
   const detailedStats = useMemo(() => {
-    const tarifsControle = controls.reduce((acc, c) => ({
+    const tarifsControle = filteredByLocation.reduce((acc, c) => ({
       stt50:       acc.stt50        + c.stt_50,
       stt100:      acc.stt100       + c.stt_100,
       rnv:         acc.rnv          + c.rnv,
@@ -74,7 +125,7 @@ export default function Dashboard() {
       autre:       acc.autre        + (c.autre_tarif    || 0),
     }), { stt50: 0, stt100: 0, rnv: 0, titreTiers: 0, docNaissance: 0, autre: 0 });
 
-    const tarifsBord = controls.reduce((acc, c) => ({
+    const tarifsBord = filteredByLocation.reduce((acc, c) => ({
       stt50:       acc.stt50        + (c.tarif_bord_stt_50        || 0),
       stt100:      acc.stt100       + (c.tarif_bord_stt_100       || 0),
       rnv:         acc.rnv          + (c.tarif_bord_rnv           || 0),
@@ -90,7 +141,59 @@ export default function Dashboard() {
       + stats.pvDocNaissance + stats.pvAutre;
 
     return { tarifsControle, tarifsBord, totalBord, totalPV };
-  }, [controls, stats]);
+  }, [filteredByLocation, stats]);
+
+  // Partager — fonctions export
+  const exportOptions = useMemo(() => ({
+    controls: filteredByLocation,
+    title: viewMode === 'my-data' ? `Mes contrôles` : 'Tous les contrôles',
+    dateRange: startDate === endDate ? startDate : `${startDate} → ${endDate}`,
+    includeStats: true,
+  }), [filteredByLocation, viewMode, startDate, endDate]);
+
+  const handleExportHTML = useCallback(() => {
+    try {
+      const html = exportToHTML(exportOptions);
+      const filename = `controles-${startDate}${startDate !== endDate ? `-${endDate}` : ''}.html`;
+      downloadHTML(html, filename);
+      toast.success('Export HTML téléchargé');
+    } catch {
+      toast.error('Erreur lors de l\'export HTML');
+    }
+  }, [exportOptions, startDate, endDate]);
+
+  const handleExportPDF = useCallback(() => {
+    try {
+      const doc = exportToPDF(exportOptions);
+      const filename = `controles-${startDate}${startDate !== endDate ? `-${endDate}` : ''}.pdf`;
+      downloadPDF(doc, filename);
+      toast.success('Export PDF téléchargé');
+    } catch {
+      toast.error('Erreur lors de l\'export PDF');
+    }
+  }, [exportOptions, startDate, endDate]);
+
+  const handleEmailExport = useCallback(() => {
+    try {
+      if (emailFormat === 'text') {
+        const email = generateEmailContent(exportOptions);
+        openMailClient(email);
+      } else if (emailFormat === 'html') {
+        const html = exportToHTML(exportOptions);
+        const filename = `controles-${startDate}${startDate !== endDate ? `-${endDate}` : ''}.html`;
+        downloadHTML(html, filename);
+        toast.success('Fichier HTML téléchargé — vous pouvez l\'envoyer en pièce jointe');
+      } else {
+        const doc = exportToPDF(exportOptions);
+        const filename = `controles-${startDate}${startDate !== endDate ? `-${endDate}` : ''}.pdf`;
+        downloadPDF(doc, filename);
+        toast.success('Fichier PDF téléchargé — vous pouvez l\'envoyer en pièce jointe');
+      }
+      setEmailDialogOpen(false);
+    } catch {
+      toast.error('Erreur lors de l\'export');
+    }
+  }, [emailFormat, exportOptions, startDate, endDate]);
 
   if (authLoading) {
     return (
@@ -133,6 +236,27 @@ export default function Dashboard() {
                 isFetching={isFetching}
                 onSync={handleSync}
               />
+
+              {/* Bouton Partager */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="gap-1.5">
+                    <Share2 className="h-4 w-4" />
+                    <span className="hidden sm:inline">Partager</span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={handleExportHTML}>
+                    HTML
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleExportPDF}>
+                    PDF
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setEmailDialogOpen(true)}>
+                    Email…
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
 
@@ -148,11 +272,35 @@ export default function Dashboard() {
                 onViewModeChange={setViewMode}
               />
             </div>
-            <div className="flex justify-center">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
               <PeriodSelector
                 selectedPeriod={period}
                 onPeriodChange={setPeriod}
+                customStart={customStart}
+                customEnd={customEnd}
+                onCustomStartChange={setCustomStart}
+                onCustomEndChange={setCustomEnd}
               />
+              {/* Filtre par lieu */}
+              <div className="flex items-center gap-1 bg-muted rounded-lg p-1">
+                {locationButtons.map(({ value, label, icon: Icon }) => (
+                  <Button
+                    key={value}
+                    variant="ghost"
+                    size="sm"
+                    className={cn(
+                      "h-7 px-2.5 text-xs font-medium transition-colors gap-1",
+                      locationFilter === value
+                        ? "bg-background shadow-sm text-foreground"
+                        : "text-muted-foreground hover:text-foreground"
+                    )}
+                    onClick={() => setLocationFilter(value)}
+                  >
+                    <Icon className="h-3 w-3" />
+                    {label}
+                  </Button>
+                ))}
+              </div>
             </div>
           </div>
         </div>
@@ -188,6 +336,11 @@ export default function Dashboard() {
         <div className="space-y-2">
           <h2 className="text-base font-semibold">
             {viewMode === 'my-data' ? 'Mes contrôles' : 'Tous les contrôles'}
+            {locationFilter !== 'all' && (
+              <span className="ml-2 text-sm font-normal text-muted-foreground">
+                — {locationFilter === 'train' ? 'À bord' : 'En gare'}
+              </span>
+            )}
           </h2>
 
           {isLoading ? (
@@ -314,12 +467,12 @@ export default function Dashboard() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="px-4 pb-3 space-y-0.5">
-                  <StatRow label="STT 100€"    value={stats.stt100} />
+                  <StatRow label="STT 100€"          value={stats.stt100} />
                   <StatRow label="STT autre montant" value={stats.pvStt100} />
-                  <StatRow label="RNV"         value={stats.pvRnv} />
-                  <StatRow label="Titre tiers" value={stats.pvTitreTiers} />
-                  <StatRow label="D.naissance" value={stats.pvDocNaissance} />
-                  <StatRow label="Autre"       value={stats.pvAutre} />
+                  <StatRow label="RNV"               value={stats.pvRnv} />
+                  <StatRow label="Titre tiers"       value={stats.pvTitreTiers} />
+                  <StatRow label="D.naissance"       value={stats.pvDocNaissance} />
+                  <StatRow label="Autre"             value={stats.pvAutre} />
                   {stats.pv === 0 && (
                     <p className="text-xs text-muted-foreground italic">Aucun</p>
                   )}
@@ -337,12 +490,12 @@ export default function Dashboard() {
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="px-4 pb-3 space-y-0.5">
-                    <StatRow label="Tarif bord"        value={detailedStats.tarifsBord.stt50} />
+                    <StatRow label="Tarif bord"         value={detailedStats.tarifsBord.stt50} />
                     <StatRow label="Tarif exceptionnel" value={detailedStats.tarifsBord.stt100} />
-                    <StatRow label="RNV"         value={detailedStats.tarifsBord.rnv} />
-                    <StatRow label="Titre tiers" value={detailedStats.tarifsBord.titreTiers} />
-                    <StatRow label="D.naissance" value={detailedStats.tarifsBord.docNaissance} />
-                    <StatRow label="Autre"       value={detailedStats.tarifsBord.autre} />
+                    <StatRow label="RNV"                value={detailedStats.tarifsBord.rnv} />
+                    <StatRow label="Titre tiers"        value={detailedStats.tarifsBord.titreTiers} />
+                    <StatRow label="D.naissance"        value={detailedStats.tarifsBord.docNaissance} />
+                    <StatRow label="Autre"              value={detailedStats.tarifsBord.autre} />
                     {detailedStats.totalBord === 0 && (
                       <p className="text-xs text-muted-foreground italic">Aucun</p>
                     )}
@@ -372,6 +525,47 @@ export default function Dashboard() {
             </div>
           </div>
         )}
+
+        {/* Dialog Email */}
+        <Dialog open={emailDialogOpen} onOpenChange={setEmailDialogOpen}>
+          <DialogContent className="sm:max-w-sm">
+            <DialogHeader>
+              <DialogTitle>Envoyer par email</DialogTitle>
+            </DialogHeader>
+            <div className="py-2">
+              <RadioGroup value={emailFormat} onValueChange={(v) => setEmailFormat(v as EmailFormat)} className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <RadioGroupItem value="text" id="email-text" />
+                  <Label htmlFor="email-text" className="cursor-pointer">
+                    <span className="font-medium">Texte brut</span>
+                    <span className="block text-xs text-muted-foreground">Ouvre votre client email avec le rapport en texte</span>
+                  </Label>
+                </div>
+                <div className="flex items-center gap-3">
+                  <RadioGroupItem value="html" id="email-html" />
+                  <Label htmlFor="email-html" className="cursor-pointer">
+                    <span className="font-medium">HTML (fichier)</span>
+                    <span className="block text-xs text-muted-foreground">Télécharge le rapport HTML à joindre à votre email</span>
+                  </Label>
+                </div>
+                <div className="flex items-center gap-3">
+                  <RadioGroupItem value="pdf" id="email-pdf" />
+                  <Label htmlFor="email-pdf" className="cursor-pointer">
+                    <span className="font-medium">PDF (fichier)</span>
+                    <span className="block text-xs text-muted-foreground">Télécharge le rapport PDF à joindre à votre email</span>
+                  </Label>
+                </div>
+              </RadioGroup>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setEmailDialogOpen(false)}>Annuler</Button>
+              <Button onClick={handleEmailExport}>
+                {emailFormat === 'text' ? 'Ouvrir email' : 'Télécharger'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
       </div>
     </AppLayout>
   );
