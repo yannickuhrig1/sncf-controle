@@ -307,16 +307,16 @@
     --stat-blue-bg: 214 80% 90%;
     --stat-blue-text: 214 90% 32%;
 
-    --card-cyan: 200 70% 92%;
-    --card-cyan-foreground: 200 70% 20%;
+    --card-cyan: 0 0% 100%;
+    --card-cyan-foreground: 220 20% 10%;
     --card-rose: 0 0% 100%;
-    --card-rose-foreground: 214 40% 10%;
-    --card-mint: 152 60% 91%;
-    --card-mint-foreground: 152 55% 20%;
-    --card-amber: 36 80% 91%;
-    --card-amber-foreground: 36 80% 22%;
-    --card-violet: 260 65% 92%;
-    --card-violet-foreground: 260 60% 25%;
+    --card-rose-foreground: 220 20% 10%;
+    --card-mint: 0 0% 100%;
+    --card-mint-foreground: 220 20% 10%;
+    --card-amber: 0 0% 100%;
+    --card-amber-foreground: 220 20% 10%;
+    --card-violet: 0 0% 100%;
+    --card-violet-foreground: 220 20% 10%;
 
     --sidebar-background: 214 25% 97%;
     --sidebar-foreground: 214 40% 20%;
@@ -404,16 +404,16 @@
     --stat-blue-bg: 210 70% 14%;
     --stat-blue-text: 210 100% 70%;
 
-    --card-cyan: 195 55% 16%;
-    --card-cyan-foreground: 195 80% 80%;
-    --card-rose: 0 45% 18%;
-    --card-rose-foreground: 0 60% 85%;
-    --card-mint: 152 45% 15%;
-    --card-mint-foreground: 152 60% 78%;
-    --card-amber: 36 50% 15%;
-    --card-amber-foreground: 36 80% 80%;
-    --card-violet: 260 45% 18%;
-    --card-violet-foreground: 260 65% 85%;
+    --card-cyan: 222 25% 12%;
+    --card-cyan-foreground: 220 15% 90%;
+    --card-rose: 222 25% 12%;
+    --card-rose-foreground: 220 15% 90%;
+    --card-mint: 222 25% 12%;
+    --card-mint-foreground: 220 15% 90%;
+    --card-amber: 222 25% 12%;
+    --card-amber-foreground: 220 15% 90%;
+    --card-violet: 222 25% 12%;
+    --card-violet-foreground: 220 15% 90%;
 
     --sidebar-background: 216 24% 10%;
     --sidebar-foreground: 214 15% 88%;
@@ -501,16 +501,16 @@
     --stat-blue-bg: 239 65% 92%;
     --stat-blue-text: 239 68% 42%;
 
-    --card-cyan: 199 75% 90%;
-    --card-cyan-foreground: 199 65% 22%;
-    --card-rose: 340 75% 91%;
-    --card-rose-foreground: 340 60% 30%;
-    --card-mint: 158 55% 88%;
-    --card-mint-foreground: 158 50% 22%;
-    --card-amber: 38 80% 88%;
-    --card-amber-foreground: 38 70% 26%;
-    --card-violet: 262 60% 90%;
-    --card-violet-foreground: 262 55% 28%;
+    --card-cyan: 0 0% 100%;
+    --card-cyan-foreground: 220 20% 10%;
+    --card-rose: 0 0% 100%;
+    --card-rose-foreground: 220 20% 10%;
+    --card-mint: 0 0% 100%;
+    --card-mint-foreground: 220 20% 10%;
+    --card-amber: 0 0% 100%;
+    --card-amber-foreground: 220 20% 10%;
+    --card-violet: 0 0% 100%;
+    --card-violet-foreground: 220 20% 10%;
 
     --sidebar-background: 0 0% 100%;
     --sidebar-foreground: 240 25% 28%;
@@ -575,16 +575,16 @@
     --stat-blue-bg: 239 55% 16%;
     --stat-blue-text: 239 75% 72%;
 
-    --card-cyan: 199 45% 18%;
-    --card-cyan-foreground: 199 60% 82%;
-    --card-rose: 340 40% 20%;
-    --card-rose-foreground: 340 55% 85%;
-    --card-mint: 158 42% 18%;
-    --card-mint-foreground: 158 52% 80%;
-    --card-amber: 38 42% 18%;
-    --card-amber-foreground: 38 65% 82%;
-    --card-violet: 262 42% 20%;
-    --card-violet-foreground: 262 58% 85%;
+    --card-cyan: 222 25% 12%;
+    --card-cyan-foreground: 220 15% 90%;
+    --card-rose: 222 25% 12%;
+    --card-rose-foreground: 220 15% 90%;
+    --card-mint: 222 25% 12%;
+    --card-mint-foreground: 220 15% 90%;
+    --card-amber: 222 25% 12%;
+    --card-amber-foreground: 220 15% 90%;
+    --card-violet: 222 25% 12%;
+    --card-violet-foreground: 220 15% 90%;
 
     --sidebar-background: 238 28% 10%;
     --sidebar-foreground: 240 18% 85%;

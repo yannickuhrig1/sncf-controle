@@ -1007,7 +1007,7 @@ export default function OnboardControl() {
               /* === EXTENDED MODE (original layout) === */
               <>
                 {/* Card 1: Train Info */}
-                <Card className="border-0 shadow-sm overflow-hidden">
+                <Card className="border-0 shadow-sm overflow-hidden bg-card-cyan text-card-cyan-foreground border-card-cyan">
                   <div className="h-1 bg-gradient-to-r from-cyan-400 to-teal-500" />
                   <CardHeader className="pb-3">
                     <CardTitle className="text-base flex items-center gap-2">
@@ -1133,7 +1133,7 @@ export default function OnboardControl() {
                 </Card>
 
                 {/* Card 2: Tarifs contrôle */}
-                <Card className="border-0 shadow-sm overflow-hidden">
+                <Card className="border-0 shadow-sm overflow-hidden bg-card-amber text-card-amber-foreground border-card-amber">
                   <div className="h-1 bg-gradient-to-r from-amber-400 to-orange-500" />
                   <CardHeader className="pb-3">
                     <CardTitle className="text-base flex items-center gap-2">
@@ -1183,7 +1183,7 @@ export default function OnboardControl() {
                 </Card>
 
                 {/* Card 3: PV */}
-                <Card className="border-0 shadow-sm overflow-hidden">
+                <Card className="border-0 shadow-sm overflow-hidden bg-card-rose text-card-rose-foreground border-card-rose">
                   <div className="h-1 bg-gradient-to-r from-rose-400 to-red-500" />
                   <CardHeader className="pb-3">
                     <CardTitle className="text-base flex items-center gap-2">
@@ -1232,7 +1232,7 @@ export default function OnboardControl() {
                 </Card>
 
                 {/* Card 4: Tarifs à bord */}
-                <Card className="border-0 shadow-sm overflow-hidden">
+                <Card className="border-0 shadow-sm overflow-hidden bg-card-mint text-card-mint-foreground border-card-mint">
                   <div className="h-1 bg-gradient-to-r from-teal-400 to-green-500" />
                   <CardHeader className="pb-3">
                     <CardTitle className="text-base flex items-center gap-2">
@@ -1261,7 +1261,7 @@ export default function OnboardControl() {
                 </Card>
 
                 {/* Card 5: RI */}
-                <Card className="border-0 shadow-sm overflow-hidden">
+                <Card className="border-0 shadow-sm overflow-hidden bg-card-violet text-card-violet-foreground border-card-violet">
                   <div className="h-1 bg-gradient-to-r from-violet-400 to-purple-500" />
                   <CardHeader className="pb-3">
                     <CardTitle className="text-base flex items-center gap-2">

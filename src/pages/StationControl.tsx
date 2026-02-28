@@ -8,7 +8,9 @@ import { useOfflineControls } from '@/hooks/useOfflineControls';
 import { useParisTime } from '@/hooks/useParisTime';
 import { supabase } from '@/integrations/supabase/client';
 import { AppLayout } from '@/components/layout/AppLayout';
-import { TarifSection } from '@/components/controls/TarifSection';
+import { TarifTypeToggle } from '@/components/controls/TarifTypeToggle';
+import { TarifListItem, TarifEntry } from '@/components/controls/TarifListItem';
+import { CounterInput } from '@/components/controls/CounterInput';
 import { MissionPreparation, PreparedTrain } from '@/components/controls/MissionPreparation';
 import { EmbarkmentControl } from '@/components/controls/EmbarkmentControl';
 import { FraudSummary } from '@/components/controls/FraudSummary';
@@ -17,13 +19,29 @@ import { LastSyncIndicator } from '@/components/controls/LastSyncIndicator';
 import { OfflineIndicator } from '@/components/controls/OfflineIndicator';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
+import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { Loader2, Building2, ArrowLeft, Save, ArrowRight, X, Clock, Calendar, ArrowDownToLine, ArrowUpFromLine, Users, UserCheck, MessageSquare } from 'lucide-react';
+import { Loader2, Building2, ArrowLeft, Save, ArrowRight, X, Clock, Calendar, ArrowDownToLine, ArrowUpFromLine, Users, UserCheck, MessageSquare, FileText, AlertTriangle, Plus, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
+
+const TARIF_TYPES = [
+  { value: 'stt',         label: 'STT' },
+  { value: 'rnv',         label: 'RNV' },
+  { value: 'titre_tiers', label: 'Titre tiers' },
+  { value: 'd_naissance', label: 'D. naissance' },
+  { value: 'autre',       label: 'Autre' },
+];
+
+const PV_TYPES = [
+  { value: 'pv_stt100',       label: 'STT' },
+  { value: 'pv_rnv',          label: 'RNV' },
+  { value: 'pv_titre_tiers',  label: 'Titre tiers' },
+  { value: 'pv_doc_naissance',label: 'D. naissance' },
+  { value: 'pv_autre',        label: 'Autre' },
+];
 
 // Liste des gares principales
 const GARES_PRINCIPALES = [
@@ -96,28 +114,17 @@ export default function StationControl() {
   const [nbPassagers, setNbPassagers] = useState(0);
   const [nbEnRegle, setNbEnRegle] = useState(0);
 
-  // Tarifs à bord (ventes)
-  const [tarifBordStt50, setTarifBordStt50] = useState({ count: 0, amount: 0 });
-  const [tarifBordStt100, setTarifBordStt100] = useState({ count: 0, amount: 0 });
-  const [tarifBordRnv, setTarifBordRnv] = useState({ count: 0, amount: 0 });
-  const [tarifBordTitreTiers, setTarifBordTitreTiers] = useState({ count: 0, amount: 0 });
-  const [tarifBordDocNaissance, setTarifBordDocNaissance] = useState({ count: 0, amount: 0 });
-  const [tarifBordAutre, setTarifBordAutre] = useState({ count: 0, amount: 0 });
+  // Tarifs contrôle (list-based, same as À bord)
+  const [tarifsControle, setTarifsControle] = useState<TarifEntry[]>([]);
+  const [controleTarifType, setControleTarifType] = useState('stt');
+  const [controleTarifMontant, setControleTarifMontant] = useState('');
+  const [autreControleComment, setAutreControleComment] = useState('');
 
-  // Tarifs contrôle (infractions régularisées)
-  const [stt50, setStt50] = useState({ count: 0, amount: 0 });
-  const [stt100, setStt100] = useState({ count: 0, amount: 0 });
-  const [rnv, setRnv] = useState({ count: 0, amount: 0 });
-  const [titreTiers, setTitreTiers] = useState({ count: 0, amount: 0 });
-  const [docNaissance, setDocNaissance] = useState({ count: 0, amount: 0 });
-  const [autreTarif, setAutreTarif] = useState({ count: 0, amount: 0 });
-
-  // PV
-  const [pvStt100, setPvStt100] = useState({ count: 0, amount: 0 });
-  const [pvRnv, setPvRnv] = useState({ count: 0, amount: 0 });
-  const [pvTitreTiers, setPvTitreTiers] = useState({ count: 0, amount: 0 });
-  const [pvDocNaissance, setPvDocNaissance] = useState({ count: 0, amount: 0 });
-  const [pvAutre, setPvAutre] = useState({ count: 0, amount: 0 });
+  // PV (list-based, same as À bord)
+  const [pvList, setPvList] = useState<TarifEntry[]>([]);
+  const [pvTarifType, setPvTarifType] = useState('pv_stt100');
+  const [pvTarifMontant, setPvTarifMontant] = useState('');
+  const [autrePvComment, setAutrePvComment] = useState('');
 
   // RI
   const [riPositive, setRiPositive] = useState(0);
@@ -128,12 +135,12 @@ export default function StationControl() {
 
   // Calculate fraud stats
   const fraudStats = useMemo(() => {
-    const tarifsControleCount = stt50.count + stt100.count + rnv.count + titreTiers.count + docNaissance.count + autreTarif.count;
-    const pvCount = pvStt100.count + pvRnv.count + pvTitreTiers.count + pvDocNaissance.count + pvAutre.count;
+    const tarifsControleCount = tarifsControle.length;
+    const pvCount = pvList.length;
     const fraudCount = tarifsControleCount + pvCount + riNegative;
     const fraudRate = nbPassagers > 0 ? (fraudCount / nbPassagers) * 100 : 0;
     return { fraudCount, fraudRate, tarifsControleCount, pvCount };
-  }, [nbPassagers, stt50, stt100, rnv, titreTiers, docNaissance, autreTarif, pvStt100, pvRnv, pvTitreTiers, pvDocNaissance, pvAutre, riNegative]);
+  }, [nbPassagers, tarifsControle, pvList, riNegative]);
 
   // Load control for editing or duplicating
   useEffect(() => {
@@ -202,29 +209,44 @@ export default function StationControl() {
     setPlatformNumber(locationParts[1] || data.platform_number || '');
     setOrigin(data.origin || '');
     setDestination(data.destination || '');
+    setControlDate(data.control_date);
+    setControlTime(data.control_time);
+    setTrainNumber(data.train_number || '');
     setNbPassagers(data.nb_passagers || 0);
     setNbEnRegle(data.nb_en_regle || 0);
-    // Tarifs contrôle
-    setStt50({ count: data.stt_50 || 0, amount: Number(data.stt_50_amount) || 0 });
-    setStt100({ count: data.stt_100 || 0, amount: Number(data.stt_100_amount) || 0 });
-    setRnv({ count: data.rnv || 0, amount: Number(data.rnv_amount) || 0 });
-    setTitreTiers({ count: data.titre_tiers || 0, amount: Number(data.titre_tiers_amount) || 0 });
-    setDocNaissance({ count: data.doc_naissance || 0, amount: Number(data.doc_naissance_amount) || 0 });
-    setAutreTarif({ count: data.autre_tarif || 0, amount: Number(data.autre_tarif_amount) || 0 });
-    // Tarifs bord
-    setTarifBordStt50({ count: data.tarif_bord_stt_50 || 0, amount: Number(data.tarif_bord_stt_50_amount) || 0 });
-    setTarifBordStt100({ count: data.tarif_bord_stt_100 || 0, amount: Number(data.tarif_bord_stt_100_amount) || 0 });
-    setTarifBordRnv({ count: data.tarif_bord_rnv || 0, amount: Number(data.tarif_bord_rnv_amount) || 0 });
-    setTarifBordTitreTiers({ count: data.tarif_bord_titre_tiers || 0, amount: Number(data.tarif_bord_titre_tiers_amount) || 0 });
-    setTarifBordDocNaissance({ count: data.tarif_bord_doc_naissance || 0, amount: Number(data.tarif_bord_doc_naissance_amount) || 0 });
-    setTarifBordAutre({ count: data.tarif_bord_autre || 0, amount: Number(data.tarif_bord_autre_amount) || 0 });
-    // PV
-    setPvStt100({ count: data.pv_stt100 || 0, amount: Number(data.pv_stt100_amount) || 0 });
-    setPvRnv({ count: data.pv_rnv || 0, amount: Number(data.pv_rnv_amount) || 0 });
-    setPvTitreTiers({ count: data.pv_titre_tiers || 0, amount: Number(data.pv_titre_tiers_amount) || 0 });
-    setPvDocNaissance({ count: data.pv_doc_naissance || 0, amount: Number(data.pv_doc_naissance_amount) || 0 });
-    setPvAutre({ count: data.pv_autre || 0, amount: Number(data.pv_autre_amount) || 0 });
-    // RI
+
+    // Reconstruct tarifs contrôle list
+    const newTarifsControle: TarifEntry[] = [];
+    const addTC = (count: number, type: string, typeLabel: string, totalAmount: number) => {
+      if (count <= 0) return;
+      const amountPerEntry = totalAmount > 0 ? totalAmount / count : 0;
+      for (let i = 0; i < count; i++) {
+        newTarifsControle.push({ id: crypto.randomUUID(), type, typeLabel, montant: amountPerEntry, category: 'controle' });
+      }
+    };
+    addTC(data.stt_50 || 0, 'stt', 'STT', Number(data.stt_50_amount) || 0);
+    addTC(data.rnv || 0, 'rnv', 'RNV', Number(data.rnv_amount) || 0);
+    addTC(data.titre_tiers || 0, 'titre_tiers', 'Titre tiers', Number(data.titre_tiers_amount) || 0);
+    addTC(data.doc_naissance || 0, 'd_naissance', 'D. naissance', Number(data.doc_naissance_amount) || 0);
+    addTC(data.autre_tarif || 0, 'autre', 'Autre', Number(data.autre_tarif_amount) || 0);
+    setTarifsControle(newTarifsControle);
+
+    // Reconstruct PV list
+    const newPvList: TarifEntry[] = [];
+    const addPV = (count: number, type: string, typeLabel: string, totalAmount: number) => {
+      if (count <= 0) return;
+      const amountPerEntry = totalAmount > 0 ? totalAmount / count : 0;
+      for (let i = 0; i < count; i++) {
+        newPvList.push({ id: crypto.randomUUID(), type, typeLabel, montant: amountPerEntry, category: 'pv' });
+      }
+    };
+    addPV(data.pv_stt100 || 0, 'pv_stt100', 'STT', Number(data.pv_stt100_amount) || 0);
+    addPV(data.pv_rnv || 0, 'pv_rnv', 'RNV', Number(data.pv_rnv_amount) || 0);
+    addPV(data.pv_titre_tiers || 0, 'pv_titre_tiers', 'Titre tiers', Number(data.pv_titre_tiers_amount) || 0);
+    addPV(data.pv_doc_naissance || 0, 'pv_doc_naissance', 'D. naissance', Number(data.pv_doc_naissance_amount) || 0);
+    addPV(data.pv_autre || 0, 'pv_autre', 'Autre', Number(data.pv_autre_amount) || 0);
+    setPvList(newPvList);
+
     setRiPositive(data.ri_positive || 0);
     setRiNegative(data.ri_negative || 0);
     setNotes(data.notes || '');
@@ -234,7 +256,6 @@ export default function StationControl() {
   const handleCancelEdit = () => {
     setIsEditMode(false);
     setSearchParams({});
-    // Reset form
     setStationName('');
     setPlatformNumber('');
     setTrainNumber('');
@@ -243,13 +264,35 @@ export default function StationControl() {
     setDestination('');
     setNbPassagers(0);
     setNbEnRegle(0);
-    setStt50({ count: 0, amount: 0 });
-    setStt100({ count: 0, amount: 0 });
-    setRnv({ count: 0, amount: 0 });
+    setTarifsControle([]);
+    setControleTarifMontant('');
+    setPvList([]);
+    setPvTarifMontant('');
     setRiPositive(0);
     setRiNegative(0);
     setNotes('');
   };
+
+  // Add/remove tarif handlers
+  const addTarifControle = useCallback(() => {
+    const montant = parseFloat(controleTarifMontant);
+    if (!montant || montant <= 0) return;
+    const typeLabel = TARIF_TYPES.find(t => t.value === controleTarifType)?.label || controleTarifType;
+    setTarifsControle(prev => [...prev, { id: crypto.randomUUID(), type: controleTarifType, typeLabel, montant, category: 'controle' }]);
+    setControleTarifMontant('');
+  }, [controleTarifType, controleTarifMontant]);
+
+  const removeTarifControle = (id: string) => setTarifsControle(prev => prev.filter(t => t.id !== id));
+
+  const addPv = useCallback(() => {
+    const montant = parseFloat(pvTarifMontant);
+    if (!montant || montant <= 0) return;
+    const typeLabel = PV_TYPES.find(t => t.value === pvTarifType)?.label || pvTarifType;
+    setPvList(prev => [...prev, { id: crypto.randomUUID(), type: pvTarifType, typeLabel, montant, category: 'pv' }]);
+    setPvTarifMontant('');
+  }, [pvTarifType, pvTarifMontant]);
+
+  const removePv = (id: string) => setPvList(prev => prev.filter(t => t.id !== id));
 
   // Handle sync - must be before early returns
   const handleSync = useCallback(async () => {
@@ -278,12 +321,30 @@ export default function StationControl() {
       return;
     }
 
-    try {
-      const locationName = platformNumber 
-        ? `${stationName} - Quai ${platformNumber}` 
-        : stationName;
+    const locationName = platformNumber
+      ? `${stationName} - Quai ${platformNumber}`
+      : stationName;
 
-      const controlData = {
+    // Aggregate tarifs contrôle list entries by type
+    const sttEntries     = tarifsControle.filter(t => t.type === 'stt');
+    const rnvEntries     = tarifsControle.filter(t => t.type === 'rnv');
+    const ttEntries      = tarifsControle.filter(t => t.type === 'titre_tiers');
+    const dnEntries      = tarifsControle.filter(t => t.type === 'd_naissance');
+    const autreEntries   = tarifsControle.filter(t => t.type === 'autre');
+    // Aggregate PV list entries by type
+    const pvSttEntries   = pvList.filter(t => t.type === 'pv_stt100');
+    const pvRnvEntries   = pvList.filter(t => t.type === 'pv_rnv');
+    const pvTTEntries    = pvList.filter(t => t.type === 'pv_titre_tiers');
+    const pvDNEntries    = pvList.filter(t => t.type === 'pv_doc_naissance');
+    const pvAutreEntries = pvList.filter(t => t.type === 'pv_autre');
+
+    const notesParts: string[] = [];
+    if (autreControleComment.trim()) notesParts.push(`[Tarif Autre] ${autreControleComment.trim()}`);
+    if (autrePvComment.trim()) notesParts.push(`[PV Autre] ${autrePvComment.trim()}`);
+    if (notes.trim()) notesParts.push(notes.trim());
+    const finalNotes = notesParts.length > 0 ? notesParts.join(' | ') : null;
+
+    const controlData = {
         location_type: 'gare' as const,
         location: locationName,
         train_number: trainNumber.trim() || null,
@@ -294,51 +355,52 @@ export default function StationControl() {
         control_time: controlTime,
         nb_passagers: nbPassagers,
         nb_en_regle: nbEnRegle,
-        // Tarifs bord
-        tarif_bord_stt_50: tarifBordStt50.count,
-        tarif_bord_stt_50_amount: tarifBordStt50.amount,
-        tarif_bord_stt_100: tarifBordStt100.count,
-        tarif_bord_stt_100_amount: tarifBordStt100.amount,
-        tarif_bord_rnv: tarifBordRnv.count,
-        tarif_bord_rnv_amount: tarifBordRnv.amount,
-        tarif_bord_titre_tiers: tarifBordTitreTiers.count,
-        tarif_bord_titre_tiers_amount: tarifBordTitreTiers.amount,
-        tarif_bord_doc_naissance: tarifBordDocNaissance.count,
-        tarif_bord_doc_naissance_amount: tarifBordDocNaissance.amount,
-        tarif_bord_autre: tarifBordAutre.count,
-        tarif_bord_autre_amount: tarifBordAutre.amount,
-        // Tarifs contrôle
-        stt_50: stt50.count,
-        stt_50_amount: stt50.amount,
-        stt_100: stt100.count,
-        stt_100_amount: stt100.amount,
-        rnv: rnv.count,
-        rnv_amount: rnv.amount,
-        titre_tiers: titreTiers.count,
-        titre_tiers_amount: titreTiers.amount,
-        doc_naissance: docNaissance.count,
-        doc_naissance_amount: docNaissance.amount,
-        autre_tarif: autreTarif.count,
-        autre_tarif_amount: autreTarif.amount,
+        // Tarifs contrôle (aggregated from list)
+        stt_50: sttEntries.length,
+        stt_50_amount: sttEntries.reduce((s, t) => s + t.montant, 0) || null,
+        stt_100: 0,
+        stt_100_amount: null,
+        rnv: rnvEntries.length,
+        rnv_amount: rnvEntries.reduce((s, t) => s + t.montant, 0) || null,
+        titre_tiers: ttEntries.length,
+        titre_tiers_amount: ttEntries.reduce((s, t) => s + t.montant, 0) || null,
+        doc_naissance: dnEntries.length,
+        doc_naissance_amount: dnEntries.reduce((s, t) => s + t.montant, 0) || null,
+        autre_tarif: autreEntries.length,
+        autre_tarif_amount: autreEntries.reduce((s, t) => s + t.montant, 0) || null,
         tarifs_controle: fraudStats.tarifsControleCount,
-        // PV
+        // PV (aggregated from list)
         pv: fraudStats.pvCount,
-        pv_stt100: pvStt100.count,
-        pv_stt100_amount: pvStt100.amount,
-        pv_rnv: pvRnv.count,
-        pv_rnv_amount: pvRnv.amount,
-        pv_titre_tiers: pvTitreTiers.count,
-        pv_titre_tiers_amount: pvTitreTiers.amount,
-        pv_doc_naissance: pvDocNaissance.count,
-        pv_doc_naissance_amount: pvDocNaissance.amount,
-        pv_autre: pvAutre.count,
-        pv_autre_amount: pvAutre.amount,
+        pv_stt100: pvSttEntries.length,
+        pv_stt100_amount: pvSttEntries.reduce((s, t) => s + t.montant, 0) || null,
+        pv_rnv: pvRnvEntries.length,
+        pv_rnv_amount: pvRnvEntries.reduce((s, t) => s + t.montant, 0) || null,
+        pv_titre_tiers: pvTTEntries.length,
+        pv_titre_tiers_amount: pvTTEntries.reduce((s, t) => s + t.montant, 0) || null,
+        pv_doc_naissance: pvDNEntries.length,
+        pv_doc_naissance_amount: pvDNEntries.reduce((s, t) => s + t.montant, 0) || null,
+        pv_autre: pvAutreEntries.length,
+        pv_autre_amount: pvAutreEntries.reduce((s, t) => s + t.montant, 0) || null,
+        // Tarifs bord (not used for En gare)
+        tarif_bord_stt_50: null,
+        tarif_bord_stt_50_amount: null,
+        tarif_bord_stt_100: null,
+        tarif_bord_stt_100_amount: null,
+        tarif_bord_rnv: null,
+        tarif_bord_rnv_amount: null,
+        tarif_bord_titre_tiers: null,
+        tarif_bord_titre_tiers_amount: null,
+        tarif_bord_doc_naissance: null,
+        tarif_bord_doc_naissance_amount: null,
+        tarif_bord_autre: null,
+        tarif_bord_autre_amount: null,
         // RI
         ri_positive: riPositive,
         ri_negative: riNegative,
-        notes: notes.trim() || null,
+        notes: finalNotes,
       };
 
+    try {
       if (isEditMode && editId) {
         await updateControl({ id: editId, ...controlData } as any);
         toast.success('Contrôle modifié', { description: 'Le contrôle en gare a été mis à jour avec succès' });
@@ -351,7 +413,7 @@ export default function StationControl() {
           navigate('/');
           return;
         }
-        
+
         await createControl(controlData as any);
         toast.success('Contrôle enregistré', { description: 'Le contrôle en gare a été ajouté avec succès' });
       }
@@ -360,80 +422,14 @@ export default function StationControl() {
     } catch (error: any) {
       // If network error and offline, save locally
       if (!isOnline) {
-        const locationName = platformNumber 
-          ? `${stationName} - Quai ${platformNumber}` 
-          : stationName;
-          
-        addOfflineControl({
-          location_type: 'gare' as const,
-          location: locationName,
-          train_number: null,
-          origin: origin.trim() || null,
-          destination: destination.trim() || null,
-          platform_number: platformNumber.trim() || null,
-          nb_passagers: nbPassagers,
-          nb_en_regle: nbEnRegle,
-          tarif_bord_stt_50: tarifBordStt50.count,
-          tarif_bord_stt_50_amount: tarifBordStt50.amount,
-          tarif_bord_stt_100: tarifBordStt100.count,
-          tarif_bord_stt_100_amount: tarifBordStt100.amount,
-          tarif_bord_rnv: tarifBordRnv.count,
-          tarif_bord_rnv_amount: tarifBordRnv.amount,
-          stt_50: stt50.count,
-          stt_50_amount: stt50.amount,
-          stt_100: stt100.count,
-          stt_100_amount: stt100.amount,
-          rnv: rnv.count,
-          rnv_amount: rnv.amount,
-          tarifs_controle: fraudStats.tarifsControleCount,
-          pv: fraudStats.pvCount,
-          pv_stt100: pvStt100.count,
-          pv_stt100_amount: pvStt100.amount,
-          pv_rnv: pvRnv.count,
-          pv_rnv_amount: pvRnv.amount,
-          pv_titre_tiers: pvTitreTiers.count,
-          pv_titre_tiers_amount: pvTitreTiers.amount,
-          pv_doc_naissance: pvDocNaissance.count,
-          pv_doc_naissance_amount: pvDocNaissance.amount,
-          pv_autre: pvAutre.count,
-          pv_autre_amount: pvAutre.amount,
-          ri_positive: riPositive,
-          ri_negative: riNegative,
-          notes: notes.trim() || null,
-        } as any);
+        addOfflineControl(controlData as any);
         navigate('/');
         return;
       }
-      
+
       toast.error('Erreur', { description: error.message || "Impossible d'enregistrer le contrôle" });
     }
   };
-
-  const tarifsBordItems = [
-    { id: 'stt50', label: 'STT 50€ - Supplément Train Tarif', ...tarifBordStt50, onCountChange: (v: number) => setTarifBordStt50(p => ({ ...p, count: v })), onAmountChange: (v: number) => setTarifBordStt50(p => ({ ...p, amount: v })) },
-    { id: 'stt100', label: 'STT 100% - Supplément Train Tarif plein', ...tarifBordStt100, onCountChange: (v: number) => setTarifBordStt100(p => ({ ...p, count: v })), onAmountChange: (v: number) => setTarifBordStt100(p => ({ ...p, amount: v })) },
-    { id: 'rnv', label: 'RNV - Régularisation Non Valide', ...tarifBordRnv, onCountChange: (v: number) => setTarifBordRnv(p => ({ ...p, count: v })), onAmountChange: (v: number) => setTarifBordRnv(p => ({ ...p, amount: v })) },
-    { id: 'titreTiers', label: 'Titre tiers - Vente pour compte tiers', ...tarifBordTitreTiers, onCountChange: (v: number) => setTarifBordTitreTiers(p => ({ ...p, count: v })), onAmountChange: (v: number) => setTarifBordTitreTiers(p => ({ ...p, amount: v })) },
-    { id: 'docNaissance', label: 'Document de naissance', ...tarifBordDocNaissance, onCountChange: (v: number) => setTarifBordDocNaissance(p => ({ ...p, count: v })), onAmountChange: (v: number) => setTarifBordDocNaissance(p => ({ ...p, amount: v })) },
-    { id: 'autre', label: 'Autre tarification', ...tarifBordAutre, onCountChange: (v: number) => setTarifBordAutre(p => ({ ...p, count: v })), onAmountChange: (v: number) => setTarifBordAutre(p => ({ ...p, amount: v })) },
-  ];
-
-  const tarifsControleItems = [
-    { id: 'ctrl-stt50', label: 'STT 50€', ...stt50, onCountChange: (v: number) => setStt50(p => ({ ...p, count: v })), onAmountChange: (v: number) => setStt50(p => ({ ...p, amount: v })) },
-    { id: 'ctrl-stt100', label: 'STT 100%', ...stt100, onCountChange: (v: number) => setStt100(p => ({ ...p, count: v })), onAmountChange: (v: number) => setStt100(p => ({ ...p, amount: v })) },
-    { id: 'ctrl-rnv', label: 'RNV', ...rnv, onCountChange: (v: number) => setRnv(p => ({ ...p, count: v })), onAmountChange: (v: number) => setRnv(p => ({ ...p, amount: v })) },
-    { id: 'ctrl-titreTiers', label: 'Titre tiers', ...titreTiers, onCountChange: (v: number) => setTitreTiers(p => ({ ...p, count: v })), onAmountChange: (v: number) => setTitreTiers(p => ({ ...p, amount: v })) },
-    { id: 'ctrl-docNaissance', label: 'Document de naissance', ...docNaissance, onCountChange: (v: number) => setDocNaissance(p => ({ ...p, count: v })), onAmountChange: (v: number) => setDocNaissance(p => ({ ...p, amount: v })) },
-    { id: 'ctrl-autre', label: 'Autre', ...autreTarif, onCountChange: (v: number) => setAutreTarif(p => ({ ...p, count: v })), onAmountChange: (v: number) => setAutreTarif(p => ({ ...p, amount: v })) },
-  ];
-
-  const pvItems = [
-    { id: 'pv-stt100', label: 'STT100', ...pvStt100, onCountChange: (v: number) => setPvStt100(p => ({ ...p, count: v })), onAmountChange: (v: number) => setPvStt100(p => ({ ...p, amount: v })) },
-    { id: 'pv-rnv', label: 'RNV', ...pvRnv, onCountChange: (v: number) => setPvRnv(p => ({ ...p, count: v })), onAmountChange: (v: number) => setPvRnv(p => ({ ...p, amount: v })) },
-    { id: 'pv-titre-tiers', label: 'Titre tiers', ...pvTitreTiers, onCountChange: (v: number) => setPvTitreTiers(p => ({ ...p, count: v })), onAmountChange: (v: number) => setPvTitreTiers(p => ({ ...p, amount: v })) },
-    { id: 'pv-doc-naissance', label: 'D. naissance', ...pvDocNaissance, onCountChange: (v: number) => setPvDocNaissance(p => ({ ...p, count: v })), onAmountChange: (v: number) => setPvDocNaissance(p => ({ ...p, amount: v })) },
-    { id: 'pv-autre', label: 'Autre', ...pvAutre, onCountChange: (v: number) => setPvAutre(p => ({ ...p, count: v })), onAmountChange: (v: number) => setPvAutre(p => ({ ...p, amount: v })) },
-  ];
 
 
   return (
@@ -543,7 +539,7 @@ export default function StationControl() {
 
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Station Info */}
-              <Card className="border-0 shadow-sm overflow-hidden">
+              <Card className="border-0 shadow-sm overflow-hidden bg-card-cyan text-card-cyan-foreground border-card-cyan">
                 <div className="h-1 bg-gradient-to-r from-cyan-400 to-teal-500" />
                 <CardHeader className="pb-3">
                   <CardTitle className="text-base flex items-center gap-2">
@@ -643,7 +639,7 @@ export default function StationControl() {
               </Card>
 
               {/* Passengers */}
-              <Card className="border-0 shadow-sm overflow-hidden">
+              <Card className="border-0 shadow-sm overflow-hidden bg-card-mint text-card-mint-foreground border-card-mint">
                 <div className="h-1 bg-gradient-to-r from-teal-400 to-green-500" />
                 <CardHeader className="pb-3">
                   <CardTitle className="text-base flex items-center gap-2">
@@ -655,89 +651,121 @@ export default function StationControl() {
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="nbPassagers">Nombre contrôlés</Label>
-                      <Input
-                        id="nbPassagers"
-                        type="number"
-                        min="0"
-                        value={nbPassagers}
-                        onChange={(e) => setNbPassagers(parseInt(e.target.value) || 0)}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="nbEnRegle">En règle</Label>
-                      <Input
-                        id="nbEnRegle"
-                        type="number"
-                        min="0"
-                        value={nbEnRegle}
-                        onChange={(e) => setNbEnRegle(parseInt(e.target.value) || 0)}
-                      />
-                    </div>
+                    <CounterInput label="Nombre contrôlés" value={nbPassagers} onChange={setNbPassagers} min={0} max={9999} steps={[1, 10]} />
+                    <CounterInput label="En règle" value={nbEnRegle} onChange={setNbEnRegle} min={0} max={9999} steps={[1, 10]} variant="success" />
                   </div>
                 </CardContent>
               </Card>
 
-              {/* Tarifs à bord */}
-              <TarifSection
-                title="Tarifs à bord"
-                description="Ventes réalisées"
-                items={tarifsBordItems}
-                variant="mint"
-              />
-
               {/* Tarifs contrôle */}
-              <TarifSection
-                title="Tarifs contrôle"
-                description="Infractions régularisées sur place"
-                items={tarifsControleItems}
-                variant="amber"
-              />
+              <Card className="border-0 shadow-sm overflow-hidden bg-card-amber text-card-amber-foreground border-card-amber">
+                <div className="h-1 bg-gradient-to-r from-amber-400 to-orange-500" />
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <div className="p-1.5 rounded-lg bg-amber-100 dark:bg-amber-900/30">
+                      <FileText className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
+                    </div>
+                    Tarif contrôle
+                  </CardTitle>
+                  <CardDescription className="text-xs pl-8">Infractions régularisées sur place</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <TarifTypeToggle types={TARIF_TYPES} value={controleTarifType} onChange={setControleTarifType} />
+                  {controleTarifType === 'autre' && (
+                    <Input
+                      placeholder="Précisez l'infraction..."
+                      value={autreControleComment}
+                      onChange={(e) => setAutreControleComment(e.target.value)}
+                    />
+                  )}
+                  <div className="flex gap-2">
+                    <Input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      placeholder="Montant (€)"
+                      value={controleTarifMontant}
+                      onChange={(e) => setControleTarifMontant(e.target.value)}
+                      className="flex-1"
+                      onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addTarifControle())}
+                    />
+                    <Button type="button" onClick={addTarifControle} disabled={!controleTarifMontant}>
+                      <Plus className="h-4 w-4 mr-1" />
+                      Ajouter
+                    </Button>
+                  </div>
+                  {tarifsControle.length > 0 && (
+                    <div className="space-y-2">
+                      {tarifsControle.map((t) => (
+                        <TarifListItem key={t.id} item={t} onRemove={removeTarifControle} />
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
 
               {/* PV */}
-              <TarifSection
-                title="Procès-Verbaux (PV)"
-                description="Infractions verbalisées"
-                items={pvItems}
-                variant="rose"
-              />
+              <Card className="border-0 shadow-sm overflow-hidden bg-card-rose text-card-rose-foreground border-card-rose">
+                <div className="h-1 bg-gradient-to-r from-rose-400 to-red-500" />
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <div className="p-1.5 rounded-lg bg-rose-100 dark:bg-rose-900/30">
+                      <AlertTriangle className="h-3.5 w-3.5 text-rose-600 dark:text-rose-400" />
+                    </div>
+                    Procès-verbaux (PV)
+                  </CardTitle>
+                  <CardDescription className="text-xs pl-8">Infractions verbalisées</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <TarifTypeToggle types={PV_TYPES} value={pvTarifType} onChange={setPvTarifType} />
+                  {pvTarifType === 'pv_autre' && (
+                    <Input
+                      placeholder="Précisez l'infraction..."
+                      value={autrePvComment}
+                      onChange={(e) => setAutrePvComment(e.target.value)}
+                    />
+                  )}
+                  <div className="flex gap-2">
+                    <Input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      placeholder="Montant (€)"
+                      value={pvTarifMontant}
+                      onChange={(e) => setPvTarifMontant(e.target.value)}
+                      className="flex-1"
+                      onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addPv())}
+                    />
+                    <Button type="button" onClick={addPv} disabled={!pvTarifMontant} variant="destructive">
+                      <Plus className="h-4 w-4 mr-1" />
+                      Ajouter
+                    </Button>
+                  </div>
+                  {pvList.length > 0 && (
+                    <div className="space-y-2">
+                      {pvList.map((t) => (
+                        <TarifListItem key={t.id} item={t} onRemove={removePv} />
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
 
               {/* RI */}
-              <Card className="border-0 shadow-sm overflow-hidden">
+              <Card className="border-0 shadow-sm overflow-hidden bg-card-violet text-card-violet-foreground border-card-violet">
                 <div className="h-1 bg-gradient-to-r from-violet-400 to-purple-500" />
                 <CardHeader className="pb-3">
                   <CardTitle className="text-base flex items-center gap-2">
                     <div className="p-1.5 rounded-lg bg-violet-100 dark:bg-violet-900/30">
                       <UserCheck className="h-3.5 w-3.5 text-violet-600 dark:text-violet-400" />
                     </div>
-                    Relevés d'Identité (RI)
+                    Relevés d'identité (RI)
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="riPositive" className="text-success font-medium">RI Positive</Label>
-                      <p className="text-xs text-muted-foreground">Identité vérifiée</p>
-                      <Input
-                        id="riPositive"
-                        type="number"
-                        min="0"
-                        value={riPositive}
-                        onChange={(e) => setRiPositive(parseInt(e.target.value) || 0)}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="riNegative" className="text-destructive font-medium">RI Négative</Label>
-                      <p className="text-xs text-muted-foreground">Identité non vérifiable</p>
-                      <Input
-                        id="riNegative"
-                        type="number"
-                        min="0"
-                        value={riNegative}
-                        onChange={(e) => setRiNegative(parseInt(e.target.value) || 0)}
-                      />
-                    </div>
+                    <CounterInput label="RI positive" sublabel="Identité vérifiée" value={riPositive} onChange={setRiPositive} variant="success" />
+                    <CounterInput label="RI négative" sublabel="Identité non vérifiable" value={riNegative} onChange={setRiNegative} variant="danger" />
                   </div>
                 </CardContent>
               </Card>
