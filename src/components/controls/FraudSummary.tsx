@@ -8,9 +8,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { AlertTriangle, CheckCircle, Users, FileText, Ticket, X } from 'lucide-react';
+import { AlertTriangle, Users, FileText, Ticket, TrendingUp, Pencil } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { getFraudRateColor, getFraudRateBgColor, getFraudThresholds } from '@/lib/stats';
+import { getFraudThresholds } from '@/lib/stats';
+import { motion } from 'framer-motion';
 
 export interface OperationDetail {
   id: string;
@@ -59,19 +60,27 @@ export function FraudSummary({
     }
   }, [isEditingPassengers]);
 
-  // Use dynamic thresholds from admin settings
+  const thresholds = getFraudThresholds();
+
   const getRateColor = (rate: number) => {
-    const thresholds = getFraudThresholds();
-    if (rate < thresholds.low) return 'text-green-600 dark:text-green-400';
-    if (rate < thresholds.medium) return 'text-yellow-600 dark:text-yellow-400';
+    if (rate === 0) return 'text-foreground';
+    if (rate < thresholds.low) return 'text-emerald-600 dark:text-emerald-400';
+    if (rate < thresholds.medium) return 'text-amber-600 dark:text-amber-400';
     return 'text-red-600 dark:text-red-400';
   };
 
-  const getRateBgColor = (rate: number) => {
-    const thresholds = getFraudThresholds();
-    if (rate < thresholds.low) return 'bg-green-100 dark:bg-green-900/30';
-    if (rate < thresholds.medium) return 'bg-yellow-100 dark:bg-yellow-900/30';
-    return 'bg-red-100 dark:bg-red-900/30';
+  const getStripGradient = (rate: number) => {
+    if (rate === 0) return 'from-slate-300 to-slate-400 dark:from-slate-600 dark:to-slate-700';
+    if (rate < thresholds.low) return 'from-emerald-400 to-green-500';
+    if (rate < thresholds.medium) return 'from-amber-400 to-orange-500';
+    return 'from-rose-500 to-red-600';
+  };
+
+  const getBarColor = (rate: number) => {
+    if (rate === 0) return 'bg-slate-300 dark:bg-slate-600';
+    if (rate < thresholds.low) return 'bg-emerald-500';
+    if (rate < thresholds.medium) return 'bg-amber-500';
+    return 'bg-red-500';
   };
 
   const handlePassengerSubmit = () => {
@@ -95,71 +104,108 @@ export function FraudSummary({
 
   return (
     <>
-      <Card className={cn('border-2', getRateBgColor(fraudRate))}>
-        <CardContent className="p-4">
-          <div className="flex items-center justify-between">
-            {/* Passengers section - clickable to edit */}
-            <div
+      <Card className="border-0 shadow-md overflow-hidden bg-card/95">
+        {/* Top colored strip */}
+        <div className={cn('h-1 bg-gradient-to-r transition-all duration-700', getStripGradient(fraudRate))} />
+
+        <CardContent className="p-0">
+          <div className="grid grid-cols-3 divide-x divide-border/40">
+
+            {/* Voyageurs */}
+            <button
+              type="button"
               className={cn(
-                'flex items-center gap-3 rounded-lg p-2 -m-2 transition-colors',
-                onPassengersChange && 'cursor-pointer hover:bg-background/50'
+                'px-4 sm:px-6 py-4 flex flex-col gap-1.5 text-left transition-colors w-full',
+                onPassengersChange ? 'cursor-pointer hover:bg-muted/40 active:bg-muted/60' : 'cursor-default'
               )}
               onClick={() => onPassengersChange && setIsEditingPassengers(true)}
-              title={onPassengersChange ? 'Cliquer pour modifier' : undefined}
+              disabled={!onPassengersChange}
             >
-              <div className="p-2 rounded-full bg-background">
-                <Users className="h-5 w-5 text-muted-foreground" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Voyageurs</p>
-                {isEditingPassengers ? (
-                  <Input
-                    ref={inputRef}
-                    type="number"
-                    value={inputValue}
-                    onChange={(e) => setInputValue(e.target.value)}
-                    onBlur={handlePassengerSubmit}
-                    onKeyDown={handleKeyDown}
-                    onClick={(e) => e.stopPropagation()}
-                    className="h-8 w-24 text-lg font-semibold [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                    min={0}
-                  />
-                ) : (
-                  <p className="text-lg font-semibold">{passengers}</p>
+              <div className="flex items-center gap-1.5">
+                <Users className="h-3.5 w-3.5 text-muted-foreground" />
+                <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+                  Voyageurs
+                </span>
+                {onPassengersChange && !isEditingPassengers && (
+                  <Pencil className="h-2.5 w-2.5 text-muted-foreground/40 ml-auto" />
                 )}
               </div>
-            </div>
+              {isEditingPassengers ? (
+                <Input
+                  ref={inputRef}
+                  type="number"
+                  value={inputValue}
+                  onChange={(e) => setInputValue(e.target.value)}
+                  onBlur={handlePassengerSubmit}
+                  onKeyDown={handleKeyDown}
+                  onClick={(e) => e.stopPropagation()}
+                  className="h-9 w-24 text-xl font-bold [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                  min={0}
+                />
+              ) : (
+                <p className="text-2xl sm:text-3xl font-bold tabular-nums tracking-tight">
+                  {passengers}
+                </p>
+              )}
+            </button>
 
-            {/* Fraud rate section - clickable to show details */}
-            <div
+            {/* Infractions */}
+            <button
+              type="button"
               className={cn(
-                'flex items-center gap-3 rounded-lg p-2 -m-2 transition-colors',
-                hasDetails && 'cursor-pointer hover:bg-background/50'
+                'px-4 sm:px-6 py-4 flex flex-col gap-1.5 text-left transition-colors w-full',
+                hasDetails ? 'cursor-pointer hover:bg-muted/40 active:bg-muted/60' : 'cursor-default'
               )}
               onClick={() => hasDetails && setShowDetails(true)}
-              title={hasDetails ? 'Cliquer pour voir le détail' : undefined}
+              disabled={!hasDetails}
             >
-              <div className={cn('p-2 rounded-full', getRateBgColor(fraudRate))}>
-                {fraudRate < 5 ? (
-                  <CheckCircle className={cn('h-5 w-5', getRateColor(fraudRate))} />
-                ) : (
-                  <AlertTriangle className={cn('h-5 w-5', getRateColor(fraudRate))} />
-                )}
+              <div className="flex items-center gap-1.5">
+                <AlertTriangle className="h-3.5 w-3.5 text-muted-foreground" />
+                <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+                  Infractions
+                </span>
               </div>
-              <div className="text-right">
-                <p className="text-sm text-muted-foreground">Taux de fraude</p>
-                <p className={cn('text-lg font-bold', getRateColor(fraudRate))}>
-                  {fraudRate.toFixed(2)}%
-                </p>
+              <p className={cn(
+                'text-2xl sm:text-3xl font-bold tabular-nums tracking-tight',
+                fraudCount > 0 ? 'text-amber-600 dark:text-amber-400' : ''
+              )}>
+                {fraudCount}
+              </p>
+            </button>
+
+            {/* Taux de fraude */}
+            <button
+              type="button"
+              className={cn(
+                'px-4 sm:px-6 py-4 flex flex-col gap-1.5 text-left transition-colors w-full',
+                hasDetails ? 'cursor-pointer hover:bg-muted/40 active:bg-muted/60' : 'cursor-default'
+              )}
+              onClick={() => hasDetails && setShowDetails(true)}
+              disabled={!hasDetails}
+            >
+              <div className="flex items-center gap-1.5">
+                <TrendingUp className="h-3.5 w-3.5 text-muted-foreground" />
+                <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+                  Taux fraude
+                </span>
               </div>
-            </div>
+              <p className={cn('text-2xl sm:text-3xl font-bold tabular-nums tracking-tight', getRateColor(fraudRate))}>
+                {fraudRate.toFixed(1)}%
+              </p>
+            </button>
           </div>
 
-          {fraudCount > 0 && (
-            <div className="mt-3 pt-3 border-t border-border/50">
-              <p className="text-sm text-muted-foreground text-center">
-                {fraudCount} infraction{fraudCount > 1 ? 's' : ''} détectée{fraudCount > 1 ? 's' : ''}
-              </p>
+          {/* Progress bar */}
+          {passengers > 0 && (
+            <div className="px-4 pb-3">
+              <div className="h-1.5 rounded-full bg-muted/70 overflow-hidden">
+                <motion.div
+                  className={cn('h-full rounded-full transition-colors duration-700', getBarColor(fraudRate))}
+                  initial={{ width: 0 }}
+                  animate={{ width: `${Math.min(fraudRate * 5, 100)}%` }}
+                  transition={{ duration: 0.6, ease: 'easeOut' }}
+                />
+              </div>
             </div>
           )}
         </CardContent>
@@ -177,15 +223,19 @@ export function FraudSummary({
 
           <div className="space-y-4">
             {/* Summary stats */}
-            <div className="grid grid-cols-2 gap-3">
-              <div className="p-3 rounded-lg bg-muted">
-                <p className="text-xs text-muted-foreground">Voyageurs</p>
+            <div className="grid grid-cols-3 gap-2">
+              <div className="p-3 rounded-lg bg-muted text-center">
+                <p className="text-xs text-muted-foreground mb-1">Voyageurs</p>
                 <p className="text-xl font-bold">{passengers}</p>
               </div>
-              <div className={cn('p-3 rounded-lg', getRateBgColor(fraudRate))}>
-                <p className="text-xs text-muted-foreground">Taux de fraude</p>
+              <div className="p-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 text-center">
+                <p className="text-xs text-muted-foreground mb-1">Infractions</p>
+                <p className="text-xl font-bold text-amber-600 dark:text-amber-400">{fraudCount}</p>
+              </div>
+              <div className={cn('p-3 rounded-lg text-center', fraudRate === 0 ? 'bg-muted' : fraudRate < thresholds.low ? 'bg-emerald-50 dark:bg-emerald-900/20' : fraudRate < thresholds.medium ? 'bg-amber-50 dark:bg-amber-900/20' : 'bg-red-50 dark:bg-red-900/20')}>
+                <p className="text-xs text-muted-foreground mb-1">Taux</p>
                 <p className={cn('text-xl font-bold', getRateColor(fraudRate))}>
-                  {fraudRate.toFixed(2)}%
+                  {fraudRate.toFixed(1)}%
                 </p>
               </div>
             </div>
@@ -200,13 +250,13 @@ export function FraudSummary({
                 <div className="space-y-1">
                   {stt50Count > 0 && (
                     <div className="flex items-center justify-between p-2 rounded bg-muted">
-                      <span className="text-sm">STT 50%</span>
+                      <span className="text-sm">STT 50€</span>
                       <Badge variant="secondary">{stt50Count} × 50€ = {stt50Count * 50}€</Badge>
                     </div>
                   )}
                   {stt100Count > 0 && (
                     <div className="flex items-center justify-between p-2 rounded bg-muted">
-                      <span className="text-sm">STT 100%</span>
+                      <span className="text-sm">PV 100€</span>
                       <Badge variant="secondary">{stt100Count} × 100€ = {stt100Count * 100}€</Badge>
                     </div>
                   )}

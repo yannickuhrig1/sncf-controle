@@ -33,6 +33,8 @@ interface MissionPreparationProps {
   stationName: string;
   selectedTrainId?: string;
   showTiles?: boolean;
+  showTilesInCard?: boolean; // if false, tiles are rendered externally via onTrainsChange
+  onTrainsChange?: (arrivals: PreparedTrain[], departures: PreparedTrain[], activeTab: 'arrivals' | 'departures') => void;
 }
 
 const STORAGE_KEY = 'mission_preparation_data';
@@ -61,7 +63,7 @@ function saveMissionData(data: MissionData): void {
   }
 }
 
-export function MissionPreparation({ onSelectTrain, stationName, selectedTrainId, showTiles = false }: MissionPreparationProps) {
+export function MissionPreparation({ onSelectTrain, stationName, selectedTrainId, showTiles = false, showTilesInCard = true, onTrainsChange }: MissionPreparationProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [activeTab, setActiveTab] = useState<'arrivals' | 'departures'>('arrivals');
   const [missionDate, setMissionDate] = useState<Date>(new Date());
@@ -148,6 +150,11 @@ export function MissionPreparation({ onSelectTrain, stationName, selectedTrainId
   const handleSelectTrain = (train: PreparedTrain) => {
     onSelectTrain(train, activeTab === 'arrivals' ? 'arrival' : 'departure');
   };
+
+  // Notify parent when trains or activeTab changes
+  useEffect(() => {
+    onTrainsChange?.(arrivals, departures, activeTab);
+  }, [arrivals, departures, activeTab]);
 
   const handleClearAll = () => {
     setArrivals([]);
@@ -349,8 +356,8 @@ export function MissionPreparation({ onSelectTrain, stationName, selectedTrainId
                 </TabsContent>
               </Tabs>
 
-              {/* Train selection - tiles or list */}
-              {currentTrains.length > 0 && (
+              {/* Train selection - tiles or list (only if showTilesInCard) */}
+              {showTilesInCard && currentTrains.length > 0 && (
                 <div className="space-y-2">
                   <Label className="text-sm font-medium">
                     Trains préparés ({currentTrains.length}) – Cliquer pour sélectionner
@@ -412,7 +419,7 @@ export function MissionPreparation({ onSelectTrain, stationName, selectedTrainId
                 </div>
               )}
 
-              {currentTrains.length === 0 && (
+              {showTilesInCard && currentTrains.length === 0 && (
                 <p className="text-sm text-muted-foreground text-center py-4">
                   Aucun train préparé. Ajoutez des trains pour préparer votre mission.
                 </p>

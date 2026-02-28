@@ -665,7 +665,10 @@ export default function Dashboard() {
     stats,
     detailedStats,
     periodLabel: periodLabels[period],
-    dateRangeLabel: startDate === endDate ? startDate : `${startDate} → ${endDate}`,
+    dateRangeLabel: (() => {
+      const fmt = (iso: string) => iso ? iso.split('-').reverse().join('-') : iso;
+      return startDate === endDate ? fmt(startDate) : `${fmt(startDate)} → ${fmt(endDate)}`;
+    })(),
     locationLabel: locationLabels[locationFilter],
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }), [stats, detailedStats, period, startDate, endDate, locationFilter]);
