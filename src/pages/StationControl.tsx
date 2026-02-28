@@ -488,7 +488,7 @@ export default function StationControl() {
 
         {/* Mode Selection - Only show when not in edit mode */}
         {!isEditMode && (
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-3 max-w-3xl mx-auto w-full">
             <Button
               variant={controlMode === 'disembarkment' ? 'default' : 'outline'}
               onClick={() => setControlMode('disembarkment')}
@@ -518,12 +518,15 @@ export default function StationControl() {
 
         {/* Content based on mode */}
         {controlMode === 'embarkment' && !isEditMode ? (
-          <EmbarkmentControl 
-            stationName={stationName}
-            onStationChange={setStationName}
-          />
+          <div className="max-w-3xl mx-auto w-full">
+            <EmbarkmentControl
+              stationName={stationName}
+              onStationChange={setStationName}
+            />
+          </div>
         ) : (
           <>
+          <div className="max-w-3xl mx-auto w-full space-y-4">
             {/* Compact/Extended Toggle */}
             <div className="flex items-center gap-2">
               <ToggleGroup
@@ -932,6 +935,7 @@ export default function StationControl() {
               {/* Progress overlay */}
               <SubmitProgress isSubmitting={isCreating || isUpdating} />
             </form>
+          </div>
           </>
         )}
       </div>
