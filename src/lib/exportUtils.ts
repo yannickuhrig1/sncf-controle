@@ -1252,6 +1252,40 @@ export function exportToHTML({ controls, title, dateRange, includeStats, exportM
     .pv-cell { color: var(--red); font-weight: 700; }
     .col-num { text-align: center; }
 
+    /* ── Group coloring (TC = vert, PV = rouge) ─────────────────── */
+    .controls-table thead tr.header-group th {
+      padding: 7px 8px; font-size: 10px; font-weight: 700;
+      letter-spacing: 0.07em; text-transform: uppercase;
+      text-align: center !important; cursor: default !important;
+      border-bottom: none;
+    }
+    .controls-table thead tr.header-group th::after { content: '' !important; }
+    .controls-table thead th.col-tc { background: #15803d !important; }
+    .controls-table thead th.col-pv { background: #b91c1c !important; }
+    .group-info, .group-voy, .group-other { background: #1a2e4a !important; }
+    .group-tc  { background: #14532d !important; }
+    .group-pv  { background: #7f1d1d !important; }
+    .controls-table tbody td.col-tc              { background: #f0fdf4; }
+    .controls-table tbody td.col-tc.col-total    { background: #dcfce7; font-weight: 700; }
+    .controls-table tbody td.col-pv              { background: #fff1f2; }
+    .controls-table tbody td.col-pv.col-total    { background: #ffe4e6; font-weight: 700; }
+    .controls-table tbody tr:hover td.col-tc                  { background: #dcfce7 !important; }
+    .controls-table tbody tr:hover td.col-tc.col-total        { background: #bbf7d0 !important; }
+    .controls-table tbody tr:hover td.col-pv                  { background: #ffe4e6 !important; }
+    .controls-table tbody tr:hover td.col-pv.col-total        { background: #fecdd3 !important; }
+    .controls-table tbody tr:nth-child(even) td.col-tc        { background: #ecfdf5 !important; }
+    .controls-table tbody tr:nth-child(even) td.col-tc.col-total { background: #d1fae5 !important; }
+    .controls-table tbody tr:nth-child(even) td.col-pv        { background: #fff1f2 !important; }
+    .controls-table tbody tr:nth-child(even) td.col-pv.col-total { background: #fdd5d7 !important; }
+    /* Toggle variants */
+    .toggle-btn.tc-btn { background: #f0fdf4; color: #15803d; border-color: #86efac; }
+    .toggle-btn.tc-btn.active { background: #15803d; color: white; border-color: #15803d; }
+    .toggle-btn.tc-btn:hover:not(.active) { background: #dcfce7; border-color: #15803d; color: #15803d; }
+    .toggle-btn.pv-btn { background: #fff1f2; color: #dc2626; border-color: #fca5a5; }
+    .toggle-btn.pv-btn.active { background: #dc2626; color: white; border-color: #dc2626; }
+    .toggle-btn.pv-btn:hover:not(.active) { background: #ffe4e6; border-color: #dc2626; color: #dc2626; }
+    .toggle-sep { align-self: stretch; width: 1px; background: var(--border); margin: 4px 6px; }
+
     /* ── Column toggles ───────────────────────────────────────────── */
     .toggles {
       display: flex; flex-wrap: wrap; gap: 6px; padding: 14px 0 6px;
@@ -1310,6 +1344,14 @@ export function exportToHTML({ controls, title, dateRange, includeStats, exportM
       .section { box-shadow: none; page-break-inside: avoid; }
       .fab, .toggles, .section-toggle { display: none !important; }
       .controls-table thead th { background: var(--navy) !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .controls-table thead th.col-tc { background: #15803d !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .controls-table thead th.col-pv { background: #b91c1c !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .controls-table thead th.group-tc { background: #14532d !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .controls-table thead th.group-pv { background: #7f1d1d !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .controls-table tbody td.col-tc { background: #f0fdf4 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .controls-table tbody td.col-tc.col-total { background: #dcfce7 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .controls-table tbody td.col-pv { background: #fff1f2 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .controls-table tbody td.col-pv.col-total { background: #ffe4e6 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
       .kpi-card { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     }
     @media (max-width: 600px) {
@@ -1594,18 +1636,34 @@ export function exportToHTML({ controls, title, dateRange, includeStats, exportM
     </div>
     <div class="section-body" id="detail-controls">
       <div class="toggles" id="column-toggles">
-        <span style="font-size:11px;color:var(--text-muted);font-weight:600;margin-right:4px;">Colonnes :</span>
-        <button class="toggle-btn active" onclick="event.stopPropagation();toggleColumn('col-stt')">STT</button>
-        <button class="toggle-btn active" onclick="event.stopPropagation();toggleColumn('col-rnv')">RNV</button>
-        <button class="toggle-btn active" onclick="event.stopPropagation();toggleColumn('col-pv')">PV</button>
+        <span style="font-size:10px;color:#15803d;font-weight:700;letter-spacing:0.05em;margin-right:2px;">TC ▸</span>
+        <button class="toggle-btn tc-btn active" onclick="event.stopPropagation();toggleColumn('col-tc-stt')">STT 50€</button>
+        <button class="toggle-btn tc-btn active" onclick="event.stopPropagation();toggleColumn('col-tc-rnv')">RNV</button>
+        <button class="toggle-btn tc-btn active" onclick="event.stopPropagation();toggleColumn('col-tc-tiers')">T.Tiers</button>
+        <button class="toggle-btn tc-btn active" onclick="event.stopPropagation();toggleColumn('col-tc-naiss')">D.Naiss.</button>
+        <button class="toggle-btn tc-btn active" onclick="event.stopPropagation();toggleColumn('col-tc-autre')">Autre TC</button>
+        <div class="toggle-sep"></div>
+        <span style="font-size:10px;color:#dc2626;font-weight:700;letter-spacing:0.05em;margin-right:2px;">PV ▸</span>
+        <button class="toggle-btn pv-btn active" onclick="event.stopPropagation();toggleColumn('col-pv-stt')">STT</button>
+        <button class="toggle-btn pv-btn active" onclick="event.stopPropagation();toggleColumn('col-pv-rnv')">RNV</button>
+        <button class="toggle-btn pv-btn active" onclick="event.stopPropagation();toggleColumn('col-pv-tiers')">T.Tiers</button>
+        <button class="toggle-btn pv-btn active" onclick="event.stopPropagation();toggleColumn('col-pv-naiss')">D.Naiss.</button>
+        <button class="toggle-btn pv-btn active" onclick="event.stopPropagation();toggleColumn('col-pv-autre')">Autre PV</button>
+        <div class="toggle-sep"></div>
         <button class="toggle-btn active" onclick="event.stopPropagation();toggleColumn('col-ri')">RI</button>
-        <button class="toggle-btn active" onclick="event.stopPropagation();toggleColumn('col-tiers')">Titre tiers</button>
-        <button class="toggle-btn active" onclick="event.stopPropagation();toggleColumn('col-naiss')">Date naiss.</button>
         <button class="toggle-btn active" onclick="event.stopPropagation();toggleColumn('col-bord')">T. bord</button>
       </div>
       <div class="table-wrap">
         <table class="controls-table" id="controls-table">
           <thead>
+            <tr class="header-group">
+              <th colspan="5" class="group-info">Informations</th>
+              <th colspan="2" class="group-voy">Voyageurs</th>
+              <th colspan="6" class="col-tc group-tc">Tarifs Contrôle</th>
+              <th colspan="6" class="col-pv group-pv">Procès-verbaux (PV)</th>
+              <th colspan="2" class="group-other">Autres</th>
+              <th class="group-other"></th>
+            </tr>
             <tr>
               <th onclick="sortTable(0)">Date</th>
               <th onclick="sortTable(1)">Heure</th>
@@ -1614,15 +1672,21 @@ export function exportToHTML({ controls, title, dateRange, includeStats, exportM
               <th onclick="sortTable(4)">Trajet</th>
               <th class="col-num" onclick="sortTable(5)">Voy.</th>
               <th class="col-num" onclick="sortTable(6)">OK</th>
-              <th class="col-stt col-num" onclick="sortTable(7)">STT 50€</th>
-              <th class="col-stt col-num" onclick="sortTable(8)">STT 100€</th>
-              <th class="col-rnv col-num" onclick="sortTable(9)">RNV</th>
-              <th class="col-pv col-num" onclick="sortTable(10)">PV</th>
-              <th class="col-tiers col-num" onclick="sortTable(11)">T.Tiers</th>
-              <th class="col-naiss col-num" onclick="sortTable(12)">D.Naiss.</th>
-              <th class="col-ri col-num" onclick="sortTable(13)">RI +/−</th>
-              <th class="col-bord col-num" onclick="sortTable(14)">T.Bord</th>
-              <th class="col-num" onclick="sortTable(15)">Fraude</th>
+              <th class="col-tc col-tc-stt col-num" onclick="sortTable(7)">STT 50€</th>
+              <th class="col-tc col-tc-rnv col-num" onclick="sortTable(8)">RNV</th>
+              <th class="col-tc col-tc-tiers col-num" onclick="sortTable(9)">T.Tiers</th>
+              <th class="col-tc col-tc-naiss col-num" onclick="sortTable(10)">D.Naiss.</th>
+              <th class="col-tc col-tc-autre col-num" onclick="sortTable(11)">Autre</th>
+              <th class="col-tc col-total col-num" onclick="sortTable(12)">Total</th>
+              <th class="col-pv col-pv-stt col-num" onclick="sortTable(13)">STT</th>
+              <th class="col-pv col-pv-rnv col-num" onclick="sortTable(14)">RNV</th>
+              <th class="col-pv col-pv-tiers col-num" onclick="sortTable(15)">T.Tiers</th>
+              <th class="col-pv col-pv-naiss col-num" onclick="sortTable(16)">D.Naiss.</th>
+              <th class="col-pv col-pv-autre col-num" onclick="sortTable(17)">Autre</th>
+              <th class="col-pv col-total col-num" onclick="sortTable(18)">Total</th>
+              <th class="col-ri col-num" onclick="sortTable(19)">RI +/−</th>
+              <th class="col-bord col-num" onclick="sortTable(20)">T.Bord</th>
+              <th class="col-num" onclick="sortTable(21)">Fraude</th>
             </tr>
           </thead>
           <tbody>
@@ -1641,12 +1705,18 @@ export function exportToHTML({ controls, title, dateRange, includeStats, exportM
                 <td style="color:var(--text-muted)">${control.location_type === 'train' ? `${d.origin} → ${d.destination}` : '—'}</td>
                 <td class="col-num"><strong>${d.passengers}</strong></td>
                 <td class="col-num">${d.inRule}</td>
-                <td class="col-stt col-num">${d.stt50 || '—'}</td>
-                <td class="col-stt col-num">${d.stt100 || '—'}</td>
-                <td class="col-rnv col-num">${d.rnv || '—'}</td>
-                <td class="col-pv col-num">${d.pv ? `<span class="pv-cell">${d.pv}</span>` : '—'}</td>
-                <td class="col-tiers col-num">${d.titreTiers || '—'}</td>
-                <td class="col-naiss col-num">${d.docNaissance || '—'}</td>
+                <td class="col-tc col-tc-stt col-num">${d.stt50 || '—'}</td>
+                <td class="col-tc col-tc-rnv col-num">${d.rnv || '—'}</td>
+                <td class="col-tc col-tc-tiers col-num">${d.titreTiers || '—'}</td>
+                <td class="col-tc col-tc-naiss col-num">${d.docNaissance || '—'}</td>
+                <td class="col-tc col-tc-autre col-num">${d.autreTarif || '—'}</td>
+                <td class="col-tc col-total col-num"><strong>${d.tarifsControle || '—'}</strong></td>
+                <td class="col-pv col-pv-stt col-num">${(d.stt100 + d.pvStt100) || '—'}</td>
+                <td class="col-pv col-pv-rnv col-num">${d.pvRnv || '—'}</td>
+                <td class="col-pv col-pv-tiers col-num">${d.pvTitreTiers || '—'}</td>
+                <td class="col-pv col-pv-naiss col-num">${d.pvDocNaissance || '—'}</td>
+                <td class="col-pv col-pv-autre col-num">${d.pvAutre || '—'}</td>
+                <td class="col-pv col-total col-num">${d.pv ? `<span class="pv-cell">${d.pv}</span>` : '—'}</td>
                 <td class="col-ri col-num">${(d.riPositive || d.riNegative) ? `${d.riPositive}/${d.riNegative}` : '—'}</td>
                 <td class="col-bord col-num">${tarifBord || '—'}</td>
                 <td class="col-num"><span class="${fraudClass}">${d.fraudRateFormatted}</span></td>
