@@ -12,13 +12,13 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { getFraudRateColor } from '@/lib/stats';
-import { Train, Building2, TrainTrack, Eye, ArrowUp, ArrowDown, ArrowUpDown } from 'lucide-react';
+import { Train, Building2, TrainTrack, ArrowUp, ArrowDown, ArrowUpDown } from 'lucide-react';
 import type { Database } from '@/integrations/supabase/types';
 
 type Control = Database['public']['Tables']['controls']['Row'];
 type LocationType = Database['public']['Enums']['location_type'];
 
-type SortKey = 'date' | 'time' | 'type' | 'location' | 'train' | 'passengers' | 'enRegle' | 'tarifsC' | 'pv' | 'stt50' | 'stt100' | 'rnv' | 'titreTiers' | 'docNaissance' | 'riPlus' | 'riMinus' | 'fraud';
+type SortKey = 'date' | 'time' | 'type' | 'location' | 'train' | 'passengers' | 'enRegle' | 'tarifsC' | 'stt50' | 'rnv' | 'titreTiers' | 'docNaissance' | 'pv' | 'stt100' | 'pvRnv' | 'pvTitreTiers' | 'pvDocNaissance' | 'riPlus' | 'riMinus' | 'fraud';
 type SortDirection = 'asc' | 'desc' | null;
 
 interface HistoryTableViewProps {
@@ -128,6 +128,15 @@ export function HistoryTableView({ controls, onControlClick }: HistoryTableViewP
         case 'docNaissance':
           comparison = (a.doc_naissance || 0) - (b.doc_naissance || 0);
           break;
+        case 'pvRnv':
+          comparison = (a.pv_rnv || 0) - (b.pv_rnv || 0);
+          break;
+        case 'pvTitreTiers':
+          comparison = (a.pv_titre_tiers || 0) - (b.pv_titre_tiers || 0);
+          break;
+        case 'pvDocNaissance':
+          comparison = (a.pv_doc_naissance || 0) - (b.pv_doc_naissance || 0);
+          break;
         case 'riPlus':
           comparison = a.ri_positive - b.ri_positive;
           break;
@@ -167,17 +176,19 @@ export function HistoryTableView({ controls, onControlClick }: HistoryTableViewP
               <TableHead>Trajet</TableHead>
               <SortableHeader columnKey="passengers" className="w-[80px] text-center">Voyageurs</SortableHeader>
               <SortableHeader columnKey="enRegle" className="w-[80px] text-center">En règle</SortableHeader>
-              <SortableHeader columnKey="tarifsC" className="w-[80px] text-center text-green-600">Tarifs C.</SortableHeader>
-              <SortableHeader columnKey="pv" className="w-[60px] text-center text-red-600">PV</SortableHeader>
-              <SortableHeader columnKey="stt50" className="w-[70px] text-center">STT 50</SortableHeader>
-              <SortableHeader columnKey="stt100" className="w-[70px] text-center">STT 100</SortableHeader>
-              <SortableHeader columnKey="rnv" className="w-[60px] text-center">RNV</SortableHeader>
-              <SortableHeader columnKey="titreTiers" className="w-[70px] text-center">T.Tiers</SortableHeader>
-              <SortableHeader columnKey="docNaissance" className="w-[70px] text-center">D.Naiss</SortableHeader>
-              <SortableHeader columnKey="riPlus" className="w-[60px] text-center">RI+</SortableHeader>
-              <SortableHeader columnKey="riMinus" className="w-[60px] text-center">RI-</SortableHeader>
-              <SortableHeader columnKey="fraud" className="w-[80px] text-center">Fraude</SortableHeader>
-              <TableHead className="w-[60px]"></TableHead>
+              <SortableHeader columnKey="tarifsC" className="w-[70px] text-center text-green-700">TC</SortableHeader>
+              <SortableHeader columnKey="stt50" className="w-[60px] text-center text-green-600">STT</SortableHeader>
+              <SortableHeader columnKey="rnv" className="w-[55px] text-center text-green-600">RNV</SortableHeader>
+              <SortableHeader columnKey="titreTiers" className="w-[65px] text-center text-green-600">T.Tiers</SortableHeader>
+              <SortableHeader columnKey="docNaissance" className="w-[65px] text-center text-green-600">D.Naiss</SortableHeader>
+              <SortableHeader columnKey="pv" className="w-[60px] text-center text-red-700">PV</SortableHeader>
+              <SortableHeader columnKey="stt100" className="w-[55px] text-center text-red-600">STT</SortableHeader>
+              <SortableHeader columnKey="pvRnv" className="w-[55px] text-center text-red-600">RNV</SortableHeader>
+              <SortableHeader columnKey="pvTitreTiers" className="w-[65px] text-center text-red-600">T.Tiers</SortableHeader>
+              <SortableHeader columnKey="pvDocNaissance" className="w-[65px] text-center text-red-600">D.Naiss</SortableHeader>
+              <SortableHeader columnKey="riPlus" className="w-[55px] text-center">RI+</SortableHeader>
+              <SortableHeader columnKey="riMinus" className="w-[55px] text-center">RI-</SortableHeader>
+              <SortableHeader columnKey="fraud" className="w-[75px] text-center">Fraude</SortableHeader>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -228,6 +239,18 @@ export function HistoryTableView({ controls, onControlClick }: HistoryTableViewP
                       </Badge>
                     ) : '-'}
                   </TableCell>
+                  <TableCell className="text-center text-sm text-green-600">
+                    {control.stt_50 > 0 ? control.stt_50 : '-'}
+                  </TableCell>
+                  <TableCell className="text-center text-sm text-green-600">
+                    {control.rnv > 0 ? control.rnv : '-'}
+                  </TableCell>
+                  <TableCell className="text-center text-sm text-green-600">
+                    {(control.titre_tiers || 0) > 0 ? control.titre_tiers : '-'}
+                  </TableCell>
+                  <TableCell className="text-center text-sm text-green-600">
+                    {(control.doc_naissance || 0) > 0 ? control.doc_naissance : '-'}
+                  </TableCell>
                   <TableCell className="text-center">
                     {control.pv > 0 ? (
                       <Badge variant="destructive" className="text-xs">
@@ -235,20 +258,17 @@ export function HistoryTableView({ controls, onControlClick }: HistoryTableViewP
                       </Badge>
                     ) : '-'}
                   </TableCell>
-                  <TableCell className="text-center text-sm text-green-600">
-                    {control.stt_50 > 0 ? control.stt_50 : '-'}
-                  </TableCell>
                   <TableCell className="text-center text-sm text-red-600">
                     {control.stt_100 > 0 ? control.stt_100 : '-'}
                   </TableCell>
-                  <TableCell className="text-center text-sm">
-                    {control.rnv > 0 ? control.rnv : '-'}
+                  <TableCell className="text-center text-sm text-red-600">
+                    {(control.pv_rnv || 0) > 0 ? control.pv_rnv : '-'}
                   </TableCell>
-                  <TableCell className="text-center text-sm">
-                    {(control.titre_tiers || 0) > 0 ? control.titre_tiers : '-'}
+                  <TableCell className="text-center text-sm text-red-600">
+                    {(control.pv_titre_tiers || 0) > 0 ? control.pv_titre_tiers : '-'}
                   </TableCell>
-                  <TableCell className="text-center text-sm">
-                    {(control.doc_naissance || 0) > 0 ? control.doc_naissance : '-'}
+                  <TableCell className="text-center text-sm text-red-600">
+                    {(control.pv_doc_naissance || 0) > 0 ? control.pv_doc_naissance : '-'}
                   </TableCell>
                   <TableCell className="text-center text-sm">
                     {control.ri_positive > 0 ? control.ri_positive : '-'}
@@ -260,19 +280,6 @@ export function HistoryTableView({ controls, onControlClick }: HistoryTableViewP
                     <span className={`font-semibold ${getFraudRateColor(fraudRate)}`}>
                       {fraudRate.toFixed(1)}%
                     </span>
-                  </TableCell>
-                  <TableCell>
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
-                      className="h-7 w-7"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onControlClick(control);
-                      }}
-                    >
-                      <Eye className="h-4 w-4" />
-                    </Button>
                   </TableCell>
                 </TableRow>
               );
