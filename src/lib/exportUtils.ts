@@ -606,24 +606,32 @@ export function exportToPDF({ controls, title, dateRange, includeStats, orientat
     return [
       d.date, d.time, typeLabel, numLieu, trajet,
       d.passengers.toString(), d.inRule.toString(),
-      d.stt50     || '—',
-      d.stt100    || '—',
-      d.rnv       || '—',
-      d.pv        || '—',
-      d.titreTiers   || '—',
-      d.docNaissance || '—',
+      // TC group
+      d.stt50           || '—',
+      d.rnv             || '—',
+      d.titreTiers      || '—',
+      d.docNaissance    || '—',
+      // PV group
+      d.pv              || '—',
+      (d.stt100 + d.pvStt100) || '—',
+      d.pvRnv           || '—',
+      d.pvTitreTiers    || '—',
+      d.pvDocNaissance  || '—',
+      // Others
       ri,
-      tarifBord   || '—',
+      tarifBord         || '—',
       d.fraudRateFormatted,
-      d.fraudRate,   // index 16 — couleur uniquement
+      d.fraudRate,   // index 19 — couleur uniquement
     ];
   });
 
   autoTable(doc, {
     startY: y,
     head: [['Date', 'Heure', 'Type', 'N° / Lieu', 'Trajet', 'Voy.', 'OK',
-            'STT 50€', 'STT 100€', 'RNV', 'PV', 'T.Tiers', 'D.Naiss.', 'RI +/−', 'T.Bord', 'Fraude']],
-    body: tableData.map(r => r.slice(0, 16)),
+            'STT', 'RNV', 'T.Tiers', 'D.Naiss.',
+            'PV', 'PV-STT', 'PV-RNV', 'PV-Tiers', 'PV-Naiss.',
+            'RI +/−', 'T.Bord', 'Fraude']],
+    body: tableData.map(r => r.slice(0, 19)),
     theme: 'plain',
     headStyles: {
       fillColor: C.navyMid,
@@ -639,11 +647,34 @@ export function exportToPDF({ controls, title, dateRange, includeStats, orientat
       if (data.section === 'head') {
         data.cell.styles.lineWidth = { bottom: 0.5 } as unknown as number;
         data.cell.styles.lineColor = C.gold as unknown as string;
+        // TC headers (7–10) → green tint
+        if (data.column.index >= 7 && data.column.index <= 10) {
+          data.cell.styles.fillColor = [21, 128, 61] as unknown as string;
+        }
+        // PV headers (11–15) → red tint
+        if (data.column.index >= 11 && data.column.index <= 15) {
+          data.cell.styles.fillColor = [185, 28, 28] as unknown as string;
+        }
       }
       if (data.section === 'body') {
-        const rate = tableData[data.row.index]?.[16] as number ?? 0;
-        // Colonne Fraude (15)
-        if (data.column.index === 15) {
+        const rate = tableData[data.row.index]?.[19] as number ?? 0;
+        // TC cells (7–10) → light green bg
+        if (data.column.index >= 7 && data.column.index <= 10) {
+          data.cell.styles.fillColor = [240, 253, 244] as unknown as string;
+          const v = data.cell.text[0];
+          if (v && v !== '—' && v !== '0') data.cell.styles.textColor = C.green as unknown as string;
+        }
+        // PV cells (11–15) → light red bg
+        if (data.column.index >= 11 && data.column.index <= 15) {
+          data.cell.styles.fillColor = [255, 241, 242] as unknown as string;
+          const v = data.cell.text[0];
+          if (v && v !== '—' && v !== '0') {
+            data.cell.styles.textColor = C.red as unknown as string;
+            if (data.column.index === 11) data.cell.styles.fontStyle = 'bold';
+          }
+        }
+        // Colonne Fraude (18)
+        if (data.column.index === 18) {
           if (rate > 10) {
             data.cell.styles.textColor = C.red as unknown as string;
             data.cell.styles.fontStyle = 'bold';
@@ -656,40 +687,28 @@ export function exportToPDF({ controls, title, dateRange, includeStats, orientat
             data.cell.styles.textColor = C.green as unknown as string;
           }
         }
-        // Colonne PV (10)
-        if (data.column.index === 10) {
-          const v = data.cell.text[0];
-          if (v && v !== '—' && v !== '0') {
-            data.cell.styles.textColor = C.red as unknown as string;
-            data.cell.styles.fontStyle = 'bold';
-          }
-        }
-        // Colonnes STT (7, 8)
-        if (data.column.index === 7 || data.column.index === 8) {
-          const v = data.cell.text[0];
-          if (v && v !== '—' && v !== '0') {
-            data.cell.styles.textColor = C.green as unknown as string;
-          }
-        }
       }
     },
     columnStyles: {
       0:  { cellWidth: 14, halign: 'center' },  // Date
       1:  { cellWidth: 9,  halign: 'center' },  // Heure
       2:  { cellWidth: 10, halign: 'center' },  // Type
-      3:  { cellWidth: 21 },                     // N°/Lieu
-      4:  { cellWidth: 33 },                     // Trajet
+      3:  { cellWidth: 18 },                     // N°/Lieu
+      4:  { cellWidth: 28 },                     // Trajet
       5:  { cellWidth: 8,  halign: 'center' },  // Voy.
       6:  { cellWidth: 7,  halign: 'center' },  // OK
-      7:  { cellWidth: 11, halign: 'center' },  // STT50
-      8:  { cellWidth: 12, halign: 'center' },  // STT100
-      9:  { cellWidth: 8,  halign: 'center' },  // RNV
-      10: { cellWidth: 8,  halign: 'center' },  // PV
-      11: { cellWidth: 10, halign: 'center' },  // T.Tiers
-      12: { cellWidth: 10, halign: 'center' },  // D.Naiss.
-      13: { cellWidth: 10, halign: 'center' },  // RI
-      14: { cellWidth: 10, halign: 'center' },  // T.Bord
-      15: { cellWidth: 13, halign: 'center' },  // Fraude
+      7:  { cellWidth: 9,  halign: 'center' },  // STT TC
+      8:  { cellWidth: 9,  halign: 'center' },  // RNV TC
+      9:  { cellWidth: 10, halign: 'center' },  // T.Tiers TC
+      10: { cellWidth: 10, halign: 'center' },  // D.Naiss. TC
+      11: { cellWidth: 9,  halign: 'center' },  // PV total
+      12: { cellWidth: 9,  halign: 'center' },  // PV-STT
+      13: { cellWidth: 9,  halign: 'center' },  // PV-RNV
+      14: { cellWidth: 10, halign: 'center' },  // PV-T.Tiers
+      15: { cellWidth: 10, halign: 'center' },  // PV-D.Naiss.
+      16: { cellWidth: 10, halign: 'center' },  // RI
+      17: { cellWidth: 10, halign: 'center' },  // T.Bord
+      18: { cellWidth: 13, halign: 'center' },  // Fraude
     },
     margin: { left: 10, right: 10 },
     tableWidth: 'auto',
@@ -806,42 +825,71 @@ export function exportTableToPDF({ controls, title, dateRange }: TableExportOpti
         control.nb_passagers.toString(),
         control.nb_en_regle.toString(),
         tarifBordTotal.toString(),
+        // TC group (7-11)
         control.tarifs_controle.toString(),
+        control.stt_50.toString(),
+        control.rnv.toString(),
         (control.titre_tiers || 0).toString(),
         (control.doc_naissance || 0).toString(),
+        // PV group (12-16)
         control.pv.toString(),
-        control.stt_50.toString(),
         control.stt_100.toString(),
-        control.rnv.toString(),
+        (control.pv_rnv || 0).toString(),
+        (control.pv_titre_tiers || 0).toString(),
+        (control.pv_doc_naissance || 0).toString(),
+        // RI + taux
         control.ri_positive.toString(),
         control.ri_negative.toString(),
         fraudRate,
-        fraudRateNum,  // index 17 – for coloring
+        fraudRateNum,  // index 20 – for coloring
       ];
     });
 
     autoTable(doc, {
       startY: 31,
-      head: [['Date','Heure','Type','Trajet','V.','OK','Bord','TC','Ti','Na','PV','S50','S100','RNV','R+','R−','%']],
-      body: tableData.map(r => r.slice(0, 17)),
+      head: [['Date','Heure','Type','Trajet','V.','OK','Brd','TC','S50','RNV','Ti','Na','PV','S100','P.RNV','P.Ti','P.Na','R+','R−','%']],
+      body: tableData.map(r => r.slice(0, 20)),
       theme: 'plain',
       headStyles: {
         fillColor: C.navyMid,
         textColor: C.white,
-        fontSize: 6.5,
-        cellPadding: 2,
+        fontSize: 6,
+        cellPadding: 1.8,
         halign: 'center',
         fontStyle: 'bold',
         lineWidth: { bottom: 0.5 } as unknown as number,
         lineColor: C.gold as unknown as string,
       },
-      bodyStyles: { fontSize: 6, cellPadding: 1.8, textColor: C.gray800 },
+      bodyStyles: { fontSize: 5.5, cellPadding: 1.5, textColor: C.gray800 },
       alternateRowStyles: { fillColor: C.gray50 },
       didParseCell: (data) => {
+        if (data.section === 'head') {
+          // TC headers (7-11) → green
+          if (data.column.index >= 7 && data.column.index <= 11) {
+            data.cell.styles.fillColor = [21, 128, 61] as unknown as string;
+          }
+          // PV headers (12-16) → red
+          if (data.column.index >= 12 && data.column.index <= 16) {
+            data.cell.styles.fillColor = [185, 28, 28] as unknown as string;
+          }
+        }
         if (data.section === 'body') {
-          const rate = tableData[data.row.index]?.[17] as number ?? 0;
-          // Fraud rate column (index 16)
-          if (data.column.index === 16) {
+          const rate = tableData[data.row.index]?.[20] as number ?? 0;
+          // TC cells (7-11)
+          if (data.column.index >= 7 && data.column.index <= 11) {
+            data.cell.styles.fillColor = [240, 253, 244] as unknown as string;
+            if (data.cell.text[0] !== '0') data.cell.styles.textColor = C.green as unknown as string;
+          }
+          // PV cells (12-16)
+          if (data.column.index >= 12 && data.column.index <= 16) {
+            data.cell.styles.fillColor = [255, 241, 242] as unknown as string;
+            if (data.cell.text[0] !== '0') {
+              data.cell.styles.textColor = C.red as unknown as string;
+              if (data.column.index === 12) data.cell.styles.fontStyle = 'bold';
+            }
+          }
+          // Fraud rate column (index 19)
+          if (data.column.index === 19) {
             if (rate > 10) {
               data.cell.styles.textColor = C.red as unknown as string;
               data.cell.styles.fontStyle = 'bold';
@@ -854,35 +902,29 @@ export function exportTableToPDF({ controls, title, dateRange }: TableExportOpti
               data.cell.styles.textColor = C.green as unknown as string;
             }
           }
-          // PV column (index 10)
-          if (data.column.index === 10 && data.cell.text[0] !== '0') {
-            data.cell.styles.textColor = C.red as unknown as string;
-            data.cell.styles.fontStyle = 'bold';
-          }
-          // TC column (index 7)
-          if (data.column.index === 7 && data.cell.text[0] !== '0') {
-            data.cell.styles.textColor = C.green as unknown as string;
-          }
         }
       },
       columnStyles: {
-        0:  { cellWidth: 14 },
-        1:  { cellWidth: 10 },
-        2:  { cellWidth: 14 },
-        3:  { cellWidth: 38 },
-        4:  { cellWidth: 8,  halign: 'center' },
-        5:  { cellWidth: 8,  halign: 'center' },
-        6:  { cellWidth: 8,  halign: 'center' },
-        7:  { cellWidth: 8,  halign: 'center' },
-        8:  { cellWidth: 8,  halign: 'center' },
-        9:  { cellWidth: 8,  halign: 'center' },
-        10: { cellWidth: 8,  halign: 'center' },
-        11: { cellWidth: 10, halign: 'center' },
-        12: { cellWidth: 12, halign: 'center' },
-        13: { cellWidth: 10, halign: 'center' },
-        14: { cellWidth: 8,  halign: 'center' },
-        15: { cellWidth: 8,  halign: 'center' },
-        16: { cellWidth: 13, halign: 'center' },
+        0:  { cellWidth: 13 },                    // Date
+        1:  { cellWidth: 9  },                    // Heure
+        2:  { cellWidth: 12 },                    // Type
+        3:  { cellWidth: 34 },                    // Trajet
+        4:  { cellWidth: 7,  halign: 'center' }, // V.
+        5:  { cellWidth: 7,  halign: 'center' }, // OK
+        6:  { cellWidth: 7,  halign: 'center' }, // Brd
+        7:  { cellWidth: 8,  halign: 'center' }, // TC
+        8:  { cellWidth: 7,  halign: 'center' }, // S50
+        9:  { cellWidth: 7,  halign: 'center' }, // RNV
+        10: { cellWidth: 7,  halign: 'center' }, // Ti
+        11: { cellWidth: 7,  halign: 'center' }, // Na
+        12: { cellWidth: 8,  halign: 'center' }, // PV
+        13: { cellWidth: 7,  halign: 'center' }, // S100
+        14: { cellWidth: 7,  halign: 'center' }, // P.RNV
+        15: { cellWidth: 7,  halign: 'center' }, // P.Ti
+        16: { cellWidth: 7,  halign: 'center' }, // P.Na
+        17: { cellWidth: 7,  halign: 'center' }, // R+
+        18: { cellWidth: 7,  halign: 'center' }, // R-
+        19: { cellWidth: 12, halign: 'center' }, // %
       },
       margin: { left: 8, right: 8 },
       tableWidth: 'auto',
@@ -1005,7 +1047,7 @@ export function exportToHTML({ controls, title, dateRange, includeStats, exportM
       font-size: 14px;
       line-height: 1.6;
     }
-    .container { max-width: 1440px; margin: 0 auto; padding: 20px; }
+    .container { max-width: 1750px; margin: 0 auto; padding: 20px; }
 
     /* ── Header ───────────────────────────────────────────────────── */
     .header {
