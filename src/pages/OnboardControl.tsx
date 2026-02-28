@@ -822,6 +822,9 @@ export default function OnboardControl() {
           />
         )}
 
+        {/* Main Content - Centered */}
+        <div className="max-w-3xl mx-auto w-full space-y-4">
+
         {/* Fraud Summary - Sticky Banner */}
         <div className="sticky top-16 z-30">
           <FraudSummary
@@ -836,10 +839,8 @@ export default function OnboardControl() {
           />
         </div>
 
-        {/* Main Content - 3 Column Layout on Desktop */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left Column - Form (2/3 on desktop) */}
-          <div className="lg:col-span-2 space-y-4">
+          {/* Form area */}
+          <div className="space-y-4">
 
             {/* === COMPACT MODE === */}
             {compactMode ? (
@@ -1303,35 +1304,29 @@ export default function OnboardControl() {
             )}
           </div>
 
-          {/* Right Column - Action Buttons (1/3 on desktop) */}
-          <div className="lg:col-span-1">
-            <div className="space-y-4 lg:sticky lg:top-52">
-              <div className="flex flex-col gap-2">
-                <Button
-                  size="lg"
-                  className="w-full"
-                  onClick={handleSubmit}
-                  disabled={isCreating || isUpdating}
-                >
-                  {(isCreating || isUpdating) ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      {isEditMode ? 'Mise à jour...' : 'Enregistrement...'}
-                    </>
-                  ) : (
-                    <>
-                      <Save className="mr-2 h-4 w-4" />
-                      {isEditMode ? 'Mettre à jour' : 'Enregistrer le contrôle'}
-                    </>
-                  )}
-                </Button>
-                
-                {/* Progress overlay */}
-                <SubmitProgress isSubmitting={isCreating || isUpdating} />
-
-              </div>
-            </div>
+          {/* Save Button */}
+          <div className="flex flex-col gap-2 pt-2 pb-4">
+            <Button
+              size="lg"
+              className="w-full"
+              onClick={handleSubmit}
+              disabled={isCreating || isUpdating}
+            >
+              {(isCreating || isUpdating) ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  {isEditMode ? 'Mise à jour...' : 'Enregistrement...'}
+                </>
+              ) : (
+                <>
+                  <Save className="mr-2 h-4 w-4" />
+                  {isEditMode ? 'Mettre à jour' : 'Enregistrer le contrôle'}
+                </>
+              )}
+            </Button>
+            <SubmitProgress isSubmitting={isCreating || isUpdating} />
           </div>
+
         </div>
 
         {/* History Section */}
