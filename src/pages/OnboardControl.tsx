@@ -849,20 +849,34 @@ export default function OnboardControl() {
                 <CardHeader className="pb-3">
                   <div className="flex flex-wrap gap-1.5">
                     {[
-                      { key: 'info' as const, icon: Train, label: 'Info' },
-                      { key: 'stt' as const, icon: Ticket, label: 'STT/PV' },
-                      { key: 'controle' as const, icon: FileText, label: 'Tarif C.' },
-                      { key: 'pv' as const, icon: AlertTriangle, label: 'PV' },
-                      { key: 'bord' as const, icon: Ticket, label: 'Bord' },
-                      { key: 'ri' as const, icon: User, label: 'RI' },
-                      { key: 'notes' as const, icon: MessageSquare, label: 'Notes' },
-                    ].map(({ key, icon: SectionIcon, label }) => (
+                      { key: 'info'     as const, icon: Train,         label: 'Info',
+                        inactive: 'border-cyan-200 bg-cyan-50 text-cyan-700 hover:bg-cyan-100 hover:text-cyan-700',
+                        active:   'bg-cyan-500 border-cyan-500 text-white hover:bg-cyan-600 hover:text-white' },
+                      { key: 'stt'      as const, icon: Ticket,        label: 'STT/PV',
+                        inactive: 'border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100 hover:text-amber-700',
+                        active:   'bg-amber-500 border-amber-500 text-white hover:bg-amber-600 hover:text-white' },
+                      { key: 'controle' as const, icon: FileText,      label: 'Tarif C.',
+                        inactive: 'border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100 hover:text-amber-700',
+                        active:   'bg-amber-500 border-amber-500 text-white hover:bg-amber-600 hover:text-white' },
+                      { key: 'pv'       as const, icon: AlertTriangle, label: 'PV',
+                        inactive: 'border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100 hover:text-rose-700',
+                        active:   'bg-rose-500 border-rose-500 text-white hover:bg-rose-600 hover:text-white' },
+                      { key: 'bord'     as const, icon: Ticket,        label: 'Bord',
+                        inactive: 'border-teal-200 bg-teal-50 text-teal-700 hover:bg-teal-100 hover:text-teal-700',
+                        active:   'bg-teal-500 border-teal-500 text-white hover:bg-teal-600 hover:text-white' },
+                      { key: 'ri'       as const, icon: User,          label: 'RI',
+                        inactive: 'border-violet-200 bg-violet-50 text-violet-700 hover:bg-violet-100 hover:text-violet-700',
+                        active:   'bg-violet-500 border-violet-500 text-white hover:bg-violet-600 hover:text-white' },
+                      { key: 'notes'    as const, icon: MessageSquare, label: 'Notes',
+                        inactive: 'border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100 hover:text-slate-700',
+                        active:   'bg-slate-500 border-slate-500 text-white hover:bg-slate-600 hover:text-white' },
+                    ].map(({ key, icon: SectionIcon, label, inactive, active }) => (
                       <Button
                         key={key}
                         type="button"
-                        variant={activeSection === key ? 'default' : 'outline'}
+                        variant="outline"
                         size="sm"
-                        className="gap-1 text-xs"
+                        className={cn('gap-1 text-xs border', activeSection === key ? active : inactive)}
                         onClick={() => setActiveSection(key)}
                       >
                         <SectionIcon className="h-3.5 w-3.5" />
