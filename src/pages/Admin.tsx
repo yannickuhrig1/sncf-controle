@@ -46,12 +46,12 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { 
-  Loader2, 
-  Users, 
-  Building2, 
-  Plus, 
-  Pencil, 
+import {
+  Loader2,
+  Users,
+  Building2,
+  Plus,
+  Pencil,
   Trash2,
   Shield,
   ShieldCheck,
@@ -66,6 +66,8 @@ import {
   Train,
   BarChart3,
   History,
+  Plug,
+  Check,
 } from 'lucide-react';
 import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
@@ -110,6 +112,15 @@ export default function AdminPage() {
   // Delete user dialog state
   const [deleteUserTarget, setDeleteUserTarget] = useState<Profile | null>(null);
   const [isDeletingUser, setIsDeletingUser] = useState(false);
+
+  // SNCF API token
+  const [sncfToken, setSncfToken] = useState(() => localStorage.getItem('sncf_api_token') || '');
+  const [showToken, setShowToken] = useState(false);
+  const saveSncfToken = (value: string) => {
+    setSncfToken(value);
+    if (value.trim()) localStorage.setItem('sncf_api_token', value.trim());
+    else              localStorage.removeItem('sncf_api_token');
+  };
 
   // Create user dialog state
   const [createUserOpen, setCreateUserOpen] = useState(false);
@@ -448,22 +459,26 @@ export default function AdminPage() {
 
         {/* Tabs */}
         <Tabs defaultValue="users" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="users" className="flex items-center gap-2">
-              <Users className="h-4 w-4" />
+          <TabsList className="grid w-full grid-cols-5">
+            <TabsTrigger value="users" className="flex items-center gap-1.5 text-xs">
+              <Users className="h-3.5 w-3.5" />
               Utilisateurs
             </TabsTrigger>
-            <TabsTrigger value="teams" className="flex items-center gap-2">
-              <Building2 className="h-4 w-4" />
+            <TabsTrigger value="teams" className="flex items-center gap-1.5 text-xs">
+              <Building2 className="h-3.5 w-3.5" />
               Équipes
             </TabsTrigger>
-            <TabsTrigger value="display" className="flex items-center gap-2">
-              <Palette className="h-4 w-4" />
+            <TabsTrigger value="display" className="flex items-center gap-1.5 text-xs">
+              <Palette className="h-3.5 w-3.5" />
               Affichage
             </TabsTrigger>
-            <TabsTrigger value="data" className="flex items-center gap-2">
-              <Database className="h-4 w-4" />
+            <TabsTrigger value="data" className="flex items-center gap-1.5 text-xs">
+              <Database className="h-3.5 w-3.5" />
               Données
+            </TabsTrigger>
+            <TabsTrigger value="integrations" className="flex items-center gap-1.5 text-xs">
+              <Plug className="h-3.5 w-3.5" />
+              Intégrations
             </TabsTrigger>
           </TabsList>
 
@@ -882,6 +897,83 @@ export default function AdminPage() {
                       </AlertDialogFooter>
                     </AlertDialogContent>
                   </AlertDialog>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Intégrations Tab */}
+          <TabsContent value="integrations" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Train className="h-5 w-5" />
+                  API SNCF (Navitia)
+                </CardTitle>
+                <CardDescription>
+                  Permet de récupérer automatiquement l'origine, la destination, les gares intermédiaires
+                  et l'état en temps réel d'un train à partir de son numéro.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-1.5">
+                  <Label>Token API</Label>
+                  <p className="text-xs text-muted-foreground">
+                    Obtenez un token gratuit sur{' '}
+                    <span className="font-mono font-medium">digital.sncf.com/startup/api</span>
+                  </p>
+                  <div className="flex gap-2">
+                    <div className="relative flex-1">
+                      <Input
+                        type={showToken ? 'text' : 'password'}
+                        placeholder="Votre token API SNCF…"
+                        value={sncfToken}
+                        onChange={e => saveSncfToken(e.target.value)}
+                        className="pr-10 font-mono text-sm"
+                      />
+                      <button
+                        type="button"
+                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                        onClick={() => setShowToken(v => !v)}
+                      >
+                        {showToken ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
+                    </div>
+                    {sncfToken && (
+                      <Button variant="outline" size="sm" onClick={() => saveSncfToken('')}>
+                        Supprimer
+                      </Button>
+                    )}
+                  </div>
+                  {sncfToken && (
+                    <p className="text-xs text-green-600 dark:text-green-400 flex items-center gap-1">
+                      <Check className="h-3 w-3" /> Token enregistré
+                    </p>
+                  )}
+                </div>
+
+                <Separator />
+
+                <div className="space-y-2">
+                  <Label className="text-muted-foreground text-xs uppercase tracking-wide">Données disponibles</Label>
+                  <ul className="text-sm space-y-1.5 text-muted-foreground">
+                    {[
+                      'Origine et destination automatiques',
+                      'Toutes les gares intermédiaires avec horaires',
+                      'Heure de départ en temps réel',
+                      'Voie/quai à chaque gare',
+                      'Type de train (TGV, TER, Intercités, OUIGO…)',
+                      'Opérateur',
+                      'Durée totale du trajet',
+                      'Statut : À l\'heure / Retard (+X min) / Supprimé',
+                      'Raison du retard (si disponible)',
+                    ].map(item => (
+                      <li key={item} className="flex items-start gap-2">
+                        <Check className="h-3.5 w-3.5 text-green-500 mt-0.5 shrink-0" />
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
                 </div>
               </CardContent>
             </Card>

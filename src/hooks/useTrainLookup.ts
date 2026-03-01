@@ -4,8 +4,9 @@ export type TrainStatus = 'on_time' | 'delayed' | 'cancelled' | 'unknown';
 
 export interface TrainStop {
   name: string;
-  departureTime: string;  // HH:MM (temps réel si dispo)
-  arrivalTime?: string;   // HH:MM
+  departureTime: string;   // HH:MM (réel si dispo)
+  arrivalTime?: string;    // HH:MM
+  platform?: string;       // Voie/quai
   isDelayed: boolean;
   delayMinutes?: number;
 }
@@ -14,11 +15,14 @@ export interface TrainInfo {
   // Trajet
   origin: string;
   destination: string;
-  departureTime: string;   // HH:MM depuis la 1ère gare
-  stops: TrainStop[];      // Toutes les gares du train
+  departureTime: string;    // HH:MM 1ère gare
+  arrivalTime?: string;     // HH:MM dernière gare
+  journeyDuration?: number; // en minutes
+  stops: TrainStop[];       // Toutes les gares
   // Type
-  trainType?: string;      // "TGV", "TER", "Intercités", "OUIGO"…
-  trainNumber?: string;    // Numéro officiel (headsign)
+  trainType?: string;       // "TGV", "TER", "Intercités", "OUIGO"…
+  trainNumber?: string;     // Numéro officiel
+  operator?: string;        // "SNCF", "OUIGO"…
   // Statut
   status: TrainStatus;
   delayMinutes?: number;
@@ -33,10 +37,21 @@ function toApiDate(dateStr: string): string {
 
 function parseHHMMSS(hhmmss: string | undefined): string {
   if (!hhmmss || hhmmss.length < 4) return '';
-  // Navitia encodes times > 24h as "250000" for trains arriving next day
+  // Navitia encode les trains après minuit > 24h (ex: "250000" = 01:00 le lendemain)
   const h = Math.floor(parseInt(hhmmss.slice(0, 2))) % 24;
   const m = hhmmss.slice(2, 4);
   return `${String(h).padStart(2, '0')}:${m}`;
+}
+
+function toMinutes(hhmmss: string): number {
+  return parseInt(hhmmss.slice(0, 2)) * 60 + parseInt(hhmmss.slice(2, 4));
+}
+
+function formatDuration(minutes: number): string {
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  if (h === 0) return `${m} min`;
+  return m === 0 ? `${h}h` : `${h}h${String(m).padStart(2, '0')}`;
 }
 
 function cleanStationName(name: string): string {
@@ -48,9 +63,7 @@ function extractTrainNumber(raw: string): string {
   return match ? match[0] : raw.trim();
 }
 
-function toMinutes(hhmmss: string): number {
-  return parseInt(hhmmss.slice(0, 2)) * 60 + parseInt(hhmmss.slice(2, 4));
-}
+export { formatDuration };
 
 export function useTrainLookup() {
   const [isLoading, setIsLoading] = useState(false);
@@ -62,7 +75,7 @@ export function useTrainLookup() {
   const lookup = async (trainNumber: string, date: string): Promise<TrainInfo | null> => {
     const token = getToken();
     if (!token) {
-      setError('Token SNCF manquant. Configurez-le dans Paramètres → Intégrations.');
+      setError('Token SNCF manquant. Configurez-le dans Administration → Intégrations.');
       return null;
     }
 
@@ -84,7 +97,7 @@ export function useTrainLookup() {
         `?headsign=${encodeURIComponent(headsign)}` +
         `&since=${since}&until=${until}` +
         `&data_freshness=realtime` +
-        `&depth=2` +          // Include physical_modes, commercial_modes
+        `&depth=2` +
         `&count=1`;
 
       const res = await fetch(url, {
@@ -106,11 +119,11 @@ export function useTrainLookup() {
 
       // ── Stops ──────────────────────────────────────────────────────────────
       const rawStops: {
-        stop_point?:            { name?: string };
-        departure_time?:        string;
-        arrival_time?:          string;
-        base_departure_time?:   string;
-        departure_status?:      string;
+        stop_point?:          { name?: string; platform_code?: string };
+        departure_time?:      string;
+        arrival_time?:        string;
+        base_departure_time?: string;
+        departure_status?:    string;
       }[] = journey.stop_times || [];
 
       if (rawStops.length < 2) {
@@ -121,25 +134,35 @@ export function useTrainLookup() {
       const stops: TrainStop[] = rawStops.map(s => {
         const isDelayed = s.departure_status === 'delayed';
         let delayMinutes: number | undefined;
-
         if (isDelayed && s.base_departure_time && s.departure_time) {
           const d = toMinutes(s.departure_time) - toMinutes(s.base_departure_time);
           if (d > 0) delayMinutes = d;
         }
-
         return {
           name:          cleanStationName(s.stop_point?.name || ''),
           departureTime: parseHHMMSS(s.departure_time),
           arrivalTime:   parseHHMMSS(s.arrival_time),
+          platform:      s.stop_point?.platform_code || undefined,
           isDelayed,
           delayMinutes,
         };
       });
 
-      // ── Train type ─────────────────────────────────────────────────────────
+      // ── Journey duration ───────────────────────────────────────────────────
+      let journeyDuration: number | undefined;
+      const firstDep  = rawStops[0].departure_time;
+      const lastArr   = rawStops[rawStops.length - 1].arrival_time || rawStops[rawStops.length - 1].departure_time;
+      if (firstDep && lastArr) {
+        const diff = toMinutes(lastArr) - toMinutes(firstDep);
+        if (diff > 0) journeyDuration = diff;
+      }
+
+      // ── Train type & operator ──────────────────────────────────────────────
       const commercialModes: { name?: string }[] = journey.commercial_modes || [];
       const physicalModes:   { name?: string }[] = journey.physical_modes   || [];
+      const networks:        { name?: string }[] = journey.networks         || [];
       const trainType = commercialModes[0]?.name || physicalModes[0]?.name;
+      const operator  = networks[0]?.name;
 
       // ── Status ─────────────────────────────────────────────────────────────
       let status: TrainStatus = 'on_time';
@@ -147,39 +170,35 @@ export function useTrainLookup() {
       let disruptionReason: string | undefined;
 
       const disruptions: {
-        severity?:  { effect?: string };
-        messages?:  { text?: string }[];
+        severity?: { effect?: string };
+        messages?: { text?: string }[];
       }[] = json.disruptions || [];
 
       if (disruptions.length > 0) {
         const d      = disruptions[0];
         const effect = d.severity?.effect;
-        if (effect === 'NO_SERVICE') {
-          status = 'cancelled';
-        } else if (effect === 'SIGNIFICANT_DELAYS' || effect === 'REDUCED_SERVICE') {
-          status = 'delayed';
-        }
+        if (effect === 'NO_SERVICE')                                       status = 'cancelled';
+        else if (effect === 'SIGNIFICANT_DELAYS' || effect === 'REDUCED_SERVICE') status = 'delayed';
         disruptionReason = d.messages?.[0]?.text;
       }
 
-      // Also check stop-level delays
       const firstDelayed = stops.find(s => s.isDelayed);
       if (status === 'on_time' && firstDelayed) {
-        status = 'delayed';
+        status       = 'delayed';
         delayMinutes = firstDelayed.delayMinutes;
       }
-
-      if (status === 'delayed' && !delayMinutes) {
-        delayMinutes = stops[0].delayMinutes;
-      }
+      if (status === 'delayed' && !delayMinutes) delayMinutes = stops[0].delayMinutes;
 
       const info: TrainInfo = {
         origin:           stops[0].name,
         destination:      stops[stops.length - 1].name,
         departureTime:    stops[0].departureTime,
+        arrivalTime:      stops[stops.length - 1].arrivalTime || stops[stops.length - 1].departureTime,
+        journeyDuration,
         stops,
         trainType,
         trainNumber:      journey.headsign || headsign,
+        operator,
         status,
         delayMinutes,
         disruptionReason,
@@ -188,18 +207,14 @@ export function useTrainLookup() {
       setTrainInfo(info);
       return info;
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Erreur inconnue';
-      setError(msg);
+      setError(err instanceof Error ? err.message : 'Erreur inconnue');
       return null;
     } finally {
       setIsLoading(false);
     }
   };
 
-  const reset = () => {
-    setTrainInfo(null);
-    setError(null);
-  };
+  const reset = () => { setTrainInfo(null); setError(null); };
 
   return { lookup, isLoading, error, trainInfo, reset };
 }
