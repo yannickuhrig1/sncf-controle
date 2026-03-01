@@ -53,7 +53,7 @@ export default function InfosUtilesPage() {
 
   return (
     <AppLayout>
-      <div className="space-y-5 max-w-4xl">
+      <div className="space-y-5 max-w-4xl mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex flex-col gap-1">

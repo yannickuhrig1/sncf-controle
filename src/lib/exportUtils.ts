@@ -308,7 +308,7 @@ export function exportToPDF({ controls, title, dateRange, includeStats, orientat
   doc.setFontSize(8);
   doc.setTextColor(...C.gray400);
   doc.text(title, 14, 30);
-  doc.text(`Période : ${dateRange}  |  Généré le ${format(new Date(), 'dd MMMM yyyy à HH:mm', { locale: fr })}`, 14, 35.5);
+  doc.text(`Periode : ${dateRange}  |  Genere le ${format(new Date(), 'dd/MM/yyyy HH:mm')}`, 14, 35.5);
 
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(11);

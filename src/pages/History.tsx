@@ -202,7 +202,7 @@ export default function HistoryPage() {
   const [endDate, setEndDate] = useState<Date | undefined>(undefined);
   const [selectedMonth, setSelectedMonth] = useState<number | undefined>(undefined);
   const [selectedYear, setSelectedYear] = useState<number | undefined>(undefined);
-  const [dataViewMode, setDataViewMode] = useState<ViewMode>('my-data');
+  const [dataViewMode, setDataViewMode] = useState<ViewMode>('all-data');
   const [pdfPreviewOpen, setPdfPreviewOpen] = useState(false);
   const [pdfPreviewUrl, setPdfPreviewUrl] = useState<string | null>(null);
   const [pdfDocRef, setPdfDocRef] = useState<ReturnType<typeof exportToPDF> | null>(null);
@@ -481,7 +481,7 @@ export default function HistoryPage() {
   };
   return (
     <AppLayout>
-      <div className="space-y-5">
+      <div className="space-y-5 max-w-screen-2xl mx-auto">
         {/* Header */}
         <div className="flex flex-col gap-3">
           <div className="flex items-center justify-between">

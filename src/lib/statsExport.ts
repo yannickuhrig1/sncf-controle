@@ -10,6 +10,13 @@ export interface StatsDetailedData {
   totalBord: number;
 }
 
+export interface WeeklyTrendPoint {
+  label: string;
+  fraudRate: number;
+  passengers: number;
+  fraudCount: number;
+}
+
 export interface StatsShareData {
   stats: ControlStats;
   detailedStats: StatsDetailedData;
@@ -17,6 +24,7 @@ export interface StatsShareData {
   dateRangeLabel: string;
   locationLabel?: string; // optionnel (absent sur Stats)
   pageTitle?: string;     // 'Tableau de bord' | 'Statistiques'
+  trendData?: WeeklyTrendPoint[];
 }
 
 // ── Texte brut ─────────────────────────────────────────────────────────────────
@@ -110,9 +118,37 @@ export function buildStatsText({
 
 // ── HTML ───────────────────────────────────────────────────────────────────────
 
+function buildTrendSVG(trendData: WeeklyTrendPoint[]): string {
+  if (!trendData || trendData.length === 0) return '';
+  const W = 760, H = 130, PADX = 8, PADY = 14, PADB = 22;
+  const chartW = W - PADX * 2;
+  const chartH = H - PADY - PADB;
+  const maxRate = Math.max(...trendData.map(d => d.fraudRate), 1);
+  const gap = chartW / trendData.length;
+  const barW = Math.max(gap * 0.6, 4);
+
+  const bars = trendData.map((d, i) => {
+    const x = PADX + i * gap + (gap - barW) / 2;
+    const barH = Math.max((d.fraudRate / maxRate) * chartH, 2);
+    const y = PADY + chartH - barH;
+    const color = d.fraudRate >= 10 ? '#ef4444' : d.fraudRate >= 5 ? '#f59e0b' : '#10b981';
+    const label = d.label.length > 8 ? d.label.substring(0, 8) : d.label;
+    return [
+      `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${barW.toFixed(1)}" height="${barH.toFixed(1)}" fill="${color}" rx="2" opacity="0.85"/>`,
+      d.fraudRate > 0 ? `<text x="${(x + barW / 2).toFixed(1)}" y="${(y - 3).toFixed(1)}" font-size="7" text-anchor="middle" fill="#374151">${d.fraudRate.toFixed(1)}%</text>` : '',
+      `<text x="${(x + barW / 2).toFixed(1)}" y="${(H - 4).toFixed(1)}" font-size="7" text-anchor="middle" fill="#9ca3af">${label}</text>`,
+    ].join('');
+  });
+
+  return `<svg viewBox="0 0 ${W} ${H}" width="100%" xmlns="http://www.w3.org/2000/svg" style="display:block;overflow:visible">
+  <line x1="${PADX}" y1="${PADY + chartH}" x2="${W - PADX}" y2="${PADY + chartH}" stroke="#e5e7eb" stroke-width="0.8"/>
+  ${bars.join('')}
+</svg>`;
+}
+
 export function buildStatsHTML({
   stats, detailedStats, periodLabel, dateRangeLabel,
-  locationLabel, pageTitle = 'Tableau de bord',
+  locationLabel, pageTitle = 'Tableau de bord', trendData,
 }: StatsShareData): string {
   const fraudColor = stats.fraudRate >= 10 ? 'red' : stats.fraudRate >= 5 ? 'amber' : 'emerald';
   const pvColor = stats.pv > 0 ? 'rose' : 'slate';
@@ -285,6 +321,17 @@ footer{text-align:center;color:#9ca3af;font-size:.68rem;padding:1.5rem;border-to
     </div>
   </div>` : ''}
 
+  ${trendData && trendData.length > 1 ? `
+  <div class="sec-ttl" style="margin-top:2rem">Tendance du taux de fraude (par semaine)</div>
+  <div class="card" style="padding:1rem 1.25rem 0.75rem;margin-bottom:1.5rem">
+    ${buildTrendSVG(trendData)}
+    <div style="display:flex;gap:1rem;justify-content:center;margin-top:0.5rem">
+      <span style="font-size:.65rem;color:#9ca3af;display:flex;align-items:center;gap:.3rem"><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:#10b981"></span>Faible</span>
+      <span style="font-size:.65rem;color:#9ca3af;display:flex;align-items:center;gap:.3rem"><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:#f59e0b"></span>Modéré</span>
+      <span style="font-size:.65rem;color:#9ca3af;display:flex;align-items:center;gap:.3rem"><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:#ef4444"></span>Élevé</span>
+    </div>
+  </div>` : ''}
+
   <footer>Généré le ${generatedAt} &nbsp;·&nbsp; SNCF Contrôles</footer>
 </div>
 </body>
@@ -295,7 +342,7 @@ footer{text-align:center;color:#9ca3af;font-size:.68rem;padding:1.5rem;border-to
 
 export function buildStatsPDF({
   stats, detailedStats, periodLabel, dateRangeLabel,
-  locationLabel, pageTitle = 'Tableau de bord',
+  locationLabel, pageTitle = 'Tableau de bord', trendData,
 }: StatsShareData): jsPDF {
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
   const W = 210;
@@ -321,9 +368,9 @@ export function buildStatsPDF({
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(7.5);
   doc.setTextColor(160, 185, 220);
-  const metaParts = [`Période : ${periodLabel}`, dateRangeLabel];
+  const metaParts = [`Periode : ${periodLabel}`, dateRangeLabel];
   if (locationLabel && locationLabel !== 'Tous') metaParts.push(locationLabel);
-  doc.text(metaParts.join('   ·   '), M, 26);
+  doc.text(metaParts.join('   |   '), M, 26);
 
   let y = 48;
 
@@ -497,16 +544,61 @@ export function buildStatsPDF({
     doc.text('RI Négatif', cx2 + 4 + bw2 + 3 + bw2 / 2, riY + 25.5, { align: 'center' });
   }
 
+  // Trend chart (if data available and space permits)
+  if (trendData && trendData.length > 1) {
+    const chartY = 210;
+    const chartH = 45;
+    const chartXStart = M;
+    const chartXEnd = W - M;
+    const chartW2 = chartXEnd - chartXStart;
+
+    doc.setFillColor(99, 102, 241);
+    doc.rect(M, chartY - 7, 3, 5.5, 'F');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(9);
+    doc.setTextColor(31, 41, 55);
+    doc.text('Tendance du taux de fraude', M + 5.5, chartY - 2.5);
+
+    const maxRate = Math.max(...trendData.map(d => d.fraudRate), 1);
+    const gap = chartW2 / trendData.length;
+    const barW2 = Math.max(gap * 0.65, 3);
+
+    trendData.forEach((d, i) => {
+      const x = chartXStart + i * gap + (gap - barW2) / 2;
+      const barH2 = Math.max((d.fraudRate / maxRate) * chartH, 1);
+      const barY = chartY + chartH - barH2;
+      const [r, g, b] = d.fraudRate >= 10 ? [239, 68, 68] : d.fraudRate >= 5 ? [245, 158, 11] : [16, 185, 129];
+      doc.setFillColor(r, g, b);
+      doc.roundedRect(x, barY, barW2, barH2, 0.8, 0.8, 'F');
+      if (d.fraudRate > 0) {
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(5.5);
+        doc.setTextColor(r, g, b);
+        doc.text(`${d.fraudRate.toFixed(1)}%`, x + barW2 / 2, barY - 1.5, { align: 'center' });
+      }
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(5.5);
+      doc.setTextColor(156, 163, 175);
+      const lbl = d.label.length > 9 ? d.label.substring(0, 9) : d.label;
+      doc.text(lbl, x + barW2 / 2, chartY + chartH + 5, { align: 'center' });
+    });
+
+    // Baseline
+    doc.setDrawColor(229, 231, 235);
+    doc.setLineWidth(0.3);
+    doc.line(chartXStart, chartY + chartH, chartXEnd, chartY + chartH);
+  }
+
   // Footer
-  const genDate = new Date().toLocaleDateString('fr-FR', {
-    day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit',
-  });
+  const _now = new Date();
+  const genDate = _now.toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })
+    + ' ' + _now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
   doc.setFillColor(240, 244, 248);
   doc.rect(0, 284, W, 13, 'F');
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(7);
   doc.setTextColor(156, 163, 175);
-  doc.text(`Généré le ${genDate}  ·  SNCF Contrôles`, W / 2, 292, { align: 'center' });
+  doc.text(`Genere le ${genDate}  |  SNCF Controles`, W / 2, 292, { align: 'center' });
 
   return doc;
 }

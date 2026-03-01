@@ -590,7 +590,7 @@ const locationButtons: { value: LocationFilter; label: string; icon: React.Eleme
 export default function Dashboard() {
   const { user, profile, loading: authLoading } = useAuth();
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
-  const [viewMode, setViewMode] = useState<ViewMode>('my-data');
+  const [viewMode, setViewMode] = useState<ViewMode>('all-data');
   const [period, setPeriod] = useState<Period>('day');
   const [customStart, setCustomStart] = useState('');
   const [customEnd, setCustomEnd] = useState('');
@@ -738,7 +738,7 @@ export default function Dashboard() {
 
   return (
     <AppLayout>
-      <div className="space-y-5 max-w-5xl">
+      <div className="space-y-5 max-w-5xl mx-auto">
 
         {/* Header */}
         <div className="flex flex-col gap-4">

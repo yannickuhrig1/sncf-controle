@@ -17,7 +17,9 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { calculateStats, formatFraudRate, getFraudRateColor } from '@/lib/stats';
 import { buildStatsText, buildStatsHTML, buildStatsPDF } from '@/lib/statsExport';
-import type { StatsShareData } from '@/lib/statsExport';
+import type { StatsShareData, WeeklyTrendPoint } from '@/lib/statsExport';
+import { format, parseISO, startOfWeek } from 'date-fns';
+import { fr } from 'date-fns/locale';
 import { PeriodSelector } from '@/components/dashboard/PeriodSelector';
 import { ViewModeToggle } from '@/components/dashboard/ViewModeToggle';
 import { DashboardDatePicker } from '@/components/dashboard/DashboardDatePicker';
@@ -58,7 +60,7 @@ export default function StatisticsPage() {
   const { user, loading: authLoading } = useAuth();
 
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
-  const [viewMode, setViewMode]         = useState<ViewMode>('my-data');
+  const [viewMode, setViewMode]         = useState<ViewMode>('all-data');
   const [period, setPeriod]             = useState<Period>('week');
   const [customStart, setCustomStart]   = useState('');
   const [customEnd, setCustomEnd]       = useState('');
@@ -97,9 +99,30 @@ export default function StatisticsPage() {
     return { tarifsControle, tarifsBord, totalBord };
   }, [controls]);
 
+  const trendData = useMemo((): WeeklyTrendPoint[] => {
+    const map = new Map<string, WeeklyTrendPoint>();
+    controls.forEach(c => {
+      const date = parseISO(c.control_date);
+      const ws = startOfWeek(date, { weekStartsOn: 1 });
+      const key = format(ws, 'yyyy-MM-dd');
+      const label = `S${format(ws, 'w')} ${format(ws, 'dd/MM', { locale: fr })}`;
+      const fraud = c.tarifs_controle + c.pv;
+      const ex = map.get(key);
+      if (ex) {
+        ex.passengers += c.nb_passagers;
+        ex.fraudCount += fraud;
+      } else {
+        map.set(key, { label, fraudRate: 0, passengers: c.nb_passagers, fraudCount: fraud });
+      }
+    });
+    map.forEach(d => { d.fraudRate = d.passengers > 0 ? (d.fraudCount / d.passengers) * 100 : 0; });
+    return Array.from(map.values()).sort((a, b) => a.label.localeCompare(b.label)).slice(-16);
+  }, [controls]);
+
   const shareData: StatsShareData = useMemo(() => ({
     stats,
     detailedStats,
+    trendData,
     periodLabel:    periodLabels[period],
     dateRangeLabel: (() => {
       const fmt = (iso: string) => iso ? iso.split('-').reverse().join('-') : iso;
@@ -107,7 +130,7 @@ export default function StatisticsPage() {
     })(),
     pageTitle:      'Statistiques Contrôles',
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }), [stats, detailedStats, period, startDate, endDate]);
+  }), [stats, detailedStats, trendData, period, startDate, endDate]);
 
   const filenameSuffix = startDate === endDate ? startDate : `${startDate}-${endDate}`;
 
