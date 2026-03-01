@@ -107,6 +107,10 @@ export default function AdminPage() {
   const [selectedRole, setSelectedRole] = useState<AppRole>('agent');
   const [selectedTeamId, setSelectedTeamId] = useState<string>('');
 
+  // Delete user dialog state
+  const [deleteUserTarget, setDeleteUserTarget] = useState<Profile | null>(null);
+  const [isDeletingUser, setIsDeletingUser] = useState(false);
+
   // Create user dialog state
   const [createUserOpen, setCreateUserOpen] = useState(false);
   const [newUserEmail, setNewUserEmail] = useState('');
@@ -381,6 +385,27 @@ export default function AdminPage() {
     }
   };
 
+  const handleDeleteUser = async () => {
+    if (!deleteUserTarget) return;
+    setIsDeletingUser(true);
+    try {
+      const response = await supabase.functions.invoke('delete-user', {
+        body: { user_id: deleteUserTarget.user_id },
+      });
+      if (response.error) throw new Error(response.error.message || 'Erreur lors de la suppression');
+      const result = response.data;
+      if (result?.error) throw new Error(result.error);
+
+      toast.success(`${deleteUserTarget.first_name} ${deleteUserTarget.last_name} a été supprimé`);
+      queryClient.invalidateQueries({ queryKey: ['admin-profiles'] });
+      setDeleteUserTarget(null);
+    } catch (error: any) {
+      toast.error('Erreur: ' + (error.message || 'Impossible de supprimer le compte'));
+    } finally {
+      setIsDeletingUser(false);
+    }
+  };
+
   const getTeamName = (teamId: string | null) => {
     if (!teamId) return '-';
     const team = teams.find(t => t.id === teamId);
@@ -525,6 +550,16 @@ export default function AdminPage() {
                                 >
                                   <Pencil className="h-4 w-4" />
                                 </Button>
+                                {p.user_id !== user?.id && (
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                                    onClick={() => setDeleteUserTarget(p)}
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                )}
                               </div>
                             </TableCell>
                           </TableRow>
@@ -927,6 +962,35 @@ export default function AdminPage() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        {/* Delete User Dialog */}
+        <AlertDialog open={!!deleteUserTarget} onOpenChange={(open) => { if (!open) setDeleteUserTarget(null); }}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Supprimer cet utilisateur ?</AlertDialogTitle>
+              <AlertDialogDescription>
+                {deleteUserTarget && (
+                  <>
+                    Vous êtes sur le point de supprimer définitivement le compte de{' '}
+                    <span className="font-semibold">{deleteUserTarget.first_name} {deleteUserTarget.last_name}</span>.
+                    Cette action est irréversible.
+                  </>
+                )}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={isDeletingUser}>Annuler</AlertDialogCancel>
+              <AlertDialogAction
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                disabled={isDeletingUser}
+                onClick={handleDeleteUser}
+              >
+                {isDeletingUser && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                Supprimer
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
 
         {/* Create User Dialog */}
         <Dialog open={createUserOpen} onOpenChange={setCreateUserOpen}>
