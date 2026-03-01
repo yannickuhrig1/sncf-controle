@@ -926,7 +926,17 @@ export default function OnboardControl() {
                         <div className="space-y-2">
                           <Label htmlFor="origin">Origine</Label>
                           {trainStops.length > 1 ? (
-                            <Select value={formState.origin} onValueChange={(v) => setFormState((p) => ({ ...p, origin: v }))}>
+                            <Select
+                              value={formState.origin}
+                              onValueChange={(v) => {
+                                const stop = trainStops.find(s => s.name === v);
+                                setFormState((p) => ({
+                                  ...p,
+                                  origin: v,
+                                  ...(stop?.departureTime ? { controlTime: stop.departureTime } : {}),
+                                }));
+                              }}
+                            >
                               <SelectTrigger id="origin">
                                 <SelectValue placeholder="Gare de départ" />
                               </SelectTrigger>
@@ -937,7 +947,7 @@ export default function OnboardControl() {
                                     {stop.departureTime && (
                                       <span className="ml-2 text-muted-foreground text-xs">
                                         {stop.departureTime}
-                                        {stop.isDelayed && stop.delayMinutes ? ` (+${stop.delayMinutes}')` : ''}
+                                        {stop.isDelayed && stop.delayMinutes ? ` (+${stop.delayMinutes} min)` : ''}
                                       </span>
                                     )}
                                   </SelectItem>
@@ -959,9 +969,10 @@ export default function OnboardControl() {
                                 {trainStops.map((stop) => (
                                   <SelectItem key={stop.name} value={stop.name}>
                                     {stop.name}
-                                    {stop.arrivalTime && (
+                                    {stop.departureTime && (
                                       <span className="ml-2 text-muted-foreground text-xs">
-                                        {stop.arrivalTime}
+                                        {stop.departureTime}
+                                        {stop.isDelayed && stop.delayMinutes ? ` (+${stop.delayMinutes} min)` : ''}
                                       </span>
                                     )}
                                   </SelectItem>
@@ -1125,7 +1136,17 @@ export default function OnboardControl() {
                       <div className="space-y-2">
                         <Label htmlFor="origin">Origine</Label>
                         {trainStops.length > 1 ? (
-                          <Select value={formState.origin} onValueChange={(v) => setFormState((p) => ({ ...p, origin: v }))}>
+                          <Select
+                            value={formState.origin}
+                            onValueChange={(v) => {
+                              const stop = trainStops.find(s => s.name === v);
+                              setFormState((p) => ({
+                                ...p,
+                                origin: v,
+                                ...(stop?.departureTime ? { controlTime: stop.departureTime } : {}),
+                              }));
+                            }}
+                          >
                             <SelectTrigger id="origin">
                               <SelectValue placeholder="Gare de départ" />
                             </SelectTrigger>
@@ -1136,7 +1157,7 @@ export default function OnboardControl() {
                                   {stop.departureTime && (
                                     <span className="ml-2 text-muted-foreground text-xs">
                                       {stop.departureTime}
-                                      {stop.isDelayed && stop.delayMinutes ? ` (+${stop.delayMinutes}')` : ''}
+                                      {stop.isDelayed && stop.delayMinutes ? ` (+${stop.delayMinutes} min)` : ''}
                                     </span>
                                   )}
                                 </SelectItem>
@@ -1163,9 +1184,10 @@ export default function OnboardControl() {
                               {trainStops.map((stop) => (
                                 <SelectItem key={stop.name} value={stop.name}>
                                   {stop.name}
-                                  {stop.arrivalTime && (
+                                  {stop.departureTime && (
                                     <span className="ml-2 text-muted-foreground text-xs">
-                                      {stop.arrivalTime}
+                                      {stop.departureTime}
+                                      {stop.isDelayed && stop.delayMinutes ? ` (+${stop.delayMinutes} min)` : ''}
                                     </span>
                                   )}
                                 </SelectItem>
