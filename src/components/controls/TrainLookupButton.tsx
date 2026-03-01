@@ -16,6 +16,7 @@ import {
   Clock,
   MapPin,
   MessageSquare,
+  Plus,
 } from 'lucide-react';
 import { useTrainLookup, TrainInfo, TrainStatus, formatDuration } from '@/hooks/useTrainLookup';
 import { toast } from 'sonner';
@@ -24,6 +25,7 @@ interface TrainLookupButtonProps {
   trainNumber: string;
   date: string;
   onResult: (info: TrainInfo) => void;
+  onAdd?: (trainNumber: string, info?: TrainInfo) => void;
 }
 
 const STATUS_CONFIG: Record<TrainStatus, {
@@ -37,7 +39,7 @@ const STATUS_CONFIG: Record<TrainStatus, {
   unknown:   { label: 'Inconnu',    className: '',                                                                               icon: <HelpCircle className="h-3 w-3" /> },
 };
 
-export function TrainLookupButton({ trainNumber, date, onResult }: TrainLookupButtonProps) {
+export function TrainLookupButton({ trainNumber, date, onResult, onAdd }: TrainLookupButtonProps) {
   const { lookup, isLoading, error, trainInfo, reset } = useTrainLookup();
 
   const handleLookup = async () => {
@@ -58,6 +60,12 @@ export function TrainLookupButton({ trainNumber, date, onResult }: TrainLookupBu
     }
   };
 
+  const handleAdd = () => {
+    if (!trainNumber.trim()) return;
+    onAdd?.(trainNumber.trim(), trainInfo ?? undefined);
+    toast.success(`Train ${trainNumber.trim()} ajouté aux trains du jour`);
+  };
+
   const cfg = trainInfo ? STATUS_CONFIG[trainInfo.status] : null;
   const hasDelayDetails = trainInfo && (trainInfo.delayMinutes || trainInfo.disruptionReason);
 
@@ -75,6 +83,20 @@ export function TrainLookupButton({ trainNumber, date, onResult }: TrainLookupBu
           {isLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Search className="h-3.5 w-3.5" />}
           {isLoading ? 'Recherche…' : 'Info SNCF'}
         </Button>
+
+        {onAdd && (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="h-8 gap-1.5 text-xs"
+            onClick={handleAdd}
+            disabled={!trainNumber.trim()}
+          >
+            <Plus className="h-3.5 w-3.5" />
+            Ajouter
+          </Button>
+        )}
 
         {/* Type de train */}
         {trainInfo?.trainType && (

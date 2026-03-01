@@ -21,6 +21,7 @@ import { ExportDialog } from '@/components/controls/ExportDialog';
 import { TrainFraudCompact } from '@/components/charts/TrainFraudCompact';
 import { SubmitProgress } from '@/components/controls/SubmitProgress';
 import { TrainLookupButton } from '@/components/controls/TrainLookupButton';
+import { useDailyTrains, DailyTrain } from '@/hooks/useDailyTrains';
 import { LastSyncIndicator } from '@/components/controls/LastSyncIndicator';
 import { OfflineIndicator } from '@/components/controls/OfflineIndicator';
 import { Button } from '@/components/ui/button';
@@ -181,6 +182,22 @@ export default function OnboardControl() {
 
   // Train stops from SNCF API lookup
   const [trainStops, setTrainStops] = useState<import('@/hooks/useTrainLookup').TrainStop[]>([]);
+
+  // Trains du jour
+  const { trains: dailyTrains, addTrain: addDailyTrain, removeTrain: removeDailyTrain } = useDailyTrains(formState.controlDate);
+
+  const handleLoadDailyTrain = (t: DailyTrain) => {
+    setFormState(p => ({
+      ...p,
+      trainNumber: t.trainNumber,
+      ...(t.trainInfo ? {
+        origin:      t.trainInfo.origin,
+        destination: t.trainInfo.destination,
+        controlTime: t.trainInfo.departureTime,
+      } : {}),
+    }));
+    if (t.trainInfo?.stops?.length) setTrainStops(t.trainInfo.stops);
+  };
   
   // Auto-update date/time when not in edit mode and form is fresh
   useEffect(() => {
@@ -893,6 +910,34 @@ export default function OnboardControl() {
                   {/* Info Section */}
                   {activeSection === 'info' && (
                     <>
+                      {/* Trains du jour */}
+                      {dailyTrains.length > 0 && (
+                        <div className="space-y-1.5">
+                          <Label className="text-xs text-muted-foreground">Trains du jour</Label>
+                          <div className="flex flex-wrap gap-1.5">
+                            {dailyTrains.map(t => (
+                              <button
+                                key={t.trainNumber}
+                                type="button"
+                                onClick={() => handleLoadDailyTrain(t)}
+                                className={cn(
+                                  'inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium border transition-colors hover:opacity-80',
+                                  t.trainInfo?.status === 'on_time'   && 'bg-green-100 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800',
+                                  t.trainInfo?.status === 'delayed'   && 'bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-800',
+                                  t.trainInfo?.status === 'cancelled' && 'bg-red-100 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800',
+                                  !t.trainInfo && 'bg-muted text-muted-foreground border-border',
+                                )}
+                              >
+                                <Train className="h-3 w-3" />
+                                {t.trainNumber}
+                                {t.trainInfo?.status === 'delayed' && t.trainInfo.delayMinutes && (
+                                  <span className="font-bold">+{t.trainInfo.delayMinutes}m</span>
+                                )}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                       <div className="space-y-2">
                         <Label htmlFor="trainNumber">Numéro de train *</Label>
                         <Input
@@ -921,6 +966,7 @@ export default function OnboardControl() {
                             }));
                             setTrainStops(info.stops || []);
                           }}
+                          onAdd={addDailyTrain}
                         />
                       </div>
                       <div className="grid grid-cols-2 gap-4">
@@ -1103,6 +1149,34 @@ export default function OnboardControl() {
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
+                    {/* Trains du jour */}
+                    {dailyTrains.length > 0 && (
+                      <div className="space-y-1.5">
+                        <Label className="text-xs text-muted-foreground">Trains du jour</Label>
+                        <div className="flex flex-wrap gap-1.5">
+                          {dailyTrains.map(t => (
+                            <button
+                              key={t.trainNumber}
+                              type="button"
+                              onClick={() => handleLoadDailyTrain(t)}
+                              className={cn(
+                                'inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium border transition-colors hover:opacity-80',
+                                t.trainInfo?.status === 'on_time'   && 'bg-green-100 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800',
+                                t.trainInfo?.status === 'delayed'   && 'bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-800',
+                                t.trainInfo?.status === 'cancelled' && 'bg-red-100 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800',
+                                !t.trainInfo && 'bg-muted text-muted-foreground border-border',
+                              )}
+                            >
+                              <Train className="h-3 w-3" />
+                              {t.trainNumber}
+                              {t.trainInfo?.status === 'delayed' && t.trainInfo.delayMinutes && (
+                                <span className="font-bold">+{t.trainInfo.delayMinutes}m</span>
+                              )}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                     <div className="space-y-2">
                       <Label htmlFor="trainNumber">Numéro de train *</Label>
                       <Input
@@ -1131,6 +1205,7 @@ export default function OnboardControl() {
                           }));
                           setTrainStops(info.stops || []);
                         }}
+                        onAdd={addDailyTrain}
                       />
                     </div>
 
