@@ -1019,9 +1019,9 @@
 
 html:not([class*="theme-"]) body {
   background-image:
-    radial-gradient(ellipse 70% 50% at 100% 0%,   hsl(343 100% 38% / 0.09) 0%, transparent 55%),
-    radial-gradient(ellipse 60% 65% at 0%   100%,  hsl(210 100% 35% / 0.09) 0%, transparent 55%),
-    radial-gradient(ellipse 45% 35% at 55%  50%,   hsl(220 30%  55% / 0.04) 0%, transparent 50%);
+    radial-gradient(ellipse 70% 50% at 100% 0%,   hsl(343 100% 45% / 0.20) 0%, transparent 55%),
+    radial-gradient(ellipse 60% 65% at 0%   100%,  hsl(210 100% 40% / 0.18) 0%, transparent 55%),
+    radial-gradient(ellipse 45% 35% at 55%  50%,   hsl(220 30%  55% / 0.07) 0%, transparent 50%);
   background-attachment: fixed;
 }
 
