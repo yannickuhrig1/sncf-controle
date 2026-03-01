@@ -232,40 +232,40 @@ export function ControlDetailDialog({
               </div>
 
               {/* Fraud types summary badges */}
-              {fraudCount > 0 && (
-                <div className="flex flex-wrap gap-2">
-                  {((control.stt_50 ?? 0) > 0 || (control.stt_100 ?? 0) > 0) && (
-                    <Badge variant="outline" className="bg-background">
-                      STT: {(control.stt_50 ?? 0) + (control.stt_100 ?? 0)}
-                    </Badge>
-                  )}
-                  {(control.rnv ?? 0) > 0 && (
-                    <Badge variant="outline" className="bg-background">
-                      RNV: {control.rnv}
-                    </Badge>
-                  )}
-                  {(control.titre_tiers ?? 0) > 0 && (
-                    <Badge variant="outline" className="bg-background">
-                      Titre tiers: {control.titre_tiers}
-                    </Badge>
-                  )}
-                  {(control.doc_naissance ?? 0) > 0 && (
-                    <Badge variant="outline" className="bg-background">
-                      Date naiss.: {control.doc_naissance}
-                    </Badge>
-                  )}
-                  {(control.autre_tarif ?? 0) > 0 && (
-                    <Badge variant="outline" className="bg-background">
-                      Autre: {control.autre_tarif}
-                    </Badge>
-                  )}
-                  {(control.pv ?? 0) > 0 && (
-                    <Badge variant="destructive">
-                      PV: {control.pv}
-                    </Badge>
-                  )}
-                </div>
-              )}
+              {(() => {
+                const bordTotal = (control.tarif_bord_stt_50 ?? 0) + (control.tarif_bord_stt_100 ?? 0)
+                  + (control.tarif_bord_rnv ?? 0) + (control.tarif_bord_titre_tiers ?? 0)
+                  + (control.tarif_bord_doc_naissance ?? 0) + (control.tarif_bord_autre ?? 0);
+                const riTotal = (control.ri_positive ?? 0) + (control.ri_negative ?? 0);
+                const tcTotal = control.tarifs_controle ?? 0;
+                const pvTotal = control.pv ?? 0;
+                const hasAny = bordTotal > 0 || tcTotal > 0 || pvTotal > 0 || riTotal > 0;
+                if (!hasAny) return null;
+                return (
+                  <div className="flex flex-wrap gap-2">
+                    {bordTotal > 0 && (
+                      <Badge variant="outline" className="bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 border-0">
+                        Bord: {bordTotal}
+                      </Badge>
+                    )}
+                    {tcTotal > 0 && (
+                      <Badge variant="outline" className="bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 border-0">
+                        TC: {tcTotal}
+                      </Badge>
+                    )}
+                    {pvTotal > 0 && (
+                      <Badge variant="destructive">
+                        PV: {pvTotal}
+                      </Badge>
+                    )}
+                    {riTotal > 0 && (
+                      <Badge variant="outline" className="bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400 border-0">
+                        RI: {riTotal}
+                      </Badge>
+                    )}
+                  </div>
+                );
+              })()}
 
               <Separator />
 
