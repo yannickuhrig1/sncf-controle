@@ -29,12 +29,6 @@ export interface TrainInfo {
   disruptionReason?: string;
 }
 
-const SNCF_API_BASE = 'https://api.sncf.com/v1/coverage/sncf';
-
-function toApiDate(dateStr: string): string {
-  return dateStr.replace(/-/g, '') + 'T000000';
-}
-
 function parseHHMMSS(hhmmss: string | undefined): string {
   if (!hhmmss || hhmmss.length < 4) return '';
   // Navitia encode les trains après minuit > 24h (ex: "250000" = 01:00 le lendemain)
@@ -58,11 +52,6 @@ function cleanStationName(name: string): string {
   return name.replace(/\s*\([^)]*\)/, '').trim();
 }
 
-function extractTrainNumber(raw: string): string {
-  const match = raw.trim().match(/\d+/);
-  return match ? match[0] : raw.trim();
-}
-
 export { formatDuration };
 
 export function useTrainLookup() {
@@ -70,40 +59,19 @@ export function useTrainLookup() {
   const [error, setError]         = useState<string | null>(null);
   const [trainInfo, setTrainInfo] = useState<TrainInfo | null>(null);
 
-  const getToken = (): string => localStorage.getItem('sncf_api_token') || '';
-
   const lookup = async (trainNumber: string, date: string): Promise<TrainInfo | null> => {
-    const token = getToken();
-    if (!token) {
-      setError('Token SNCF manquant. Configurez-le dans Administration → Intégrations.');
-      return null;
-    }
-
-    const headsign = extractTrainNumber(trainNumber);
-    if (!headsign) return null;
+    if (!trainNumber.trim()) return null;
 
     setIsLoading(true);
     setError(null);
     setTrainInfo(null);
 
     try {
-      const since   = toApiDate(date);
-      const nextDay = new Date(date);
-      nextDay.setDate(nextDay.getDate() + 1);
-      const until = nextDay.toISOString().split('T')[0].replace(/-/g, '') + 'T000000';
+      const res = await fetch(
+        `/api/sncf-lookup?trainNumber=${encodeURIComponent(trainNumber.trim())}&date=${encodeURIComponent(date)}`
+      );
 
-      const url =
-        `${SNCF_API_BASE}/vehicle_journeys` +
-        `?headsign=${encodeURIComponent(headsign)}` +
-        `&since=${since}&until=${until}` +
-        `&data_freshness=realtime` +
-        `&depth=2` +
-        `&count=1`;
-
-      const res = await fetch(url, {
-        headers: { Authorization: 'Basic ' + btoa(token + ':') },
-      });
-
+      if (res.status === 503) throw new Error('Token SNCF non configuré sur le serveur');
       if (res.status === 401) throw new Error('Token SNCF invalide');
       if (res.status === 404) throw new Error('Train introuvable');
       if (!res.ok)            throw new Error(`Erreur API SNCF (${res.status})`);
@@ -150,8 +118,8 @@ export function useTrainLookup() {
 
       // ── Journey duration ───────────────────────────────────────────────────
       let journeyDuration: number | undefined;
-      const firstDep  = rawStops[0].departure_time;
-      const lastArr   = rawStops[rawStops.length - 1].arrival_time || rawStops[rawStops.length - 1].departure_time;
+      const firstDep = rawStops[0].departure_time;
+      const lastArr  = rawStops[rawStops.length - 1].arrival_time || rawStops[rawStops.length - 1].departure_time;
       if (firstDep && lastArr) {
         const diff = toMinutes(lastArr) - toMinutes(firstDep);
         if (diff > 0) journeyDuration = diff;
@@ -177,7 +145,7 @@ export function useTrainLookup() {
       if (disruptions.length > 0) {
         const d      = disruptions[0];
         const effect = d.severity?.effect;
-        if (effect === 'NO_SERVICE')                                       status = 'cancelled';
+        if (effect === 'NO_SERVICE')                                              status = 'cancelled';
         else if (effect === 'SIGNIFICANT_DELAYS' || effect === 'REDUCED_SERVICE') status = 'delayed';
         disruptionReason = d.messages?.[0]?.text;
       }
@@ -190,14 +158,14 @@ export function useTrainLookup() {
       if (status === 'delayed' && !delayMinutes) delayMinutes = stops[0].delayMinutes;
 
       const info: TrainInfo = {
-        origin:           stops[0].name,
-        destination:      stops[stops.length - 1].name,
-        departureTime:    stops[0].departureTime,
-        arrivalTime:      stops[stops.length - 1].arrivalTime || stops[stops.length - 1].departureTime,
+        origin:        stops[0].name,
+        destination:   stops[stops.length - 1].name,
+        departureTime: stops[0].departureTime,
+        arrivalTime:   stops[stops.length - 1].arrivalTime || stops[stops.length - 1].departureTime,
         journeyDuration,
         stops,
         trainType,
-        trainNumber:      journey.headsign || headsign,
+        trainNumber:   journey.headsign || trainNumber.trim(),
         operator,
         status,
         delayMinutes,

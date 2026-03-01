@@ -62,7 +62,6 @@ import {
   Palette,
   Info,
   Eye,
-  EyeOff,
   Train,
   BarChart3,
   History,
@@ -112,15 +111,6 @@ export default function AdminPage() {
   // Delete user dialog state
   const [deleteUserTarget, setDeleteUserTarget] = useState<Profile | null>(null);
   const [isDeletingUser, setIsDeletingUser] = useState(false);
-
-  // SNCF API token
-  const [sncfToken, setSncfToken] = useState(() => localStorage.getItem('sncf_api_token') || '');
-  const [showToken, setShowToken] = useState(false);
-  const saveSncfToken = (value: string) => {
-    setSncfToken(value);
-    if (value.trim()) localStorage.setItem('sncf_api_token', value.trim());
-    else              localStorage.removeItem('sncf_api_token');
-  };
 
   // Create user dialog state
   const [createUserOpen, setCreateUserOpen] = useState(false);
@@ -916,40 +906,28 @@ export default function AdminPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="space-y-1.5">
-                  <Label>Token API</Label>
-                  <p className="text-xs text-muted-foreground">
-                    Obtenez un token gratuit sur{' '}
-                    <span className="font-mono font-medium">digital.sncf.com/startup/api</span>
-                  </p>
-                  <div className="flex gap-2">
-                    <div className="relative flex-1">
-                      <Input
-                        type={showToken ? 'text' : 'password'}
-                        placeholder="Votre token API SNCF…"
-                        value={sncfToken}
-                        onChange={e => saveSncfToken(e.target.value)}
-                        className="pr-10 font-mono text-sm"
-                      />
-                      <button
-                        type="button"
-                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                        onClick={() => setShowToken(v => !v)}
-                      >
-                        {showToken ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                      </button>
+                <div className="rounded-lg border bg-muted/40 p-4 space-y-3">
+                  <div className="flex items-start gap-2">
+                    <Info className="h-4 w-4 text-blue-500 mt-0.5 shrink-0" />
+                    <div className="space-y-1 text-sm">
+                      <p className="font-medium">Token configuré côté serveur</p>
+                      <p className="text-muted-foreground text-xs">
+                        Le token n'est jamais exposé aux utilisateurs. Il est stocké dans les variables
+                        d'environnement Vercel et utilisé par le proxy <span className="font-mono">/api/sncf-lookup</span>.
+                      </p>
                     </div>
-                    {sncfToken && (
-                      <Button variant="outline" size="sm" onClick={() => saveSncfToken('')}>
-                        Supprimer
-                      </Button>
-                    )}
                   </div>
-                  {sncfToken && (
-                    <p className="text-xs text-green-600 dark:text-green-400 flex items-center gap-1">
-                      <Check className="h-3 w-3" /> Token enregistré
-                    </p>
-                  )}
+                  <Separator />
+                  <div className="space-y-1.5 text-xs text-muted-foreground">
+                    <p className="font-medium text-foreground">Pour configurer le token :</p>
+                    <ol className="space-y-1 list-decimal list-inside">
+                      <li>Obtenez un token sur <span className="font-mono font-medium">digital.sncf.com/startup/api</span></li>
+                      <li>Ouvrez votre projet sur <span className="font-mono font-medium">vercel.com</span></li>
+                      <li>Allez dans <span className="font-medium">Settings → Environment Variables</span></li>
+                      <li>Ajoutez la variable <span className="font-mono font-medium bg-muted px-1 rounded">SNCF_API_TOKEN</span> avec votre token comme valeur</li>
+                      <li>Redéployez l'application</li>
+                    </ol>
+                  </div>
                 </div>
 
                 <Separator />

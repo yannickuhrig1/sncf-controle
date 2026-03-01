@@ -39,7 +39,6 @@ const STATUS_CONFIG: Record<TrainStatus, {
 
 export function TrainLookupButton({ trainNumber, date, onResult }: TrainLookupButtonProps) {
   const { lookup, isLoading, error, trainInfo, reset } = useTrainLookup();
-  const hasToken = !!localStorage.getItem('sncf_api_token');
 
   const handleLookup = async () => {
     if (!trainNumber.trim()) { toast.error('Saisissez un numéro de train'); return; }
@@ -75,10 +74,6 @@ export function TrainLookupButton({ trainNumber, date, onResult }: TrainLookupBu
           {isLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Search className="h-3.5 w-3.5" />}
           {isLoading ? 'Recherche…' : 'Info SNCF'}
         </Button>
-
-        {!hasToken && (
-          <span className="text-xs text-muted-foreground italic">(token requis dans Administration)</span>
-        )}
 
         {/* Type de train */}
         {trainInfo?.trainType && (
