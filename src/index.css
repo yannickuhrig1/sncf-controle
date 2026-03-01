@@ -94,13 +94,13 @@
 
   .dark {
     /* SNCF dark theme - Enhanced */
-    --background: 222 30% 7%;
+    --background: 222 25% 11%;
     --foreground: 220 15% 92%;
 
-    --card: 222 25% 11%;
+    --card: 222 22% 16%;
     --card-foreground: 220 15% 92%;
 
-    --popover: 222 25% 11%;
+    --popover: 222 22% 16%;
     --popover-foreground: 220 15% 92%;
 
     --primary: 343 90% 55%;
@@ -109,10 +109,10 @@
     --secondary: 222 20% 16%;
     --secondary-foreground: 220 15% 88%;
 
-    --muted: 222 20% 14%;
-    --muted-foreground: 220 10% 58%;
+    --muted: 222 18% 20%;
+    --muted-foreground: 220 10% 60%;
 
-    --accent: 222 20% 16%;
+    --accent: 222 18% 23%;
     --accent-foreground: 220 15% 92%;
 
     --destructive: 0 72% 52%;
@@ -124,8 +124,8 @@
     --warning: 38 92% 55%;
     --warning-foreground: 0 0% 0%;
 
-    --border: 222 18% 18%;
-    --input: 222 18% 18%;
+    --border: 222 15% 27%;
+    --input: 222 15% 24%;
     --ring: 343 90% 55%;
 
     /* Chart-specific dark tokens */
@@ -149,18 +149,18 @@
     --stat-blue-text: 210 80% 65%;
 
     /* Section colors (neutral for SNCF dark) */
-    --card-cyan: 222 25% 12%;
+    --card-cyan: 222 22% 18%;
     --card-cyan-foreground: 220 15% 90%;
-    --card-rose: 222 25% 12%;
+    --card-rose: 222 22% 18%;
     --card-rose-foreground: 220 15% 90%;
-    --card-mint: 222 25% 12%;
+    --card-mint: 222 22% 18%;
     --card-mint-foreground: 220 15% 90%;
-    --card-amber: 222 25% 12%;
+    --card-amber: 222 22% 18%;
     --card-amber-foreground: 220 15% 90%;
-    --card-violet: 222 25% 12%;
+    --card-violet: 222 22% 18%;
     --card-violet-foreground: 220 15% 90%;
 
-    --sidebar-background: 222 30% 8%;
+    --sidebar-background: 222 25% 13%;
     --sidebar-foreground: 220 15% 88%;
     --sidebar-primary: 343 90% 55%;
     --sidebar-primary-foreground: 0 0% 100%;
@@ -1015,38 +1015,30 @@
 }
 
 /* ===== SNCF Default Theme — Ambient Background Gradient ===== */
-/* Applied only when no premium theme class is active on <html>  */
+/* background-image se superpose à background-color de Tailwind sans conflit  */
 
-html:not([class*="theme-"]) body::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
-  background:
-    radial-gradient(ellipse 70% 50% at 100% 0%,   hsl(343 100% 38% / 0.045) 0%, transparent 55%),
-    radial-gradient(ellipse 60% 65% at 0%   100%,  hsl(210 100% 35% / 0.050) 0%, transparent 55%),
-    radial-gradient(ellipse 50% 40% at 55%  50%,   hsl(220 30%  55% / 0.018) 0%, transparent 50%);
+html:not([class*="theme-"]) body {
+  background-image:
+    radial-gradient(ellipse 70% 50% at 100% 0%,   hsl(343 100% 38% / 0.09) 0%, transparent 55%),
+    radial-gradient(ellipse 60% 65% at 0%   100%,  hsl(210 100% 35% / 0.09) 0%, transparent 55%),
+    radial-gradient(ellipse 45% 35% at 55%  50%,   hsl(220 30%  55% / 0.04) 0%, transparent 50%);
+  background-attachment: fixed;
   animation: sncf-ambient 18s ease-in-out infinite alternate;
 }
 
-html.dark:not([class*="theme-"]) body::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
-  background:
-    radial-gradient(ellipse 75% 55% at 100% 0%,   hsl(343 90%  58% / 0.14) 0%, transparent 58%),
-    radial-gradient(ellipse 65% 70% at 0%   100%,  hsl(210 90%  55% / 0.16) 0%, transparent 58%),
-    radial-gradient(ellipse 45% 35% at 55%  40%,   hsl(225 70%  38% / 0.06) 0%, transparent 45%);
+html.dark:not([class*="theme-"]) body {
+  background-image:
+    radial-gradient(ellipse 75% 55% at 100% 0%,   hsl(343 90%  58% / 0.18) 0%, transparent 58%),
+    radial-gradient(ellipse 65% 70% at 0%   100%,  hsl(210 90%  55% / 0.20) 0%, transparent 58%),
+    radial-gradient(ellipse 45% 35% at 55%  40%,   hsl(225 70%  38% / 0.08) 0%, transparent 45%);
+  background-attachment: fixed;
   animation: sncf-ambient 18s ease-in-out infinite alternate;
 }
 
 @keyframes sncf-ambient {
   0%   { opacity: 1;    transform: scale(1)    translate(0px,   0px); }
-  30%  { opacity: 0.80; transform: scale(1.04) translate(10px, -8px); }
-  65%  { opacity: 0.92; transform: scale(0.97) translate(-8px, 10px); }
+  30%  { opacity: 0.82; transform: scale(1.04) translate(10px, -8px); }
+  65%  { opacity: 0.93; transform: scale(0.97) translate(-8px, 10px); }
   100% { opacity: 1;    transform: scale(1.02) translate(5px,  -5px); }
 }
 
