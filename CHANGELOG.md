@@ -5,6 +5,25 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/),
 et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.8.5] - 2026-03-01
+
+### Corrigé
+- **Historique — popup détail** : Badges de résumé remplacés (STT/RNV/PV → Bord/TC/PV/RI)
+- **Statistiques — sélecteur de date** : Navigation adaptée à la période choisie (semaine/mois/année)
+- **CLAUDE.md** : Règle de mise à jour version + changelog à chaque publication
+
+## [1.8.4] - 2026-03-01
+
+### Ajouté
+- **Historique — vignettes** : Badges Bord/TC/PV/RI remplacent STT/RNV/PV
+- **Historique — popup détail** : "RI Positive/Négative" → "RI Positif/Négatif", "STT 50€/100€" → "Tarif bord/exceptionnel"
+- **Paramètres** : Jauges de luminosité pour le fond et les cartes
+
+## [1.8.3] - 2026-03-01
+
+### Corrigé
+- **Export HTML/PDF** : "RI Positive" → "RI Positif", "RI Négative" → "RI Négatif"
+
 ## [1.8.2] - 2026-02-27
 
 ### Corrigé

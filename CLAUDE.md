@@ -1,7 +1,7 @@
 # CLAUDE.md — SNCF Contrôles
 
 ## Version actuelle
-**1.8.2** (synchronisé dans `package.json` et `CHANGELOG.md`)
+**1.8.5** (synchronisé dans `package.json` et `CHANGELOG.md`)
 
 ## Stack
 - React 18 + TypeScript + Vite
@@ -49,6 +49,13 @@
 
 ## Déploiement
 Push sur `main` → Vercel déploie automatiquement.
+
+### Règle obligatoire avant chaque publication
+**À chaque `git push`, tu dois obligatoirement :**
+1. Incrémenter la version dans `package.json` (patch x.x.**X**, minor x.**X**.0, major **X**.0.0)
+2. Mettre à jour la version dans `CLAUDE.md` (ligne "Version actuelle")
+3. Ajouter une entrée dans `CHANGELOG.md` avec la date et la description des changements
+4. Mettre à jour `README.md` si des fonctionnalités visibles ont changé
 
 ## Conventions UI
 - Dashboard : cartes par catégorie (Tarifs contrôle, PV, Tarifs à bord / exceptionnel, RI)
