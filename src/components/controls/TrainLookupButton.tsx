@@ -92,7 +92,9 @@ export function TrainLookupButton({ trainNumber, date, onResult }: TrainLookupBu
                 <Badge variant="outline" className={`flex items-center gap-1 text-xs h-6 cursor-default ${cfg.className}`}>
                   {cfg.icon}
                   {cfg.label}
-                  {trainInfo.delayMinutes && trainInfo.delayMinutes > 0 ? ` +${trainInfo.delayMinutes} min` : ''}
+                  {trainInfo.delayMinutes && trainInfo.delayMinutes > 0 && (
+                    <span className="font-bold">+{trainInfo.delayMinutes} min</span>
+                  )}
                 </Badge>
               </TooltipTrigger>
               {trainInfo.disruptionReason && (

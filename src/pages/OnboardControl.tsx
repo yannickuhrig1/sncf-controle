@@ -901,6 +901,7 @@ export default function OnboardControl() {
                           value={formState.trainNumber}
                           onChange={(e) => setFormState((p) => ({ ...p, trainNumber: e.target.value }))}
                           list="recent-trains"
+                          inputMode="numeric"
                           required
                         />
                         <datalist id="recent-trains">
@@ -1110,6 +1111,7 @@ export default function OnboardControl() {
                         value={formState.trainNumber}
                         onChange={(e) => setFormState((p) => ({ ...p, trainNumber: e.target.value }))}
                         list="recent-trains"
+                        inputMode="numeric"
                         required
                       />
                       <datalist id="recent-trains">
