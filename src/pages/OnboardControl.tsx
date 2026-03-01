@@ -1179,7 +1179,7 @@ export default function OnboardControl() {
                             value={formState.destination}
                             onChange={(v) => setFormState((p) => ({ ...p, destination: v }))}
                           />
-                        )
+                        )}
                       </div>
                     </div>
 
