@@ -1,11 +1,10 @@
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
 import {
   Loader2,
   Search,
@@ -16,6 +15,7 @@ import {
   Train,
   Clock,
   MapPin,
+  MessageSquare,
 } from 'lucide-react';
 import { useTrainLookup, TrainInfo, TrainStatus, formatDuration } from '@/hooks/useTrainLookup';
 import { toast } from 'sonner';
@@ -59,6 +59,7 @@ export function TrainLookupButton({ trainNumber, date, onResult }: TrainLookupBu
   };
 
   const cfg = trainInfo ? STATUS_CONFIG[trainInfo.status] : null;
+  const hasDelayDetails = trainInfo && (trainInfo.delayMinutes || trainInfo.disruptionReason);
 
   return (
     <div className="flex flex-col gap-1.5">
@@ -84,26 +85,47 @@ export function TrainLookupButton({ trainNumber, date, onResult }: TrainLookupBu
           </Badge>
         )}
 
-        {/* Statut avec tooltip raison */}
+        {/* Statut — cliquable si retard ou émotif */}
         {cfg && trainInfo && (
-          <TooltipProvider delayDuration={200}>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Badge variant="outline" className={`flex items-center gap-1 text-xs h-6 cursor-default ${cfg.className}`}>
+          hasDelayDetails ? (
+            <Popover>
+              <PopoverTrigger asChild>
+                <Badge
+                  variant="outline"
+                  className={`flex items-center gap-1 text-xs h-6 cursor-pointer ${cfg.className}`}
+                >
                   {cfg.icon}
                   {cfg.label}
                   {trainInfo.delayMinutes && trainInfo.delayMinutes > 0 && (
                     <span className="font-bold">+{trainInfo.delayMinutes} min</span>
                   )}
                 </Badge>
-              </TooltipTrigger>
-              {trainInfo.disruptionReason && (
-                <TooltipContent side="bottom" className="max-w-xs text-xs">
-                  {trainInfo.disruptionReason}
-                </TooltipContent>
-              )}
-            </Tooltip>
-          </TooltipProvider>
+              </PopoverTrigger>
+              <PopoverContent side="bottom" align="start" className="w-72 p-3 space-y-2 text-sm">
+                {trainInfo.delayMinutes && trainInfo.delayMinutes > 0 && (
+                  <div className="flex items-center gap-2">
+                    <Clock className="h-4 w-4 text-amber-500 shrink-0" />
+                    <span className="font-semibold text-amber-700 dark:text-amber-400">
+                      Retard : +{trainInfo.delayMinutes} min
+                    </span>
+                  </div>
+                )}
+                {trainInfo.disruptionReason && (
+                  <div className="flex items-start gap-2">
+                    <MessageSquare className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
+                    <p className="text-xs text-muted-foreground leading-relaxed">
+                      {trainInfo.disruptionReason}
+                    </p>
+                  </div>
+                )}
+              </PopoverContent>
+            </Popover>
+          ) : (
+            <Badge variant="outline" className={`flex items-center gap-1 text-xs h-6 cursor-default ${cfg.className}`}>
+              {cfg.icon}
+              {cfg.label}
+            </Badge>
+          )
         )}
 
         {error && !isLoading && <span className="text-xs text-destructive">{error}</span>}
