@@ -124,11 +124,13 @@ export function TrainLookupButton({ trainNumber, date, onResult, onAdd }: TrainL
                 </button>
               </PopoverTrigger>
               <PopoverContent side="bottom" align="start" className="w-72 p-3 space-y-2 text-sm">
-                {trainInfo.delayMinutes && trainInfo.delayMinutes > 0 && (
+                {trainInfo.status === 'delayed' && (
                   <div className="flex items-center gap-2">
                     <Clock className="h-4 w-4 text-amber-500 shrink-0" />
                     <span className="font-semibold text-amber-700 dark:text-amber-400">
-                      Retard : +{trainInfo.delayMinutes} min
+                      {trainInfo.delayMinutes && trainInfo.delayMinutes > 0
+                        ? `Retard : +${trainInfo.delayMinutes} min`
+                        : 'Retard (durée non disponible)'}
                     </span>
                   </div>
                 )}
