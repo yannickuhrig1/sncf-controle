@@ -5,6 +5,11 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/),
 et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.8.8] - 2026-03-01
+
+### Technique
+- Test déploiement Vercel après retour en repo public
+
 ## [1.8.7] - 2026-03-01
 
 ### Technique
