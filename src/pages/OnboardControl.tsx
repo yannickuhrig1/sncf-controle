@@ -20,6 +20,7 @@ import { ControlDetailDialog } from '@/components/controls/ControlDetailDialog';
 import { ExportDialog } from '@/components/controls/ExportDialog';
 import { TrainFraudCompact } from '@/components/charts/TrainFraudCompact';
 import { SubmitProgress } from '@/components/controls/SubmitProgress';
+import { TrainLookupButton } from '@/components/controls/TrainLookupButton';
 import { LastSyncIndicator } from '@/components/controls/LastSyncIndicator';
 import { OfflineIndicator } from '@/components/controls/OfflineIndicator';
 import { Button } from '@/components/ui/button';
@@ -177,6 +178,9 @@ export default function OnboardControl() {
   // Form state
   const [formState, setFormState] = useState<FormState>(getInitialFormState);
   const { clearDraft } = useFormPersistence('onboard-control', formState, setFormState, INITIAL_FORM_STATE);
+
+  // Train stops from SNCF API lookup
+  const [trainStops, setTrainStops] = useState<import('@/hooks/useTrainLookup').TrainStop[]>([]);
   
   // Auto-update date/time when not in edit mode and form is fresh
   useEffect(() => {
@@ -904,15 +908,80 @@ export default function OnboardControl() {
                             <option key={train} value={train} />
                           ))}
                         </datalist>
+                        <TrainLookupButton
+                          trainNumber={formState.trainNumber}
+                          date={formState.controlDate}
+                          onResult={(info) => {
+                            setFormState((p) => ({
+                              ...p,
+                              origin: info.origin || p.origin,
+                              destination: info.destination || p.destination,
+                              controlTime: info.departureTime || p.controlTime,
+                            }));
+                            setTrainStops(info.stops || []);
+                          }}
+                        />
                       </div>
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                           <Label htmlFor="origin">Origine</Label>
-                          <StationAutocomplete id="origin" placeholder="Gare de départ" value={formState.origin} onChange={(v) => setFormState((p) => ({ ...p, origin: v }))} />
+                          {trainStops.length > 1 ? (
+                            <Select
+                              value={formState.origin}
+                              onValueChange={(v) => {
+                                const stop = trainStops.find(s => s.name === v);
+                                setFormState((p) => ({
+                                  ...p,
+                                  origin: v,
+                                  ...(stop?.departureTime ? { controlTime: stop.departureTime } : {}),
+                                }));
+                              }}
+                            >
+                              <SelectTrigger id="origin">
+                                <SelectValue placeholder="Gare de départ" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {trainStops.map((stop) => (
+                                  <SelectItem key={stop.name} value={stop.name}>
+                                    {stop.name}
+                                    {stop.departureTime && (
+                                      <span className="ml-2 text-muted-foreground text-xs">
+                                        {stop.departureTime}
+                                        {stop.isDelayed && stop.delayMinutes ? ` (+${stop.delayMinutes} min)` : ''}
+                                      </span>
+                                    )}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          ) : (
+                            <StationAutocomplete id="origin" placeholder="Gare de départ" value={formState.origin} onChange={(v) => setFormState((p) => ({ ...p, origin: v }))} />
+                          )}
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor="destination">Destination</Label>
-                          <StationAutocomplete id="destination" placeholder="Gare d'arrivée" value={formState.destination} onChange={(v) => setFormState((p) => ({ ...p, destination: v }))} />
+                          {trainStops.length > 1 ? (
+                            <Select value={formState.destination} onValueChange={(v) => setFormState((p) => ({ ...p, destination: v }))}>
+                              <SelectTrigger id="destination">
+                                <SelectValue placeholder="Gare d'arrivée" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {trainStops.map((stop) => (
+                                  <SelectItem key={stop.name} value={stop.name}>
+                                    {stop.name}
+                                    {stop.departureTime && (
+                                      <span className="ml-2 text-muted-foreground text-xs">
+                                        {stop.departureTime}
+                                        {stop.isDelayed && stop.delayMinutes ? ` (+${stop.delayMinutes} min)` : ''}
+                                      </span>
+                                    )}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          ) : (
+                            <StationAutocomplete id="destination" placeholder="Gare d'arrivée" value={formState.destination} onChange={(v) => setFormState((p) => ({ ...p, destination: v }))} />
+                          )}
                         </div>
                       </div>
                       <div className="grid grid-cols-2 gap-4">
@@ -1048,26 +1117,91 @@ export default function OnboardControl() {
                           <option key={train} value={train} />
                         ))}
                       </datalist>
+                      <TrainLookupButton
+                        trainNumber={formState.trainNumber}
+                        date={formState.controlDate}
+                        onResult={(info) => {
+                          setFormState((p) => ({
+                            ...p,
+                            origin: info.origin || p.origin,
+                            destination: info.destination || p.destination,
+                            controlTime: info.departureTime || p.controlTime,
+                          }));
+                          setTrainStops(info.stops || []);
+                        }}
+                      />
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="origin">Origine</Label>
-                        <StationAutocomplete
-                          id="origin"
-                          placeholder="Gare de départ"
-                          value={formState.origin}
-                          onChange={(v) => setFormState((p) => ({ ...p, origin: v }))}
-                        />
+                        {trainStops.length > 1 ? (
+                          <Select
+                            value={formState.origin}
+                            onValueChange={(v) => {
+                              const stop = trainStops.find(s => s.name === v);
+                              setFormState((p) => ({
+                                ...p,
+                                origin: v,
+                                ...(stop?.departureTime ? { controlTime: stop.departureTime } : {}),
+                              }));
+                            }}
+                          >
+                            <SelectTrigger id="origin">
+                              <SelectValue placeholder="Gare de départ" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {trainStops.map((stop) => (
+                                <SelectItem key={stop.name} value={stop.name}>
+                                  {stop.name}
+                                  {stop.departureTime && (
+                                    <span className="ml-2 text-muted-foreground text-xs">
+                                      {stop.departureTime}
+                                      {stop.isDelayed && stop.delayMinutes ? ` (+${stop.delayMinutes} min)` : ''}
+                                    </span>
+                                  )}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        ) : (
+                          <StationAutocomplete
+                            id="origin"
+                            placeholder="Gare de départ"
+                            value={formState.origin}
+                            onChange={(v) => setFormState((p) => ({ ...p, origin: v }))}
+                          />
+                        )}
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="destination">Destination</Label>
-                        <StationAutocomplete
-                          id="destination"
-                          placeholder="Gare d'arrivée"
-                          value={formState.destination}
-                          onChange={(v) => setFormState((p) => ({ ...p, destination: v }))}
-                        />
+                        {trainStops.length > 1 ? (
+                          <Select value={formState.destination} onValueChange={(v) => setFormState((p) => ({ ...p, destination: v }))}>
+                            <SelectTrigger id="destination">
+                              <SelectValue placeholder="Gare d'arrivée" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {trainStops.map((stop) => (
+                                <SelectItem key={stop.name} value={stop.name}>
+                                  {stop.name}
+                                  {stop.departureTime && (
+                                    <span className="ml-2 text-muted-foreground text-xs">
+                                      {stop.departureTime}
+                                      {stop.isDelayed && stop.delayMinutes ? ` (+${stop.delayMinutes} min)` : ''}
+                                    </span>
+                                  )}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        ) : (
+                          <StationAutocomplete
+                            id="destination"
+                            placeholder="Gare d'arrivée"
+                            value={formState.destination}
+                            onChange={(v) => setFormState((p) => ({ ...p, destination: v }))}
+                          />
+                        )}
                       </div>
                     </div>
 
