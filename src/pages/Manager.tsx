@@ -23,7 +23,6 @@ import {
   TrendingUp,
   AlertTriangle,
 } from 'lucide-react';
-import { AgentRanking } from '@/components/manager/AgentRanking';
 import { HourlyHeatmap } from '@/components/manager/HourlyHeatmap';
 import { AuditTrailView } from '@/components/manager/AuditTrailView';
 import type { Database } from '@/integrations/supabase/types';
@@ -111,7 +110,7 @@ export default function ManagerPage() {
 
   return (
     <AppLayout>
-      <div className="space-y-5 max-w-5xl">
+      <div className="space-y-5 max-w-5xl mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex flex-col gap-1">
@@ -189,9 +188,6 @@ export default function ManagerPage() {
           </TabsList>
 
           <TabsContent value="overview" className="space-y-4">
-            {/* Agent Ranking */}
-            <AgentRanking controls={todayControls} members={teamMembers} />
-
             {/* Team Members */}
             <Card className="border-0 shadow-sm overflow-hidden">
               <div className="h-1 bg-gradient-to-r from-blue-400 to-indigo-500" />

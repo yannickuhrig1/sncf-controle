@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import {
   LineChart,
   Line,
@@ -12,14 +12,11 @@ import {
   Bar,
 } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
-import { format, parseISO, startOfWeek, startOfMonth, endOfWeek, endOfMonth } from 'date-fns';
+import { format, parseISO, startOfWeek } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import type { Database } from '@/integrations/supabase/types';
 
 type Control = Database['public']['Tables']['controls']['Row'];
-
-type Period = 'week' | 'month';
 
 interface FraudTrendChartProps {
   controls: Control[];
@@ -35,25 +32,14 @@ interface PeriodStats {
 }
 
 export function FraudTrendChart({ controls }: FraudTrendChartProps) {
-  const [period, setPeriod] = useState<Period>('week');
-
   const chartData = useMemo(() => {
     const periodMap = new Map<string, PeriodStats>();
 
     controls.forEach((control) => {
       const date = parseISO(control.control_date);
-      let key: string;
-      let label: string;
-
-      if (period === 'week') {
-        const weekStart = startOfWeek(date, { weekStartsOn: 1 });
-        key = format(weekStart, 'yyyy-MM-dd');
-        label = `S${format(weekStart, 'w')} ${format(weekStart, 'dd/MM', { locale: fr })}`;
-      } else {
-        const monthStart = startOfMonth(date);
-        key = format(monthStart, 'yyyy-MM');
-        label = format(monthStart, 'MMM yyyy', { locale: fr });
-      }
+      const weekStart = startOfWeek(date, { weekStartsOn: 1 });
+      const key = format(weekStart, 'yyyy-MM-dd');
+      const label = `S${format(weekStart, 'w')} ${format(weekStart, 'dd/MM', { locale: fr })}`;
 
       const fraudCount = control.tarifs_controle + control.pv;
       const existing = periodMap.get(key);
@@ -83,7 +69,7 @@ export function FraudTrendChart({ controls }: FraudTrendChartProps) {
     return Array.from(periodMap.values())
       .sort((a, b) => a.key.localeCompare(b.key))
       .slice(-12);
-  }, [controls, period]);
+  }, [controls]);
 
   if (chartData.length === 0) {
     return (
@@ -103,22 +89,7 @@ export function FraudTrendChart({ controls }: FraudTrendChartProps) {
   return (
     <Card>
       <CardHeader className="pb-2">
-        <div className="flex items-center justify-between flex-wrap gap-2">
-          <CardTitle className="text-base">Tendance du taux de fraude</CardTitle>
-          <ToggleGroup
-            type="single"
-            value={period}
-            onValueChange={(v) => v && setPeriod(v as Period)}
-            className="border rounded-md"
-          >
-            <ToggleGroupItem value="week" size="sm" className="text-xs px-3">
-              Semaine
-            </ToggleGroupItem>
-            <ToggleGroupItem value="month" size="sm" className="text-xs px-3">
-              Mois
-            </ToggleGroupItem>
-          </ToggleGroup>
-        </div>
+        <CardTitle className="text-base">Tendance du taux de fraude</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="h-[280px]">
