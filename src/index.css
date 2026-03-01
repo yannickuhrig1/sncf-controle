@@ -1023,7 +1023,6 @@ html:not([class*="theme-"]) body {
     radial-gradient(ellipse 60% 65% at 0%   100%,  hsl(210 100% 35% / 0.09) 0%, transparent 55%),
     radial-gradient(ellipse 45% 35% at 55%  50%,   hsl(220 30%  55% / 0.04) 0%, transparent 50%);
   background-attachment: fixed;
-  animation: sncf-ambient 18s ease-in-out infinite alternate;
 }
 
 html.dark:not([class*="theme-"]) body {
@@ -1032,14 +1031,6 @@ html.dark:not([class*="theme-"]) body {
     radial-gradient(ellipse 65% 70% at 0%   100%,  hsl(210 90%  55% / 0.20) 0%, transparent 58%),
     radial-gradient(ellipse 45% 35% at 55%  40%,   hsl(225 70%  38% / 0.08) 0%, transparent 45%);
   background-attachment: fixed;
-  animation: sncf-ambient 18s ease-in-out infinite alternate;
-}
-
-@keyframes sncf-ambient {
-  0%   { opacity: 1;    transform: scale(1)    translate(0px,   0px); }
-  30%  { opacity: 0.82; transform: scale(1.04) translate(10px, -8px); }
-  65%  { opacity: 0.93; transform: scale(0.97) translate(-8px, 10px); }
-  100% { opacity: 1;    transform: scale(1.02) translate(5px,  -5px); }
 }
 
 /* Glassmorphism utilities */
