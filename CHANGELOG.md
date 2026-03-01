@@ -5,6 +5,16 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/),
 et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.9.2] - 2026-03-01
+
+### Ajouté
+- Trains du jour : bouton Ajouter à côté de Info SNCF pour préparer sa mission
+- Chips colorées par statut (vert/amber/rouge/gris) avec retard en gras
+- Clic sur un chip charge le train sauvegardé (numéro, origine, destination, heure, gares)
+
+### Modifié
+- Renommage "Suppléments rapides" → "STT rapides" (Contrôle à bord et en gare)
+
 ## [1.9.1] - 2026-03-01
 
 ### Modifié
