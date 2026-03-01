@@ -793,6 +793,7 @@ export default function Dashboard() {
               <DashboardDatePicker
                 date={selectedDate}
                 onDateChange={setSelectedDate}
+                period={period}
               />
               <ViewModeToggle
                 viewMode={viewMode}
