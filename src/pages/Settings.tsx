@@ -62,7 +62,7 @@ import {
 } from '@dnd-kit/sortable';
 import { SortablePageItem } from '@/components/settings/SortablePageItem';
 import { InstallAppButton } from '@/components/InstallAppButton';
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 const PAGE_OPTIONS: { id: PageId; label: string; canDisable: boolean; roleRequired?: 'manager' | 'admin' }[] = [
   { id: 'dashboard', label: 'Accueil', canDisable: false },
@@ -84,6 +84,40 @@ export default function Settings() {
     updatePreferences,
     isUpdating,
   } = useUserPreferences();
+
+  const [bgBrightness, setBgBrightness] = useState(() =>
+    parseInt(localStorage.getItem('sncf_bg_brightness') || '100'));
+  const [cardBrightness, setCardBrightness] = useState(() =>
+    parseInt(localStorage.getItem('sncf_card_brightness') || '100'));
+
+  const applyBrightness = useCallback((bg: number, card: number) => {
+    let el = document.getElementById('user-brightness-style') as HTMLStyleElement | null;
+    if (!el) {
+      el = document.createElement('style');
+      el.id = 'user-brightness-style';
+      document.head.appendChild(el);
+    }
+    const bgF = bg / 100;
+    const cardF = card / bg; // compensate body filter then apply card target
+    const parts: string[] = [];
+    if (bgF !== 1) parts.push(`#root{filter:brightness(${bgF})}`);
+    if (Math.abs(cardF - 1) > 0.001) parts.push(`#root .bg-card{filter:brightness(${cardF.toFixed(4)})!important}`);
+    el.textContent = parts.join('');
+  }, []);
+
+  useEffect(() => { applyBrightness(bgBrightness, cardBrightness); }, []);
+
+  const handleBgBrightness = (v: number) => {
+    setBgBrightness(v);
+    localStorage.setItem('sncf_bg_brightness', String(v));
+    applyBrightness(v, cardBrightness);
+  };
+
+  const handleCardBrightness = (v: number) => {
+    setCardBrightness(v);
+    localStorage.setItem('sncf_card_brightness', String(v));
+    applyBrightness(bgBrightness, v);
+  };
 
   const [openSections, setOpenSections] = useState({
     appearance: true,
@@ -417,6 +451,47 @@ export default function Settings() {
                       </SelectItem>
                     </SelectContent>
                   </Select>
+                </div>
+
+                <Separator />
+
+                <div className="space-y-4">
+                  <Label className="flex items-center gap-2">
+                    <Sun className="h-4 w-4" />
+                    Luminosité
+                  </Label>
+                  <div className="space-y-3">
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-muted-foreground">Fond</span>
+                        <span className="text-xs font-medium tabular-nums">{bgBrightness}%</span>
+                      </div>
+                      <input
+                        type="range" min="40" max="160" step="5"
+                        value={bgBrightness}
+                        onChange={(e) => handleBgBrightness(parseInt(e.target.value))}
+                        className="w-full h-1.5 rounded-full appearance-none cursor-pointer bg-muted [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-primary [&::-webkit-slider-thumb]:cursor-pointer"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-muted-foreground">Cartes</span>
+                        <span className="text-xs font-medium tabular-nums">{cardBrightness}%</span>
+                      </div>
+                      <input
+                        type="range" min="40" max="160" step="5"
+                        value={cardBrightness}
+                        onChange={(e) => handleCardBrightness(parseInt(e.target.value))}
+                        className="w-full h-1.5 rounded-full appearance-none cursor-pointer bg-muted [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-primary [&::-webkit-slider-thumb]:cursor-pointer"
+                      />
+                    </div>
+                    {(bgBrightness !== 100 || cardBrightness !== 100) && (
+                      <Button variant="ghost" size="sm" className="h-7 text-xs px-2"
+                        onClick={() => { handleBgBrightness(100); handleCardBrightness(100); }}>
+                        Réinitialiser
+                      </Button>
+                    )}
+                  </div>
                 </div>
               </CardContent>
             </CollapsibleContent>

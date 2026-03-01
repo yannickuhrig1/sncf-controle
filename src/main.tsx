@@ -40,4 +40,21 @@ const initializeTheme = () => {
 
 initializeTheme();
 
+// Initialize brightness from user settings
+try {
+  const bg   = parseInt(localStorage.getItem('sncf_bg_brightness')   || '100');
+  const card = parseInt(localStorage.getItem('sncf_card_brightness') || '100');
+  if (bg !== 100 || card !== 100) {
+    const el = document.createElement('style');
+    el.id = 'user-brightness-style';
+    const bgF   = bg / 100;
+    const cardF = card / bg;
+    const parts: string[] = [];
+    if (bgF !== 1)                   parts.push(`#root{filter:brightness(${bgF})}`);
+    if (Math.abs(cardF - 1) > 0.001) parts.push(`#root .bg-card{filter:brightness(${cardF.toFixed(4)})!important}`);
+    el.textContent = parts.join('');
+    document.head.appendChild(el);
+  }
+} catch { /* silently ignore */ }
+
 createRoot(document.getElementById("root")!).render(<App />);

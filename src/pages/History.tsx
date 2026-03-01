@@ -120,32 +120,27 @@ function ControlRow({ control, onClick }: ControlRowProps) {
               </span>
             </div>
 
-            {/* Line 3: fraud badges — simplified, max 4 */}
-            {fraudCount > 0 && (() => {
+            {/* Line 3: badges Bord / TC / PV / RI */}
+            {(() => {
+              const bordTotal = (control.tarif_bord_stt_50 || 0) + (control.tarif_bord_stt_100 || 0)
+                + (control.tarif_bord_rnv || 0) + (control.tarif_bord_titre_tiers || 0)
+                + (control.tarif_bord_doc_naissance || 0) + (control.tarif_bord_autre || 0);
+              const riTotal = (control.ri_positive || 0) + (control.ri_negative || 0);
               const badges = [
-                control.tarifs_controle > 0 && { label: `TC: ${control.tarifs_controle}`, cls: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 hover:bg-amber-100 border-0' },
-                control.pv > 0 && { label: `PV: ${control.pv}`, cls: 'bg-red-500 text-white hover:bg-red-500 border-0' },
-                control.rnv > 0 && { label: `RNV: ${control.rnv}`, cls: '' },
-                ((control.stt_50 || 0) + (control.stt_100 || 0)) > 0 && { label: `STT: ${(control.stt_50 || 0) + (control.stt_100 || 0)}`, cls: 'text-orange-600 border-orange-200' },
-                (control.titre_tiers || 0) > 0 && { label: `T.Tiers: ${control.titre_tiers}`, cls: '' },
-                (control.doc_naissance || 0) > 0 && { label: `D.Naiss: ${control.doc_naissance}`, cls: '' },
+                bordTotal > 0            && { label: `Bord: ${bordTotal}`,                cls: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 border-0' },
+                control.tarifs_controle > 0 && { label: `TC: ${control.tarifs_controle}`, cls: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 border-0' },
+                control.pv > 0           && { label: `PV: ${control.pv}`,                cls: 'bg-red-500 text-white border-0' },
+                riTotal > 0              && { label: `RI: ${riTotal}`,                    cls: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400 border-0' },
               ].filter(Boolean) as { label: string; cls: string }[];
 
-              const visible = badges.slice(0, 3);
-              const extra = badges.length - 3;
-
+              if (badges.length === 0) return null;
               return (
                 <div className="flex flex-wrap gap-1 mt-2">
-                  {visible.map((b, i) => (
+                  {badges.map((b, i) => (
                     <Badge key={i} variant="outline" className={`text-[10px] px-1.5 py-0 ${b.cls}`}>
                       {b.label}
                     </Badge>
                   ))}
-                  {extra > 0 && (
-                    <Badge variant="outline" className="text-[10px] px-1.5 py-0 text-muted-foreground">
-                      +{extra}
-                    </Badge>
-                  )}
                 </div>
               );
             })()}
