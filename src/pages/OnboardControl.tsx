@@ -20,6 +20,7 @@ import { ControlDetailDialog } from '@/components/controls/ControlDetailDialog';
 import { ExportDialog } from '@/components/controls/ExportDialog';
 import { TrainFraudCompact } from '@/components/charts/TrainFraudCompact';
 import { SubmitProgress } from '@/components/controls/SubmitProgress';
+import { TrainLookupButton } from '@/components/controls/TrainLookupButton';
 import { LastSyncIndicator } from '@/components/controls/LastSyncIndicator';
 import { OfflineIndicator } from '@/components/controls/OfflineIndicator';
 import { Button } from '@/components/ui/button';
@@ -904,6 +905,16 @@ export default function OnboardControl() {
                             <option key={train} value={train} />
                           ))}
                         </datalist>
+                        <TrainLookupButton
+                          trainNumber={formState.trainNumber}
+                          date={formState.controlDate}
+                          onResult={(info) => setFormState((p) => ({
+                            ...p,
+                            origin: info.origin || p.origin,
+                            destination: info.destination || p.destination,
+                            controlTime: info.departureTime || p.controlTime,
+                          }))}
+                        />
                       </div>
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
@@ -1048,6 +1059,16 @@ export default function OnboardControl() {
                           <option key={train} value={train} />
                         ))}
                       </datalist>
+                      <TrainLookupButton
+                        trainNumber={formState.trainNumber}
+                        date={formState.controlDate}
+                        onResult={(info) => setFormState((p) => ({
+                          ...p,
+                          origin: info.origin || p.origin,
+                          destination: info.destination || p.destination,
+                          controlTime: info.departureTime || p.controlTime,
+                        }))}
+                      />
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">

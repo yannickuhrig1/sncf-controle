@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import {
   Select,
   SelectContent,
@@ -37,6 +38,10 @@ import {
   FileText,
   ChevronDown,
   Smartphone,
+  Plug,
+  Eye as EyeIcon,
+  EyeOff,
+  Train,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -124,8 +129,21 @@ export default function Settings() {
     navigation: true,
     notifications: true,
     data: true,
+    integrations: true,
     app: true,
   });
+
+  // SNCF API token
+  const [sncfToken, setSncfToken] = useState(() => localStorage.getItem('sncf_api_token') || '');
+  const [showToken, setShowToken] = useState(false);
+  const saveSncfToken = (value: string) => {
+    setSncfToken(value);
+    if (value.trim()) {
+      localStorage.setItem('sncf_api_token', value.trim());
+    } else {
+      localStorage.removeItem('sncf_api_token');
+    }
+  };
 
   const toggleSection = (key: keyof typeof openSections) => {
     setOpenSections(prev => ({ ...prev, [key]: !prev[key] }));
@@ -778,6 +796,72 @@ export default function Settings() {
                       </AlertDialogFooter>
                     </AlertDialogContent>
                   </AlertDialog>
+                </div>
+              </CardContent>
+            </CollapsibleContent>
+          </Card>
+        </Collapsible>
+
+        {/* Intégrations */}
+        <Collapsible open={openSections.integrations} onOpenChange={() => toggleSection('integrations')}>
+          <Card>
+            <CollapsibleTrigger asChild>
+              <CardHeader className="cursor-pointer hover:bg-muted/30 transition-colors rounded-t-lg">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Plug className="h-4 w-4" />
+                  Intégrations
+                  <ChevronDown className={`h-4 w-4 ml-auto transition-transform ${openSections.integrations ? 'rotate-180' : ''}`} />
+                </CardTitle>
+                <CardDescription>Connexion aux services externes</CardDescription>
+              </CardHeader>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-2">
+                    <Train className="h-4 w-4" />
+                    Token API SNCF
+                  </Label>
+                  <p className="text-xs text-muted-foreground">
+                    Permet de récupérer automatiquement l'origine, la destination et l'état du train.
+                    Obtenez un token sur{' '}
+                    <span className="font-medium">digital.sncf.com/startup/api</span>
+                  </p>
+                  <div className="flex gap-2">
+                    <div className="relative flex-1">
+                      <Input
+                        type={showToken ? 'text' : 'password'}
+                        placeholder="Votre token API SNCF…"
+                        value={sncfToken}
+                        onChange={e => saveSncfToken(e.target.value)}
+                        className="pr-10 font-mono text-sm"
+                      />
+                      <button
+                        type="button"
+                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                        onClick={() => setShowToken(v => !v)}
+                      >
+                        {showToken
+                          ? <EyeOff className="h-4 w-4" />
+                          : <EyeIcon className="h-4 w-4" />
+                        }
+                      </button>
+                    </div>
+                    {sncfToken && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => saveSncfToken('')}
+                      >
+                        Supprimer
+                      </Button>
+                    )}
+                  </div>
+                  {sncfToken && (
+                    <p className="text-xs text-green-600 dark:text-green-400 flex items-center gap-1">
+                      <Check className="h-3 w-3" /> Token enregistré
+                    </p>
+                  )}
                 </div>
               </CardContent>
             </CollapsibleContent>
