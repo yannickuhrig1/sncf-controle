@@ -124,7 +124,7 @@ export default function StationControl() {
   // Passengers
   const [nbPassagers, setNbPassagers] = useState(0);
 
-  // Suppléments rapides (quick counters)
+  // STT rapides (quick counters)
   const [stt50Count, setStt50Count] = useState(0);
   const [stt100Count, setStt100Count] = useState(0);
 
@@ -811,7 +811,7 @@ export default function StationControl() {
                     </CardContent>
                   </Card>
 
-                  {/* Suppléments rapides */}
+                  {/* STT rapides */}
                   <Card className="border-0 shadow-sm overflow-hidden">
                     <div className="h-1 bg-gradient-to-r from-amber-400 to-orange-500" />
                     <CardHeader className="pb-3">
@@ -819,7 +819,7 @@ export default function StationControl() {
                         <div className="p-1.5 rounded-lg bg-amber-100 dark:bg-amber-900/30">
                           <Ticket className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
                         </div>
-                        Suppléments rapides
+                        STT rapides
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
