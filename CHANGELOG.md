@@ -5,6 +5,20 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/),
 et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.9.0] - 2026-03-01
+
+### Ajouté
+- Intégration API SNCF (Navitia) : récupération automatique des infos train depuis le numéro
+- Bouton "Info SNCF" dans le formulaire contrôle à bord : remplit origine, destination, heure, statut
+- Toutes les gares de la ligne s'affichent dans les sélecteurs Origine / Destination
+- Sélection d'une gare d'origine remplit automatiquement l'heure de départ
+- Affichage du retard (+X min) dans les items de chaque gare
+- Badge type de train (TGV, TER, OUIGO…), statut (À l'heure / Retard / Supprimé), durée, voie, heure d'arrivée
+- Onglet "Intégrations" dans Administration pour configurer le token API SNCF
+
+### Modifié
+- Token API SNCF déplacé de Paramètres vers Administration → Intégrations
+
 ## [1.8.8] - 2026-03-01
 
 ### Technique
