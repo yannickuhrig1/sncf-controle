@@ -112,16 +112,16 @@ export function TrainLookupButton({ trainNumber, date, onResult, onAdd }: TrainL
           hasDelayDetails ? (
             <Popover>
               <PopoverTrigger asChild>
-                <Badge
-                  variant="outline"
-                  className={`flex items-center gap-1 text-xs h-6 cursor-pointer ${cfg.className}`}
+                <button
+                  type="button"
+                  className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-semibold cursor-pointer ${cfg.className}`}
                 >
                   {cfg.icon}
                   {cfg.label}
                   {trainInfo.delayMinutes && trainInfo.delayMinutes > 0 && (
                     <span className="font-bold">+{trainInfo.delayMinutes} min</span>
                   )}
-                </Badge>
+                </button>
               </PopoverTrigger>
               <PopoverContent side="bottom" align="start" className="w-72 p-3 space-y-2 text-sm">
                 {trainInfo.delayMinutes && trainInfo.delayMinutes > 0 && (
