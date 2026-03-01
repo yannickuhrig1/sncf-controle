@@ -389,12 +389,12 @@ export default function AdminPage() {
     if (!deleteUserTarget) return;
     setIsDeletingUser(true);
     try {
-      const response = await supabase.functions.invoke('delete-user', {
-        body: { user_id: deleteUserTarget.user_id },
-      });
-      if (response.error) throw new Error(response.error.message || 'Erreur lors de la suppression');
-      const result = response.data;
-      if (result?.error) throw new Error(result.error);
+      const { error } = await supabase
+        .from('profiles')
+        .delete()
+        .eq('user_id', deleteUserTarget.user_id);
+
+      if (error) throw error;
 
       toast.success(`${deleteUserTarget.first_name} ${deleteUserTarget.last_name} a été supprimé`);
       queryClient.invalidateQueries({ queryKey: ['admin-profiles'] });
