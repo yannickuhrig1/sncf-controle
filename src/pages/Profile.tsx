@@ -106,7 +106,7 @@ export default function ProfilePage() {
 
   return (
     <AppLayout>
-      <div className="space-y-5 max-w-2xl mx-auto">
+      <div className="space-y-5 max-w-3xl mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex flex-col gap-1">

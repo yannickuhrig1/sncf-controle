@@ -207,7 +207,7 @@ export default function Settings() {
 
   return (
     <AppLayout>
-      <div className="space-y-5 max-w-2xl mx-auto">
+      <div className="space-y-5 max-w-3xl mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex flex-col gap-1">
@@ -356,40 +356,6 @@ export default function Settings() {
                       </SelectItem>
                     </SelectContent>
                   </Select>
-                </div>
-
-                <Separator />
-
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>Mode compact</Label>
-                    <p className="text-xs text-muted-foreground">
-                      Réduit l'espacement pour afficher plus d'informations
-                    </p>
-                  </div>
-                  <Switch
-                    checked={preferences?.display_compact_mode || false}
-                    onCheckedChange={(checked) =>
-                      updatePreferences({ display_compact_mode: checked })
-                    }
-                    disabled={isUpdating}
-                  />
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>Afficher les totaux</Label>
-                    <p className="text-xs text-muted-foreground">
-                      Affiche les totaux en euros dans les listes
-                    </p>
-                  </div>
-                  <Switch
-                    checked={preferences?.display_show_totals ?? true}
-                    onCheckedChange={(checked) =>
-                      updatePreferences({ display_show_totals: checked })
-                    }
-                    disabled={isUpdating}
-                  />
                 </div>
 
                 <Separator />

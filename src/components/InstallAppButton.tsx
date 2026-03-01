@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Download, Smartphone, Check } from 'lucide-react';
+import { Download, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
@@ -112,7 +112,7 @@ export function InstallAppButton({
       asChild
     >
       <Link to="/install">
-        <Smartphone className="h-4 w-4" />
+        <Download className="h-4 w-4" />
         {showLabel && <span className="ml-2">Installer</span>}
       </Link>
     </Button>

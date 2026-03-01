@@ -663,6 +663,32 @@ export default function AdminPage() {
 
           {/* Display Settings Tab */}
           <TabsContent value="display" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Eye className="h-5 w-5" />
+                  Affichage des données
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label>Afficher les totaux</Label>
+                    <p className="text-xs text-muted-foreground">
+                      Affiche les totaux en euros dans les listes
+                    </p>
+                  </div>
+                  <Switch
+                    checked={preferences?.display_show_totals ?? true}
+                    onCheckedChange={(checked) =>
+                      updatePreferences({ display_show_totals: checked })
+                    }
+                    disabled={isUpdating}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
             <FraudThresholdsSettings />
             
             {/* Page Visibility Toggles */}
@@ -829,7 +855,7 @@ export default function AdminPage() {
 
         {/* User Role Dialog */}
         <Dialog open={roleDialogOpen} onOpenChange={setRoleDialogOpen}>
-          <DialogContent>
+          <DialogContent className="overflow-y-auto max-h-[85vh]">
             <DialogHeader>
               <DialogTitle>Modifier l'utilisateur</DialogTitle>
               <DialogDescription>
@@ -867,12 +893,15 @@ export default function AdminPage() {
               </div>
               <div className="space-y-2">
                 <Label>Équipe</Label>
-                <Select value={selectedTeamId} onValueChange={setSelectedTeamId}>
+                <Select
+                  value={selectedTeamId || '__none__'}
+                  onValueChange={(v) => setSelectedTeamId(v === '__none__' ? '' : v)}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Aucune équipe" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Aucune équipe</SelectItem>
+                    <SelectItem value="__none__">Aucune équipe</SelectItem>
                     {teams.map((team) => (
                       <SelectItem key={team.id} value={team.id}>
                         {team.name}
@@ -901,7 +930,7 @@ export default function AdminPage() {
 
         {/* Create User Dialog */}
         <Dialog open={createUserOpen} onOpenChange={setCreateUserOpen}>
-          <DialogContent>
+          <DialogContent className="overflow-y-auto max-h-[85vh]">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <UserPlus className="h-5 w-5" />
@@ -968,12 +997,15 @@ export default function AdminPage() {
               </div>
               <div className="space-y-2">
                 <Label>Équipe</Label>
-                <Select value={newUserTeamId} onValueChange={setNewUserTeamId}>
+                <Select
+                  value={newUserTeamId || '__none__'}
+                  onValueChange={(v) => setNewUserTeamId(v === '__none__' ? '' : v)}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Aucune équipe" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Aucune équipe</SelectItem>
+                    <SelectItem value="__none__">Aucune équipe</SelectItem>
                     {teams.map((team) => (
                       <SelectItem key={team.id} value={team.id}>
                         {team.name}

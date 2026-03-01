@@ -22,8 +22,7 @@ import { LastSyncIndicator } from '@/components/controls/LastSyncIndicator';
 import { OfflineIndicator } from '@/components/controls/OfflineIndicator';
 import { HistoryTableView } from '@/components/history/HistoryTableView';
 import { EmbarkmentHistoryView } from '@/components/history/EmbarkmentHistoryView';
-import { DateRangeFilter } from '@/components/history/DateRangeFilter';
-import { MonthYearFilter, getDateRangeFromMonthYear } from '@/components/history/MonthYearFilter';
+import type { Period } from '@/components/dashboard/PeriodSelector';
 import { ViewModeToggle } from '@/components/dashboard/ViewModeToggle';
 import { getFraudRateColor } from '@/lib/stats';
 import { exportTableToPDF, exportToPDF, downloadPDF } from '@/lib/exportUtils';
@@ -49,7 +48,7 @@ import {
   ArrowUpFromLine,
   Eye,
 } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { toast } from 'sonner';
 import type { Database } from '@/integrations/supabase/types';
@@ -198,10 +197,9 @@ export default function HistoryPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [locationFilter, setLocationFilter] = useState<LocationType | 'all'>('all');
   const [sortOption, setSortOption] = useState<SortOption>('date');
-  const [startDate, setStartDate] = useState<Date | undefined>(undefined);
-  const [endDate, setEndDate] = useState<Date | undefined>(undefined);
-  const [selectedMonth, setSelectedMonth] = useState<number | undefined>(undefined);
-  const [selectedYear, setSelectedYear] = useState<number | undefined>(undefined);
+  const [historyPeriod, setHistoryPeriod] = useState<Period | 'all'>('all');
+  const [customStart, setCustomStart] = useState('');
+  const [customEnd, setCustomEnd] = useState('');
   const [dataViewMode, setDataViewMode] = useState<ViewMode>('all-data');
   const [pdfPreviewOpen, setPdfPreviewOpen] = useState(false);
   const [pdfPreviewUrl, setPdfPreviewUrl] = useState<string | null>(null);
@@ -264,20 +262,39 @@ export default function HistoryPage() {
     return sourceControls;
   }, [infiniteControls, controls, dataViewMode, profile]);
 
+  // Compute effective date range from period selection
+  const periodDateRange = useMemo(() => {
+    const today = new Date();
+    switch (historyPeriod) {
+      case 'day':
+        return { start: today, end: today };
+      case 'week':
+        return { start: startOfWeek(today, { weekStartsOn: 1 }), end: endOfWeek(today, { weekStartsOn: 1 }) };
+      case 'month':
+        return { start: startOfMonth(today), end: endOfMonth(today) };
+      case 'year':
+        return { start: startOfYear(today), end: endOfYear(today) };
+      case 'custom':
+        return {
+          start: customStart ? new Date(customStart) : null,
+          end: customEnd ? new Date(customEnd) : null,
+        };
+      default: // 'all'
+        return { start: null, end: null };
+    }
+  }, [historyPeriod, customStart, customEnd]);
+
   // Filter and sort controls
   const filteredControls = useMemo(() => {
-    // Get effective date range from month/year filter if set
-    const monthYearRange = getDateRangeFromMonthYear(selectedMonth, selectedYear);
-    const effectiveStartDate = startDate ?? monthYearRange.startDate;
-    const effectiveEndDate = endDate ?? monthYearRange.endDate;
+    const { start: effectiveStartDate, end: effectiveEndDate } = periodDateRange;
 
     let result = displayControls.filter(control => {
       // Location type filter
       if (locationFilter !== 'all' && control.location_type !== locationFilter) {
         return false;
       }
-      
-      // Date range filter (from DateRangeFilter or MonthYearFilter)
+
+      // Date range filter from period selection
       if (effectiveStartDate || effectiveEndDate) {
         const controlDate = new Date(control.control_date);
         if (effectiveStartDate && controlDate < effectiveStartDate) {
@@ -329,7 +346,7 @@ export default function HistoryPage() {
     }
 
     return result;
-  }, [displayControls, searchQuery, locationFilter, sortOption, startDate, endDate, selectedMonth, selectedYear, getFraudRate]);
+  }, [displayControls, searchQuery, locationFilter, sortOption, periodDateRange, getFraudRate]);
 
   // Group filtered controls by date
   const groupedControls = useMemo(() => {
@@ -349,16 +366,15 @@ export default function HistoryPage() {
     );
   }, [groupedControls]);
 
-  const hasActiveFilters = searchQuery.trim() !== '' || locationFilter !== 'all' || sortOption !== 'date' || startDate !== undefined || endDate !== undefined || selectedMonth !== undefined || selectedYear !== undefined;
+  const hasActiveFilters = searchQuery.trim() !== '' || locationFilter !== 'all' || sortOption !== 'date' || historyPeriod !== 'all';
 
   const clearFilters = () => {
     setSearchQuery('');
     setLocationFilter('all');
     setSortOption('date');
-    setStartDate(undefined);
-    setEndDate(undefined);
-    setSelectedMonth(undefined);
-    setSelectedYear(undefined);
+    setHistoryPeriod('all');
+    setCustomStart('');
+    setCustomEnd('');
   };
 
   const handleExportTablePDF = () => {
@@ -366,14 +382,13 @@ export default function HistoryPage() {
       toast.error('Aucune donnée à exporter');
       return;
     }
-    
-    const dateRange = startDate && endDate 
-      ? `${format(startDate, 'dd/MM/yyyy', { locale: fr })} - ${format(endDate, 'dd/MM/yyyy', { locale: fr })}`
-      : startDate 
-        ? `Depuis ${format(startDate, 'dd/MM/yyyy', { locale: fr })}`
-        : endDate
-          ? `Jusqu'au ${format(endDate, 'dd/MM/yyyy', { locale: fr })}`
-          : 'Toutes les dates';
+
+    const { start: sd, end: ed } = periodDateRange;
+    const dateRange = sd && ed
+      ? `${format(sd, 'dd/MM/yyyy', { locale: fr })} - ${format(ed, 'dd/MM/yyyy', { locale: fr })}`
+      : sd
+        ? `Depuis ${format(sd, 'dd/MM/yyyy', { locale: fr })}`
+        : 'Toutes les dates';
     
     try {
       exportTableToPDF({
@@ -388,9 +403,9 @@ export default function HistoryPage() {
   };
 
   const getDateRangeString = () => {
-    if (startDate && endDate) return `${format(startDate, 'dd/MM/yyyy', { locale: fr })} - ${format(endDate, 'dd/MM/yyyy', { locale: fr })}`;
-    if (startDate) return `Depuis ${format(startDate, 'dd/MM/yyyy', { locale: fr })}`;
-    if (endDate) return `Jusqu'au ${format(endDate, 'dd/MM/yyyy', { locale: fr })}`;
+    const { start: sd, end: ed } = periodDateRange;
+    if (sd && ed) return `${format(sd, 'dd/MM/yyyy', { locale: fr })} - ${format(ed, 'dd/MM/yyyy', { locale: fr })}`;
+    if (sd) return `Depuis ${format(sd, 'dd/MM/yyyy', { locale: fr })}`;
     return 'Toutes les dates';
   };
 
@@ -609,47 +624,54 @@ export default function HistoryPage() {
                   </ToggleGroup>
                 </div>
 
-                {/* Date range filter */}
-                <DateRangeFilter
-                  startDate={startDate}
-                  endDate={endDate}
-                  onStartDateChange={(date) => {
-                    setStartDate(date);
-                    if (date) {
-                      setSelectedMonth(undefined);
-                      setSelectedYear(undefined);
-                    }
-                  }}
-                  onEndDateChange={(date) => {
-                    setEndDate(date);
-                    if (date) {
-                      setSelectedMonth(undefined);
-                      setSelectedYear(undefined);
-                    }
-                  }}
-                  onClear={() => { setStartDate(undefined); setEndDate(undefined); }}
-                />
-
-                {/* Month/Year filter */}
-                <MonthYearFilter
-                  selectedMonth={selectedMonth}
-                  selectedYear={selectedYear}
-                  onMonthChange={(month) => {
-                    setSelectedMonth(month);
-                    if (month !== undefined) {
-                      setStartDate(undefined);
-                      setEndDate(undefined);
-                    }
-                  }}
-                  onYearChange={(year) => {
-                    setSelectedYear(year);
-                    if (year !== undefined) {
-                      setStartDate(undefined);
-                      setEndDate(undefined);
-                    }
-                  }}
-                  onClear={() => { setSelectedMonth(undefined); setSelectedYear(undefined); }}
-                />
+                {/* Period filter */}
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-center gap-1 bg-muted rounded-lg p-1">
+                    {([
+                      { value: 'all',   label: 'Tous' },
+                      { value: 'day',   label: 'Jour' },
+                      { value: 'week',  label: 'Semaine' },
+                      { value: 'month', label: 'Mois' },
+                      { value: 'year',  label: 'Année' },
+                      { value: 'custom',label: 'Perso.' },
+                    ] as const).map((p) => (
+                      <Button
+                        key={p.value}
+                        variant="ghost"
+                        size="sm"
+                        className={`h-7 px-3 text-xs font-medium transition-colors ${
+                          historyPeriod === p.value
+                            ? 'bg-background shadow-sm text-foreground'
+                            : 'text-muted-foreground hover:text-foreground'
+                        }`}
+                        onClick={() => {
+                          setHistoryPeriod(p.value);
+                          if (p.value !== 'custom') { setCustomStart(''); setCustomEnd(''); }
+                        }}
+                      >
+                        {p.label}
+                      </Button>
+                    ))}
+                  </div>
+                  {historyPeriod === 'custom' && (
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <input
+                        type="date"
+                        value={customStart}
+                        onChange={(e) => setCustomStart(e.target.value)}
+                        className="h-8 px-2 text-xs rounded-md border border-input bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                      />
+                      <span className="text-xs text-muted-foreground">→</span>
+                      <input
+                        type="date"
+                        value={customEnd}
+                        min={customStart}
+                        onChange={(e) => setCustomEnd(e.target.value)}
+                        className="h-8 px-2 text-xs rounded-md border border-input bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                      />
+                    </div>
+                  )}
+                </div>
 
                 {/* Sort options */}
                 <div className="flex items-center gap-2">
