@@ -5,6 +5,13 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/),
 et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.8.6] - 2026-03-01
+
+### Ajouté
+- **Manager — Équipes** : Nouvel onglet "Équipes" permettant de créer plusieurs équipes, d'y ajouter/retirer des agents (avec recherche), et de transférer un agent d'une équipe à l'autre
+- **Manager — Vue d'ensemble** : Colonne "Équipe" affichée si le manager gère plusieurs équipes
+- **Manager** : Les KPI (contrôles du jour, heatmap) agrègent maintenant toutes les équipes du manager
+
 ## [1.8.5] - 2026-03-01
 
 ### Corrigé
