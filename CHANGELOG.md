@@ -5,6 +5,15 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/),
 et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.9.3] - 2026-03-01
+
+### Ajouté
+- Tableau des départs en gare (StationControl) : bouton "Départs" sous le champ Gare
+- Panel Sheet avec tous les trains de la gare en temps réel (heure, retard, statut, destination, voie)
+- Clic sur un train → charge automatiquement N° train, destination, heure dans le formulaire
+- Proxy Vercel `/api/sncf-departures` pour les requêtes départs (token côté serveur)
+- Clavier numérique activé sur le champ N° Train en gare
+
 ## [1.9.2] - 2026-03-01
 
 ### Ajouté

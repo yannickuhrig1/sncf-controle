@@ -18,6 +18,7 @@ import { FraudSummary } from '@/components/controls/FraudSummary';
 import { SubmitProgress } from '@/components/controls/SubmitProgress';
 import { LastSyncIndicator } from '@/components/controls/LastSyncIndicator';
 import { OfflineIndicator } from '@/components/controls/OfflineIndicator';
+import { DeparturesBoard } from '@/components/controls/DeparturesBoard';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -659,10 +660,21 @@ export default function StationControl() {
                             <Label className="text-xs">Gare *</Label>
                             <Input list="gares-c" placeholder="Sélectionner ou saisir" value={stationName} onChange={(e) => setStationName(e.target.value)} required />
                             <datalist id="gares-c">{GARES_PRINCIPALES.map((g) => <option key={g} value={g} />)}</datalist>
+                            <DeparturesBoard
+                              station={stationName}
+                              date={controlDate}
+                              time={controlTime}
+                              onSelect={(entry) => {
+                                setTrainNumber(entry.trainNumber);
+                                setOrigin(entry.direction.split(' → ')[0] || origin);
+                                setDestination(entry.direction);
+                                if (entry.realTime) setControlTime(entry.realTime);
+                              }}
+                            />
                           </div>
                           <div className="space-y-1">
                             <Label className="text-xs">N° Train</Label>
-                            <Input placeholder="Ex: 6231" value={trainNumber} onChange={(e) => setTrainNumber(e.target.value)} />
+                            <Input placeholder="Ex: 6231" value={trainNumber} onChange={(e) => setTrainNumber(e.target.value)} inputMode="numeric" />
                           </div>
                           <div className="space-y-1">
                             <Label className="text-xs">Quai</Label>
@@ -759,10 +771,21 @@ export default function StationControl() {
                           <Label htmlFor="stationName">Gare *</Label>
                           <Input id="stationName" list="gares" placeholder="Sélectionner ou saisir" value={stationName} onChange={(e) => setStationName(e.target.value)} required />
                           <datalist id="gares">{GARES_PRINCIPALES.map((gare) => <option key={gare} value={gare} />)}</datalist>
+                          <DeparturesBoard
+                            station={stationName}
+                            date={controlDate}
+                            time={controlTime}
+                            onSelect={(entry) => {
+                              setTrainNumber(entry.trainNumber);
+                              setOrigin(entry.direction.split(' → ')[0] || origin);
+                              setDestination(entry.direction);
+                              if (entry.realTime) setControlTime(entry.realTime);
+                            }}
+                          />
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor="trainNumber">N° Train</Label>
-                          <Input id="trainNumber" placeholder="Ex: 6231" value={trainNumber} onChange={(e) => setTrainNumber(e.target.value)} />
+                          <Input id="trainNumber" placeholder="Ex: 6231" value={trainNumber} onChange={(e) => setTrainNumber(e.target.value)} inputMode="numeric" />
                         </div>
                       </div>
                       <div className="space-y-2">
