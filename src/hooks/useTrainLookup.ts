@@ -140,6 +140,13 @@ export function useTrainLookup() {
       const disruptions: {
         severity?: { effect?: string };
         messages?: { text?: string }[];
+        impacted_objects?: {
+          impacted_stops?: {
+            departure_status?: string;
+            amended_departure_time?: string;
+            base_departure_time?: string;
+          }[];
+        }[];
       }[] = json.disruptions || [];
 
       if (disruptions.length > 0) {
@@ -148,6 +155,16 @@ export function useTrainLookup() {
         if (effect === 'NO_SERVICE')                                              status = 'cancelled';
         else if (effect === 'SIGNIFICANT_DELAYS' || effect === 'REDUCED_SERVICE') status = 'delayed';
         disruptionReason = d.messages?.[0]?.text;
+
+        // Essayer d'extraire le retard depuis impacted_stops de la perturbation
+        if (!delayMinutes) {
+          const impactedStops = d.impacted_objects?.[0]?.impacted_stops ?? [];
+          const delayedStop = impactedStops.find(s => s.departure_status === 'delayed');
+          if (delayedStop?.amended_departure_time && delayedStop?.base_departure_time) {
+            const diff = toMinutes(delayedStop.amended_departure_time) - toMinutes(delayedStop.base_departure_time);
+            if (diff > 0) delayMinutes = diff;
+          }
+        }
       }
 
       const firstDelayed = stops.find(s => s.isDelayed);
