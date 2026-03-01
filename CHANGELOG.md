@@ -5,6 +5,13 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/),
 et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.9.1] - 2026-03-01
+
+### Modifié
+- Token SNCF déplacé vers proxy Vercel serverless (variable `SNCF_API_TOKEN`) — jamais exposé côté client
+- Badge retard : délai affiché en gras (+X min) dans la pastille
+- Champ numéro de train : clavier numérique activé sur mobile
+
 ## [1.9.0] - 2026-03-01
 
 ### Ajouté
