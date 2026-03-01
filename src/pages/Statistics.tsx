@@ -212,7 +212,7 @@ export default function StatisticsPage() {
         {/* Filtres */}
         <div className="flex flex-col gap-3">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <DashboardDatePicker date={selectedDate} onDateChange={setSelectedDate} />
+            <DashboardDatePicker date={selectedDate} onDateChange={setSelectedDate} period={period} />
             <ViewModeToggle viewMode={viewMode} onViewModeChange={setViewMode} />
           </div>
           <PeriodSelector
