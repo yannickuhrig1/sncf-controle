@@ -314,7 +314,7 @@ export function AppLayout({ children }: AppLayoutProps) {
   );
 
   return (
-    <div className={cn('min-h-screen flex flex-col md:flex-row', showBottomBar && 'pb-20 md:pb-0')}>
+    <div className={cn('min-h-screen flex flex-col md:flex-row', showBottomBar && 'pb-20')}>
 
       {/* ── Sidebar — Tablette + Desktop ─────────────────────────────────────── */}
       <aside className="hidden md:flex flex-col w-60 shrink-0 bg-primary text-primary-foreground sticky top-0 h-screen overflow-y-auto">
@@ -437,7 +437,7 @@ export function AppLayout({ children }: AppLayoutProps) {
 
       {/* ── Bottom Navigation — Mobile uniquement ────────────────────────────── */}
       {showBottomBar && (
-        <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 glass-frosted border-t border-border/50 dark:border-white/10 safe-area-inset-bottom">
+        <nav className="fixed bottom-0 left-0 md:left-60 right-0 z-50 glass-frosted border-t border-border/50 dark:border-white/10 safe-area-inset-bottom">
           <div className="flex justify-around items-center h-16">
             {renderBottomNavLinks()}
           </div>
