@@ -314,7 +314,7 @@ export function AppLayout({ children }: AppLayoutProps) {
   );
 
   return (
-    <div className={cn('min-h-screen flex flex-col md:flex-row', showBottomBar && 'pb-20')}>
+    <div className={cn('min-h-screen flex flex-col md:flex-row', showBottomBar && 'pb-14')}>
 
       {/* ── Sidebar — Tablette + Desktop ─────────────────────────────────────── */}
       <aside className="hidden md:flex flex-col w-60 shrink-0 bg-primary text-primary-foreground sticky top-0 h-screen overflow-y-auto">
@@ -399,32 +399,30 @@ export function AppLayout({ children }: AppLayoutProps) {
                 </TooltipContent>
               </Tooltip>
 
-              {/* Burger Menu */}
-              {showBurgerMenu && (
-                <Sheet open={burgerOpen} onOpenChange={setBurgerOpen}>
-                  <SheetTrigger asChild>
-                    <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                      <Button variant="ghost" size="icon" className="text-primary-foreground hover:bg-primary/90">
-                        <Menu className="h-5 w-5" />
-                      </Button>
-                    </motion.div>
-                  </SheetTrigger>
-                  <SheetContent side="right" className="w-72 p-0">
-                    <SheetHeader className="p-4 border-b">
-                      <SheetTitle className="flex items-center gap-2">
-                        <Train className="h-5 w-5 text-primary" />
-                        Navigation
-                      </SheetTitle>
-                    </SheetHeader>
-                    <nav className="flex flex-col gap-1 p-2">
-                      {renderBurgerLinks()}
-                    </nav>
-                    <div className="p-4 border-t mt-auto">
-                      <InstallAppButton variant="outline" className="w-full" />
-                    </div>
-                  </SheetContent>
-                </Sheet>
-              )}
+              {/* Burger Menu — toujours visible sur mobile */}
+              <Sheet open={burgerOpen} onOpenChange={setBurgerOpen}>
+                <SheetTrigger asChild>
+                  <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                    <Button variant="ghost" size="icon" className="text-primary-foreground hover:bg-primary/90">
+                      <Menu className="h-5 w-5" />
+                    </Button>
+                  </motion.div>
+                </SheetTrigger>
+                <SheetContent side="right" className="w-72 p-0">
+                  <SheetHeader className="p-4 border-b">
+                    <SheetTitle className="flex items-center gap-2">
+                      <Train className="h-5 w-5 text-primary" />
+                      Navigation
+                    </SheetTitle>
+                  </SheetHeader>
+                  <nav className="flex flex-col gap-1 p-2">
+                    {renderBurgerLinks()}
+                  </nav>
+                  <div className="p-4 border-t mt-auto">
+                    <InstallAppButton variant="outline" className="w-full" />
+                  </div>
+                </SheetContent>
+              </Sheet>
             </div>
           </div>
         </header>
@@ -438,7 +436,7 @@ export function AppLayout({ children }: AppLayoutProps) {
       {/* ── Bottom Navigation — Mobile uniquement ────────────────────────────── */}
       {showBottomBar && (
         <nav className="fixed bottom-0 left-0 md:left-60 right-0 z-50 glass-frosted border-t border-border/50 dark:border-white/10 safe-area-inset-bottom">
-          <div className="flex justify-around items-center h-16">
+          <div className="flex justify-around items-center h-12">
             {renderBottomNavLinks()}
           </div>
         </nav>
