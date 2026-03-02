@@ -1,9 +1,16 @@
+import { useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useAdminSettings } from '@/hooks/useAdminSettings';
 import { AppLayout } from '@/components/layout/AppLayout';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import {
   Accordion,
   AccordionContent,
@@ -24,15 +31,348 @@ import {
   Mail,
   ExternalLink,
   Calculator,
-  Clock,
+  LayoutDashboard,
+  Building2,
+  BarChart3,
+  History,
+  Settings,
 } from 'lucide-react';
 import { Loader2 } from 'lucide-react';
 
+/* ─── Types ──────────────────────────────────────────────────────────────── */
+interface Tile {
+  id: string;
+  icon: React.ElementType;
+  label: string;
+  gradient: string;
+  iconBg: string;
+  iconColor: string;
+}
+
+/* ─── Tuiles ─────────────────────────────────────────────────────────────── */
+const TILES: Tile[] = [
+  {
+    id: 'about',
+    icon: Info,
+    label: "À propos de l'app",
+    gradient: 'from-primary/80 to-primary',
+    iconBg: 'bg-white/20',
+    iconColor: 'text-white',
+  },
+  {
+    id: 'fraude',
+    icon: Calculator,
+    label: 'Taux de fraude',
+    gradient: 'from-blue-400 to-indigo-500',
+    iconBg: 'bg-white/20',
+    iconColor: 'text-white',
+  },
+  {
+    id: 'tarifs',
+    icon: Ticket,
+    label: 'Tarification',
+    gradient: 'from-amber-400 to-orange-500',
+    iconBg: 'bg-white/20',
+    iconColor: 'text-white',
+  },
+  {
+    id: 'faq',
+    icon: HelpCircle,
+    label: 'FAQ',
+    gradient: 'from-violet-400 to-purple-500',
+    iconBg: 'bg-white/20',
+    iconColor: 'text-white',
+  },
+  {
+    id: 'contacts',
+    icon: Phone,
+    label: 'Contacts',
+    gradient: 'from-green-400 to-emerald-500',
+    iconBg: 'bg-white/20',
+    iconColor: 'text-white',
+  },
+  {
+    id: 'ressources',
+    icon: BookOpen,
+    label: 'Ressources',
+    gradient: 'from-slate-400 to-slate-600',
+    iconBg: 'bg-white/20',
+    iconColor: 'text-white',
+  },
+];
+
+/* ─── Contenu des dialogs ────────────────────────────────────────────────── */
+function ContentAbout() {
+  const menus = [
+    { icon: LayoutDashboard, label: 'Accueil', desc: 'Tableau de bord du jour : stats en temps réel, taux de fraude, recettes.', color: 'text-primary' },
+    { icon: Train, label: 'À bord', desc: "Saisie d'un contrôle en train : passagers, tarifs, PV, RI, trains du jour.", color: 'text-blue-500' },
+    { icon: Building2, label: 'En gare', desc: 'Saisie d\'un contrôle en gare ou sur quai, avec trains du jour identiques.', color: 'text-teal-500' },
+    { icon: BarChart3, label: 'Statistiques', desc: 'Graphiques détaillés sur une période : fraude, recettes, tendances.', color: 'text-amber-500' },
+    { icon: History, label: 'Historique', desc: 'Liste complète des contrôles, filtrage par période, export HTML/PDF.', color: 'text-violet-500' },
+    { icon: Settings, label: 'Paramètres', desc: 'Thème, navigation, notifications, luminosité, orientation PDF.', color: 'text-slate-500' },
+  ];
+
+  return (
+    <div className="space-y-5">
+      {/* App header */}
+      <div className="flex items-center gap-4">
+        <img
+          src="/icon-192.png"
+          alt="SNCF Contrôles"
+          className="w-16 h-16 rounded-2xl shadow-md object-cover shrink-0"
+        />
+        <div>
+          <h2 className="text-lg font-bold">SNCF Contrôles</h2>
+          <p className="text-sm text-muted-foreground">
+            Application de gestion des contrôles voyageurs pour les agents SNCF.
+          </p>
+          <div className="flex gap-2 mt-1.5 flex-wrap">
+            <Badge variant="secondary">PWA</Badge>
+            <Badge variant="secondary">Hors-ligne</Badge>
+            <Badge variant="secondary">Supabase</Badge>
+          </div>
+        </div>
+      </div>
+
+      {/* Description */}
+      <p className="text-sm text-muted-foreground leading-relaxed">
+        Conçue pour les contrôleurs SNCF, cette application permet de saisir,
+        suivre et exporter les contrôles à bord et en gare. Les données sont
+        synchronisées en temps réel et accessibles hors ligne.
+      </p>
+
+      {/* Menu sections */}
+      <div>
+        <h3 className="text-sm font-semibold mb-3">Sections de l'application</h3>
+        <div className="grid grid-cols-1 gap-2">
+          {menus.map(({ icon: Icon, label, desc, color }) => (
+            <div key={label} className="flex items-start gap-3 p-3 bg-muted/30 rounded-lg">
+              <Icon className={`h-5 w-5 mt-0.5 shrink-0 ${color}`} />
+              <div>
+                <p className="text-sm font-medium">{label}</p>
+                <p className="text-xs text-muted-foreground">{desc}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Key features */}
+      <div>
+        <h3 className="text-sm font-semibold mb-2">Fonctionnalités clés</h3>
+        <ul className="text-sm text-muted-foreground space-y-1 list-disc list-inside">
+          <li>Calcul automatique du taux de fraude</li>
+          <li>Lookup des trains en temps réel (API SNCF Navitia)</li>
+          <li>Export HTML et PDF des rapports</li>
+          <li>Mode sombre / thèmes personnalisables</li>
+          <li>Navigation personnalisable (sidebar + barre du bas)</li>
+          <li>Compatible mobile, tablette et PC</li>
+        </ul>
+      </div>
+    </div>
+  );
+}
+
+function ContentFraude() {
+  return (
+    <div className="space-y-4">
+      <p className="text-sm text-muted-foreground">Le taux de fraude est calculé ainsi :</p>
+      <div className="bg-muted/50 p-4 rounded-lg font-mono text-sm text-center">
+        (Tarifs contrôle + PV + RI négatifs) / Passagers × 100
+      </div>
+      <div className="space-y-2 text-sm">
+        <p className="font-medium">Ce qui <span className="text-destructive">compte</span> dans le taux :</p>
+        <ul className="list-disc list-inside text-muted-foreground space-y-1">
+          <li>Tarifs contrôle (STT 50€, 100€, 200€, etc.)</li>
+          <li>Procès-verbaux (PV)</li>
+          <li>RI négatifs (sans pièce d'identité)</li>
+        </ul>
+        <p className="font-medium mt-3">Ce qui <span className="text-green-600">ne compte pas</span> :</p>
+        <ul className="list-disc list-inside text-muted-foreground space-y-1">
+          <li>Tarifs à bord (billet vendu volontairement avant contrôle)</li>
+          <li>RI positifs (pièce d'identité valide présentée)</li>
+        </ul>
+      </div>
+      <div className="text-sm border rounded-lg p-3 space-y-1">
+        <p className="font-medium">Seuils de couleur (par défaut) :</p>
+        <p><span className="text-green-600 font-medium">Vert</span> — Taux &lt; 5 %</p>
+        <p><span className="text-yellow-600 font-medium">Jaune</span> — Taux entre 5 % et 10 %</p>
+        <p><span className="text-destructive font-medium">Rouge</span> — Taux ≥ 10 %</p>
+      </div>
+    </div>
+  );
+}
+
+function ContentTarifs() {
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-1 gap-3">
+        <div className="p-3 bg-muted/30 rounded-lg">
+          <Badge variant="outline" className="mb-1.5">Tarifs à bord</Badge>
+          <p className="text-sm text-muted-foreground">
+            Régularisation volontaire avant contrôle. <strong>Ne compte pas</strong> dans le taux de fraude.
+          </p>
+        </div>
+        <div className="p-3 bg-muted/30 rounded-lg">
+          <Badge variant="secondary" className="mb-1.5">Tarifs contrôle</Badge>
+          <p className="text-sm text-muted-foreground">
+            Régularisation lors du contrôle. <strong>Compte</strong> dans le taux de fraude.
+          </p>
+        </div>
+      </div>
+
+      <h4 className="font-semibold text-sm">Catégories</h4>
+      <div className="grid grid-cols-2 gap-2 text-sm">
+        {[
+          { code: 'STT 50€', desc: 'Supplément Train Tarif' },
+          { code: 'STT 100€', desc: 'PV standard' },
+          { code: 'RNV', desc: 'Régularisation Non Valide' },
+          { code: 'Titre tiers', desc: "Titre au nom d'un tiers" },
+          { code: 'D. naissance', desc: 'Fraude date de naissance' },
+          { code: 'RI+ / RI-', desc: "Relevé d'identité +/-" },
+        ].map(({ code, desc }) => (
+          <div key={code} className="bg-muted/30 p-2.5 rounded-lg">
+            <span className="font-medium text-xs">{code}</span>
+            <p className="text-xs text-muted-foreground mt-0.5">{desc}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function ContentFAQ() {
+  return (
+    <Accordion type="single" collapsible className="w-full">
+      {[
+        {
+          q: 'Comment saisir un contrôle hors ligne ?',
+          a: "L'application fonctionne en mode hors ligne. Vos contrôles sont enregistrés localement et synchronisés automatiquement dès que la connexion est rétablie.",
+        },
+        {
+          q: 'Quelle est la différence entre RI+ et RI- ?',
+          a: 'RI+ : pièce d\'identité valide → ne compte pas comme fraude. RI- : pas de pièce d\'identité valide → compte dans le taux de fraude.',
+        },
+        {
+          q: 'Comment modifier un contrôle déjà enregistré ?',
+          a: 'Rendez-vous dans l\'Historique, cliquez sur le contrôle puis utilisez le bouton "Modifier".',
+        },
+        {
+          q: 'Comment exporter mes contrôles ?',
+          a: 'Utilisez le bouton "Exporter" dans l\'Historique ou sur les pages de contrôle. Formats disponibles : HTML et PDF.',
+        },
+        {
+          q: 'Comment sont calculés les seuils de couleur ?',
+          a: 'Configurables par l\'admin. Par défaut : Vert < 5%, Jaune 5-10%, Rouge ≥ 10%.',
+        },
+      ].map((item, i) => (
+        <AccordionItem key={i} value={`item-${i}`}>
+          <AccordionTrigger className="text-sm text-left">{item.q}</AccordionTrigger>
+          <AccordionContent className="text-sm text-muted-foreground">{item.a}</AccordionContent>
+        </AccordionItem>
+      ))}
+    </Accordion>
+  );
+}
+
+function ContentContacts() {
+  return (
+    <div className="space-y-4">
+      <h4 className="text-sm font-semibold">Numéros publics SNCF</h4>
+      <div className="grid grid-cols-1 gap-2">
+        {[
+          { label: 'SNCF Voyageurs', num: '3635', info: '0,40€/min', tel: '3635' },
+          { label: 'Objets trouvés', num: '01 55 31 79 49', info: 'Lun-Ven 9h-17h', tel: '0155317949' },
+          { label: 'Accessibilité', num: '0890 640 650', info: 'Accès Plus (0,12€/min)', tel: '0890640650' },
+        ].map(({ label, num, info, tel }) => (
+          <div key={label} className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg">
+            <Phone className="h-4 w-4 text-primary shrink-0" />
+            <div className="flex-1">
+              <p className="text-sm font-medium">{label}</p>
+              <a href={`tel:${tel}`} className="text-sm text-primary hover:underline">{num}</a>
+              <p className="text-xs text-muted-foreground">{info}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <h4 className="text-sm font-semibold pt-2">Contacts internes</h4>
+      <div className="grid grid-cols-1 gap-2">
+        <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg">
+          <Shield className="h-4 w-4 text-muted-foreground shrink-0" />
+          <div>
+            <p className="text-sm font-medium">Sûreté ferroviaire</p>
+            <a href="tel:0800405040" className="text-sm text-primary hover:underline">0 800 40 50 40</a>
+            <p className="text-xs text-muted-foreground">N° vert 24h/24</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg">
+          <AlertTriangle className="h-4 w-4 text-destructive shrink-0" />
+          <div>
+            <p className="text-sm font-medium">Urgences</p>
+            <div className="flex gap-2 text-sm">
+              <a href="tel:112" className="text-primary hover:underline font-medium">112</a>
+              <span className="text-muted-foreground">·</span>
+              <a href="tel:15" className="text-primary hover:underline">15 SAMU</a>
+              <span className="text-muted-foreground">·</span>
+              <a href="tel:17" className="text-primary hover:underline">17 Police</a>
+            </div>
+          </div>
+        </div>
+        <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg">
+          <Mail className="h-4 w-4 text-muted-foreground shrink-0" />
+          <div>
+            <p className="text-sm font-medium">Support application</p>
+            <a href="mailto:controle-app@sncf.fr" className="text-sm text-primary hover:underline">
+              controle-app@sncf.fr
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ContentRessources() {
+  return (
+    <div className="space-y-3">
+      {[
+        { icon: BookOpen, label: 'Documentation interne', desc: 'Intranet SNCF > Espace contrôle' },
+        { icon: FileText, label: 'Guide tarifaire', desc: 'Disponible sur l\'intranet' },
+        { icon: Users, label: 'Chef d\'équipe', desc: 'Voir la page Manager dans l\'app' },
+        { icon: ExternalLink, label: 'Site SNCF', desc: 'sncf-voyageurs.com', href: 'https://www.sncf-voyageurs.com' },
+      ].map(({ icon: Icon, label, desc, href }) => (
+        <div key={label} className="flex items-start gap-3 p-3 bg-muted/30 rounded-lg">
+          <Icon className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+          <div>
+            <p className="text-sm font-medium">{label}</p>
+            {href ? (
+              <a href={href} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline">{desc}</a>
+            ) : (
+              <p className="text-xs text-muted-foreground">{desc}</p>
+            )}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+const DIALOG_CONTENT: Record<string, { title: string; content: React.ReactNode }> = {
+  about:     { title: "À propos de l'application", content: <ContentAbout /> },
+  fraude:    { title: 'Calcul du taux de fraude',   content: <ContentFraude /> },
+  tarifs:    { title: 'Types de tarification',       content: <ContentTarifs /> },
+  faq:       { title: 'Questions fréquentes',        content: <ContentFAQ /> },
+  contacts:  { title: 'Contacts utiles',             content: <ContentContacts /> },
+  ressources:{ title: 'Ressources',                  content: <ContentRessources /> },
+};
+
+/* ─── Page principale ────────────────────────────────────────────────────── */
 export default function InfosUtilesPage() {
   const { user, loading: authLoading } = useAuth();
   const { settings, isLoading: settingsLoading } = useAdminSettings();
+  const [openTile, setOpenTile] = useState<string | null>(null);
 
-  // Check if infos page is hidden
   const hideInfosPage = settings?.find(s => s.key === 'hide_infos_page')?.value === true;
 
   if (authLoading || settingsLoading) {
@@ -43,355 +383,57 @@ export default function InfosUtilesPage() {
     );
   }
 
-  if (!user) {
-    return <Navigate to="/auth" replace />;
-  }
+  if (!user) return <Navigate to="/auth" replace />;
+  if (hideInfosPage) return <Navigate to="/" replace />;
 
-  if (hideInfosPage) {
-    return <Navigate to="/" replace />;
-  }
+  const dialog = openTile ? DIALOG_CONTENT[openTile] : null;
 
   return (
     <AppLayout>
       <div className="space-y-5 max-w-4xl mx-auto">
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <div className="flex flex-col gap-1">
-            <h1 className="text-xl font-bold flex items-center gap-2">
-              <Info className="h-5 w-5 text-primary" />
-              Infos utiles
-            </h1>
-            <p className="text-sm text-muted-foreground">
-              Guides, procédures et informations pour les contrôleurs
-            </p>
-          </div>
+        <div>
+          <h1 className="text-xl font-bold flex items-center gap-2">
+            <Info className="h-5 w-5 text-primary" />
+            Infos utiles
+          </h1>
+          <p className="text-sm text-muted-foreground mt-0.5">
+            Guides, procédures et informations pour les contrôleurs
+          </p>
         </div>
 
-        {/* Quick Reference Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Card className="border-0 shadow-sm overflow-hidden">
-            <div className="h-1 bg-gradient-to-r from-blue-400 to-indigo-500" />
-            <CardHeader className="pb-3 py-3 px-4">
-              <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                <div className="p-1.5 rounded-lg bg-blue-100 dark:bg-blue-900/30">
-                  <Calculator className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
+        {/* Grille de tuiles */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          {TILES.map((tile) => {
+            const Icon = tile.icon;
+            return (
+              <Card
+                key={tile.id}
+                onClick={() => setOpenTile(tile.id)}
+                className="cursor-pointer border-0 shadow-sm overflow-hidden hover:shadow-md transition-shadow active:scale-95 transition-transform select-none"
+              >
+                <div className={`bg-gradient-to-br ${tile.gradient} p-5 flex flex-col items-center gap-3 text-white`}>
+                  <div className={`p-3 rounded-2xl ${tile.iconBg}`}>
+                    <Icon className={`h-6 w-6 ${tile.iconColor}`} />
+                  </div>
+                  <span className="text-sm font-semibold text-center leading-tight">
+                    {tile.label}
+                  </span>
                 </div>
-                Calcul du taux de fraude
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="text-sm space-y-2">
-              <p className="text-muted-foreground">
-                Le taux de fraude est calculé ainsi :
-              </p>
-              <div className="bg-muted/50 p-3 rounded-lg font-mono text-xs">
-                (Tarifs contrôle + PV + RI négatifs) / Passagers × 100
-              </div>
-              <p className="text-xs text-muted-foreground mt-2">
-                <strong>Note :</strong> Les tarifs à bord et les RI positifs ne comptent pas dans le taux de fraude.
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="border-0 shadow-sm overflow-hidden">
-            <div className="h-1 bg-gradient-to-r from-emerald-400 to-teal-500" />
-            <CardHeader className="pb-3 py-3 px-4">
-              <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                <div className="p-1.5 rounded-lg bg-emerald-100 dark:bg-emerald-900/30">
-                  <Clock className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
-                </div>
-                Horaires de service
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="text-sm space-y-2">
-              <div className="flex justify-between py-1.5 border-b border-border/50">
-                <span className="text-muted-foreground">Lundi - Vendredi</span>
-                <span className="font-medium">6h00 - 22h00</span>
-              </div>
-              <div className="flex justify-between py-1.5 border-b border-border/50">
-                <span className="text-muted-foreground">Samedi</span>
-                <span className="font-medium">7h00 - 21h00</span>
-              </div>
-              <div className="flex justify-between py-1.5">
-                <span className="text-muted-foreground">Dimanche</span>
-                <span className="font-medium">8h00 - 20h00</span>
-              </div>
-            </CardContent>
-          </Card>
+              </Card>
+            );
+          })}
         </div>
 
-        {/* Tarif Types Reference */}
-        <Card className="border-0 shadow-sm overflow-hidden">
-          <div className="h-1 bg-gradient-to-r from-amber-400 to-orange-500" />
-          <CardHeader className="py-3 px-4 pb-2">
-            <CardTitle className="text-sm font-semibold flex items-center gap-2">
-              <div className="p-1.5 rounded-lg bg-amber-100 dark:bg-amber-900/30">
-                <Ticket className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
-              </div>
-              Types de tarification
-            </CardTitle>
-            <CardDescription className="text-xs pl-8">
-              Référence des différents types de tarifs applicables
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-3">
-                <h4 className="font-semibold text-sm flex items-center gap-2">
-                  <Badge variant="outline">Tarifs à bord</Badge>
-                </h4>
-                <p className="text-sm text-muted-foreground">
-                  Régularisation volontaire du voyageur avant contrôle. Ne compte pas dans le taux de fraude.
-                </p>
-              </div>
-              
-              <div className="space-y-3">
-                <h4 className="font-semibold text-sm flex items-center gap-2">
-                  <Badge variant="secondary">Tarifs contrôle</Badge>
-                </h4>
-                <p className="text-sm text-muted-foreground">
-                  Régularisation lors du contrôle. Compte dans le taux de fraude.
-                </p>
-              </div>
-            </div>
-
-            <div className="border-t pt-4 space-y-3">
-              <h4 className="font-semibold text-sm">Catégories de tarifs</h4>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
-                <div className="bg-muted/30 p-3 rounded-lg">
-                  <span className="font-medium">STT 50€</span>
-                  <p className="text-xs text-muted-foreground mt-1">Supplément Train Tarif</p>
-                </div>
-                <div className="bg-muted/30 p-3 rounded-lg">
-                  <span className="font-medium">STT 100€</span>
-                  <p className="text-xs text-muted-foreground mt-1">Sans Titre de Transport - PV</p>
-                </div>
-                <div className="bg-muted/30 p-3 rounded-lg">
-                  <span className="font-medium">RNV</span>
-                  <p className="text-xs text-muted-foreground mt-1">Régularisation Non Valide</p>
-                </div>
-                <div className="bg-muted/30 p-3 rounded-lg">
-                  <span className="font-medium">Titre tiers</span>
-                  <p className="text-xs text-muted-foreground mt-1">Utilisation d'un titre au nom d'un tiers</p>
-                </div>
-                <div className="bg-muted/30 p-3 rounded-lg">
-                  <span className="font-medium">D. naissance</span>
-                  <p className="text-xs text-muted-foreground mt-1">Fraude sur la date de naissance</p>
-                </div>
-                <div className="bg-muted/30 p-3 rounded-lg">
-                  <span className="font-medium">RI+/RI-</span>
-                  <p className="text-xs text-muted-foreground mt-1">Relevé d'identité (positif/négatif)</p>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* FAQ Section */}
-        <Card className="border-0 shadow-sm overflow-hidden">
-          <div className="h-1 bg-gradient-to-r from-violet-400 to-purple-500" />
-          <CardHeader className="py-3 px-4 pb-2">
-            <CardTitle className="text-sm font-semibold flex items-center gap-2">
-              <div className="p-1.5 rounded-lg bg-violet-100 dark:bg-violet-900/30">
-                <HelpCircle className="h-3.5 w-3.5 text-violet-600 dark:text-violet-400" />
-              </div>
-              Questions fréquentes
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Accordion type="single" collapsible className="w-full">
-              <AccordionItem value="item-1">
-                <AccordionTrigger>
-                  Comment saisir un contrôle hors ligne ?
-                </AccordionTrigger>
-                <AccordionContent className="text-muted-foreground">
-                  L'application fonctionne en mode hors ligne. Vos contrôles sont enregistrés localement 
-                  et synchronisés automatiquement dès que la connexion est rétablie. Un indicateur 
-                  dans l'en-tête vous montre le nombre de contrôles en attente de synchronisation.
-                </AccordionContent>
-              </AccordionItem>
-
-              <AccordionItem value="item-2">
-                <AccordionTrigger>
-                  Quelle est la différence entre RI+ et RI- ?
-                </AccordionTrigger>
-                <AccordionContent className="text-muted-foreground">
-                  <strong>RI+ (positif)</strong> : Le voyageur a présenté une pièce d'identité valide lors du contrôle. 
-                  Ne compte pas comme fraude.<br />
-                  <strong>RI- (négatif)</strong> : Le voyageur n'a pas pu présenter de pièce d'identité valide. 
-                  Compte dans le taux de fraude.
-                </AccordionContent>
-              </AccordionItem>
-
-              <AccordionItem value="item-3">
-                <AccordionTrigger>
-                  Comment modifier un contrôle déjà enregistré ?
-                </AccordionTrigger>
-                <AccordionContent className="text-muted-foreground">
-                  Rendez-vous dans l'historique des contrôles, cliquez sur le contrôle à modifier, 
-                  puis utilisez le bouton "Modifier" dans le dialogue de détails. 
-                  Vous pouvez également dupliquer un contrôle pour créer une nouvelle entrée similaire.
-                </AccordionContent>
-              </AccordionItem>
-
-              <AccordionItem value="item-4">
-                <AccordionTrigger>
-                  Comment exporter mes contrôles ?
-                </AccordionTrigger>
-                <AccordionContent className="text-muted-foreground">
-                  Utilisez le bouton "Exporter" disponible dans l'en-tête des pages de contrôle 
-                  ou dans l'historique. Vous pouvez filtrer par période (jour, semaine, mois, année) 
-                  et choisir le format d'export (HTML ou PDF).
-                </AccordionContent>
-              </AccordionItem>
-
-              <AccordionItem value="item-5">
-                <AccordionTrigger>
-                  Comment sont calculés les seuils de couleur du taux de fraude ?
-                </AccordionTrigger>
-                <AccordionContent className="text-muted-foreground">
-                  Les seuils sont configurables par l'administrateur. Par défaut :<br />
-                  <span className="text-success">Vert</span> : Taux &lt; 5%<br />
-                  <span className="text-warning">Jaune</span> : Taux entre 5% et 10%<br />
-                  <span className="text-destructive">Rouge</span> : Taux ≥ 10%
-                </AccordionContent>
-              </AccordionItem>
-            </Accordion>
-          </CardContent>
-        </Card>
-
-        {/* Contact Section */}
-        <Card className="border-0 shadow-sm overflow-hidden">
-          <div className="h-1 bg-gradient-to-r from-green-400 to-emerald-500" />
-          <CardHeader className="py-3 px-4 pb-2">
-            <CardTitle className="text-sm font-semibold flex items-center gap-2">
-              <div className="p-1.5 rounded-lg bg-green-100 dark:bg-green-900/30">
-                <Phone className="h-3.5 w-3.5 text-green-600 dark:text-green-400" />
-              </div>
-              Contacts utiles
-            </CardTitle>
-            <CardDescription className="text-xs pl-8">
-              Numéros publics SNCF et contacts internes
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {/* Public SNCF Numbers */}
-            <div>
-              <h4 className="font-semibold text-sm mb-3 flex items-center gap-2">
-                <Badge variant="outline">Numéros publics SNCF</Badge>
-              </h4>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg">
-                  <Phone className="h-5 w-5 text-primary" />
-                  <div>
-                    <p className="font-medium text-sm">SNCF Voyageurs</p>
-                    <a href="tel:3635" className="text-sm text-primary hover:underline">3635</a>
-                    <p className="text-xs text-muted-foreground">Service clients (0,40€/min)</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg">
-                  <Phone className="h-5 w-5 text-primary" />
-                  <div>
-                    <p className="font-medium text-sm">Objets trouvés</p>
-                    <a href="tel:0155317949" className="text-sm text-primary hover:underline">01 55 31 79 49</a>
-                    <p className="text-xs text-muted-foreground">Du lundi au vendredi 9h-17h</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg">
-                  <Phone className="h-5 w-5 text-primary" />
-                  <div>
-                    <p className="font-medium text-sm">Accessibilité</p>
-                    <a href="tel:0890640650" className="text-sm text-primary hover:underline">0890 640 650</a>
-                    <p className="text-xs text-muted-foreground">Accès Plus (0,12€/min)</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg">
-                  <ExternalLink className="h-5 w-5 text-primary" />
-                  <div>
-                    <p className="font-medium text-sm">Site SNCF</p>
-                    <a 
-                      href="https://www.sncf-voyageurs.com" 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="text-sm text-primary hover:underline"
-                    >
-                      sncf-voyageurs.com
-                    </a>
-                    <p className="text-xs text-muted-foreground">Informations voyageurs</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Internal Contacts */}
-            <div>
-              <h4 className="font-semibold text-sm mb-3 flex items-center gap-2">
-                <Badge variant="secondary">Contacts internes</Badge>
-              </h4>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg">
-                  <Users className="h-5 w-5 text-muted-foreground" />
-                  <div>
-                    <p className="font-medium text-sm">Chef d'équipe</p>
-                    <p className="text-sm text-muted-foreground">Voir page Manager</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg">
-                  <Shield className="h-5 w-5 text-muted-foreground" />
-                  <div>
-                    <p className="font-medium text-sm">Sûreté ferroviaire</p>
-                    <a href="tel:0800405040" className="text-sm text-primary hover:underline">0 800 40 50 40</a>
-                    <p className="text-xs text-muted-foreground">N° vert 24h/24</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg">
-                  <AlertTriangle className="h-5 w-5 text-destructive" />
-                  <div>
-                    <p className="font-medium text-sm">Urgences</p>
-                    <div className="flex gap-2 text-sm">
-                      <a href="tel:112" className="text-primary hover:underline font-medium">112</a>
-                      <span className="text-muted-foreground">|</span>
-                      <a href="tel:15" className="text-primary hover:underline">15 (SAMU)</a>
-                      <span className="text-muted-foreground">|</span>
-                      <a href="tel:17" className="text-primary hover:underline">17 (Police)</a>
-                    </div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg">
-                  <Mail className="h-5 w-5 text-muted-foreground" />
-                  <div>
-                    <p className="font-medium text-sm">Support application</p>
-                    <a href="mailto:controle-app@sncf.fr" className="text-sm text-primary hover:underline">
-                      controle-app@sncf.fr
-                    </a>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Documentation */}
-            <div>
-              <h4 className="font-semibold text-sm mb-3 flex items-center gap-2">
-                <Badge variant="outline">Ressources</Badge>
-              </h4>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg">
-                  <BookOpen className="h-5 w-5 text-muted-foreground" />
-                  <div>
-                    <p className="font-medium text-sm">Documentation interne</p>
-                    <p className="text-xs text-muted-foreground">Intranet SNCF &gt; Espace contrôle</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg">
-                  <FileText className="h-5 w-5 text-muted-foreground" />
-                  <div>
-                    <p className="font-medium text-sm">Guide tarifaire</p>
-                    <p className="text-xs text-muted-foreground">Disponible sur l'intranet</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        {/* Dialog */}
+        <Dialog open={!!openTile} onOpenChange={(open) => !open && setOpenTile(null)}>
+          <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>{dialog?.title}</DialogTitle>
+            </DialogHeader>
+            {dialog?.content}
+          </DialogContent>
+        </Dialog>
       </div>
     </AppLayout>
   );
