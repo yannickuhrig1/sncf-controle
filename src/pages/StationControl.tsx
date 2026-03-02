@@ -11,8 +11,8 @@ import { AppLayout } from '@/components/layout/AppLayout';
 import { TarifTypeToggle } from '@/components/controls/TarifTypeToggle';
 import { TarifListItem, TarifEntry } from '@/components/controls/TarifListItem';
 import { CounterInput } from '@/components/controls/CounterInput';
-import { MissionPreparation, PreparedTrain } from '@/components/controls/MissionPreparation';
-import { TrainTileSelector } from '@/components/controls/TrainTileSelector';
+import { TrainLookupButton } from '@/components/controls/TrainLookupButton';
+import { useDailyTrains, DailyTrain } from '@/hooks/useDailyTrains';
 import { EmbarkmentControl } from '@/components/controls/EmbarkmentControl';
 import { FraudSummary } from '@/components/controls/FraudSummary';
 import { SubmitProgress } from '@/components/controls/SubmitProgress';
@@ -99,11 +99,22 @@ export default function StationControl() {
   const [origin, setOrigin] = useState('');
   const [destination, setDestination] = useState('');
   const [trainNumber, setTrainNumber] = useState('');
-  const [selectedTrainId, setSelectedTrainId] = useState<string | undefined>();
   
   // Control date/time - initialized with Paris time
   const [controlDate, setControlDate] = useState(parisDate);
   const [controlTime, setControlTime] = useState(parisTime);
+
+  // Trains du jour (comme À bord)
+  const { trains: dailyTrains, addTrain: addDailyTrain, removeTrain: removeDailyTrain } = useDailyTrains(controlDate);
+
+  const handleLoadDailyTrain = (t: DailyTrain) => {
+    setTrainNumber(t.trainNumber);
+    if (t.trainInfo) {
+      setOrigin(t.trainInfo.origin || '');
+      setDestination(t.trainInfo.destination || '');
+      if (t.trainInfo.departureTime) setControlTime(t.trainInfo.departureTime);
+    }
+  };
   
   // Auto-update date/time when not in edit mode and form is fresh
   useEffect(() => {
@@ -117,10 +128,6 @@ export default function StationControl() {
   const [compactMode, setCompactMode] = useState(false);
   const [activeSection, setActiveSection] = useState<'info' | 'voyageurs' | 'supplements' | 'controle' | 'pv' | 'ri' | 'notes'>('info');
 
-  // Prepared trains (exposed from MissionPreparation for separate tile card)
-  const [preparedArrivals, setPreparedArrivals] = useState<PreparedTrain[]>([]);
-  const [preparedDepartures, setPreparedDepartures] = useState<PreparedTrain[]>([]);
-  const [preparedActiveTab, setPreparedActiveTab] = useState<'arrivals' | 'departures'>('arrivals');
 
   // Passengers
   const [nbPassagers, setNbPassagers] = useState(0);
@@ -556,57 +563,6 @@ export default function StationControl() {
               />
             </div>
             
-            {/* Mission Preparation - collapsible form only (tiles rendered separately) */}
-            {!isEditMode && (
-              <MissionPreparation
-                stationName={stationName}
-                selectedTrainId={selectedTrainId}
-                showTiles={false}
-                showTilesInCard={false}
-                onTrainsChange={(arrivals, departures, tab) => {
-                  setPreparedArrivals(arrivals);
-                  setPreparedDepartures(departures);
-                  setPreparedActiveTab(tab);
-                }}
-                onSelectTrain={(train: PreparedTrain, type: 'arrival' | 'departure') => {
-                  setSelectedTrainId(train.id);
-                  setTrainNumber(train.trainNumber || '');
-                  setOrigin(train.origin || '');
-                  setDestination(train.destination || (type === 'arrival' ? stationName : ''));
-                  if (train.time) setControlTime(train.time);
-                }}
-              />
-            )}
-
-            {/* Trains préparés - separate tile card */}
-            {!isEditMode && (preparedArrivals.length > 0 || preparedDepartures.length > 0) && (
-              <Card className="border-0 shadow-sm overflow-hidden">
-                <div className="h-1 bg-gradient-to-r from-blue-400 to-indigo-500" />
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base flex items-center gap-2">
-                    <div className="p-1.5 rounded-lg bg-blue-100 dark:bg-blue-900/30">
-                      <Train className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
-                    </div>
-                    Trains préparés
-                    <span className="text-xs text-muted-foreground font-normal">— cliquer pour sélectionner</span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <TrainTileSelector
-                    trains={preparedActiveTab === 'arrivals' ? preparedArrivals : preparedDepartures}
-                    selectedId={selectedTrainId}
-                    onSelect={(train) => {
-                      setSelectedTrainId(train.id);
-                      setTrainNumber(train.trainNumber || '');
-                      setOrigin(train.origin || '');
-                      setDestination(train.destination || (preparedActiveTab === 'arrivals' ? stationName : ''));
-                      if (train.time) setControlTime(train.time);
-                    }}
-                    onRemove={() => {}}
-                  />
-                </CardContent>
-              </Card>
-            )}
 
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* ===== COMPACT MODE ===== */}
@@ -672,9 +628,33 @@ export default function StationControl() {
                               }}
                             />
                           </div>
-                          <div className="space-y-1">
+                          <div className="space-y-1 col-span-2">
+                            {dailyTrains.length > 0 && (
+                              <div className="flex flex-wrap gap-1.5 mb-1">
+                                {dailyTrains.map(t => (
+                                  <span key={t.trainNumber} className={cn('inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium border',
+                                    t.trainInfo?.status === 'on_time'   && 'bg-green-100 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800',
+                                    t.trainInfo?.status === 'delayed'   && 'bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-800',
+                                    t.trainInfo?.status === 'cancelled' && 'bg-red-100 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800',
+                                    !t.trainInfo && 'bg-muted text-muted-foreground border-border',
+                                  )}>
+                                    <button type="button" onClick={() => handleLoadDailyTrain(t)} className="inline-flex items-center gap-1 hover:opacity-80">
+                                      <Train className="h-3 w-3" />{t.trainNumber}
+                                      {t.trainInfo?.status === 'delayed' && t.trainInfo.delayMinutes && <span className="font-bold">+{t.trainInfo.delayMinutes}m</span>}
+                                    </button>
+                                    <button type="button" onClick={() => removeDailyTrain(t.trainNumber)} className="ml-0.5 hover:opacity-60"><X className="h-3 w-3" /></button>
+                                  </span>
+                                ))}
+                              </div>
+                            )}
                             <Label className="text-xs">N° Train</Label>
                             <Input placeholder="Ex: 6231" value={trainNumber} onChange={(e) => setTrainNumber(e.target.value)} inputMode="numeric" />
+                            <TrainLookupButton
+                              trainNumber={trainNumber}
+                              date={controlDate}
+                              onResult={(info) => { setOrigin(info.origin || ''); setDestination(info.destination || ''); if (info.departureTime) setControlTime(info.departureTime); }}
+                              onAdd={addDailyTrain}
+                            />
                           </div>
                           <div className="space-y-1">
                             <Label className="text-xs">Quai</Label>
@@ -784,8 +764,35 @@ export default function StationControl() {
                           />
                         </div>
                         <div className="space-y-2">
+                          {dailyTrains.length > 0 && (
+                            <div className="space-y-1">
+                              <Label className="text-xs text-muted-foreground">Trains du jour</Label>
+                              <div className="flex flex-wrap gap-1.5">
+                                {dailyTrains.map(t => (
+                                  <span key={t.trainNumber} className={cn('inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium border',
+                                    t.trainInfo?.status === 'on_time'   && 'bg-green-100 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800',
+                                    t.trainInfo?.status === 'delayed'   && 'bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-800',
+                                    t.trainInfo?.status === 'cancelled' && 'bg-red-100 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800',
+                                    !t.trainInfo && 'bg-muted text-muted-foreground border-border',
+                                  )}>
+                                    <button type="button" onClick={() => handleLoadDailyTrain(t)} className="inline-flex items-center gap-1 hover:opacity-80">
+                                      <Train className="h-3 w-3" />{t.trainNumber}
+                                      {t.trainInfo?.status === 'delayed' && t.trainInfo.delayMinutes && <span className="font-bold">+{t.trainInfo.delayMinutes}m</span>}
+                                    </button>
+                                    <button type="button" onClick={() => removeDailyTrain(t.trainNumber)} className="ml-0.5 hover:opacity-60"><X className="h-3 w-3" /></button>
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          )}
                           <Label htmlFor="trainNumber">N° Train</Label>
                           <Input id="trainNumber" placeholder="Ex: 6231" value={trainNumber} onChange={(e) => setTrainNumber(e.target.value)} inputMode="numeric" />
+                          <TrainLookupButton
+                            trainNumber={trainNumber}
+                            date={controlDate}
+                            onResult={(info) => { setOrigin(info.origin || ''); setDestination(info.destination || ''); if (info.departureTime) setControlTime(info.departureTime); }}
+                            onAdd={addDailyTrain}
+                          />
                         </div>
                       </div>
                       <div className="space-y-2">
