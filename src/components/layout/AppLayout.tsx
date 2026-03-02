@@ -314,10 +314,10 @@ export function AppLayout({ children }: AppLayoutProps) {
   );
 
   return (
-    <div className={cn('min-h-screen flex flex-col lg:flex-row', showBottomBar && 'pb-20 lg:pb-0')}>
+    <div className={cn('min-h-screen flex flex-col md:flex-row', showBottomBar && 'pb-20 md:pb-0')}>
 
-      {/* ── Sidebar — Desktop uniquement ─────────────────────────────────────── */}
-      <aside className="hidden lg:flex flex-col w-60 shrink-0 bg-primary text-primary-foreground sticky top-0 h-screen overflow-y-auto">
+      {/* ── Sidebar — Tablette + Desktop ─────────────────────────────────────── */}
+      <aside className="hidden md:flex flex-col w-60 shrink-0 bg-primary text-primary-foreground sticky top-0 h-screen overflow-y-auto">
         {/* Brand */}
         <div className="flex items-center gap-2.5 px-4 py-4 border-b border-white/10">
           <Train className="h-5 w-5 shrink-0" />
@@ -350,7 +350,7 @@ export function AppLayout({ children }: AppLayoutProps) {
         {/* Header — Mobile uniquement */}
         <header
           className={cn(
-            "sticky top-0 z-40 transition-all duration-300 lg:hidden",
+            "sticky top-0 z-40 transition-all duration-300 md:hidden",
             isScrolled
               ? "bg-primary/90 backdrop-blur-md shadow-lg dark:bg-primary/80"
               : "bg-primary",
@@ -430,14 +430,14 @@ export function AppLayout({ children }: AppLayoutProps) {
         </header>
 
         {/* Contenu principal */}
-        <main className="flex-1 px-4 py-6 lg:px-8 lg:py-8 lg:w-full">
+        <main className="flex-1 px-4 py-6 md:px-8 md:py-8 md:w-full">
           {children}
         </main>
       </div>
 
       {/* ── Bottom Navigation — Mobile uniquement ────────────────────────────── */}
       {showBottomBar && (
-        <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 glass-frosted border-t border-border/50 dark:border-white/10 safe-area-inset-bottom">
+        <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 glass-frosted border-t border-border/50 dark:border-white/10 safe-area-inset-bottom">
           <div className="flex justify-around items-center h-16">
             {renderBottomNavLinks()}
           </div>
