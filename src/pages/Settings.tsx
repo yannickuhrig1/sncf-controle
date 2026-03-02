@@ -120,11 +120,11 @@ export default function Settings() {
   };
 
   const [openSections, setOpenSections] = useState({
-    appearance: true,
-    navigation: true,
-    notifications: true,
-    data: true,
-    app: true,
+    appearance: false,
+    navigation: false,
+    notifications: false,
+    data: false,
+    app: false,
   });
 
   const toggleSection = (key: keyof typeof openSections) => {
@@ -455,43 +455,38 @@ export default function Settings() {
 
                 <Separator />
 
-                <div className="space-y-4">
+                <div className="space-y-3">
                   <Label className="flex items-center gap-2">
                     <Sun className="h-4 w-4" />
                     Luminosité
                   </Label>
-                  <div className="space-y-3">
-                    <div className="space-y-1.5">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-muted-foreground">Fond</span>
-                        <span className="text-xs font-medium tabular-nums">{bgBrightness}%</span>
+                  {[
+                    { label: 'Arrière-plan', value: bgBrightness,   onChange: handleBgBrightness },
+                    { label: 'Cartes',        value: cardBrightness, onChange: handleCardBrightness },
+                  ].map(({ label, value, onChange }) => {
+                    const pct = ((value - 40) / 120) * 100;
+                    return (
+                      <div key={label} className="flex items-center gap-3">
+                        <span className="text-xs text-muted-foreground w-24 shrink-0">{label}</span>
+                        <div className="flex-1">
+                          <input
+                            type="range" min="40" max="160" step="5"
+                            value={value}
+                            onChange={(e) => onChange(parseInt(e.target.value))}
+                            style={{ background: `linear-gradient(to right, hsl(var(--primary)) ${pct}%, hsl(var(--muted)) ${pct}%)` }}
+                            className="w-full h-0.5 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3.5 [&::-webkit-slider-thumb]:h-3.5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-primary [&::-webkit-slider-thumb]:shadow-md [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-background"
+                          />
+                        </div>
+                        <span className="text-xs tabular-nums font-medium w-9 text-right">{value}%</span>
                       </div>
-                      <input
-                        type="range" min="40" max="160" step="5"
-                        value={bgBrightness}
-                        onChange={(e) => handleBgBrightness(parseInt(e.target.value))}
-                        className="w-full h-1.5 rounded-full appearance-none cursor-pointer bg-muted [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-primary [&::-webkit-slider-thumb]:cursor-pointer"
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-muted-foreground">Cartes</span>
-                        <span className="text-xs font-medium tabular-nums">{cardBrightness}%</span>
-                      </div>
-                      <input
-                        type="range" min="40" max="160" step="5"
-                        value={cardBrightness}
-                        onChange={(e) => handleCardBrightness(parseInt(e.target.value))}
-                        className="w-full h-1.5 rounded-full appearance-none cursor-pointer bg-muted [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-primary [&::-webkit-slider-thumb]:cursor-pointer"
-                      />
-                    </div>
-                    {(bgBrightness !== 100 || cardBrightness !== 100) && (
-                      <Button variant="ghost" size="sm" className="h-7 text-xs px-2"
-                        onClick={() => { handleBgBrightness(100); handleCardBrightness(100); }}>
-                        Réinitialiser
-                      </Button>
-                    )}
-                  </div>
+                    );
+                  })}
+                  {(bgBrightness !== 100 || cardBrightness !== 100) && (
+                    <Button variant="ghost" size="sm" className="h-7 text-xs px-2"
+                      onClick={() => { handleBgBrightness(100); handleCardBrightness(100); }}>
+                      Réinitialiser
+                    </Button>
+                  )}
                 </div>
               </CardContent>
             </CollapsibleContent>
