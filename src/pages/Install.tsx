@@ -101,9 +101,11 @@ export default function Install() {
           animate={{ opacity: 1, y: 0 }}
           className="text-center space-y-4"
         >
-          <div className="w-24 h-24 mx-auto bg-primary rounded-2xl flex items-center justify-center shadow-lg">
-            <span className="text-4xl">🚆</span>
-          </div>
+          <img
+            src="/icon-192.png"
+            alt="SNCF Contrôles"
+            className="w-24 h-24 mx-auto rounded-2xl shadow-lg object-cover"
+          />
           <h1 className="text-2xl font-bold">SNCF Contrôles</h1>
           <p className="text-muted-foreground">
             Installez l'application pour une expérience optimale
