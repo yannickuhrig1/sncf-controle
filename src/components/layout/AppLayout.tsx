@@ -399,30 +399,32 @@ export function AppLayout({ children }: AppLayoutProps) {
                 </TooltipContent>
               </Tooltip>
 
-              {/* Burger Menu — toujours visible sur mobile */}
-              <Sheet open={burgerOpen} onOpenChange={setBurgerOpen}>
-                <SheetTrigger asChild>
-                  <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                    <Button variant="ghost" size="icon" className="text-primary-foreground hover:bg-primary/90">
-                      <Menu className="h-5 w-5" />
-                    </Button>
-                  </motion.div>
-                </SheetTrigger>
-                <SheetContent side="right" className="w-72 p-0">
-                  <SheetHeader className="p-4 border-b">
-                    <SheetTitle className="flex items-center gap-2">
-                      <Train className="h-5 w-5 text-primary" />
-                      Navigation
-                    </SheetTitle>
-                  </SheetHeader>
-                  <nav className="flex flex-col gap-1 p-2">
-                    {renderBurgerLinks()}
-                  </nav>
-                  <div className="p-4 border-t mt-auto">
-                    <InstallAppButton variant="outline" className="w-full" />
-                  </div>
-                </SheetContent>
-              </Sheet>
+              {/* Burger Menu — contrôlé par la préférence sur mobile */}
+              {showBurgerMenu && (
+                <Sheet open={burgerOpen} onOpenChange={setBurgerOpen}>
+                  <SheetTrigger asChild>
+                    <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                      <Button variant="ghost" size="icon" className="text-primary-foreground hover:bg-primary/90">
+                        <Menu className="h-5 w-5" />
+                      </Button>
+                    </motion.div>
+                  </SheetTrigger>
+                  <SheetContent side="right" className="w-72 p-0">
+                    <SheetHeader className="p-4 border-b">
+                      <SheetTitle className="flex items-center gap-2">
+                        <Train className="h-5 w-5 text-primary" />
+                        Navigation
+                      </SheetTitle>
+                    </SheetHeader>
+                    <nav className="flex flex-col gap-1 p-2">
+                      {renderBurgerLinks()}
+                    </nav>
+                    <div className="p-4 border-t mt-auto">
+                      <InstallAppButton variant="outline" className="w-full" />
+                    </div>
+                  </SheetContent>
+                </Sheet>
+              )}
             </div>
           </div>
         </header>
