@@ -358,13 +358,13 @@ function ContentRessources() {
   );
 }
 
-const DIALOG_CONTENT: Record<string, { title: string; content: React.ReactNode }> = {
-  about:     { title: "À propos de l'application", content: <ContentAbout /> },
-  fraude:    { title: 'Calcul du taux de fraude',   content: <ContentFraude /> },
-  tarifs:    { title: 'Types de tarification',       content: <ContentTarifs /> },
-  faq:       { title: 'Questions fréquentes',        content: <ContentFAQ /> },
-  contacts:  { title: 'Contacts utiles',             content: <ContentContacts /> },
-  ressources:{ title: 'Ressources',                  content: <ContentRessources /> },
+const DIALOG_CONTENT: Record<string, { title: string; Content: () => JSX.Element }> = {
+  about:     { title: "À propos de l'application", Content: ContentAbout },
+  fraude:    { title: 'Calcul du taux de fraude',   Content: ContentFraude },
+  tarifs:    { title: 'Types de tarification',       Content: ContentTarifs },
+  faq:       { title: 'Questions fréquentes',        Content: ContentFAQ },
+  contacts:  { title: 'Contacts utiles',             Content: ContentContacts },
+  ressources:{ title: 'Ressources',                  Content: ContentRessources },
 };
 
 /* ─── Page principale ────────────────────────────────────────────────────── */
@@ -386,7 +386,7 @@ export default function InfosUtilesPage() {
   if (!user) return <Navigate to="/auth" replace />;
   if (hideInfosPage) return <Navigate to="/" replace />;
 
-  const dialog = openTile ? DIALOG_CONTENT[openTile] : null;
+  const dialogDef = openTile ? DIALOG_CONTENT[openTile] : null;
 
   return (
     <AppLayout>
@@ -429,9 +429,9 @@ export default function InfosUtilesPage() {
         <Dialog open={!!openTile} onOpenChange={(open) => !open && setOpenTile(null)}>
           <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>{dialog?.title}</DialogTitle>
+              <DialogTitle>{dialogDef?.title}</DialogTitle>
             </DialogHeader>
-            {dialog?.content}
+            {dialogDef && <dialogDef.Content />}
           </DialogContent>
         </Dialog>
       </div>
