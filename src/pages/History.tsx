@@ -261,8 +261,10 @@ export default function HistoryPage() {
   const periodDateRange = useMemo(() => {
     const today = new Date();
     switch (historyPeriod) {
-      case 'day':
-        return { start: today, end: today };
+      case 'day': {
+        const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+        return { start: startOfToday, end: today };
+      }
       case 'week':
         return { start: startOfWeek(today, { weekStartsOn: 1 }), end: endOfWeek(today, { weekStartsOn: 1 }) };
       case 'month':
