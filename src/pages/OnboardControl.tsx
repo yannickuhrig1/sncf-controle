@@ -916,24 +916,27 @@ export default function OnboardControl() {
                           <Label className="text-xs text-muted-foreground">Trains du jour</Label>
                           <div className="flex flex-wrap gap-1.5">
                             {dailyTrains.map(t => (
-                              <button
+                              <span
                                 key={t.trainNumber}
-                                type="button"
-                                onClick={() => handleLoadDailyTrain(t)}
                                 className={cn(
-                                  'inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium border transition-colors hover:opacity-80',
+                                  'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium border',
                                   t.trainInfo?.status === 'on_time'   && 'bg-green-100 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800',
                                   t.trainInfo?.status === 'delayed'   && 'bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-800',
                                   t.trainInfo?.status === 'cancelled' && 'bg-red-100 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800',
                                   !t.trainInfo && 'bg-muted text-muted-foreground border-border',
                                 )}
                               >
-                                <Train className="h-3 w-3" />
-                                {t.trainNumber}
-                                {t.trainInfo?.status === 'delayed' && t.trainInfo.delayMinutes && (
-                                  <span className="font-bold">+{t.trainInfo.delayMinutes}m</span>
-                                )}
-                              </button>
+                                <button type="button" onClick={() => handleLoadDailyTrain(t)} className="inline-flex items-center gap-1 hover:opacity-80">
+                                  <Train className="h-3 w-3" />
+                                  {t.trainNumber}
+                                  {t.trainInfo?.status === 'delayed' && t.trainInfo.delayMinutes && (
+                                    <span className="font-bold">+{t.trainInfo.delayMinutes}m</span>
+                                  )}
+                                </button>
+                                <button type="button" onClick={() => removeDailyTrain(t.trainNumber)} className="ml-0.5 hover:opacity-60" aria-label="Supprimer">
+                                  <X className="h-3 w-3" />
+                                </button>
+                              </span>
                             ))}
                           </div>
                         </div>
@@ -1155,24 +1158,27 @@ export default function OnboardControl() {
                         <Label className="text-xs text-muted-foreground">Trains du jour</Label>
                         <div className="flex flex-wrap gap-1.5">
                           {dailyTrains.map(t => (
-                            <button
+                            <span
                               key={t.trainNumber}
-                              type="button"
-                              onClick={() => handleLoadDailyTrain(t)}
                               className={cn(
-                                'inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium border transition-colors hover:opacity-80',
+                                'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium border',
                                 t.trainInfo?.status === 'on_time'   && 'bg-green-100 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800',
                                 t.trainInfo?.status === 'delayed'   && 'bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-800',
                                 t.trainInfo?.status === 'cancelled' && 'bg-red-100 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800',
                                 !t.trainInfo && 'bg-muted text-muted-foreground border-border',
                               )}
                             >
-                              <Train className="h-3 w-3" />
-                              {t.trainNumber}
-                              {t.trainInfo?.status === 'delayed' && t.trainInfo.delayMinutes && (
-                                <span className="font-bold">+{t.trainInfo.delayMinutes}m</span>
-                              )}
-                            </button>
+                              <button type="button" onClick={() => handleLoadDailyTrain(t)} className="inline-flex items-center gap-1 hover:opacity-80">
+                                <Train className="h-3 w-3" />
+                                {t.trainNumber}
+                                {t.trainInfo?.status === 'delayed' && t.trainInfo.delayMinutes && (
+                                  <span className="font-bold">+{t.trainInfo.delayMinutes}m</span>
+                                )}
+                              </button>
+                              <button type="button" onClick={() => removeDailyTrain(t.trainNumber)} className="ml-0.5 hover:opacity-60" aria-label="Supprimer">
+                                <X className="h-3 w-3" />
+                              </button>
+                            </span>
                           ))}
                         </div>
                       </div>
