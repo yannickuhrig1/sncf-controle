@@ -159,12 +159,18 @@ export function ControlDetailDialog({
                 </div>
                 <div>
                   <DialogTitle className="text-lg">{control.location}</DialogTitle>
-                  <div className="flex items-center gap-2 mt-1">
+                  <div className="flex items-center gap-2 mt-1 flex-wrap">
                     <Badge variant={control.location_type === 'train' ? 'default' : 'secondary'}>
                       {locationLabels[control.location_type]}
                     </Badge>
                     {control.train_number && (
                       <span className="text-sm text-muted-foreground">N° {control.train_number}</span>
+                    )}
+                    {(control as any).is_cancelled && (
+                      <Badge variant="outline" className="bg-slate-700 text-white border-0">Supprimé</Badge>
+                    )}
+                    {(control as any).is_overcrowded && (
+                      <Badge variant="outline" className="bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400 border-0">Sur-occupation</Badge>
                     )}
                   </div>
                 </div>
