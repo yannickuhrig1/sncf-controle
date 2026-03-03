@@ -5,6 +5,17 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/),
 et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.9.5] - 2026-03-03
+
+### Ajouté
+- Graphique "Fraude par numéro de train" dans Statistiques : barres horizontales (top 15), colorées vert/amber/rouge selon le seuil, avec tooltip détaillé (taux, fraudes, voyageurs, contrôles)
+- Info SNCF dans En gare : bouton "Info SNCF" ajouté au champ N° Train (modes compact et étendu), auto-remplit origine, destination, heure et quai si l'API retourne un quai
+- Occupation du train : affichée sous le bouton Info SNCF si l'API SNCF la fournit (ex : "Places disponibles", "Peu de places", "Bondé")
+- Filtre mois spécifique dans Historique : sélecteurs mois + année apparaissent quand la période "Mois" est sélectionnée ; sélecteur année seul pour la période "Année"
+
+### Supprimé
+- Tableau des départs en temps réel (DeparturesBoard) retiré de la page En gare
+
 ## [1.9.3] - 2026-03-01
 
 ### Ajouté

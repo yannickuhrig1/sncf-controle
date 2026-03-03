@@ -27,6 +27,8 @@ export interface TrainInfo {
   status: TrainStatus;
   delayMinutes?: number;
   disruptionReason?: string;
+  // Occupation
+  occupancy?: string;       // Libellé FR de l'occupation si fourni
 }
 
 function parseHHMMSS(hhmmss: string | undefined): string {
@@ -174,6 +176,18 @@ export function useTrainLookup() {
       }
       if (status === 'delayed' && !delayMinutes) delayMinutes = stops[0].delayMinutes;
 
+      // ── Occupancy ──────────────────────────────────────────────────────────
+      const OCCUPANCY_LABELS: Record<string, string> = {
+        empty:                      'Vide',
+        many_seats_available:       'Places disponibles',
+        few_seats_available:        'Peu de places',
+        standing_room_only:         'Debout seulement',
+        crushed_standing_room_only: 'Bondé',
+        not_accepting_passengers:   'Accès refusé',
+      };
+      const rawOccupancy: string | undefined = journey.occupancies?.[0]?.occupancy ?? journey.occupancy;
+      const occupancy = rawOccupancy ? (OCCUPANCY_LABELS[rawOccupancy] ?? rawOccupancy) : undefined;
+
       const info: TrainInfo = {
         origin:        stops[0].name,
         destination:   stops[stops.length - 1].name,
@@ -187,6 +201,7 @@ export function useTrainLookup() {
         status,
         delayMinutes,
         disruptionReason,
+        occupancy,
       };
 
       setTrainInfo(info);

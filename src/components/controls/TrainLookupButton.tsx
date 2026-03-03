@@ -17,6 +17,7 @@ import {
   MapPin,
   MessageSquare,
   Plus,
+  Users,
 } from 'lucide-react';
 import { useTrainLookup, TrainInfo, TrainStatus, formatDuration } from '@/hooks/useTrainLookup';
 import { toast } from 'sonner';
@@ -155,9 +156,9 @@ export function TrainLookupButton({ trainNumber, date, onResult, onAdd }: TrainL
         {error && !isLoading && <span className="text-xs text-destructive">{error}</span>}
       </div>
 
-      {/* Durée + voie 1ère gare */}
+      {/* Durée + voie 1ère gare + occupation */}
       {trainInfo && (
-        <div className="flex items-center gap-3 text-xs text-muted-foreground">
+        <div className="flex items-center gap-3 flex-wrap text-xs text-muted-foreground">
           {trainInfo.journeyDuration && (
             <span className="flex items-center gap-1">
               <Clock className="h-3 w-3" />
@@ -174,6 +175,12 @@ export function TrainLookupButton({ trainNumber, date, onResult, onAdd }: TrainL
             <span className="flex items-center gap-1">
               <Clock className="h-3 w-3" />
               Arrivée {trainInfo.destination} : {trainInfo.arrivalTime}
+            </span>
+          )}
+          {trainInfo.occupancy && (
+            <span className="flex items-center gap-1">
+              <Users className="h-3 w-3" />
+              {trainInfo.occupancy}
             </span>
           )}
         </div>

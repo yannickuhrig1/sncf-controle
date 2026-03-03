@@ -195,6 +195,8 @@ export default function HistoryPage() {
   const [historyPeriod, setHistoryPeriod] = useState<Period | 'all'>('all');
   const [customStart, setCustomStart] = useState('');
   const [customEnd, setCustomEnd] = useState('');
+  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth()); // 0-11
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [dataViewMode, setDataViewMode] = useState<ViewMode>('all-data');
   const [pdfPreviewOpen, setPdfPreviewOpen] = useState(false);
   const [pdfPreviewUrl, setPdfPreviewUrl] = useState<string | null>(null);
@@ -267,10 +269,14 @@ export default function HistoryPage() {
       }
       case 'week':
         return { start: startOfWeek(today, { weekStartsOn: 1 }), end: endOfWeek(today, { weekStartsOn: 1 }) };
-      case 'month':
-        return { start: startOfMonth(today), end: endOfMonth(today) };
-      case 'year':
-        return { start: startOfYear(today), end: endOfYear(today) };
+      case 'month': {
+        const ref = new Date(selectedYear, selectedMonth, 1);
+        return { start: startOfMonth(ref), end: endOfMonth(ref) };
+      }
+      case 'year': {
+        const refY = new Date(selectedYear, 0, 1);
+        return { start: startOfYear(refY), end: endOfYear(refY) };
+      }
       case 'custom':
         return {
           start: customStart ? new Date(customStart) : null,
@@ -279,7 +285,7 @@ export default function HistoryPage() {
       default: // 'all'
         return { start: null, end: null };
     }
-  }, [historyPeriod, customStart, customEnd]);
+  }, [historyPeriod, customStart, customEnd, selectedMonth, selectedYear]);
 
   // Filter and sort controls
   const filteredControls = useMemo(() => {
@@ -650,6 +656,44 @@ export default function HistoryPage() {
                       </Button>
                     ))}
                   </div>
+                  {historyPeriod === 'month' && (
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <Select value={String(selectedMonth)} onValueChange={(v) => setSelectedMonth(Number(v))}>
+                        <SelectTrigger className="h-8 w-[130px] text-xs">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'].map((m, i) => (
+                            <SelectItem key={i} value={String(i)}>{m}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Select value={String(selectedYear)} onValueChange={(v) => setSelectedYear(Number(v))}>
+                        <SelectTrigger className="h-8 w-[90px] text-xs">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {Array.from({ length: new Date().getFullYear() - 2022 }, (_, i) => 2023 + i).map((y) => (
+                            <SelectItem key={y} value={String(y)}>{y}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+                  {historyPeriod === 'year' && (
+                    <div className="flex items-center gap-2">
+                      <Select value={String(selectedYear)} onValueChange={(v) => setSelectedYear(Number(v))}>
+                        <SelectTrigger className="h-8 w-[90px] text-xs">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {Array.from({ length: new Date().getFullYear() - 2022 }, (_, i) => 2023 + i).map((y) => (
+                            <SelectItem key={y} value={String(y)}>{y}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
                   {historyPeriod === 'custom' && (
                     <div className="flex items-center gap-2 flex-wrap">
                       <input

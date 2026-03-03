@@ -6,6 +6,7 @@ import { AppLayout } from '@/components/layout/AppLayout';
 import { FraudRateChart } from '@/components/charts/FraudRateChart';
 import { FraudTrendChart } from '@/components/charts/FraudTrendChart';
 import { PassengersChart } from '@/components/charts/PassengersChart';
+import { TrainNumberFraudChart } from '@/components/charts/TrainNumberFraudChart';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -305,6 +306,7 @@ export default function StatisticsPage() {
             <FraudTrendChart controls={controls} />
             <FraudRateChart controls={controls} />
             <PassengersChart controls={controls} />
+            <TrainNumberFraudChart controls={controls} />
 
             {/* Détails (si données présentes) */}
             {stats.controlCount > 0 && (
