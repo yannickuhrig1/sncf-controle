@@ -48,7 +48,7 @@ import {
   ArrowUpFromLine,
   Eye,
 } from 'lucide-react';
-import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear } from 'date-fns';
+import { format, parseISO, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { toast } from 'sonner';
 import type { Database } from '@/integrations/supabase/types';
@@ -127,6 +127,8 @@ function ControlRow({ control, onClick }: ControlRowProps) {
                 + (control.tarif_bord_doc_naissance || 0) + (control.tarif_bord_autre || 0);
               const riTotal = (control.ri_positive || 0) + (control.ri_negative || 0);
               const badges = [
+                (control as any).is_cancelled   && { label: 'Supprimé', cls: 'bg-slate-700 text-white border-0' },
+                (control as any).is_overcrowded && { label: 'Sur-occ.', cls: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400 border-0' },
                 bordTotal > 0            && { label: `Bord: ${bordTotal}`,                cls: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 border-0' },
                 control.tarifs_controle > 0 && { label: `TC: ${control.tarifs_controle}`, cls: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 border-0' },
                 control.pv > 0           && { label: `PV: ${control.pv}`,                cls: 'bg-red-500 text-white border-0' },
@@ -144,6 +146,11 @@ function ControlRow({ control, onClick }: ControlRowProps) {
                 </div>
               );
             })()}
+            {control.notes && (
+              <p className="text-[10px] text-muted-foreground mt-1.5 truncate italic">
+                {control.notes}
+              </p>
+            )}
           </div>
           
           {/* Fraud rate — always visible */}
@@ -197,6 +204,7 @@ export default function HistoryPage() {
   const [customEnd, setCustomEnd] = useState('');
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth()); // 0-11
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const [selectedDay, setSelectedDay] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [dataViewMode, setDataViewMode] = useState<ViewMode>('all-data');
   const [pdfPreviewOpen, setPdfPreviewOpen] = useState(false);
   const [pdfPreviewUrl, setPdfPreviewUrl] = useState<string | null>(null);
@@ -264,8 +272,9 @@ export default function HistoryPage() {
     const today = new Date();
     switch (historyPeriod) {
       case 'day': {
-        const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-        return { start: startOfToday, end: today };
+        const ref = selectedDay ? parseISO(selectedDay) : today;
+        const d = new Date(ref.getFullYear(), ref.getMonth(), ref.getDate());
+        return { start: d, end: d };
       }
       case 'week':
         return { start: startOfWeek(today, { weekStartsOn: 1 }), end: endOfWeek(today, { weekStartsOn: 1 }) };
@@ -285,7 +294,7 @@ export default function HistoryPage() {
       default: // 'all'
         return { start: null, end: null };
     }
-  }, [historyPeriod, customStart, customEnd, selectedMonth, selectedYear]);
+  }, [historyPeriod, customStart, customEnd, selectedMonth, selectedYear, selectedDay]);
 
   // Filter and sort controls
   const filteredControls = useMemo(() => {
@@ -656,6 +665,16 @@ export default function HistoryPage() {
                       </Button>
                     ))}
                   </div>
+                  {historyPeriod === 'day' && (
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="date"
+                        value={selectedDay}
+                        onChange={(e) => setSelectedDay(e.target.value)}
+                        className="h-8 w-[145px] text-xs"
+                      />
+                    </div>
+                  )}
                   {historyPeriod === 'month' && (
                     <div className="flex items-center gap-2 flex-wrap">
                       <Select value={String(selectedMonth)} onValueChange={(v) => setSelectedMonth(Number(v))}>

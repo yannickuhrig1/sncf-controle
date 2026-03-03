@@ -25,6 +25,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
 import { Loader2, Building2, ArrowLeft, Save, ArrowRight, X, Clock, Calendar, ArrowDownToLine, ArrowUpFromLine, Users, UserCheck, MessageSquare, FileText, AlertTriangle, Plus, User, Ticket, Train, LayoutList, Layers } from 'lucide-react';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
@@ -100,6 +101,8 @@ export default function StationControl() {
   const [destination, setDestination] = useState('');
   const [trainNumber, setTrainNumber] = useState('');
   const [selectedTrainId, setSelectedTrainId] = useState<string | undefined>();
+  const [isCancelled, setIsCancelled]   = useState(false);
+  const [isOvercrowded, setIsOvercrowded] = useState(false);
   
   // Control date/time - initialized with Paris time
   const [controlDate, setControlDate] = useState(parisDate);
@@ -228,6 +231,8 @@ export default function StationControl() {
     setControlTime(data.control_time);
     setTrainNumber(data.train_number || '');
     setNbPassagers(data.nb_passagers || 0);
+    setIsCancelled(data.is_cancelled ?? false);
+    setIsOvercrowded(data.is_overcrowded ?? false);
     setStt50Count(0); // quick counter always reset on load; stt_50 goes into list
     setStt100Count(data.stt_100 || 0);
 
@@ -288,6 +293,8 @@ export default function StationControl() {
     setRiPositive(0);
     setRiNegative(0);
     setNotes('');
+    setIsCancelled(false);
+    setIsOvercrowded(false);
   };
 
   // Add/remove tarif handlers
@@ -415,6 +422,8 @@ export default function StationControl() {
         ri_positive: riPositive,
         ri_negative: riNegative,
         notes: finalNotes,
+        is_cancelled:   isCancelled,
+        is_overcrowded: isOvercrowded,
       };
 
     try {
@@ -695,6 +704,16 @@ export default function StationControl() {
                             <Label className="text-xs">Destination</Label>
                             <Input placeholder="Lyon" value={destination} onChange={(e) => setDestination(e.target.value)} />
                           </div>
+                          <div className="col-span-2 flex items-center gap-4 flex-wrap pt-1">
+                            <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
+                              <Checkbox checked={isCancelled} onCheckedChange={(v) => setIsCancelled(!!v)} />
+                              <span>Train supprimé</span>
+                            </label>
+                            <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
+                              <Checkbox checked={isOvercrowded} onCheckedChange={(v) => setIsOvercrowded(!!v)} />
+                              <span>Sur-occupation</span>
+                            </label>
+                          </div>
                         </div>
                       </>
                     )}
@@ -789,6 +808,16 @@ export default function StationControl() {
                       <div className="space-y-2">
                         <Label htmlFor="platformNumber">Numéro de quai</Label>
                         <Input id="platformNumber" placeholder="1A" value={platformNumber} onChange={(e) => setPlatformNumber(e.target.value)} />
+                      </div>
+                      <div className="flex items-center gap-4 flex-wrap">
+                        <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
+                          <Checkbox checked={isCancelled} onCheckedChange={(v) => setIsCancelled(!!v)} />
+                          <span>Train supprimé</span>
+                        </label>
+                        <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
+                          <Checkbox checked={isOvercrowded} onCheckedChange={(v) => setIsOvercrowded(!!v)} />
+                          <span>Sur-occupation</span>
+                        </label>
                       </div>
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">

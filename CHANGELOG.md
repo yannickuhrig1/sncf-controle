@@ -5,6 +5,18 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/),
 et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.9.6] - 2026-03-03
+
+### Ajouté
+- Flags "Train supprimé" et "Sur-occupation" : cases à cocher dans À bord et En gare (modes compact et étendu), sauvegardés en base de données
+- Badges "Supprimé" (gris foncé) et "Sur-occ." (orange) sur les vignettes de l'Historique
+- Sélection d'un jour spécifique dans l'Historique : date picker apparaît quand la période "Jour" est sélectionnée
+- Affichage du commentaire (notes) en italique tronqué sur les vignettes de l'Historique
+- Répartition Tarifs contrôle + Tarifs à bord dans Statistiques : 2 nouveaux camemberts (donuts) en grille de 3 avec la répartition PV
+
+### Modifié
+- Répartition PV dans Statistiques : déplacé dans une grille 3 colonnes avec les 2 nouveaux graphiques
+
 ## [1.9.5] - 2026-03-03
 
 ### Ajouté

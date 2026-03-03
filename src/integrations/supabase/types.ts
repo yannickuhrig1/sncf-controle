@@ -86,6 +86,8 @@ export type Database = {
           doc_naissance: number | null
           doc_naissance_amount: number | null
           id: string
+          is_cancelled: boolean
+          is_overcrowded: boolean
           location: string
           location_type: Database["public"]["Enums"]["location_type"]
           nb_en_regle: number
@@ -142,6 +144,8 @@ export type Database = {
           doc_naissance?: number | null
           doc_naissance_amount?: number | null
           id?: string
+          is_cancelled?: boolean | null
+          is_overcrowded?: boolean | null
           location: string
           location_type?: Database["public"]["Enums"]["location_type"]
           nb_en_regle?: number
@@ -198,6 +202,8 @@ export type Database = {
           doc_naissance?: number | null
           doc_naissance_amount?: number | null
           id?: string
+          is_cancelled?: boolean | null
+          is_overcrowded?: boolean | null
           location?: string
           location_type?: Database["public"]["Enums"]["location_type"]
           nb_en_regle?: number

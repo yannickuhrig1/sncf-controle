@@ -30,6 +30,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
   AlertDialog,
@@ -111,6 +112,8 @@ interface FormState {
   commentaire: string;
   autreControleComment: string;
   autrePvComment: string;
+  isCancelled: boolean;
+  isOvercrowded: boolean;
 }
 
 const INITIAL_FORM_STATE: FormState = {
@@ -131,6 +134,8 @@ const INITIAL_FORM_STATE: FormState = {
   commentaire: '',
   autreControleComment: '',
   autrePvComment: '',
+  isCancelled: false,
+  isOvercrowded: false,
 };
 
 export default function OnboardControl() {
@@ -307,6 +312,8 @@ export default function OnboardControl() {
           commentaire: data.notes || '',
           autreControleComment: '',
           autrePvComment: '',
+          isCancelled: (data as any).is_cancelled ?? false,
+          isOvercrowded: (data as any).is_overcrowded ?? false,
         });
       };
       
@@ -637,6 +644,8 @@ export default function OnboardControl() {
         ri_positive: formState.riPositif,
         ri_negative: formState.riNegatif,
         notes: finalNotes,
+        is_cancelled:   formState.isCancelled,
+        is_overcrowded: formState.isOvercrowded,
       };
 
       if (isEditMode && editId) {
@@ -694,6 +703,8 @@ export default function OnboardControl() {
           ri_positive: formState.riPositif,
           ri_negative: formState.riNegatif,
           notes: formState.commentaire.trim() || null,
+          is_cancelled:   formState.isCancelled,
+          is_overcrowded: formState.isOvercrowded,
         } as any);
         triggerHaptic('success');
         clearDraft();
@@ -1051,6 +1062,16 @@ export default function OnboardControl() {
                         </div>
                       </div>
                       <CounterInput label="Nombre de passagers *" value={formState.passengers} onChange={(v) => setFormState((p) => ({ ...p, passengers: v }))} min={0} max={9999} steps={[1, 10]} />
+                      <div className="flex items-center gap-4 flex-wrap pt-1">
+                        <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
+                          <Checkbox checked={formState.isCancelled} onCheckedChange={(v) => setFormState(p => ({...p, isCancelled: !!v}))} />
+                          <span>Train supprimé</span>
+                        </label>
+                        <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
+                          <Checkbox checked={formState.isOvercrowded} onCheckedChange={(v) => setFormState(p => ({...p, isOvercrowded: !!v}))} />
+                          <span>Sur-occupation</span>
+                        </label>
+                      </div>
                     </>
                   )}
 
@@ -1325,6 +1346,16 @@ export default function OnboardControl() {
                       max={9999}
                       steps={[1, 10]}
                     />
+                    <div className="flex items-center gap-4 flex-wrap pt-1">
+                      <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
+                        <Checkbox checked={formState.isCancelled} onCheckedChange={(v) => setFormState(p => ({...p, isCancelled: !!v}))} />
+                        <span>Train supprimé</span>
+                      </label>
+                      <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
+                        <Checkbox checked={formState.isOvercrowded} onCheckedChange={(v) => setFormState(p => ({...p, isOvercrowded: !!v}))} />
+                        <span>Sur-occupation</span>
+                      </label>
+                    </div>
                   </CardContent>
                 </Card>
 
