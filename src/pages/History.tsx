@@ -22,6 +22,7 @@ import { LastSyncIndicator } from '@/components/controls/LastSyncIndicator';
 import { OfflineIndicator } from '@/components/controls/OfflineIndicator';
 import { HistoryTableView } from '@/components/history/HistoryTableView';
 import { EmbarkmentHistoryView } from '@/components/history/EmbarkmentHistoryView';
+import { PeriodSelector } from '@/components/dashboard/PeriodSelector';
 import type { Period } from '@/components/dashboard/PeriodSelector';
 import { ViewModeToggle } from '@/components/dashboard/ViewModeToggle';
 import { getFraudRateColor } from '@/lib/stats';
@@ -637,101 +638,24 @@ export default function HistoryPage() {
                 </div>
 
                 {/* Period filter */}
-                <div className="flex flex-col gap-2">
-                  <div className="flex items-center gap-1 bg-muted rounded-lg p-1">
-                    {([
-                      { value: 'all',   label: 'Tous' },
-                      { value: 'day',   label: 'Jour' },
-                      { value: 'week',  label: 'Semaine' },
-                      { value: 'month', label: 'Mois' },
-                      { value: 'year',  label: 'Année' },
-                      { value: 'custom',label: 'Perso.' },
-                    ] as const).map((p) => (
-                      <Button
-                        key={p.value}
-                        variant="ghost"
-                        size="sm"
-                        className={`h-7 px-3 text-xs font-medium transition-colors ${
-                          historyPeriod === p.value
-                            ? 'bg-background shadow-sm text-foreground'
-                            : 'text-muted-foreground hover:text-foreground'
-                        }`}
-                        onClick={() => {
-                          setHistoryPeriod(p.value);
-                          if (p.value !== 'custom') { setCustomStart(''); setCustomEnd(''); }
-                        }}
-                      >
-                        {p.label}
-                      </Button>
-                    ))}
-                  </div>
-                  {historyPeriod === 'day' && (
-                    <div className="flex items-center gap-2">
-                      <Input
-                        type="date"
-                        value={selectedDay}
-                        onChange={(e) => setSelectedDay(e.target.value)}
-                        className="h-8 w-[145px] text-xs"
-                      />
-                    </div>
-                  )}
-                  {historyPeriod === 'month' && (
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <Select value={String(selectedMonth)} onValueChange={(v) => setSelectedMonth(Number(v))}>
-                        <SelectTrigger className="h-8 w-[130px] text-xs">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'].map((m, i) => (
-                            <SelectItem key={i} value={String(i)}>{m}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <Select value={String(selectedYear)} onValueChange={(v) => setSelectedYear(Number(v))}>
-                        <SelectTrigger className="h-8 w-[90px] text-xs">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {Array.from({ length: new Date().getFullYear() - 2022 }, (_, i) => 2023 + i).map((y) => (
-                            <SelectItem key={y} value={String(y)}>{y}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  )}
-                  {historyPeriod === 'year' && (
-                    <div className="flex items-center gap-2">
-                      <Select value={String(selectedYear)} onValueChange={(v) => setSelectedYear(Number(v))}>
-                        <SelectTrigger className="h-8 w-[90px] text-xs">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {Array.from({ length: new Date().getFullYear() - 2022 }, (_, i) => 2023 + i).map((y) => (
-                            <SelectItem key={y} value={String(y)}>{y}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  )}
-                  {historyPeriod === 'custom' && (
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <input
-                        type="date"
-                        value={customStart}
-                        onChange={(e) => setCustomStart(e.target.value)}
-                        className="h-8 px-2 text-xs rounded-md border border-input bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-                      />
-                      <span className="text-xs text-muted-foreground">→</span>
-                      <input
-                        type="date"
-                        value={customEnd}
-                        min={customStart}
-                        onChange={(e) => setCustomEnd(e.target.value)}
-                        className="h-8 px-2 text-xs rounded-md border border-input bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-                      />
-                    </div>
-                  )}
-                </div>
+                <PeriodSelector
+                  selectedPeriod={historyPeriod}
+                  onPeriodChange={(p) => {
+                    setHistoryPeriod(p);
+                    if (p !== 'custom') { setCustomStart(''); setCustomEnd(''); }
+                  }}
+                  showAll
+                  customStart={customStart}
+                  customEnd={customEnd}
+                  onCustomStartChange={setCustomStart}
+                  onCustomEndChange={setCustomEnd}
+                  selectedDay={selectedDay}
+                  onDayChange={setSelectedDay}
+                  selectedMonth={selectedMonth}
+                  onMonthChange={setSelectedMonth}
+                  selectedYear={selectedYear}
+                  onYearChange={setSelectedYear}
+                />
 
                 {/* Sort options */}
                 <div className="flex items-center gap-2">
