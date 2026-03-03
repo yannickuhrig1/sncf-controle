@@ -12,10 +12,10 @@ et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - Badges "Supprimé" (gris foncé) et "Sur-occ." (orange) sur les vignettes de l'Historique
 - Sélection d'un jour spécifique dans l'Historique : date picker apparaît quand la période "Jour" est sélectionnée
 - Affichage du commentaire (notes) en italique tronqué sur les vignettes de l'Historique
-- Répartition Tarifs contrôle + Tarifs à bord dans Statistiques : 2 nouveaux camemberts (donuts) en grille de 3 avec la répartition PV
+- Statistiques : graphique unique "Répartition des infractions" fusionnant PV (rouge/orange), Tarifs contrôle (vert) et Tarifs à bord (bleu) en un seul donut
 
 ### Modifié
-- Répartition PV dans Statistiques : déplacé dans une grille 3 colonnes avec les 2 nouveaux graphiques
+- Validation à bord : 0 voyageurs autorisé si "Train supprimé" ou "Sur-occupation" est coché
 
 ## [1.9.5] - 2026-03-03
 

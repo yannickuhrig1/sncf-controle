@@ -421,85 +421,100 @@ export default function StatisticsPage() {
               </div>
             )}
 
-            {/* Répartition PV + TC + Bord */}
+            {/* Répartition PV + TC + Bord — graphique unique */}
             {(stats.pv > 0 || stats.tarifsControle > 0 || detailedStats.totalBord > 0) && (() => {
               type SliceRow = { label: string; value: number; color: string; twColor: string };
-              function DonutCard({ title, total, rows }: { title: string; total: number; rows: SliceRow[] }) {
-                const data = rows.filter(r => r.value > 0);
-                if (data.length === 0) return null;
-                return (
-                  <Card>
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-sm">{title}</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-3">
-                        <ResponsiveContainer width="100%" height={180}>
+
+              const pvRows: SliceRow[] = [
+                { label: 'STT 100€',     value: stats.stt100,                              color: '#dc2626', twColor: 'bg-red-700' },
+                { label: 'STT autre',    value: stats.pvStt100,                            color: '#ef4444', twColor: 'bg-red-500' },
+                { label: 'RNV',          value: stats.pvRnv,                               color: '#f97316', twColor: 'bg-orange-500' },
+                { label: 'Titre tiers',  value: stats.pvTitreTiers,                        color: '#eab308', twColor: 'bg-yellow-500' },
+                { label: 'D.naissance',  value: stats.pvDocNaissance,                      color: '#8b5cf6', twColor: 'bg-violet-500' },
+                { label: 'Autre',        value: stats.pvAutre,                             color: '#6b7280', twColor: 'bg-gray-500' },
+              ];
+              const tcRows: SliceRow[] = [
+                { label: 'STT 50€',      value: detailedStats.tarifsControle.stt50,        color: '#16a34a', twColor: 'bg-green-600' },
+                { label: 'RNV',          value: detailedStats.tarifsControle.rnv,           color: '#15803d', twColor: 'bg-green-700' },
+                { label: 'Titre tiers',  value: detailedStats.tarifsControle.titreTiers,    color: '#22c55e', twColor: 'bg-green-500' },
+                { label: 'D.naissance',  value: detailedStats.tarifsControle.docNaissance,  color: '#86efac', twColor: 'bg-green-300' },
+                { label: 'Autre',        value: detailedStats.tarifsControle.autre,         color: '#9ca3af', twColor: 'bg-gray-400' },
+              ];
+              const bordRows: SliceRow[] = [
+                { label: 'Tarif bord',   value: detailedStats.tarifsBord.stt50,            color: '#1d4ed8', twColor: 'bg-blue-700' },
+                { label: 'T.Exception.', value: detailedStats.tarifsBord.stt100,           color: '#3b82f6', twColor: 'bg-blue-500' },
+                { label: 'RNV',          value: detailedStats.tarifsBord.rnv,              color: '#60a5fa', twColor: 'bg-blue-400' },
+                { label: 'Titre tiers',  value: detailedStats.tarifsBord.titreTiers,       color: '#818cf8', twColor: 'bg-indigo-400' },
+                { label: 'D.naissance',  value: detailedStats.tarifsBord.docNaissance,     color: '#a78bfa', twColor: 'bg-violet-400' },
+                { label: 'Autre',        value: detailedStats.tarifsBord.autre,            color: '#cbd5e1', twColor: 'bg-slate-300' },
+              ];
+
+              const allSlices = [...pvRows, ...tcRows, ...bordRows].filter(r => r.value > 0);
+              const grandTotal = stats.pv + stats.tarifsControle + detailedStats.totalBord;
+
+              const groups: { label: string; dotColor: string; total: number; rows: SliceRow[] }[] = [
+                { label: 'PV',   dotColor: 'bg-red-500',   total: stats.pv,                   rows: pvRows },
+                { label: 'TC',   dotColor: 'bg-green-600', total: stats.tarifsControle,        rows: tcRows },
+                { label: 'Bord', dotColor: 'bg-blue-700',  total: detailedStats.totalBord,     rows: bordRows },
+              ].filter(g => g.total > 0);
+
+              return (
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm">Répartition des infractions</CardTitle>
+                    <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
+                      {groups.map(g => (
+                        <span key={g.label} className="flex items-center gap-1">
+                          <span className={`inline-block h-2 w-2 rounded-full ${g.dotColor}`} />
+                          {g.label} : <span className="font-semibold text-foreground">{g.total}</span>
+                        </span>
+                      ))}
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex flex-col sm:flex-row gap-4 items-start">
+                      <div className="w-full sm:w-[200px] shrink-0">
+                        <ResponsiveContainer width="100%" height={200}>
                           <PieChart>
-                            <Pie data={data} cx="50%" cy="50%" innerRadius={45} outerRadius={70}
-                              paddingAngle={3} dataKey="value">
-                              {data.map((entry, i) => <Cell key={i} fill={entry.color} />)}
+                            <Pie data={allSlices} cx="50%" cy="50%" innerRadius={52} outerRadius={80}
+                              paddingAngle={2} dataKey="value">
+                              {allSlices.map((entry, i) => <Cell key={i} fill={entry.color} />)}
                             </Pie>
                             <Tooltip
                               formatter={(value: number, name: string) => [
-                                `${value} (${((value / total) * 100).toFixed(1)}%)`, name,
+                                `${value} (${((value / grandTotal) * 100).toFixed(1)}%)`, name,
                               ]}
                             />
-                            <Legend formatter={(value, entry: unknown) => {
-                              const e = entry as { payload: { value: number } };
-                              return `${value} — ${e.payload.value}`;
-                            }} />
                           </PieChart>
                         </ResponsiveContainer>
-                        <div className="space-y-1">
-                          {rows.filter(r => r.value > 0).map(({ label, value, twColor }) => (
-                            <div key={label} className="flex items-center justify-between text-xs">
-                              <span className="flex items-center gap-1.5 text-muted-foreground">
-                                <span className={`inline-block h-2 w-2 rounded-full ${twColor}`} />
-                                {label}
-                              </span>
-                              <span className="font-semibold tabular-nums">
-                                {value}
-                                <span className="text-muted-foreground ml-1">({((value / total) * 100).toFixed(0)}%)</span>
-                              </span>
-                            </div>
-                          ))}
-                          <div className="border-t pt-1 flex items-center justify-between text-xs font-semibold mt-1">
-                            <span>Total</span>
-                            <span>{total}</span>
+                      </div>
+                      <div className="flex-1 space-y-3 w-full">
+                        {groups.map((g, gi) => (
+                          <div key={g.label}>
+                            {gi > 0 && <div className="border-t mb-2" />}
+                            <p className="text-[10px] uppercase tracking-wide font-semibold text-muted-foreground mb-1">{g.label}</p>
+                            {g.rows.filter(r => r.value > 0).map(({ label, value, twColor }) => (
+                              <div key={label} className="flex items-center justify-between text-xs py-0.5">
+                                <span className="flex items-center gap-1.5 text-muted-foreground">
+                                  <span className={`inline-block h-2 w-2 rounded-full ${twColor}`} />
+                                  {label}
+                                </span>
+                                <span className="font-semibold tabular-nums">
+                                  {value}
+                                  <span className="text-muted-foreground ml-1">({((value / grandTotal) * 100).toFixed(0)}%)</span>
+                                </span>
+                              </div>
+                            ))}
                           </div>
+                        ))}
+                        <div className="border-t pt-1 flex items-center justify-between text-xs font-semibold">
+                          <span>Total</span>
+                          <span>{grandTotal}</span>
                         </div>
                       </div>
-                    </CardContent>
-                  </Card>
-                );
-              }
-              return (
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <DonutCard title="Répartition PV" total={stats.pv} rows={[
-                    { label: 'STT 100 €',    value: stats.stt100,        color: '#dc2626', twColor: 'bg-red-700' },
-                    { label: 'STT autre',    value: stats.pvStt100,      color: '#ef4444', twColor: 'bg-red-500' },
-                    { label: 'RNV',          value: stats.pvRnv,         color: '#f97316', twColor: 'bg-orange-500' },
-                    { label: 'Titre tiers',  value: stats.pvTitreTiers,  color: '#eab308', twColor: 'bg-yellow-500' },
-                    { label: 'D. naissance', value: stats.pvDocNaissance,color: '#8b5cf6', twColor: 'bg-violet-500' },
-                    { label: 'Autre',        value: stats.pvAutre,       color: '#6b7280', twColor: 'bg-gray-500' },
-                  ]} />
-                  <DonutCard title="Répartition Tarifs contrôle" total={stats.tarifsControle} rows={[
-                    { label: 'STT 50€',      value: detailedStats.tarifsControle.stt50,        color: '#16a34a', twColor: 'bg-green-600' },
-                    { label: 'RNV',          value: detailedStats.tarifsControle.rnv,           color: '#15803d', twColor: 'bg-green-700' },
-                    { label: 'Titre tiers',  value: detailedStats.tarifsControle.titreTiers,    color: '#22c55e', twColor: 'bg-green-500' },
-                    { label: 'D. naissance', value: detailedStats.tarifsControle.docNaissance,  color: '#86efac', twColor: 'bg-green-300' },
-                    { label: 'Autre',        value: detailedStats.tarifsControle.autre,         color: '#6b7280', twColor: 'bg-gray-500' },
-                  ]} />
-                  <DonutCard title="Répartition Tarifs à bord" total={detailedStats.totalBord} rows={[
-                    { label: 'Tarif bord',   value: detailedStats.tarifsBord.stt50,        color: '#1d4ed8', twColor: 'bg-blue-700' },
-                    { label: 'T.Exception.', value: detailedStats.tarifsBord.stt100,       color: '#3b82f6', twColor: 'bg-blue-500' },
-                    { label: 'RNV',          value: detailedStats.tarifsBord.rnv,          color: '#60a5fa', twColor: 'bg-blue-400' },
-                    { label: 'Titre tiers',  value: detailedStats.tarifsBord.titreTiers,   color: '#818cf8', twColor: 'bg-indigo-400' },
-                    { label: 'D. naissance', value: detailedStats.tarifsBord.docNaissance, color: '#a78bfa', twColor: 'bg-violet-400' },
-                    { label: 'Autre',        value: detailedStats.tarifsBord.autre,        color: '#6b7280', twColor: 'bg-gray-500' },
-                  ]} />
-                </div>
+                    </div>
+                  </CardContent>
+                </Card>
               );
             })()}
 

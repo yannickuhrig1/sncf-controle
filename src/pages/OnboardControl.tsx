@@ -548,7 +548,7 @@ export default function OnboardControl() {
       return;
     }
 
-    if (formState.passengers <= 0) {
+    if (formState.passengers <= 0 && !formState.isCancelled && !formState.isOvercrowded) {
       toast.error('Erreur', { description: 'Veuillez indiquer le nombre de passagers' });
       triggerHaptic('error');
       return;
