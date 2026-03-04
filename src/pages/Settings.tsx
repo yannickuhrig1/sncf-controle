@@ -531,7 +531,7 @@ export default function Settings() {
                       {showBottomBar && <Check className="h-4 w-4 text-green-500" />}
                     </Label>
                     <p className="text-xs text-muted-foreground">
-                      Affiche une barre de navigation fixe en bas de l'écran
+                      Affiche une barre de navigation fixe en bas de l'écran (mobile uniquement)
                     </p>
                   </div>
                   <Switch
@@ -576,11 +576,11 @@ export default function Settings() {
                   <div className="space-y-0.5">
                     <Label className="flex items-center gap-2">
                       <Menu className="h-4 w-4" />
-                      Menu burger
+                      Menu burger · Menu latéral (PC)
                       {showBurgerMenu && <Check className="h-4 w-4 text-green-500" />}
                     </Label>
                     <p className="text-xs text-muted-foreground">
-                      Affiche un menu hamburger dans le header
+                      Affiche le menu dans le header sur mobile. Les pages configurées ici sont aussi les pages du menu latéral sur PC.
                     </p>
                   </div>
                   <Switch
@@ -594,7 +594,7 @@ export default function Settings() {
                   <div className="space-y-3 pl-4 border-l-2 border-muted">
                     <div className="flex items-center gap-2">
                       <Eye className="h-4 w-4" />
-                      <Label>Pages dans le menu burger</Label>
+                      <Label>Pages du menu (mobile + latéral PC)</Label>
                     </div>
                     <p className="text-xs text-muted-foreground">
                       Glissez pour réordonner, utilisez les toggles pour afficher/masquer
