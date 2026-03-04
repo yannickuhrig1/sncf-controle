@@ -57,4 +57,24 @@ try {
   }
 } catch { /* silently ignore */ }
 
+// Auto-reload when a new service worker takes control (after silent update)
+if ('serviceWorker' in navigator) {
+  // Reload once when the SW changes (skipWaiting fired → new version active)
+  let reloading = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (!reloading) {
+      reloading = true;
+      window.location.reload();
+    }
+  });
+
+  // Trigger update check each time the app comes back to foreground
+  const triggerUpdate = () => {
+    navigator.serviceWorker.getRegistration().then(reg => reg?.update());
+  };
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') triggerUpdate();
+  });
+}
+
 createRoot(document.getElementById("root")!).render(<App />);
