@@ -183,10 +183,11 @@ export default function HistoryPage() {
     isLoadingInfinite,
     totalCount,
   } = useControls();
-  const { 
-    missions: embarkmentMissions, 
+  const {
+    missions: embarkmentMissions,
     isLoading: isLoadingEmbarkment,
     refreshMissions: refetchEmbarkment,
+    deleteMission: deleteEmbarkmentMission,
   } = useEmbarkmentMissions();
   const navigate = useNavigate();
   const { formattedLastSync, updateLastSync } = useLastSync();
@@ -798,6 +799,7 @@ export default function HistoryPage() {
                 onMissionClick={(mission) => {
                   navigate(`/station?mission=${mission.id}`);
                 }}
+                onDelete={deleteEmbarkmentMission}
               />
             )}
           </>

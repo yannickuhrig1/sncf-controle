@@ -30,11 +30,11 @@ import { getFraudRateColor, getFraudRateBgColor } from '@/lib/stats';
 import { downloadEmbarkmentPDF, downloadEmbarkmentHTML, openEmbarkmentHTMLPreview, downloadGroupedEmbarkmentPDF } from '@/lib/embarkmentExportUtils';
 import type { EmbarkmentMissionData, EmbarkmentTrain } from '@/components/controls/EmbarkmentControl';
 import { DateRangeFilter } from '@/components/history/DateRangeFilter';
-import { 
-  Train, 
-  Building2, 
-  Calendar, 
-  Users, 
+import {
+  Train,
+  Building2,
+  Calendar,
+  Users,
   AlertTriangle,
   ChevronRight,
   Eye,
@@ -45,14 +45,25 @@ import {
   CheckCircle2,
   Clock,
   TrendingDown,
-  UserX,
   Search,
   X,
   LayoutGrid,
   List,
   TableIcon,
   Filter,
+  Trash2,
 } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 
@@ -75,6 +86,7 @@ interface EmbarkmentHistoryViewProps {
   missions: EmbarkmentMissionRow[];
   viewMode: 'list' | 'table';
   onMissionClick?: (mission: EmbarkmentMissionRow) => void;
+  onDelete?: (id: string) => Promise<boolean>;
   isLoading?: boolean;
 }
 
@@ -184,7 +196,7 @@ function GlobalStatsSummary({ missions }: { missions: EmbarkmentMissionRow[] }) 
   );
 }
 
-function MissionRow({ mission, onClick }: { mission: EmbarkmentMissionRow; onClick?: () => void }) {
+function MissionRow({ mission, onClick, onDelete }: { mission: EmbarkmentMissionRow; onClick?: () => void; onDelete?: (id: string) => void }) {
   const stats = getMissionStats(mission.trains);
   
   const handleExportPDF = (e: React.MouseEvent) => {
@@ -293,9 +305,21 @@ function MissionRow({ mission, onClick }: { mission: EmbarkmentMissionRow; onCli
                   <FileText className="h-4 w-4 mr-2" />
                   Export PDF
                 </DropdownMenuItem>
+                {onDelete && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      className="text-destructive focus:text-destructive"
+                      onClick={(e) => { e.stopPropagation(); onDelete(mission.id); }}
+                    >
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Supprimer
+                    </DropdownMenuItem>
+                  </>
+                )}
               </DropdownMenuContent>
             </DropdownMenu>
-            
+
             <ChevronRight className="h-4 w-4 text-muted-foreground" />
           </div>
         </div>
@@ -305,7 +329,7 @@ function MissionRow({ mission, onClick }: { mission: EmbarkmentMissionRow; onCli
 }
 
 // Grid card component for grid view
-function MissionCard({ mission, onClick }: { mission: EmbarkmentMissionRow; onClick?: () => void }) {
+function MissionCard({ mission, onClick, onDelete }: { mission: EmbarkmentMissionRow; onClick?: () => void; onDelete?: (id: string) => void }) {
   const stats = getMissionStats(mission.trains);
   
   const handleExportPDF = (e: React.MouseEvent) => {
@@ -411,6 +435,16 @@ function MissionCard({ mission, onClick }: { mission: EmbarkmentMissionRow; onCl
             <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleExportPDF}>
               <FileText className="h-3.5 w-3.5" />
             </Button>
+            {onDelete && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7 text-destructive hover:text-destructive"
+                onClick={(e) => { e.stopPropagation(); onDelete(mission.id); }}
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+              </Button>
+            )}
           </div>
           <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:translate-x-1 transition-transform" />
         </div>
@@ -419,7 +453,8 @@ function MissionCard({ mission, onClick }: { mission: EmbarkmentMissionRow; onCl
   );
 }
 
-export function EmbarkmentHistoryView({ missions, viewMode, onMissionClick, isLoading }: EmbarkmentHistoryViewProps) {
+export function EmbarkmentHistoryView({ missions, viewMode, onMissionClick, onDelete, isLoading }: EmbarkmentHistoryViewProps) {
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   // Internal state for embarkment-specific filtering
   const [internalViewMode, setInternalViewMode] = useState<EmbarkmentViewMode>('list');
   const [searchQuery, setSearchQuery] = useState('');
@@ -506,6 +541,15 @@ export function EmbarkmentHistoryView({ missions, viewMode, onMissionClick, isLo
     setStatusFilter('all');
     setStartDate(undefined);
     setEndDate(undefined);
+  };
+
+  const handleDeleteRequest = (id: string) => setConfirmDeleteId(id);
+
+  const handleDeleteConfirm = async () => {
+    if (confirmDeleteId && onDelete) {
+      await onDelete(confirmDeleteId);
+    }
+    setConfirmDeleteId(null);
   };
 
   const handleExportGroupedPDF = () => {
@@ -648,6 +692,18 @@ export function EmbarkmentHistoryView({ missions, viewMode, onMissionClick, isLo
                               <FileText className="h-4 w-4 mr-2" />
                               PDF
                             </DropdownMenuItem>
+                            {onDelete && (
+                              <>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                  className="text-destructive focus:text-destructive"
+                                  onClick={(e) => { e.stopPropagation(); handleDeleteRequest(mission.id); }}
+                                >
+                                  <Trash2 className="h-4 w-4 mr-2" />
+                                  Supprimer
+                                </DropdownMenuItem>
+                              </>
+                            )}
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </TableCell>
@@ -708,6 +764,7 @@ export function EmbarkmentHistoryView({ missions, viewMode, onMissionClick, isLo
                 key={mission.id}
                 mission={mission}
                 onClick={() => onMissionClick?.(mission)}
+                onDelete={onDelete ? handleDeleteRequest : undefined}
               />
             ))}
           </div>
@@ -718,67 +775,91 @@ export function EmbarkmentHistoryView({ missions, viewMode, onMissionClick, isLo
 
   // List view (default)
   return (
-    <div className="space-y-4">
-      <GlobalStatsSummary missions={filteredMissions} />
-      
-      {/* Filters */}
-      <EmbarkmentFilters
-        searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
-        stationFilter={stationFilter}
-        onStationFilterChange={setStationFilter}
-        stations={uniqueStations}
-        statusFilter={statusFilter}
-        onStatusFilterChange={setStatusFilter}
-        startDate={startDate}
-        endDate={endDate}
-        onStartDateChange={setStartDate}
-        onEndDateChange={setEndDate}
-        internalViewMode={internalViewMode}
-        onViewModeChange={setInternalViewMode}
-        hasActiveFilters={hasActiveFilters}
-        onClearFilters={clearFilters}
-        filteredCount={filteredMissions.length}
-        totalCount={missions.length}
-        onExportGroupedPDF={handleExportGroupedPDF}
-      />
+    <>
+      <div className="space-y-4">
+        <GlobalStatsSummary missions={filteredMissions} />
 
-      {filteredMissions.length === 0 ? (
-        <div className="text-center py-12">
-          <Search className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-          <h2 className="text-lg font-semibold mb-2">Aucun résultat</h2>
-          <p className="text-muted-foreground mb-4">
-            Aucune mission ne correspond à vos critères.
-          </p>
-          <Button variant="outline" onClick={clearFilters}>
-            Effacer les filtres
-          </Button>
-        </div>
-      ) : (
-        <div className="space-y-6">
-          {sortedDates.map((date) => (
-            <div key={date} className="space-y-2">
-              <h2 className="text-sm font-medium text-muted-foreground sticky top-0 bg-background py-2 flex items-center gap-2">
-                <Calendar className="h-4 w-4" />
-                {format(new Date(date), 'EEEE d MMMM yyyy', { locale: fr })}
-                <Badge variant="secondary" className="ml-auto">
-                  {groupedMissions[date].length} mission{groupedMissions[date].length > 1 ? 's' : ''}
-                </Badge>
-              </h2>
-              <div className="space-y-2">
-                {groupedMissions[date].map((mission) => (
-                  <MissionRow 
-                    key={mission.id} 
-                    mission={mission} 
-                    onClick={() => onMissionClick?.(mission)}
-                  />
-                ))}
+        {/* Filters */}
+        <EmbarkmentFilters
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          stationFilter={stationFilter}
+          onStationFilterChange={setStationFilter}
+          stations={uniqueStations}
+          statusFilter={statusFilter}
+          onStatusFilterChange={setStatusFilter}
+          startDate={startDate}
+          endDate={endDate}
+          onStartDateChange={setStartDate}
+          onEndDateChange={setEndDate}
+          internalViewMode={internalViewMode}
+          onViewModeChange={setInternalViewMode}
+          hasActiveFilters={hasActiveFilters}
+          onClearFilters={clearFilters}
+          filteredCount={filteredMissions.length}
+          totalCount={missions.length}
+          onExportGroupedPDF={handleExportGroupedPDF}
+        />
+
+        {filteredMissions.length === 0 ? (
+          <div className="text-center py-12">
+            <Search className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+            <h2 className="text-lg font-semibold mb-2">Aucun résultat</h2>
+            <p className="text-muted-foreground mb-4">
+              Aucune mission ne correspond à vos critères.
+            </p>
+            <Button variant="outline" onClick={clearFilters}>
+              Effacer les filtres
+            </Button>
+          </div>
+        ) : (
+          <div className="space-y-6">
+            {sortedDates.map((date) => (
+              <div key={date} className="space-y-2">
+                <h2 className="text-sm font-medium text-muted-foreground sticky top-0 bg-background py-2 flex items-center gap-2">
+                  <Calendar className="h-4 w-4" />
+                  {format(new Date(date), 'EEEE d MMMM yyyy', { locale: fr })}
+                  <Badge variant="secondary" className="ml-auto">
+                    {groupedMissions[date].length} mission{groupedMissions[date].length > 1 ? 's' : ''}
+                  </Badge>
+                </h2>
+                <div className="space-y-2">
+                  {groupedMissions[date].map((mission) => (
+                    <MissionRow
+                      key={mission.id}
+                      mission={mission}
+                      onClick={() => onMissionClick?.(mission)}
+                      onDelete={onDelete ? handleDeleteRequest : undefined}
+                    />
+                  ))}
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Confirmation dialog */}
+      <AlertDialog open={confirmDeleteId !== null} onOpenChange={(open) => { if (!open) setConfirmDeleteId(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Supprimer cette mission ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Cette action est irréversible. La mission sera définitivement supprimée.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteConfirm}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Supprimer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }
 
