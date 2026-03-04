@@ -5,6 +5,12 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/),
 et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.10.1] - 2026-03-04
+
+### Corrigé
+- TrainGroupCard : badges Bord, TC, PV, RI désormais affichés dans l'en-tête agrégé du train/gare multi-agents
+- TrainGroupCard sous-lignes agents : badge Bord (tarifs à bord) et RI+ ajoutés — tous les badges sont maintenant complets
+
 ## [1.10.0] - 2026-03-04
 
 ### Ajouté

@@ -96,6 +96,41 @@ export function TrainGroupCard({
               {fraudRate.toFixed(1)} %
             </span>
           </div>
+          {/* Badges agrégés de tous les contrôles */}
+          {(() => {
+            const totalBord = sorted.reduce((s, c) =>
+              s + (c.tarif_bord_stt_50 || 0) + (c.tarif_bord_stt_100 || 0)
+                + (c.tarif_bord_rnv || 0) + (c.tarif_bord_titre_tiers || 0)
+                + (c.tarif_bord_doc_naissance || 0) + (c.tarif_bord_autre || 0), 0);
+            const totalTC  = sorted.reduce((s, c) => s + c.tarifs_controle, 0);
+            const totalPV  = sorted.reduce((s, c) => s + c.pv, 0);
+            const totalRI  = sorted.reduce((s, c) => s + c.ri_positive + c.ri_negative, 0);
+            if (totalBord === 0 && totalTC === 0 && totalPV === 0 && totalRI === 0) return null;
+            return (
+              <div className="flex gap-1 mt-1.5 flex-wrap">
+                {totalBord > 0 && (
+                  <Badge variant="outline" className="text-[9px] px-1.5 py-0 bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 border-0 h-4">
+                    Bord: {totalBord}
+                  </Badge>
+                )}
+                {totalTC > 0 && (
+                  <Badge variant="outline" className="text-[9px] px-1.5 py-0 bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 border-0 h-4">
+                    TC: {totalTC}
+                  </Badge>
+                )}
+                {totalPV > 0 && (
+                  <Badge variant="outline" className="text-[9px] px-1.5 py-0 bg-red-500 text-white border-0 h-4">
+                    PV: {totalPV}
+                  </Badge>
+                )}
+                {totalRI > 0 && (
+                  <Badge variant="outline" className="text-[9px] px-1.5 py-0 bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400 border-0 h-4">
+                    RI: {totalRI}
+                  </Badge>
+                )}
+              </div>
+            );
+          })()}
         </div>
       </div>
 
@@ -143,6 +178,16 @@ export function TrainGroupCard({
                   </span>
                 </div>
                 <div className="flex items-center gap-1 mt-0.5 flex-wrap">
+                  {(() => {
+                    const bord = (control.tarif_bord_stt_50 || 0) + (control.tarif_bord_stt_100 || 0)
+                      + (control.tarif_bord_rnv || 0) + (control.tarif_bord_titre_tiers || 0)
+                      + (control.tarif_bord_doc_naissance || 0) + (control.tarif_bord_autre || 0);
+                    return bord > 0 ? (
+                      <Badge variant="outline" className="text-[9px] px-1 py-0 bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 border-0 h-4">
+                        Bord:{bord}
+                      </Badge>
+                    ) : null;
+                  })()}
                   {control.tarifs_controle > 0 && (
                     <Badge variant="outline" className="text-[9px] px-1 py-0 bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 border-0 h-4">
                       TC:{control.tarifs_controle}
@@ -151,6 +196,11 @@ export function TrainGroupCard({
                   {control.pv > 0 && (
                     <Badge variant="outline" className="text-[9px] px-1 py-0 bg-red-500 text-white border-0 h-4">
                       PV:{control.pv}
+                    </Badge>
+                  )}
+                  {control.ri_positive > 0 && (
+                    <Badge variant="outline" className="text-[9px] px-1 py-0 bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400 border-0 h-4">
+                      RI+:{control.ri_positive}
                     </Badge>
                   )}
                   {control.ri_negative > 0 && (
