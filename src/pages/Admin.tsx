@@ -67,6 +67,7 @@ import {
   History,
   Plug,
   Check,
+  Monitor,
 } from 'lucide-react';
 import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
@@ -449,7 +450,7 @@ export default function AdminPage() {
 
         {/* Tabs */}
         <Tabs defaultValue="users" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="users" className="flex items-center gap-1.5 text-xs">
               <Users className="h-3.5 w-3.5" />
               Utilisateurs
@@ -469,6 +470,10 @@ export default function AdminPage() {
             <TabsTrigger value="integrations" className="flex items-center gap-1.5 text-xs">
               <Plug className="h-3.5 w-3.5" />
               Intégrations
+            </TabsTrigger>
+            <TabsTrigger value="presentation" className="flex items-center gap-1.5 text-xs">
+              <Monitor className="h-3.5 w-3.5" />
+              Présentation
             </TabsTrigger>
           </TabsList>
 
@@ -953,6 +958,27 @@ export default function AdminPage() {
                     ))}
                   </ul>
                 </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Présentation Tab */}
+          <TabsContent value="presentation" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Monitor className="h-5 w-5" />
+                  Présentation de l'application
+                </CardTitle>
+                <CardDescription>Aperçu de la présentation SNCF Contrôles</CardDescription>
+              </CardHeader>
+              <CardContent className="p-0">
+                <iframe
+                  src="/presentation_sncf_controles.html"
+                  className="w-full rounded-b-lg border-0"
+                  style={{ height: '80vh' }}
+                  title="Présentation SNCF Contrôles"
+                />
               </CardContent>
             </Card>
           </TabsContent>

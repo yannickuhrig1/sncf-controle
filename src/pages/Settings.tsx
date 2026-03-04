@@ -70,6 +70,7 @@ const PAGE_OPTIONS: { id: PageId; label: string; canDisable: boolean; roleRequir
   { id: 'station', label: 'Contrôle en gare', canDisable: true },
   { id: 'statistics', label: 'Statistiques', canDisable: true },
   { id: 'history', label: 'Historique', canDisable: true },
+  { id: 'infos', label: 'Infos', canDisable: true },
   { id: 'manager', label: 'Manager', canDisable: true, roleRequired: 'manager' },
   { id: 'profile', label: 'Profil', canDisable: true },
   { id: 'settings', label: 'Paramètres', canDisable: true },
