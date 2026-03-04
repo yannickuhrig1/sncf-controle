@@ -109,7 +109,7 @@ export function AppLayout({ children }: AppLayoutProps) {
   // Filter and order nav items for burger menu / sidebar
   const burgerNavItems = (() => {
     const allowedItems = allNavItems.filter(item => {
-      if (item.adminOnly && !isUserAdmin) return false;
+      if (item.adminOnly && !isUserAdmin && !isUserManager) return false;
       if (item.managerOnly && !isUserManager && !isUserAdmin) return false;
       if (item.pageId === 'infos' && hideInfosPage) return false;
       return visiblePages.includes(item.pageId);
@@ -125,7 +125,7 @@ export function AppLayout({ children }: AppLayoutProps) {
   // Filter and order nav items for bottom bar
   const bottomNavItems = (() => {
     const allowedItems = allNavItems.filter(item => {
-      if (item.adminOnly && !isUserAdmin) return false;
+      if (item.adminOnly && !isUserAdmin && !isUserManager) return false;
       if (item.managerOnly && !isUserManager && !isUserAdmin) return false;
       if (item.pageId === 'infos' && hideInfosPage) return false;
       return bottomBarPages.includes(item.pageId);

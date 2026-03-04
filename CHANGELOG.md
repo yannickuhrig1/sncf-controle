@@ -5,6 +5,14 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/),
 et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.9.9] - 2026-03-04
+
+### Ajouté
+- Admin : dialogue d'édition complet (nom, prénom, téléphone, matricule, email + champs admin : rôle, équipe, approbation) — email lu via RPC `get_auth_user_email` (SECURITY DEFINER), sauvegardé via edge function `update-user`
+- Admin : accès managers à la page `/admin` (onglet Utilisateurs) — champs rôle/équipe/approbation désactivés pour les managers
+- Navigation : icône Admin visible pour les managers dans le menu latéral et la barre du bas
+- RLS : fonction SQL `public.get_auth_user_email(uuid)` pour lire l'email depuis `auth.users`
+
 ## [1.9.8] - 2026-03-04
 
 ### Ajouté

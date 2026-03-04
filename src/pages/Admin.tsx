@@ -103,11 +103,19 @@ export default function AdminPage() {
   const [teamName, setTeamName] = useState('');
   const [teamDescription, setTeamDescription] = useState('');
 
-  // User role dialog state
+  // User edit dialog state
   const [roleDialogOpen, setRoleDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<Profile | null>(null);
   const [selectedRole, setSelectedRole] = useState<AppRole>('agent');
   const [selectedTeamId, setSelectedTeamId] = useState<string>('');
+  const [editFirstName,  setEditFirstName]  = useState('');
+  const [editLastName,   setEditLastName]   = useState('');
+  const [editPhone,      setEditPhone]      = useState('');
+  const [editMatricule,  setEditMatricule]  = useState('');
+  const [editEmail,      setEditEmail]      = useState('');
+  const [editApproved,   setEditApproved]   = useState(false);
+  const [isEmailLoading, setIsEmailLoading] = useState(false);
+  const [isSavingUser,   setIsSavingUser]   = useState(false);
 
   // Delete user dialog state
   const [deleteUserTarget, setDeleteUserTarget] = useState<Profile | null>(null);
@@ -137,7 +145,7 @@ export default function AdminPage() {
       if (error) throw error;
       return data as Profile[];
     },
-    enabled: !!profile && isAdmin(),
+    enabled: !!profile && (isAdmin() || isManager()),
   });
 
   // Fetch all teams
@@ -151,7 +159,7 @@ export default function AdminPage() {
       if (error) throw error;
       return data as Team[];
     },
-    enabled: !!profile && isAdmin(),
+    enabled: !!profile && (isAdmin() || isManager()),
   });
 
   // Fetch hide_infos_page setting
@@ -290,6 +298,12 @@ export default function AdminPage() {
     setEditingUser(null);
     setSelectedRole('agent');
     setSelectedTeamId('');
+    setEditFirstName('');
+    setEditLastName('');
+    setEditPhone('');
+    setEditMatricule('');
+    setEditEmail('');
+    setEditApproved(false);
   };
 
   const openEditTeam = (team: Team) => {
@@ -299,11 +313,25 @@ export default function AdminPage() {
     setTeamDialogOpen(true);
   };
 
-  const openEditUser = (user: Profile) => {
+  const openEditUser = async (user: Profile) => {
     setEditingUser(user);
     setSelectedRole(user.role);
     setSelectedTeamId(user.team_id || '');
+    setEditFirstName(user.first_name ?? '');
+    setEditLastName(user.last_name ?? '');
+    setEditPhone(user.phone_number ?? '');
+    setEditMatricule(user.matricule ?? '');
+    setEditApproved(user.is_approved);
+    setEditEmail('');
     setRoleDialogOpen(true);
+    // Fetch email async
+    setIsEmailLoading(true);
+    try {
+      const { data: emailData } = await supabase.rpc('get_auth_user_email', { p_user_id: user.user_id });
+      setEditEmail(emailData ?? '');
+    } catch { /* ignore */ } finally {
+      setIsEmailLoading(false);
+    }
   };
 
   const handleTeamSubmit = () => {
@@ -326,14 +354,36 @@ export default function AdminPage() {
     }
   };
 
-  const handleRoleSubmit = () => {
+  const handleSaveUser = async () => {
     if (!editingUser) return;
-    
-    updateUserRole.mutate({
-      userId: editingUser.user_id,
-      role: selectedRole,
-      teamId: selectedTeamId || null,
-    });
+    setIsSavingUser(true);
+    try {
+      const response = await supabase.functions.invoke('update-user', {
+        body: {
+          userId: editingUser.user_id,
+          firstName: editFirstName,
+          lastName: editLastName,
+          phone: editPhone,
+          matricule: editMatricule,
+          email: editEmail || undefined,
+          ...(isAdmin() && {
+            role: selectedRole,
+            teamId: selectedTeamId || null,
+            isApproved: editApproved,
+          }),
+        },
+      });
+      if (response.error || response.data?.error) {
+        throw new Error(response.data?.error || response.error?.message || 'Erreur');
+      }
+      toast.success('Profil mis à jour');
+      queryClient.invalidateQueries({ queryKey: ['admin-profiles'] });
+      resetRoleDialog();
+    } catch (error: any) {
+      toast.error('Erreur: ' + (error.message || 'Impossible de mettre à jour'));
+    } finally {
+      setIsSavingUser(false);
+    }
   };
 
   const handleCreateUser = async () => {
@@ -426,7 +476,7 @@ export default function AdminPage() {
     return <Navigate to="/auth" replace />;
   }
 
-  if (!isAdmin()) {
+  if (!isAdmin() && !isManager()) {
     return <Navigate to="/" replace />;
   }
 
@@ -984,75 +1034,107 @@ export default function AdminPage() {
           </TabsContent>
         </Tabs>
 
-        {/* User Role Dialog */}
-        <Dialog open={roleDialogOpen} onOpenChange={setRoleDialogOpen}>
-          <DialogContent className="overflow-y-auto max-h-[85vh]">
+        {/* User Edit Dialog */}
+        <Dialog open={roleDialogOpen} onOpenChange={(open) => { if (!open) resetRoleDialog(); }}>
+          <DialogContent className="overflow-y-auto max-h-[90vh] sm:max-w-lg">
             <DialogHeader>
-              <DialogTitle>Modifier l'utilisateur</DialogTitle>
+              <DialogTitle>Modifier le profil</DialogTitle>
               <DialogDescription>
                 {editingUser && `${editingUser.first_name} ${editingUser.last_name}`}
               </DialogDescription>
             </DialogHeader>
-            <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <Label>Rôle</Label>
-                <Select value={selectedRole} onValueChange={(v) => setSelectedRole(v as AppRole)}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="agent">
-                      <div className="flex items-center gap-2">
-                        <Shield className="h-4 w-4" />
-                        Agent
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="manager">
-                      <div className="flex items-center gap-2">
-                        <ShieldCheck className="h-4 w-4" />
-                        Manager
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="admin">
-                      <div className="flex items-center gap-2">
-                        <UserCog className="h-4 w-4" />
-                        Administrateur
-                      </div>
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
+            <div className="space-y-4 py-2">
+              {/* Identité */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label>Prénom</Label>
+                  <Input value={editFirstName} onChange={(e) => setEditFirstName(e.target.value)} placeholder="Prénom" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Nom</Label>
+                  <Input value={editLastName} onChange={(e) => setEditLastName(e.target.value)} placeholder="Nom" />
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label>Équipe</Label>
-                <Select
-                  value={selectedTeamId || '__none__'}
-                  onValueChange={(v) => setSelectedTeamId(v === '__none__' ? '' : v)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Aucune équipe" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="__none__">Aucune équipe</SelectItem>
-                    {teams.map((team) => (
-                      <SelectItem key={team.id} value={team.id}>
-                        {team.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label>Téléphone</Label>
+                  <Input value={editPhone} onChange={(e) => setEditPhone(e.target.value)} placeholder="06 …" type="tel" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Matricule</Label>
+                  <Input value={editMatricule} onChange={(e) => setEditMatricule(e.target.value)} placeholder="Matricule" />
+                </div>
               </div>
+              {/* Email */}
+              <div className="space-y-1.5">
+                <Label className="flex items-center gap-2">
+                  Email du compte
+                  {isEmailLoading && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />}
+                </Label>
+                <Input
+                  type="email"
+                  value={editEmail}
+                  onChange={(e) => setEditEmail(e.target.value)}
+                  placeholder={isEmailLoading ? 'Chargement…' : 'email@exemple.com'}
+                  disabled={isEmailLoading}
+                />
+              </div>
+
+              {/* Séparateur — champs admin uniquement */}
+              {isAdmin() && (
+                <>
+                  <Separator />
+                  <p className="text-xs text-muted-foreground font-medium">Paramètres admin</p>
+                  <div className="space-y-1.5">
+                    <Label>Rôle</Label>
+                    <Select value={selectedRole} onValueChange={(v) => setSelectedRole(v as AppRole)}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="agent">
+                          <div className="flex items-center gap-2"><Shield className="h-4 w-4" />Agent</div>
+                        </SelectItem>
+                        <SelectItem value="manager">
+                          <div className="flex items-center gap-2"><ShieldCheck className="h-4 w-4" />Manager</div>
+                        </SelectItem>
+                        <SelectItem value="admin">
+                          <div className="flex items-center gap-2"><UserCog className="h-4 w-4" />Administrateur</div>
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>Équipe</Label>
+                    <Select
+                      value={selectedTeamId || '__none__'}
+                      onValueChange={(v) => setSelectedTeamId(v === '__none__' ? '' : v)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Aucune équipe" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="__none__">Aucune équipe</SelectItem>
+                        {teams.map((team) => (
+                          <SelectItem key={team.id} value={team.id}>{team.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label>Compte approuvé</Label>
+                      <p className="text-xs text-muted-foreground">L'utilisateur peut se connecter</p>
+                    </div>
+                    <Switch checked={editApproved} onCheckedChange={setEditApproved} />
+                  </div>
+                </>
+              )}
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={resetRoleDialog}>
-                Annuler
-              </Button>
-              <Button 
-                onClick={handleRoleSubmit}
-                disabled={updateUserRole.isPending}
-              >
-                {updateUserRole.isPending && (
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                )}
+              <Button variant="outline" onClick={resetRoleDialog}>Annuler</Button>
+              <Button onClick={handleSaveUser} disabled={isSavingUser}>
+                {isSavingUser && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
                 Enregistrer
               </Button>
             </DialogFooter>
