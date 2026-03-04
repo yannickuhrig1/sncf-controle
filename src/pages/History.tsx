@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/useAuth';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useControls } from '@/hooks/useControls';
@@ -8,6 +9,8 @@ import { useLastSync } from '@/hooks/useLastSync';
 import { useOfflineSync } from '@/hooks/useOfflineSync';
 import { useUserPreferences, type HistoryViewMode } from '@/hooks/useUserPreferences';
 import { AppLayout } from '@/components/layout/AppLayout';
+import { supabase } from '@/integrations/supabase/client';
+import { TrainGroupCard } from '@/components/history/TrainGroupCard';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button, buttonVariants } from '@/components/ui/button';
@@ -168,7 +171,7 @@ function ControlRow({ control, onClick }: ControlRowProps) {
 }
 
 export default function HistoryPage() {
-  const { user, profile, loading: authLoading } = useAuth();
+  const { user, profile, loading: authLoading, isAdmin, isManager } = useAuth();
   const isMobile = useIsMobile();
   const { 
     controls, 
@@ -193,7 +196,9 @@ export default function HistoryPage() {
   const { formattedLastSync, updateLastSync } = useLastSync();
   const { isOnline, pendingCount, isSyncing } = useOfflineSync();
   const { preferences, updatePreferences } = useUserPreferences();
-  
+  const isUserAdmin   = isAdmin();
+  const isUserManager = isManager();
+
   const [activeTab, setActiveTab] = useState<HistoryTab>('controls');
   const [selectedControl, setSelectedControl] = useState<Control | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
@@ -268,6 +273,37 @@ export default function HistoryPage() {
     
     return sourceControls;
   }, [infiniteControls, controls, dataViewMode, profile]);
+
+  // Fetch agent profiles for multi-agent grouping display
+  const allControls = infiniteControls.length > 0 ? infiniteControls : controls;
+  const agentIds = useMemo(() =>
+    [...new Set(allControls.map(c => c.agent_id))],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [allControls.length]
+  );
+  const { data: agentProfiles = [] } = useQuery({
+    queryKey: ['profiles-by-ids', agentIds],
+    queryFn: async () => {
+      if (!agentIds.length) return [];
+      const { data } = await supabase
+        .from('profiles')
+        .select('id, first_name, last_name')
+        .in('id', agentIds);
+      return data ?? [];
+    },
+    enabled: agentIds.length > 0,
+    staleTime: 5 * 60 * 1000,
+  });
+  const profileMap = useMemo(() =>
+    Object.fromEntries(agentProfiles.map(p => [p.id, { first_name: p.first_name ?? '', last_name: p.last_name ?? '' }])),
+    [agentProfiles]
+  );
+
+  // Permission helper: can current user edit/delete this control?
+  const canEditControl = useCallback((control: Control) =>
+    control.agent_id === profile?.id || isUserAdmin || isUserManager,
+    [profile?.id, isUserAdmin, isUserManager]
+  );
 
   // Compute effective date range from period selection
   const periodDateRange = useMemo(() => {
@@ -362,23 +398,47 @@ export default function HistoryPage() {
     return result;
   }, [displayControls, searchQuery, locationFilter, sortOption, periodDateRange, getFraudRate]);
 
-  // Group filtered controls by date
-  const groupedControls = useMemo(() => {
-    return filteredControls.reduce((groups, control) => {
-      const date = control.control_date;
-      if (!groups[date]) {
-        groups[date] = [];
-      }
-      groups[date].push(control);
-      return groups;
-    }, {} as Record<string, Control[]>);
-  }, [filteredControls]);
+  // Group filtered controls by date, then sub-group multi-agent trains/gares
+  const groupedByDate = useMemo(() => {
+    const byDate: Record<string, Control[]> = {};
+    filteredControls.forEach(c => {
+      if (!byDate[c.control_date]) byDate[c.control_date] = [];
+      byDate[c.control_date].push(c);
+    });
 
-  const sortedDates = useMemo(() => {
-    return Object.keys(groupedControls).sort((a, b) => 
-      new Date(b).getTime() - new Date(a).getTime()
-    );
-  }, [groupedControls]);
+    return Object.entries(byDate)
+      .sort(([a], [b]) => new Date(b).getTime() - new Date(a).getTime())
+      .map(([date, dayControls]) => {
+        const buckets: Record<string, Control[]> = {};
+        const solo: Control[] = [];
+
+        dayControls.forEach(c => {
+          const key = c.location_type === 'train' && c.train_number
+            ? `train::${c.train_number}`
+            : c.location_type === 'gare'
+            ? `gare::${c.location}`
+            : null;
+          if (key) {
+            if (!buckets[key]) buckets[key] = [];
+            buckets[key].push(c);
+          } else {
+            solo.push(c);
+          }
+        });
+
+        const groups: { type: 'train' | 'gare'; controls: Control[] }[] = [];
+        Object.entries(buckets).forEach(([key, cs]) => {
+          if (cs.length > 1) {
+            groups.push({ type: key.startsWith('train') ? 'train' : 'gare', controls: cs });
+          } else {
+            solo.push(...cs);
+          }
+        });
+
+        solo.sort((a, b) => b.control_time.localeCompare(a.control_time));
+        return { date, groups, solo };
+      });
+  }, [filteredControls]);
 
   const hasActiveFilters = searchQuery.trim() !== '' || locationFilter !== 'all' || sortOption !== 'date' || historyPeriod !== 'all';
 
@@ -737,20 +797,32 @@ export default function HistoryPage() {
               </div>
             ) : (
               <div className="space-y-6">
-                {sortedDates.map((date) => (
+                {groupedByDate.map(({ date, groups, solo }) => (
                   <div key={date} className="space-y-2">
                     <h2 className="text-sm font-medium text-muted-foreground sticky top-0 bg-background py-2 flex items-center gap-2">
                       <Calendar className="h-4 w-4" />
                       {format(new Date(date), 'EEEE d MMMM yyyy', { locale: fr })}
                       <Badge variant="secondary" className="ml-auto">
-                        {groupedControls[date].length} contrôle{groupedControls[date].length > 1 ? 's' : ''}
+                        {groups.reduce((n, g) => n + g.controls.length, 0) + solo.length} contrôle{groups.reduce((n, g) => n + g.controls.length, 0) + solo.length > 1 ? 's' : ''}
                       </Badge>
                     </h2>
                     <div className="space-y-2">
-                      {groupedControls[date].map((control) => (
-                        <ControlRow 
-                          key={control.id} 
-                          control={control} 
+                      {groups.map((g, i) => (
+                        <TrainGroupCard
+                          key={i}
+                          groupType={g.type}
+                          controls={g.controls}
+                          profileMap={profileMap}
+                          currentUserId={profile?.id}
+                          isUserAdmin={isUserAdmin}
+                          isUserManager={isUserManager}
+                          onControlClick={handleControlClick}
+                        />
+                      ))}
+                      {solo.map((control) => (
+                        <ControlRow
+                          key={control.id}
+                          control={control}
                           onClick={() => handleControlClick(control)}
                         />
                       ))}
@@ -811,8 +883,8 @@ export default function HistoryPage() {
         control={selectedControl}
         open={detailOpen}
         onOpenChange={setDetailOpen}
-        onEdit={handleEdit}
-        onDelete={handleDelete}
+        onEdit={selectedControl && canEditControl(selectedControl) ? handleEdit : undefined}
+        onDelete={selectedControl && canEditControl(selectedControl) ? handleDelete : undefined}
         onDuplicate={handleDuplicate}
       />
       

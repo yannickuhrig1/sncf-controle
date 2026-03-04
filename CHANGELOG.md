@@ -5,6 +5,16 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/),
 et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.9.8] - 2026-03-04
+
+### Ajouté
+- Historique : vignette globale multi-agent (`TrainGroupCard`) quand ≥ 2 contrôles détectés sur le même train ou la même gare le même jour — agrégats (voyageurs, fraudes, taux global) + sous-lignes par agent (avatar coloré, nom, heure, badges TC/PV/RI, taux individuel)
+- Permissions : agents ne voient les boutons Modifier/Supprimer que sur leurs propres contrôles ; managers et admins peuvent modifier/supprimer tous les contrôles de leur équipe/périmètre
+- RLS Supabase : politiques UPDATE et DELETE de la table `controls` étendues aux managers (leur équipe uniquement)
+
+### Modifié
+- Paramètres → Navigation : barre du bas marquée "(mobile uniquement)" ; menu burger renommé "Menu burger · Menu latéral (PC)" avec description expliquant que la config s'applique aussi au menu latéral PC
+
 ## [1.9.7] - 2026-03-04
 
 ### Ajouté
