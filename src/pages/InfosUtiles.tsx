@@ -17,6 +17,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion';
+import { Button } from '@/components/ui/button';
 import {
   Info,
   Train,
@@ -36,6 +37,10 @@ import {
   BarChart3,
   History,
   Settings,
+  Share2,
+  Copy,
+  MessageSquare,
+  QrCode,
 } from 'lucide-react';
 import { Loader2 } from 'lucide-react';
 
@@ -92,10 +97,10 @@ const TILES: Tile[] = [
     iconColor: 'text-white',
   },
   {
-    id: 'ressources',
-    icon: BookOpen,
-    label: 'Ressources',
-    gradient: 'from-slate-400 to-slate-600',
+    id: 'partager',
+    icon: Share2,
+    label: "Partager l'app",
+    gradient: 'from-teal-400 to-cyan-500',
     iconBg: 'bg-white/20',
     iconColor: 'text-white',
   },
@@ -333,27 +338,81 @@ function ContentContacts() {
   );
 }
 
-function ContentRessources() {
+function ContentPartager() {
+  const appUrl   = window.location.origin;
+  const qrSrc    = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(appUrl)}`;
+  const smsBody  = encodeURIComponent(`SNCF Contrôles — Application de gestion des contrôles : ${appUrl}`);
+  const mailSub  = encodeURIComponent('SNCF Contrôles — Application');
+  const mailBody = encodeURIComponent(`Bonjour,\n\nVoici le lien vers l'application SNCF Contrôles :\n${appUrl}\n\nElle permet de saisir et exporter les contrôles à bord et en gare.`);
+
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(appUrl).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
+
   return (
-    <div className="space-y-3">
-      {[
-        { icon: BookOpen, label: 'Documentation interne', desc: 'Intranet SNCF > Espace contrôle' },
-        { icon: FileText, label: 'Guide tarifaire', desc: 'Disponible sur l\'intranet' },
-        { icon: Users, label: 'Chef d\'équipe', desc: 'Voir la page Manager dans l\'app' },
-        { icon: ExternalLink, label: 'Site SNCF', desc: 'sncf-voyageurs.com', href: 'https://www.sncf-voyageurs.com' },
-      ].map(({ icon: Icon, label, desc, href }) => (
-        <div key={label} className="flex items-start gap-3 p-3 bg-muted/30 rounded-lg">
-          <Icon className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
-          <div>
-            <p className="text-sm font-medium">{label}</p>
-            {href ? (
-              <a href={href} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline">{desc}</a>
-            ) : (
-              <p className="text-xs text-muted-foreground">{desc}</p>
-            )}
-          </div>
-        </div>
-      ))}
+    <div className="space-y-4">
+      <p className="text-sm text-muted-foreground">
+        Partagez l'application SNCF Contrôles avec vos collègues via QR code, SMS ou email.
+      </p>
+
+      {/* QR Code */}
+      <div className="flex flex-col items-center gap-2">
+        <img
+          src={qrSrc}
+          alt="QR Code SNCF Contrôles"
+          width={180}
+          height={180}
+          className="rounded-xl border shadow-sm"
+        />
+        <p className="text-xs text-muted-foreground">Scannez pour ouvrir l'app</p>
+      </div>
+
+      {/* URL */}
+      <div className="flex items-center gap-2 bg-muted rounded-md px-3 py-2">
+        <span className="text-xs text-muted-foreground truncate flex-1">{appUrl}</span>
+      </div>
+
+      {/* Actions */}
+      <div className="grid grid-cols-2 gap-2">
+        <Button variant="outline" size="sm" className="gap-1.5" onClick={handleCopy}>
+          <Copy className="h-3.5 w-3.5" />
+          {copied ? 'Copié !' : 'Copier le lien'}
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          className="gap-1.5"
+          onClick={() => window.open(`sms:?body=${smsBody}`)}
+        >
+          <MessageSquare className="h-3.5 w-3.5" />
+          SMS
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          className="gap-1.5"
+          onClick={() => window.open(`mailto:?subject=${mailSub}&body=${mailBody}`)}
+        >
+          <Mail className="h-3.5 w-3.5" />
+          Email
+        </Button>
+        {typeof navigator !== 'undefined' && navigator.share && (
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-1.5"
+            onClick={() => navigator.share({ title: 'SNCF Contrôles', url: appUrl })}
+          >
+            <Share2 className="h-3.5 w-3.5" />
+            Partager
+          </Button>
+        )}
+      </div>
     </div>
   );
 }
@@ -364,7 +423,7 @@ const DIALOG_CONTENT: Record<string, { title: string; Content: () => JSX.Element
   tarifs:    { title: 'Types de tarification',       Content: ContentTarifs },
   faq:       { title: 'Questions fréquentes',        Content: ContentFAQ },
   contacts:  { title: 'Contacts utiles',             Content: ContentContacts },
-  ressources:{ title: 'Ressources',                  Content: ContentRessources },
+  partager:  { title: "Partager l'application",        Content: ContentPartager },
 };
 
 /* ─── Page principale ────────────────────────────────────────────────────── */

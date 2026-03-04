@@ -27,7 +27,14 @@ import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
-import { Loader2, Building2, ArrowLeft, Save, ArrowRight, X, Clock, Calendar, ArrowDownToLine, ArrowUpFromLine, Users, UserCheck, MessageSquare, FileText, AlertTriangle, Plus, User, Ticket, Train, LayoutList, Layers } from 'lucide-react';
+import { Loader2, Building2, ArrowLeft, Save, ArrowRight, X, Clock, Calendar, ArrowDownToLine, ArrowUpFromLine, Users, UserCheck, MessageSquare, FileText, AlertTriangle, Plus, User, Ticket, Train, LayoutList, Layers, Share2, Copy, Mail, Link2 } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { cn } from '@/lib/utils';
 
@@ -116,6 +123,15 @@ export default function StationControl() {
     }
   }, [parisDate, parisTime, isEditMode, stationName]);
   
+  // Pre-fill station from ?station= URL param (rejoindre un groupe)
+  useEffect(() => {
+    const stationParam = searchParams.get('station');
+    if (stationParam && !editId && !duplicateId) {
+      setStationName(decodeURIComponent(stationParam));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Compact/Extended mode
   const [compactMode, setCompactMode] = useState(false);
   const [activeSection, setActiveSection] = useState<'info' | 'voyageurs' | 'supplements' | 'controle' | 'pv' | 'ri' | 'notes'>('info');
@@ -150,6 +166,12 @@ export default function StationControl() {
 
   // Notes
   const [notes, setNotes] = useState('');
+
+  // Groupe multi-agents
+  const [shareGroupOpen, setShareGroupOpen] = useState(false);
+  const [joinGroupOpen,  setJoinGroupOpen]  = useState(false);
+  const [joinInput,      setJoinInput]      = useState('');
+  const [copySuccess,    setCopySuccess]    = useState(false);
 
   // Calculate fraud stats
   const fraudStats = useMemo(() => {
@@ -537,6 +559,30 @@ export default function StationControl() {
         ) : (
           <>
           <div className="max-w-3xl mx-auto w-full space-y-4">
+            {/* Groupe multi-agents */}
+            {!isEditMode && !isDuplicateMode && (
+              <Card>
+                <CardContent className="p-3 flex items-center gap-2 flex-wrap">
+                  <Users className="h-4 w-4 text-muted-foreground shrink-0" />
+                  <span className="text-sm text-muted-foreground flex-1 min-w-0">Contrôle multi-agents</span>
+                  <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setJoinGroupOpen(true)}>
+                    <Link2 className="h-3.5 w-3.5" />
+                    Rejoindre
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant={stationName.trim() ? 'default' : 'outline'}
+                    className="gap-1.5"
+                    disabled={!stationName.trim()}
+                    onClick={() => setShareGroupOpen(true)}
+                  >
+                    <Share2 className="h-3.5 w-3.5" />
+                    Partager
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
+
             {/* Compact/Extended Toggle */}
             <div className="flex items-center gap-2">
               <ToggleGroup
@@ -989,6 +1035,137 @@ export default function StationControl() {
           </>
         )}
       </div>
+
+      {/* ── Dialog : Rejoindre un groupe ───────────────────────────────── */}
+      <Dialog open={joinGroupOpen} onOpenChange={setJoinGroupOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Link2 className="h-4 w-4" />
+              Rejoindre un groupe
+            </DialogTitle>
+            <DialogDescription>
+              Entrez le nom de la gare partagée pour rejoindre le groupe de contrôle.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 pt-1">
+            <input
+              className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              placeholder="Ex: Metz, Luxembourg…"
+              value={joinInput}
+              onChange={(e) => setJoinInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && joinInput.trim()) {
+                  setStationName(joinInput.trim());
+                  setJoinGroupOpen(false);
+                  setJoinInput('');
+                }
+              }}
+            />
+            <Button
+              className="w-full"
+              disabled={!joinInput.trim()}
+              onClick={() => {
+                setStationName(joinInput.trim());
+                setJoinGroupOpen(false);
+                setJoinInput('');
+              }}
+            >
+              Rejoindre
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Dialog : Partager la session ───────────────────────────────── */}
+      <Dialog open={shareGroupOpen} onOpenChange={setShareGroupOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Share2 className="h-4 w-4" />
+              Partager la session — {stationName}
+            </DialogTitle>
+            <DialogDescription>
+              Partagez ce QR code ou ce lien pour que d'autres agents rejoignent le contrôle en gare de {stationName}.
+            </DialogDescription>
+          </DialogHeader>
+          {(() => {
+            const shareUrl = `${window.location.origin}/station?station=${encodeURIComponent(stationName)}`;
+            const smsBody  = encodeURIComponent(`Rejoins le contrôle en gare de ${stationName} : ${shareUrl}`);
+            const mailSub  = encodeURIComponent(`Contrôle gare ${stationName}`);
+            const mailBody = encodeURIComponent(`Rejoins le contrôle en gare de ${stationName} :\n${shareUrl}`);
+            const qrSrc    = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(shareUrl)}`;
+
+            return (
+              <div className="space-y-4 pt-1">
+                {/* QR Code */}
+                <div className="flex justify-center">
+                  <img
+                    src={qrSrc}
+                    alt="QR Code"
+                    width={180}
+                    height={180}
+                    className="rounded-lg border"
+                  />
+                </div>
+
+                {/* URL */}
+                <div className="flex items-center gap-2 bg-muted rounded-md px-3 py-2">
+                  <span className="text-xs text-muted-foreground truncate flex-1">{shareUrl}</span>
+                </div>
+
+                {/* Actions */}
+                <div className="grid grid-cols-2 gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-1.5"
+                    onClick={() => {
+                      navigator.clipboard.writeText(shareUrl).then(() => {
+                        setCopySuccess(true);
+                        setTimeout(() => setCopySuccess(false), 2000);
+                      });
+                    }}
+                  >
+                    <Copy className="h-3.5 w-3.5" />
+                    {copySuccess ? 'Copié !' : 'Copier'}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-1.5"
+                    onClick={() => window.open(`sms:?body=${smsBody}`)}
+                  >
+                    <MessageSquare className="h-3.5 w-3.5" />
+                    SMS
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-1.5"
+                    onClick={() => window.open(`mailto:?subject=${mailSub}&body=${mailBody}`)}
+                  >
+                    <Mail className="h-3.5 w-3.5" />
+                    Email
+                  </Button>
+                  {typeof navigator !== 'undefined' && navigator.share && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="gap-1.5"
+                      onClick={() => navigator.share({ title: `Contrôle gare ${stationName}`, url: shareUrl })}
+                    >
+                      <Share2 className="h-3.5 w-3.5" />
+                      Partager
+                    </Button>
+                  )}
+                </div>
+              </div>
+            );
+          })()}
+        </DialogContent>
+      </Dialog>
+
     </AppLayout>
   );
 }

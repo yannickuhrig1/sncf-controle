@@ -5,6 +5,12 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/),
 et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.10.2] - 2026-03-04
+
+### Ajouté
+- En gare : contrôle multi-agents — "Créer / Partager" une session (QR code + lien + SMS + email) pour que plusieurs agents rejoignent le même groupe de contrôle ; "Rejoindre" via code de gare ou URL `?station=NOM`
+- Infos : tuile "Partager l'app" remplace "Ressources" — QR code de l'application + Copier / SMS / Email / Web Share API
+
 ## [1.10.1] - 2026-03-04
 
 ### Corrigé
