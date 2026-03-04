@@ -14,6 +14,7 @@ interface TrainGroupCardProps {
   isUserAdmin: boolean;
   isUserManager: boolean;
   onControlClick: (control: Control) => void;
+  onGroupClick?: (controls: Control[]) => void;
 }
 
 function getFraudRateColor(rate: number) {
@@ -43,6 +44,7 @@ export function TrainGroupCard({
   controls,
   profileMap,
   onControlClick,
+  onGroupClick,
 }: TrainGroupCardProps) {
   const sorted = [...controls].sort((a, b) => a.control_time.localeCompare(b.control_time));
 
@@ -64,8 +66,11 @@ export function TrainGroupCard({
 
   return (
     <Card className="overflow-hidden border-primary/20">
-      {/* En-tête agrégé */}
-      <div className="flex items-start gap-3 p-3 bg-primary/5 border-b border-primary/10">
+      {/* En-tête agrégé — cliquable pour vue fusionnée */}
+      <div
+        className={cn('flex items-start gap-3 p-3 bg-primary/5 border-b border-primary/10', onGroupClick && 'cursor-pointer hover:bg-primary/10 transition-colors')}
+        onClick={onGroupClick ? () => onGroupClick(controls) : undefined}
+      >
         <div className="p-1.5 rounded-md bg-primary/15 shrink-0">
           <Icon className="h-4 w-4 text-primary" />
         </div>

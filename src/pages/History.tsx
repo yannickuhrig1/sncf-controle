@@ -62,6 +62,56 @@ type LocationType = Database['public']['Enums']['location_type'];
 type SortOption = 'date' | 'fraud_desc' | 'fraud_asc' | 'passengers_desc' | 'passengers_asc';
 type HistoryTab = 'controls' | 'embarkment';
 
+/** Fusionne les contrôles du même train (ou gare) le même jour en un seul. */
+function mergeControlsByTrain(controls: Control[]): Control[] {
+  const groups = new Map<string, Control[]>();
+  for (const c of controls) {
+    const key = c.location_type === 'train' && c.train_number
+      ? `train::${c.control_date}::${c.train_number}`
+      : c.location_type === 'gare'
+      ? `gare::${c.control_date}::${c.location}`
+      : `solo::${c.id}`;
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key)!.push(c);
+  }
+  return Array.from(groups.values()).map(group => {
+    if (group.length === 1) return group[0];
+    const first = group[0];
+    const s = (fn: (c: Control) => number) => group.reduce((acc, c) => acc + fn(c), 0);
+    return {
+      ...first,
+      control_time: group.reduce((m, c) => c.control_time < m ? c.control_time : m, first.control_time),
+      nb_passagers:           s(c => c.nb_passagers),
+      nb_en_regle:            s(c => c.nb_en_regle),
+      tarifs_controle:        s(c => c.tarifs_controle),
+      pv:                     s(c => c.pv),
+      ri_positive:            s(c => c.ri_positive),
+      ri_negative:            s(c => c.ri_negative),
+      stt_50:                 s(c => c.stt_50),
+      stt_50_amount:          s(c => c.stt_50_amount || 0),
+      stt_100:                s(c => c.stt_100),
+      stt_100_amount:         s(c => c.stt_100_amount || 0),
+      rnv:                    s(c => c.rnv),
+      rnv_amount:             s(c => c.rnv_amount || 0),
+      titre_tiers:            s(c => c.titre_tiers || 0),
+      titre_tiers_amount:     s(c => c.titre_tiers_amount || 0),
+      doc_naissance:          s(c => c.doc_naissance || 0),
+      doc_naissance_amount:   s(c => c.doc_naissance_amount || 0),
+      pv_rnv:                 s(c => c.pv_rnv || 0),
+      pv_titre_tiers:         s(c => c.pv_titre_tiers || 0),
+      pv_doc_naissance:       s(c => c.pv_doc_naissance || 0),
+      pv_autre:               s(c => c.pv_autre || 0),
+      tarif_bord_stt_50:      s(c => c.tarif_bord_stt_50 || 0),
+      tarif_bord_stt_100:     s(c => c.tarif_bord_stt_100 || 0),
+      tarif_bord_rnv:         s(c => c.tarif_bord_rnv || 0),
+      tarif_bord_titre_tiers: s(c => c.tarif_bord_titre_tiers || 0),
+      tarif_bord_doc_naissance: s(c => c.tarif_bord_doc_naissance || 0),
+      tarif_bord_autre:       s(c => c.tarif_bord_autre || 0),
+      notes: group.map(c => c.notes).filter(Boolean).join(' | ') || null,
+    };
+  });
+}
+
 const locationIcons: Record<LocationType, React.ComponentType<{ className?: string }>> = {
   train: Train,
   gare: Building2,
@@ -216,6 +266,8 @@ export default function HistoryPage() {
   const [pdfPreviewOpen, setPdfPreviewOpen] = useState(false);
   const [pdfPreviewUrl, setPdfPreviewUrl] = useState<string | null>(null);
   const [pdfDocRef, setPdfDocRef] = useState<ReturnType<typeof exportToPDF> | null>(null);
+  const [mergedGroupControls, setMergedGroupControls] = useState<Control[] | null>(null);
+  const [mergedDialogOpen, setMergedDialogOpen] = useState(false);
   
   // Get view mode from preferences, default to 'list'
   // On mobile, always force list view regardless of preference
@@ -304,6 +356,12 @@ export default function HistoryPage() {
     control.agent_id === profile?.id || isUserAdmin || isUserManager,
     [profile?.id, isUserAdmin, isUserManager]
   );
+
+  // Open merged view for a group of controls (same train/gare same day)
+  const handleGroupClick = useCallback((groupControls: Control[]) => {
+    setMergedGroupControls(groupControls);
+    setMergedDialogOpen(true);
+  }, []);
 
   // Compute effective date range from period selection
   const periodDateRange = useMemo(() => {
@@ -466,7 +524,7 @@ export default function HistoryPage() {
     
     try {
       exportTableToPDF({
-        controls: filteredControls,
+        controls: mergeControlsByTrain(filteredControls),
         title: 'Export Tableau Historique',
         dateRange,
       });
@@ -489,9 +547,10 @@ export default function HistoryPage() {
       return;
     }
     try {
+      const merged = mergeControlsByTrain(filteredControls);
       const doc = exportToPDF({
-        controls: filteredControls,
-        title: `Historique des contrôles (${filteredControls.length})`,
+        controls: merged,
+        title: `Historique des contrôles (${merged.length})`,
         dateRange: getDateRangeString(),
         includeStats: true,
         orientation: 'auto',
@@ -817,6 +876,7 @@ export default function HistoryPage() {
                           isUserAdmin={isUserAdmin}
                           isUserManager={isUserManager}
                           onControlClick={handleControlClick}
+                          onGroupClick={handleGroupClick}
                         />
                       ))}
                       {solo.map((control) => (
@@ -887,10 +947,17 @@ export default function HistoryPage() {
         onDelete={selectedControl && canEditControl(selectedControl) ? handleDelete : undefined}
         onDuplicate={handleDuplicate}
       />
+
+      {/* Merged Group Dialog — vue fusionnée multi-agents */}
+      <ControlDetailDialog
+        control={mergedGroupControls ? mergeControlsByTrain(mergedGroupControls)[0] : null}
+        open={mergedDialogOpen}
+        onOpenChange={setMergedDialogOpen}
+      />
       
       {/* Export Dialog */}
       <ExportDialog
-        controls={controls}
+        controls={mergeControlsByTrain(controls)}
         open={exportOpen}
         onOpenChange={setExportOpen}
       />

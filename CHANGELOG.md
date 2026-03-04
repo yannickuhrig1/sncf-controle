@@ -5,6 +5,17 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/),
 et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.10.0] - 2026-03-04
+
+### Ajouté
+- Historique : clic sur l'en-tête d'une vignette multi-agents ouvre une vue fusionnée (tous les contrôles du train/gare combinés en un seul)
+- Historique vue tableau PC : colonne "Commentaire" affichée dans l'espace central
+- Exports (PDF, email, tableau) : contrôles du même train le même jour fusionnés en une seule entrée
+
+### Corrigé
+- Admin.tsx : `isManager` manquant dans le destructuring `useAuth()` (page inaccessible pour les managers malgré le guard)
+- Présentation SNCF : description RI positif corrigée + version mise à jour automatiquement
+
 ## [1.9.9] - 2026-03-04
 
 ### Ajouté

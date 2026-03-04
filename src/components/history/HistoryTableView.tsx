@@ -106,6 +106,13 @@ const ALL_COLUMNS: ColumnDef[] = [
     ),
   },
   {
+    id: 'notes',
+    label: 'Commentaire',
+    renderCell: (c) => c.notes ? (
+      <span className="text-xs text-muted-foreground italic line-clamp-2 max-w-[280px]">{c.notes}</span>
+    ) : null,
+  },
+  {
     id: 'passengers',
     label: 'Voyageurs',
     headerClass: 'w-[80px] text-center',

@@ -93,7 +93,7 @@ const roleBadgeVariants: Record<AppRole, 'default' | 'secondary' | 'outline'> = 
 };
 
 export default function AdminPage() {
-  const { user, profile, loading: authLoading, isAdmin } = useAuth();
+  const { user, profile, loading: authLoading, isAdmin, isManager } = useAuth();
   const queryClient = useQueryClient();
   const { preferences, updatePreferences, isUpdating } = useUserPreferences();
   
