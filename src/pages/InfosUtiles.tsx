@@ -126,7 +126,7 @@ const TILES: Tile[] = [
   {
     id: 'departures',
     icon: Train,
-    label: 'Départs en gare',
+    label: 'Départs/Arrivées en gare',
     gradient: 'from-sky-400 to-blue-600',
     iconBg: 'bg-white/20',
     iconColor: 'text-white',
@@ -772,7 +772,7 @@ const DIALOG_CONTENT: Record<string, { title: string; Content: () => JSX.Element
   contacts:  { title: 'Contacts utiles',             Content: ContentContacts },
   partager:      { title: "Partager l'application",     Content: ContentPartager },
   presentation:  { title: 'Présentation de l\'application', Content: ContentPresentation },
-  departures:    { title: 'Départs en gare',                Content: ContentDepartures },
+  departures:    { title: 'Départs/Arrivées en gare',       Content: ContentDepartures },
 };
 
 /* ─── Page principale ────────────────────────────────────────────────────── */

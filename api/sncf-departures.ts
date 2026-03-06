@@ -30,7 +30,7 @@ export default async function handler(req: Request) {
   const endpoint = mode; // 'departures' | 'arrivals'
   const depRes = await fetch(
     `${base}/stop_areas/${encodeURIComponent(stopArea.id)}/${endpoint}` +
-    `?from_datetime=${dt}&count=${count}&data_freshness=realtime&depth=1`,
+    `?from_datetime=${dt}&count=${count}&data_freshness=realtime&depth=2`,
     { headers: { Authorization: auth } }
   );
   const depJson = await depRes.json();
