@@ -18,6 +18,7 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import {
   Info,
   Train,
@@ -43,8 +44,14 @@ import {
   QrCode,
   Monitor,
   Download,
+  CheckCircle2,
+  XCircle,
+  MapPin,
+  Search,
+  RefreshCw,
 } from 'lucide-react';
 import { Loader2 } from 'lucide-react';
+import { useStationDepartures } from '@/hooks/useStationDepartures';
 
 /* ─── Types ──────────────────────────────────────────────────────────────── */
 interface Tile {
@@ -111,6 +118,14 @@ const TILES: Tile[] = [
     icon: Monitor,
     label: 'Présentation',
     gradient: 'from-rose-400 to-pink-600',
+    iconBg: 'bg-white/20',
+    iconColor: 'text-white',
+  },
+  {
+    id: 'departures',
+    icon: Train,
+    label: 'Départs en gare',
+    gradient: 'from-sky-400 to-blue-600',
     iconBg: 'bg-white/20',
     iconColor: 'text-white',
   },
@@ -484,6 +499,92 @@ function ContentPresentation() {
   );
 }
 
+function ContentDepartures() {
+  const [station, setStation] = useState('');
+  const { fetchDepartures, isLoading, error, departures, stationName } = useStationDepartures();
+
+  const load = () => { if (station.trim()) fetchDepartures(station); };
+
+  return (
+    <div className="space-y-4">
+      {/* Recherche */}
+      <div className="flex gap-2">
+        <Input
+          placeholder="Nom de gare (ex : Paris Lyon)..."
+          value={station}
+          onChange={e => setStation(e.target.value)}
+          onKeyDown={e => e.key === 'Enter' && load()}
+          className="flex-1"
+        />
+        <Button type="button" size="icon" onClick={load} disabled={isLoading || !station.trim()}>
+          {isLoading
+            ? <Loader2 className="h-4 w-4 animate-spin" />
+            : <Search className="h-4 w-4" />}
+        </Button>
+      </div>
+
+      {stationName && (
+        <div className="flex items-center justify-between">
+          <p className="text-xs text-muted-foreground">
+            Départs · <span className="font-medium">{stationName}</span>
+          </p>
+          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={load} disabled={isLoading}>
+            <RefreshCw className="h-3.5 w-3.5" />
+          </Button>
+        </div>
+      )}
+
+      {error && !isLoading && (
+        <p className="text-sm text-destructive text-center py-4">{error}</p>
+      )}
+      {!isLoading && !error && departures.length === 0 && stationName && (
+        <p className="text-sm text-muted-foreground text-center py-4">Aucun départ trouvé</p>
+      )}
+
+      <div className="space-y-1">
+        {departures.map((dep, i) => (
+          <div
+            key={`${dep.trainNumber}-${i}`}
+            className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-muted/30"
+          >
+            <div className="w-14 shrink-0 text-center">
+              <div className={`text-sm font-bold tabular-nums ${dep.status === 'cancelled' ? 'line-through text-muted-foreground' : ''}`}>
+                {dep.scheduledTime}
+              </div>
+              {dep.delayMinutes > 0 && (
+                <div className="text-xs font-bold text-amber-600 dark:text-amber-400 tabular-nums">
+                  +{dep.delayMinutes} min
+                </div>
+              )}
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-1.5 flex-wrap">
+                {dep.trainType && (
+                  <Badge variant="outline" className="text-xs h-5 px-1.5 font-medium border-muted-foreground/30">
+                    {dep.trainType}
+                  </Badge>
+                )}
+                <span className="text-sm font-semibold">{dep.trainNumber}</span>
+                {dep.platform && (
+                  <span className="text-xs text-muted-foreground flex items-center gap-0.5">
+                    <MapPin className="h-3 w-3" />V{dep.platform}
+                  </span>
+                )}
+              </div>
+              <div className="text-xs text-muted-foreground truncate mt-0.5">→ {dep.direction}</div>
+            </div>
+            <div className="shrink-0">
+              {dep.status === 'on_time'   && <CheckCircle2 className="h-5 w-5 text-green-500" />}
+              {dep.status === 'delayed'   && <AlertTriangle className="h-5 w-5 text-amber-500" />}
+              {dep.status === 'cancelled' && <XCircle       className="h-5 w-5 text-red-500" />}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 const DIALOG_CONTENT: Record<string, { title: string; Content: () => JSX.Element }> = {
   about:     { title: "À propos de l'application", Content: ContentAbout },
   fraude:    { title: 'Calcul du taux de fraude',   Content: ContentFraude },
@@ -492,6 +593,7 @@ const DIALOG_CONTENT: Record<string, { title: string; Content: () => JSX.Element
   contacts:  { title: 'Contacts utiles',             Content: ContentContacts },
   partager:      { title: "Partager l'application",     Content: ContentPartager },
   presentation:  { title: 'Présentation de l\'application', Content: ContentPresentation },
+  departures:    { title: 'Départs en gare',                Content: ContentDepartures },
 };
 
 /* ─── Page principale ────────────────────────────────────────────────────── */

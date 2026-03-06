@@ -5,6 +5,11 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/),
 et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.10.5] - 2026-03-06
+
+### Ajouté
+- Infos : tuile "Départs en gare" — saisie d'une gare, affichage des prochains départs en temps réel (API SNCF Navitia) avec heure, retard, statut, voie et direction
+
 ## [1.10.4] - 2026-03-06
 
 ### Modifié
