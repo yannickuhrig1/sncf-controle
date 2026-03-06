@@ -3,18 +3,19 @@ import { useState } from 'react';
 export interface DepartureEntry {
   trainNumber:       string;
   direction:         string;
-  scheduledTime:     string;   // HH:MM théorique (départ ou arrivée selon mode)
+  scheduledTime:     string;   // HH:MM théorique
   realTime:          string;   // HH:MM temps réel
   delayMinutes:      number;
   status:            'on_time' | 'delayed' | 'cancelled';
   trainType?:        string;
   platform?:         string;
-  vehicleJourneyId?: string;   // pour récupérer le détail des arrêts
+  vehicleJourneyId?: string;
+  delayReason?:      string;   // motif de retard (depuis les disruptions Navitia)
+  occupancy?:        string;   // taux d'occupation : empty | many_seats_available | few_seats_available | standing_room_only | full
 }
 
 function parseNavitiaTime(dt: string | undefined): string {
   if (!dt || dt.length < 13) return '';
-  // format Navitia : 20240301T081500
   const h = parseInt(dt.slice(9, 11)) % 24;
   const m = dt.slice(11, 13);
   return `${String(h).padStart(2, '0')}:${m}`;
@@ -22,12 +23,11 @@ function parseNavitiaTime(dt: string | undefined): string {
 
 function diffMinutes(real: string, base: string): number {
   if (!real || !base || real.length < 13 || base.length < 13) return 0;
-  const rMin = parseInt(real.slice(9, 11))  * 60 + parseInt(real.slice(11, 13));
-  const bMin = parseInt(base.slice(9, 11))  * 60 + parseInt(base.slice(11, 13));
+  const rMin = parseInt(real.slice(9, 11)) * 60 + parseInt(real.slice(11, 13));
+  const bMin = parseInt(base.slice(9, 11)) * 60 + parseInt(base.slice(11, 13));
   return Math.max(0, rMin - bMin);
 }
 
-/* Formate une date YYYY-MM-DD + heure HH:MM en chaîne Navitia YYYYMMDDTHHMMSS */
 export function toNavitiaDatetime(date: string, time: string): string {
   return date.replace(/-/g, '') + 'T' + time.replace(':', '') + '00';
 }
@@ -61,13 +61,14 @@ export function useStationDepartures() {
       setStationName(json.stationName || station);
 
       const isArrival = mode === 'arrivals';
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const disruptions: any[] = json.disruptions ?? [];
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const deps: DepartureEntry[] = (json.departures as any[]).map(d => {
         const info = d.display_informations ?? {};
         const sdt  = d.stop_date_time       ?? {};
 
-        // Pour les arrivées, utiliser les champs arrival ; pour les départs, departure
         const scheduled = isArrival
           ? (sdt.base_arrival_date_time   ?? sdt.arrival_date_time   ?? '')
           : (sdt.base_departure_date_time ?? sdt.departure_date_time ?? '');
@@ -81,13 +82,28 @@ export function useStationDepartures() {
         let status: DepartureEntry['status'] = delay > 0 ? 'delayed' : 'on_time';
         if (addInfo.some((s: string) => /deleted|cancel|supprim/i.test(s))) status = 'cancelled';
 
-        // Extraire l'id du vehicle_journey depuis les links
+        // Vehicle journey ID (pour le détail des arrêts)
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const vjLink = (d.links ?? []).find((l: any) => l.type === 'vehicle_journey');
 
+        // Motif de retard : chercher dans les disruptions liées à ce départ
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const disruptionIds = (d.links ?? []).filter((l: any) => l.type === 'disruption').map((l: any) => l.id);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const disruption = disruptions.find((dis: any) => disruptionIds.includes(dis.id) || disruptionIds.includes(dis.disruption_id));
+        const delayReason = disruption
+          ? (disruption.cause || disruption.messages?.[0]?.text || undefined)
+          : undefined;
+
+        // Occupation (disponible selon les opérateurs / modes)
+        const occupancy: string | undefined =
+          d.occupancies?.[0]?.occupancy
+          ?? info.occupancy
+          ?? undefined;
+
         return {
-          trainNumber:       info.headsign       ?? '',
-          direction:         info.direction      ?? '',
+          trainNumber:       info.headsign  ?? '',
+          direction:         info.direction ?? '',
           scheduledTime:     parseNavitiaTime(scheduled),
           realTime:          parseNavitiaTime(real),
           delayMinutes:      delay,
@@ -95,6 +111,8 @@ export function useStationDepartures() {
           trainType:         info.commercial_mode || info.name || undefined,
           platform:          d.stop_point?.platform_code || undefined,
           vehicleJourneyId:  vjLink?.id ?? undefined,
+          delayReason:       delayReason ?? undefined,
+          occupancy:         occupancy ?? undefined,
         } satisfies DepartureEntry;
       }).filter(d => d.trainNumber);
 

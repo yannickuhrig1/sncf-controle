@@ -533,11 +533,31 @@ interface StopTime {
   platform:      string | null;
 }
 
+function getModeColors(mode: 'departures' | 'arrivals') {
+  return mode === 'departures'
+    ? { border: 'border-l-4 border-l-blue-500', bg: 'bg-blue-50/50 dark:bg-blue-950/15', hoverBg: 'hover:bg-blue-100/60 dark:hover:bg-blue-950/25', time: 'text-blue-700 dark:text-blue-300' }
+    : { border: 'border-l-4 border-l-green-500', bg: 'bg-green-50/50 dark:bg-green-950/15', hoverBg: 'hover:bg-green-100/60 dark:hover:bg-green-950/25', time: 'text-green-700 dark:text-green-300' };
+}
+
+function occupancyLabel(occ: string | undefined): { label: string; cls: string } | null {
+  switch (occ) {
+    case 'empty':
+    case 'many_seats_available':       return { label: 'Peu chargé',  cls: 'bg-green-100  text-green-700  dark:bg-green-900/30  dark:text-green-300'  };
+    case 'few_seats_available':        return { label: 'Chargé',      cls: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300' };
+    case 'standing_room_only':
+    case 'crushed_standing_room_only': return { label: 'Très chargé', cls: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300' };
+    case 'full':                       return { label: 'Complet',     cls: 'bg-red-100    text-red-700    dark:bg-red-900/30    dark:text-red-300'    };
+    default: return null;
+  }
+}
+
 function TrainHeader({ dep, mode }: { dep: DepartureEntry; mode: 'departures' | 'arrivals' }) {
+  const mc  = getModeColors(mode);
+  const occ = occupancyLabel(dep.occupancy);
   return (
-    <div className="flex items-center gap-3 p-4 bg-muted/30 rounded-xl">
+    <div className={`flex items-start gap-3 p-4 rounded-xl ${mc.bg} ${mc.border}`}>
       <div className="w-14 shrink-0 text-center">
-        <div className={`text-sm font-bold tabular-nums ${dep.status === 'cancelled' ? 'line-through text-muted-foreground' : ''}`}>
+        <div className={`text-sm font-bold tabular-nums ${dep.status === 'cancelled' ? 'line-through text-muted-foreground' : mc.time}`}>
           {dep.scheduledTime}
         </div>
         {dep.delayMinutes > 0 && (
@@ -559,10 +579,20 @@ function TrainHeader({ dep, mode }: { dep: DepartureEntry; mode: 'departures' | 
               <MapPin className="h-3 w-3" />V{dep.platform}
             </span>
           )}
+          {occ && (
+            <span className={`text-xs px-1.5 py-0.5 rounded-md font-medium ${occ.cls}`}>
+              {occ.label}
+            </span>
+          )}
         </div>
         <div className="text-xs text-muted-foreground mt-0.5 truncate">
           {mode === 'arrivals' ? '← ' : '→ '}{dep.direction}
         </div>
+        {dep.delayReason && (
+          <div className="text-xs text-amber-600 dark:text-amber-400 mt-0.5 italic truncate">
+            {dep.delayReason}
+          </div>
+        )}
       </div>
       <div className="shrink-0">
         {dep.status === 'on_time'   && <CheckCircle2 className="h-5 w-5 text-green-500" />}
@@ -741,49 +771,63 @@ function ContentDepartures() {
       )}
 
       <div className="space-y-1">
-        {departures.map((dep, i) => (
-          <button
-            key={`${dep.trainNumber}-${i}`}
-            type="button"
-            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl bg-muted/30 hover:bg-muted/60 active:bg-muted transition-colors text-left"
-            onClick={() => handleSelectTrain(dep)}
-          >
-            <div className="w-14 shrink-0 text-center">
-              <div className={`text-sm font-bold tabular-nums ${dep.status === 'cancelled' ? 'line-through text-muted-foreground' : ''}`}>
-                {dep.scheduledTime}
-              </div>
-              {dep.delayMinutes > 0 && (
-                <div className="text-xs font-bold text-amber-600 dark:text-amber-400 tabular-nums">
-                  +{dep.delayMinutes} min
+        {departures.map((dep, i) => {
+          const mc  = getModeColors(mode);
+          const occ = occupancyLabel(dep.occupancy);
+          return (
+            <button
+              key={`${dep.trainNumber}-${i}`}
+              type="button"
+              className={`w-full flex items-start gap-3 px-3 py-2.5 rounded-xl transition-colors text-left ${mc.bg} ${mc.border} ${mc.hoverBg} active:opacity-80`}
+              onClick={() => handleSelectTrain(dep)}
+            >
+              <div className="w-14 shrink-0 text-center pt-0.5">
+                <div className={`text-sm font-bold tabular-nums ${dep.status === 'cancelled' ? 'line-through text-muted-foreground' : mc.time}`}>
+                  {dep.scheduledTime}
                 </div>
-              )}
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-1.5 flex-wrap">
-                {dep.trainType && (
-                  <Badge variant="outline" className="text-xs h-5 px-1.5 font-medium border-muted-foreground/30">
-                    {dep.trainType}
-                  </Badge>
-                )}
-                <span className="text-sm font-semibold">{dep.trainNumber}</span>
-                {dep.platform && (
-                  <span className="text-xs text-muted-foreground flex items-center gap-0.5">
-                    <MapPin className="h-3 w-3" />V{dep.platform}
-                  </span>
+                {dep.delayMinutes > 0 && (
+                  <div className="text-xs font-bold text-amber-600 dark:text-amber-400 tabular-nums">
+                    +{dep.delayMinutes} min
+                  </div>
                 )}
               </div>
-              <div className="text-xs text-muted-foreground truncate mt-0.5">
-                {mode === 'arrivals' ? '← ' : '→ '}{dep.direction}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  {dep.trainType && (
+                    <Badge variant="outline" className="text-xs h-5 px-1.5 font-medium border-muted-foreground/30">
+                      {dep.trainType}
+                    </Badge>
+                  )}
+                  <span className="text-sm font-semibold">{dep.trainNumber}</span>
+                  {dep.platform && (
+                    <span className="text-xs text-muted-foreground flex items-center gap-0.5">
+                      <MapPin className="h-3 w-3" />V{dep.platform}
+                    </span>
+                  )}
+                  {occ && (
+                    <span className={`text-xs px-1.5 py-0.5 rounded-md font-medium ${occ.cls}`}>
+                      {occ.label}
+                    </span>
+                  )}
+                </div>
+                <div className="text-xs text-muted-foreground truncate mt-0.5">
+                  {mode === 'arrivals' ? '← ' : '→ '}{dep.direction}
+                </div>
+                {dep.delayReason && (
+                  <div className="text-xs text-amber-600 dark:text-amber-400 mt-0.5 italic truncate">
+                    {dep.delayReason}
+                  </div>
+                )}
               </div>
-            </div>
-            <div className="flex items-center gap-1 shrink-0">
-              {dep.status === 'on_time'   && <CheckCircle2 className="h-4 w-4 text-green-500" />}
-              {dep.status === 'delayed'   && <AlertTriangle className="h-4 w-4 text-amber-500" />}
-              {dep.status === 'cancelled' && <XCircle       className="h-4 w-4 text-red-500" />}
-              <ChevronRight className="h-4 w-4 text-muted-foreground" />
-            </div>
-          </button>
-        ))}
+              <div className="flex items-center gap-1 shrink-0 pt-0.5">
+                {dep.status === 'on_time'   && <CheckCircle2 className="h-4 w-4 text-green-500" />}
+                {dep.status === 'delayed'   && <AlertTriangle className="h-4 w-4 text-amber-500" />}
+                {dep.status === 'cancelled' && <XCircle       className="h-4 w-4 text-red-500" />}
+                <ChevronRight className="h-4 w-4 text-muted-foreground" />
+              </div>
+            </button>
+          );
+        })}
       </div>
     </div>
   );

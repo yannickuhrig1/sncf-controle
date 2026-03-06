@@ -5,6 +5,22 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/),
 et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.10.9] - 2026-03-06
+
+### Amélioré
+- Départs/Arrivées en gare : thème bleu SNCF pour les départs, vert pour les arrivées (bordure colorée + fond teinté)
+- Départs/Arrivées : affichage du motif de retard (depuis les disruptions Navitia) en italique ambré sous la direction
+- Départs/Arrivées : badge d'occupation du train (Peu chargé / Chargé / Très chargé / Complet) coloré selon le niveau
+- hook `useStationDepartures` : extraction de `delayReason` et `occupancy` depuis la réponse Navitia
+
+## [1.10.8] - 2026-03-06
+
+### Ajouté
+- Admin : gestion des coordonnées du support application (email + téléphone) dans l'onglet Intégrations
+- Infos / Assistance : tuile pour signaler un bug ou envoyer un message à l'admin avec pièces jointes (images, PDF, texte)
+- Admin : onglet "Assistance" (admin uniquement) pour voir et clôturer les tickets de support
+- Migration Supabase : table `support_tickets`, bucket storage `support-attachments`, setting `support_contact`
+
 ## [1.10.6] - 2026-03-06
 
 ### Amélioré
