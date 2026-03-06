@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
@@ -96,6 +97,15 @@ interface SupportTicket {
   created_at: string;
 }
 
+interface SupportReply {
+  id: string;
+  ticket_id: string;
+  author_id: string;
+  message: string;
+  is_admin: boolean;
+  created_at: string;
+}
+
 const roleLabels: Record<AppRole, string> = {
   admin: 'Administrateur',
   manager: 'Manager',
@@ -168,7 +178,11 @@ export default function AdminPage() {
   const [isSavingContact, setIsSavingContact] = useState(false);
 
   // Ticket detail dialog
-  const [viewingTicket, setViewingTicket] = useState<SupportTicket | null>(null);
+  const [viewingTicket,    setViewingTicket]    = useState<SupportTicket | null>(null);
+  const [replies,          setReplies]          = useState<SupportReply[]>([]);
+  const [replyText,        setReplyText]        = useState('');
+  const [isSendingReply,   setIsSendingReply]   = useState(false);
+  const [isLoadingReplies, setIsLoadingReplies] = useState(false);
 
   // Fetch all profiles (admin only)
   const { data: profiles = [], isLoading: profilesLoading } = useQuery({
@@ -375,7 +389,51 @@ export default function AdminPage() {
       .eq('id', ticketId);
     if (error) { toast.error('Erreur: ' + error.message); return; }
     queryClient.invalidateQueries({ queryKey: ['support-tickets'] });
+    queryClient.invalidateQueries({ queryKey: ['open-tickets-count'] });
     toast.success('Ticket fermé');
+  };
+
+  // Charger les réponses quand un ticket est ouvert
+  useEffect(() => {
+    if (!viewingTicket) { setReplies([]); setReplyText(''); return; }
+    setIsLoadingReplies(true);
+    supabase
+      .from('support_replies' as any)
+      .select('*')
+      .eq('ticket_id', viewingTicket.id)
+      .order('created_at')
+      .then(({ data }) => {
+        setReplies((data || []) as SupportReply[]);
+        setIsLoadingReplies(false);
+      });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [viewingTicket?.id]);
+
+  const sendReply = async () => {
+    if (!viewingTicket || !replyText.trim()) return;
+    setIsSendingReply(true);
+    const { data: { user: me } } = await supabase.auth.getUser();
+    const { error } = await supabase.from('support_replies' as any).insert({
+      ticket_id: viewingTicket.id,
+      author_id: me?.id,
+      message: replyText.trim(),
+      is_admin: true,
+    });
+    if (error) { toast.error('Erreur : ' + error.message); setIsSendingReply(false); return; }
+    // Marquer le ticket comme ayant une réponse non lue pour l'agent
+    await supabase.from('support_tickets' as any)
+      .update({ has_unread_reply: true })
+      .eq('id', viewingTicket.id);
+    setReplyText('');
+    const { data } = await supabase
+      .from('support_replies' as any)
+      .select('*')
+      .eq('ticket_id', viewingTicket.id)
+      .order('created_at');
+    setReplies((data || []) as SupportReply[]);
+    queryClient.invalidateQueries({ queryKey: ['support-tickets'] });
+    setIsSendingReply(false);
+    toast.success('Réponse envoyée');
   };
 
   const resetTeamDialog = () => {
@@ -1279,9 +1337,12 @@ export default function AdminPage() {
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
+              {/* Message initial */}
               <div className="p-4 bg-muted/30 rounded-lg text-sm whitespace-pre-wrap leading-relaxed">
                 {viewingTicket?.message}
               </div>
+
+              {/* Pièces jointes */}
               {viewingTicket && viewingTicket.attachment_paths.length > 0 && (
                 <div className="space-y-2">
                   <p className="text-sm font-medium flex items-center gap-1.5">
@@ -1303,6 +1364,54 @@ export default function AdminPage() {
                       <span className="truncate">{path.split('/').pop()}</span>
                     </Button>
                   ))}
+                </div>
+              )}
+
+              {/* Fil de discussion */}
+              {(isLoadingReplies || replies.length > 0) && (
+                <div className="space-y-2">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Fil de discussion</p>
+                  {isLoadingReplies
+                    ? <div className="flex justify-center py-3"><Loader2 className="h-4 w-4 animate-spin" /></div>
+                    : replies.map(r => {
+                        const name = r.is_admin
+                          ? 'Admin'
+                          : (profiles.find(p => p.user_id === r.author_id)?.first_name ?? 'Agent');
+                        return (
+                          <div key={r.id} className={`p-3 rounded-lg text-sm ${r.is_admin ? 'bg-primary/10 ml-6' : 'bg-muted/30 mr-6'}`}>
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="font-semibold text-xs">{name}</span>
+                              <span className="text-xs text-muted-foreground">
+                                {new Date(r.created_at).toLocaleString('fr-FR', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' })}
+                              </span>
+                            </div>
+                            <p className="whitespace-pre-wrap leading-relaxed">{r.message}</p>
+                          </div>
+                        );
+                      })
+                  }
+                </div>
+              )}
+
+              {/* Zone de réponse (ticket ouvert) */}
+              {viewingTicket?.status === 'open' && (
+                <div className="flex gap-2">
+                  <Textarea
+                    value={replyText}
+                    onChange={e => setReplyText(e.target.value)}
+                    placeholder="Votre réponse…"
+                    rows={2}
+                    className="resize-none flex-1"
+                    onKeyDown={e => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) sendReply(); }}
+                  />
+                  <Button
+                    size="icon"
+                    className="self-end shrink-0"
+                    onClick={sendReply}
+                    disabled={isSendingReply || !replyText.trim()}
+                  >
+                    {isSendingReply ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                  </Button>
                 </div>
               )}
             </div>

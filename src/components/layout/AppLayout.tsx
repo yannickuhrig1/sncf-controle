@@ -2,7 +2,8 @@ import { ReactNode, useState, useEffect, useMemo } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { LayoutDashboard, Train, Building2, History, User, BarChart3, Settings, Shield, Menu, UserCheck, Wifi, WifiOff, Download, Info, ClipboardCheck } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserPreferences, PageId, DEFAULT_VISIBLE_PAGES, DEFAULT_BOTTOM_BAR_PAGES } from '@/hooks/useUserPreferences';
@@ -41,6 +42,7 @@ export function AppLayout({ children }: AppLayoutProps) {
   const location = useLocation();
   const { profile, isManager, isAdmin, user } = useAuth();
   const { preferences } = useUserPreferences();
+  const queryClient = useQueryClient();
   const [burgerOpen, setBurgerOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
@@ -108,8 +110,43 @@ export function AppLayout({ children }: AppLayoutProps) {
       return count || 0;
     },
     enabled: isAdmin() || isManager(),
-    refetchInterval: 30000, // Refresh every 30s
+    refetchInterval: 30000,
   });
+
+  // Fetch open support tickets count for admin badge
+  const { data: openTicketsCount = 0 } = useQuery({
+    queryKey: ['open-tickets-count'],
+    queryFn: async () => {
+      const { count } = await supabase
+        .from('support_tickets' as any)
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'open');
+      return count || 0;
+    },
+    enabled: !!user && isAdmin(),
+    refetchInterval: 60_000,
+  });
+
+  const adminBadgeCount = pendingApprovalCount + openTicketsCount;
+
+  // Realtime : notifier l'admin dès qu'un nouveau ticket arrive
+  useEffect(() => {
+    if (!user || !isAdmin()) return;
+    const ch = supabase
+      .channel('admin-new-tickets')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'support_tickets' },
+        payload => {
+          toast.info("Nouveau ticket d'assistance", {
+            description: `Sujet : ${(payload.new as any).subject}`,
+          });
+          queryClient.invalidateQueries({ queryKey: ['open-tickets-count'] });
+          queryClient.invalidateQueries({ queryKey: ['support-tickets'] });
+        }
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
 
   const isUserAdmin = isAdmin();
   const isUserManager = isManager();
@@ -173,9 +210,9 @@ export function AppLayout({ children }: AppLayoutProps) {
             >
               <div className="relative">
                 <item.icon className="h-5 w-5" />
-                {item.pageId === 'admin' && pendingApprovalCount > 0 && (
+                {item.pageId === 'admin' && adminBadgeCount > 0 && (
                   <span className="absolute -top-1.5 -right-1.5 flex items-center justify-center h-4 min-w-4 px-0.5 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold">
-                    {pendingApprovalCount}
+                    {adminBadgeCount > 9 ? '9+' : adminBadgeCount}
                   </span>
                 )}
               </div>
@@ -209,9 +246,9 @@ export function AppLayout({ children }: AppLayoutProps) {
             >
               <div className="relative shrink-0">
                 <item.icon className="h-5 w-5" />
-                {item.pageId === 'admin' && pendingApprovalCount > 0 && (
+                {item.pageId === 'admin' && adminBadgeCount > 0 && (
                   <span className="absolute -top-1.5 -right-1.5 flex items-center justify-center h-4 min-w-4 px-0.5 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold">
-                    {pendingApprovalCount}
+                    {adminBadgeCount > 9 ? '9+' : adminBadgeCount}
                   </span>
                 )}
               </div>
@@ -252,9 +289,9 @@ export function AppLayout({ children }: AppLayoutProps) {
                   'h-5 w-5 transition-all duration-200',
                   isActive && 'text-primary scale-110'
                 )} />
-                {item.pageId === 'admin' && pendingApprovalCount > 0 && (
+                {item.pageId === 'admin' && adminBadgeCount > 0 && (
                   <span className="absolute -top-1 -right-1 flex items-center justify-center h-4 min-w-4 px-0.5 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold">
-                    {pendingApprovalCount}
+                    {adminBadgeCount > 9 ? '9+' : adminBadgeCount}
                   </span>
                 )}
               </div>

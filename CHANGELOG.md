@@ -5,6 +5,17 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/),
 et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.10.10] - 2026-03-06
+
+### Ajouté
+- Notifications temps réel : l'admin reçoit un toast dès qu'un nouveau ticket d'assistance arrive
+- Notifications temps réel : l'agent reçoit un toast quand l'admin répond à son ticket
+- Admin : réponse directe aux tickets depuis le dialogue (fil de discussion accordéon)
+- Infos / Assistance : vue "Mes tickets" avec fil de réponses, réponse agent, marquage lu automatique
+- Badge rouge sur la tuile "Assistance" indiquant les réponses non lues
+- Badge admin nav combiné : approbations en attente + tickets ouverts
+- Migration : table `support_replies`, colonne `has_unread_reply`, RPC `mark_ticket_read`
+
 ## [1.10.9] - 2026-03-06
 
 ### Amélioré

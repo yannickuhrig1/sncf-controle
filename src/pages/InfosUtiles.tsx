@@ -835,6 +835,7 @@ function ContentDepartures() {
 
 function ContentAssistance() {
   const { user } = useAuth();
+  const [view,    setView]    = useState<'form' | 'tickets'>('form');
   const [type,    setType]    = useState<'bug' | 'message'>('bug');
   const [subject, setSubject] = useState('');
   const [message, setMessage] = useState('');
@@ -843,18 +844,74 @@ function ContentAssistance() {
   const [sent,      setSent]      = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
+  // Vue "Mes tickets"
+  const [myTickets,       setMyTickets]       = useState<any[]>([]);
+  const [ticketsLoading,  setTicketsLoading]  = useState(false);
+  const [expandedTicket,  setExpandedTicket]  = useState<string | null>(null);
+  const [ticketReplies,   setTicketReplies]   = useState<Record<string, any[]>>({});
+  const [userReply,       setUserReply]       = useState('');
+  const [isSendingReply,  setIsSendingReply]  = useState(false);
+
+  const loadTickets = async () => {
+    if (!user) return;
+    setTicketsLoading(true);
+    const { data } = await supabase
+      .from('support_tickets' as any)
+      .select('*')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false });
+    setMyTickets(data || []);
+    setTicketsLoading(false);
+  };
+
+  useEffect(() => {
+    if (view === 'tickets') loadTickets();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [view]);
+
+  const expandTicket = async (ticketId: string) => {
+    if (expandedTicket === ticketId) { setExpandedTicket(null); return; }
+    setExpandedTicket(ticketId);
+    const { data } = await supabase
+      .from('support_replies' as any)
+      .select('*')
+      .eq('ticket_id', ticketId)
+      .order('created_at');
+    setTicketReplies(prev => ({ ...prev, [ticketId]: data || [] }));
+    // Marquer comme lu
+    await supabase.rpc('mark_ticket_read' as any, { p_ticket_id: ticketId });
+    setMyTickets(prev => prev.map(t => t.id === ticketId ? { ...t, has_unread_reply: false } : t));
+  };
+
+  const sendUserReply = async (ticketId: string) => {
+    if (!user || !userReply.trim()) return;
+    setIsSendingReply(true);
+    await supabase.from('support_replies' as any).insert({
+      ticket_id: ticketId,
+      author_id: user.id,
+      message: userReply.trim(),
+      is_admin: false,
+    });
+    const { data } = await supabase
+      .from('support_replies' as any)
+      .select('*')
+      .eq('ticket_id', ticketId)
+      .order('created_at');
+    setTicketReplies(prev => ({ ...prev, [ticketId]: data || [] }));
+    setUserReply('');
+    setIsSendingReply(false);
+  };
+
   const handleSend = async () => {
     if (!user || !subject.trim() || !message.trim()) return;
     setIsSending(true);
     try {
-      // Upload des pièces jointes
       const paths: string[] = [];
       for (const file of files) {
         const path = `${user.id}/${Date.now()}-${file.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
         const { error: upErr } = await supabase.storage.from('support-attachments').upload(path, file);
         if (!upErr) paths.push(path);
       }
-      // Insertion du ticket
       const { error } = await supabase
         .from('support_tickets' as any)
         .insert({ user_id: user.id, type, subject: subject.trim(), message: message.trim(), attachment_paths: paths });
@@ -867,28 +924,147 @@ function ContentAssistance() {
     }
   };
 
-  if (sent) {
+  /* ── Toggle vues ── */
+  const viewToggle = (
+    <div className="flex gap-1 bg-muted/50 rounded-lg p-1">
+      {(['form', 'tickets'] as const).map(v => (
+        <button
+          key={v}
+          type="button"
+          onClick={() => setView(v)}
+          className={`flex-1 text-sm py-1.5 rounded-md transition-colors font-medium ${
+            view === v ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'
+          }`}
+        >
+          {v === 'form' ? 'Nouveau message' : 'Mes tickets'}
+        </button>
+      ))}
+    </div>
+  );
+
+  /* ── Vue "Mes tickets" ── */
+  if (view === 'tickets') {
     return (
-      <div className="flex flex-col items-center gap-4 py-10 text-center">
-        <div className="p-4 bg-green-100 dark:bg-green-900/30 rounded-full">
-          <CheckCircle2 className="h-10 w-10 text-green-500" />
+      <div className="space-y-4">
+        {viewToggle}
+        {ticketsLoading && (
+          <div className="flex justify-center py-8">
+            <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+          </div>
+        )}
+        {!ticketsLoading && myTickets.length === 0 && (
+          <p className="text-sm text-muted-foreground text-center py-8">Aucun ticket pour le moment</p>
+        )}
+        <div className="space-y-2">
+          {myTickets.map(ticket => (
+            <div key={ticket.id} className="border rounded-xl overflow-hidden">
+              {/* En-tête du ticket */}
+              <button
+                type="button"
+                className="w-full flex items-start gap-3 p-3 text-left hover:bg-muted/30 transition-colors"
+                onClick={() => expandTicket(ticket.id)}
+              >
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <Badge variant={ticket.type === 'bug' ? 'destructive' : 'secondary'} className="text-xs shrink-0">
+                      {ticket.type === 'bug' ? '🐛 Bug' : '💬 Message'}
+                    </Badge>
+                    {ticket.has_unread_reply && (
+                      <span className="h-2 w-2 rounded-full bg-red-500 shrink-0" />
+                    )}
+                    {ticket.status === 'closed' && (
+                      <Badge variant="outline" className="text-xs shrink-0">Fermé</Badge>
+                    )}
+                    <span className="text-sm font-medium truncate">{ticket.subject}</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {new Date(ticket.created_at).toLocaleDateString('fr-FR', { day:'2-digit', month:'2-digit', year:'2-digit', hour:'2-digit', minute:'2-digit' })}
+                  </p>
+                </div>
+                <ChevronRight className={`h-4 w-4 text-muted-foreground shrink-0 mt-0.5 transition-transform ${expandedTicket === ticket.id ? 'rotate-90' : ''}`} />
+              </button>
+
+              {/* Détail expandé */}
+              {expandedTicket === ticket.id && (
+                <div className="border-t px-3 pb-3 space-y-3 bg-muted/10">
+                  {/* Message original */}
+                  <div className="mt-3 p-3 bg-muted/30 rounded-lg text-sm whitespace-pre-wrap leading-relaxed mr-6">
+                    {ticket.message}
+                  </div>
+
+                  {/* Fil de réponses */}
+                  {(ticketReplies[ticket.id] ?? []).map((r: any) => (
+                    <div key={r.id} className={`p-3 rounded-lg text-sm ${r.is_admin ? 'bg-primary/10 ml-6' : 'bg-muted/30 mr-6'}`}>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="font-semibold text-xs">{r.is_admin ? 'Admin' : 'Vous'}</span>
+                        <span className="text-xs text-muted-foreground">
+                          {new Date(r.created_at).toLocaleString('fr-FR', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' })}
+                        </span>
+                      </div>
+                      <p className="whitespace-pre-wrap leading-relaxed">{r.message}</p>
+                    </div>
+                  ))}
+
+                  {/* Répondre (ticket ouvert) */}
+                  {ticket.status === 'open' && (
+                    <div className="flex gap-2">
+                      <Textarea
+                        value={userReply}
+                        onChange={e => setUserReply(e.target.value)}
+                        placeholder="Votre réponse…"
+                        rows={2}
+                        className="resize-none flex-1"
+                        onKeyDown={e => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) sendUserReply(ticket.id); }}
+                      />
+                      <Button
+                        size="icon"
+                        className="self-end shrink-0"
+                        onClick={() => sendUserReply(ticket.id)}
+                        disabled={isSendingReply || !userReply.trim()}
+                      >
+                        {isSendingReply ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          ))}
         </div>
-        <div>
-          <p className="font-semibold text-base">Message envoyé !</p>
-          <p className="text-sm text-muted-foreground mt-1">L'administrateur traitera votre demande.</p>
-        </div>
-        <Button variant="outline" size="sm" onClick={() => { setSent(false); setSubject(''); setMessage(''); setFiles([]); }}>
-          Nouveau message
-        </Button>
       </div>
     );
   }
 
+  /* ── Vue "Nouveau message" (succès) ── */
+  if (sent) {
+    return (
+      <div className="space-y-4">
+        {viewToggle}
+        <div className="flex flex-col items-center gap-4 py-8 text-center">
+          <div className="p-4 bg-green-100 dark:bg-green-900/30 rounded-full">
+            <CheckCircle2 className="h-10 w-10 text-green-500" />
+          </div>
+          <div>
+            <p className="font-semibold text-base">Message envoyé !</p>
+            <p className="text-sm text-muted-foreground mt-1">L'administrateur traitera votre demande.</p>
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={() => { setSent(false); setSubject(''); setMessage(''); setFiles([]); }}>
+              Nouveau message
+            </Button>
+            <Button size="sm" onClick={() => { setSent(false); setView('tickets'); }}>
+              Voir mes tickets
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  /* ── Vue "Nouveau message" (formulaire) ── */
   return (
     <div className="space-y-4">
-      <p className="text-sm text-muted-foreground">
-        Signalez un problème ou envoyez un message à l'administrateur de l'application.
-      </p>
+      {viewToggle}
 
       {/* Type */}
       <div className="flex gap-1 bg-muted/50 rounded-lg p-1">
@@ -987,8 +1163,40 @@ export default function InfosUtilesPage() {
   const { user, loading: authLoading } = useAuth();
   const { settings, isLoading: settingsLoading } = useAdminSettings();
   const [openTile, setOpenTile] = useState<string | null>(null);
+  const [unreadRepliesCount, setUnreadRepliesCount] = useState(0);
 
   const hideInfosPage = settings?.find(s => s.key === 'hide_infos_page')?.value === true;
+
+  // Compter les réponses non lues + s'abonner aux nouvelles réponses admin
+  useEffect(() => {
+    if (!user) return;
+    supabase
+      .from('support_tickets' as any)
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', user.id)
+      .eq('has_unread_reply', true)
+      .then(({ count }) => setUnreadRepliesCount(count || 0));
+
+    const ch = supabase
+      .channel('user-support-replies')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'support_replies' },
+        async (payload) => {
+          const r = payload.new as any;
+          if (!r.is_admin) return;
+          const { data: t } = await supabase
+            .from('support_tickets' as any)
+            .select('user_id')
+            .eq('id', r.ticket_id)
+            .single();
+          if ((t as any)?.user_id !== user.id) return;
+          toast.info("L'admin a répondu à votre demande");
+          setUnreadRepliesCount(c => c + 1);
+        }
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
 
   if (authLoading || settingsLoading) {
     return (
@@ -1022,20 +1230,26 @@ export default function InfosUtilesPage() {
           {TILES.map((tile) => {
             const Icon = tile.icon;
             return (
-              <Card
-                key={tile.id}
-                onClick={() => setOpenTile(tile.id)}
-                className="cursor-pointer border-0 shadow-sm overflow-hidden hover:shadow-md transition-shadow active:scale-95 transition-transform select-none"
-              >
-                <div className={`bg-gradient-to-br ${tile.gradient} p-5 flex flex-col items-center gap-3 text-white`}>
-                  <div className={`p-3 rounded-2xl ${tile.iconBg}`}>
-                    <Icon className={`h-6 w-6 ${tile.iconColor}`} />
-                  </div>
-                  <span className="text-sm font-semibold text-center leading-tight">
-                    {tile.label}
+              <div key={tile.id} className="relative">
+                {tile.id === 'assistance' && unreadRepliesCount > 0 && (
+                  <span className="absolute top-1.5 right-1.5 z-10 flex items-center justify-center h-5 min-w-5 px-1 rounded-full bg-red-500 text-white text-[10px] font-bold">
+                    {unreadRepliesCount > 9 ? '9+' : unreadRepliesCount}
                   </span>
-                </div>
-              </Card>
+                )}
+                <Card
+                  onClick={() => setOpenTile(tile.id)}
+                  className="cursor-pointer border-0 shadow-sm overflow-hidden hover:shadow-md transition-shadow active:scale-95 transition-transform select-none"
+                >
+                  <div className={`bg-gradient-to-br ${tile.gradient} p-5 flex flex-col items-center gap-3 text-white`}>
+                    <div className={`p-3 rounded-2xl ${tile.iconBg}`}>
+                      <Icon className={`h-6 w-6 ${tile.iconColor}`} />
+                    </div>
+                    <span className="text-sm font-semibold text-center leading-tight">
+                      {tile.label}
+                    </span>
+                  </div>
+                </Card>
+              </div>
             );
           })}
         </div>
