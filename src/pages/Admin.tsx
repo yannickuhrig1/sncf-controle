@@ -69,6 +69,10 @@ import {
   Check,
   Monitor,
   Clock,
+  LifeBuoy,
+  Paperclip,
+  Send,
+  X,
 } from 'lucide-react';
 import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
@@ -80,6 +84,17 @@ import { FraudThresholdsSettings } from '@/components/admin/FraudThresholdsSetti
 type Profile = DbType['public']['Tables']['profiles']['Row'];
 type Team = DbType['public']['Tables']['teams']['Row'];
 type AppRole = DbType['public']['Enums']['app_role'];
+
+interface SupportTicket {
+  id: string;
+  user_id: string;
+  type: 'bug' | 'message';
+  subject: string;
+  message: string;
+  status: 'open' | 'closed';
+  attachment_paths: string[];
+  created_at: string;
+}
 
 const roleLabels: Record<AppRole, string> = {
   admin: 'Administrateur',
@@ -147,6 +162,14 @@ export default function AdminPage() {
   // Page visibility states
   const [pageVisibility, setPageVisibility] = useState<Record<string, boolean>>({});
 
+  // Support contact states
+  const [supportEmail, setSupportEmail] = useState('');
+  const [supportPhone, setSupportPhone] = useState('');
+  const [isSavingContact, setIsSavingContact] = useState(false);
+
+  // Ticket detail dialog
+  const [viewingTicket, setViewingTicket] = useState<SupportTicket | null>(null);
+
   // Fetch all profiles (admin only)
   const { data: profiles = [], isLoading: profilesLoading } = useQuery({
     queryKey: ['admin-profiles'],
@@ -199,6 +222,19 @@ export default function AdminPage() {
     enabled: !!profile && isAdmin(),
   });
 
+  // Fetch support tickets (admin only)
+  const { data: tickets = [] } = useQuery({
+    queryKey: ['support-tickets'],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('support_tickets' as any)
+        .select('*')
+        .order('created_at', { ascending: false });
+      return (data || []) as SupportTicket[];
+    },
+    enabled: !!profile && isAdmin(),
+  });
+
   // Load page visibility settings on mount
   useEffect(() => {
     const visibility: Record<string, boolean> = {};
@@ -208,6 +244,11 @@ export default function AdminPage() {
       visibility[key] = setting?.value === true;
     });
     setPageVisibility(visibility);
+
+    // Init support contact
+    const contact = adminSettings.find(s => s.key === 'support_contact')?.value as { email?: string; phone?: string } | undefined;
+    setSupportEmail(contact?.email ?? 'controle-app@sncf.fr');
+    setSupportPhone(contact?.phone ?? '');
   }, [adminSettings]);
 
   // Toggle page visibility
@@ -309,6 +350,33 @@ export default function AdminPage() {
       toast.error('Erreur lors de la mise à jour: ' + error.message);
     },
   });
+
+  const saveSupportContact = async () => {
+    setIsSavingContact(true);
+    try {
+      const { error } = await supabase
+        .from('admin_settings' as any)
+        .update({ value: { email: supportEmail, phone: supportPhone } })
+        .eq('key', 'support_contact');
+      if (error) throw error;
+      queryClient.invalidateQueries({ queryKey: ['admin-settings'] });
+      toast.success('Contact support mis à jour');
+    } catch (e: any) {
+      toast.error('Erreur: ' + e.message);
+    } finally {
+      setIsSavingContact(false);
+    }
+  };
+
+  const closeTicket = async (ticketId: string) => {
+    const { error } = await supabase
+      .from('support_tickets' as any)
+      .update({ status: 'closed' })
+      .eq('id', ticketId);
+    if (error) { toast.error('Erreur: ' + error.message); return; }
+    queryClient.invalidateQueries({ queryKey: ['support-tickets'] });
+    toast.success('Ticket fermé');
+  };
 
   const resetTeamDialog = () => {
     setTeamDialogOpen(false);
@@ -524,32 +592,40 @@ export default function AdminPage() {
 
         {/* Tabs */}
         <Tabs defaultValue="users" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-6">
-            <TabsTrigger value="users" className="flex items-center gap-1.5 text-xs">
+          <div className="overflow-x-auto pb-1">
+          <TabsList className={`grid w-full ${isAdmin() ? 'grid-cols-7' : 'grid-cols-6'} min-w-[560px]`}>
+            <TabsTrigger value="users" className="flex items-center gap-1 text-xs">
               <Users className="h-3.5 w-3.5" />
               Utilisateurs
             </TabsTrigger>
-            <TabsTrigger value="teams" className="flex items-center gap-1.5 text-xs">
+            <TabsTrigger value="teams" className="flex items-center gap-1 text-xs">
               <Building2 className="h-3.5 w-3.5" />
               Équipes
             </TabsTrigger>
-            <TabsTrigger value="display" className="flex items-center gap-1.5 text-xs">
+            <TabsTrigger value="display" className="flex items-center gap-1 text-xs">
               <Palette className="h-3.5 w-3.5" />
               Affichage
             </TabsTrigger>
-            <TabsTrigger value="data" className="flex items-center gap-1.5 text-xs">
+            <TabsTrigger value="data" className="flex items-center gap-1 text-xs">
               <Database className="h-3.5 w-3.5" />
               Données
             </TabsTrigger>
-            <TabsTrigger value="integrations" className="flex items-center gap-1.5 text-xs">
+            <TabsTrigger value="integrations" className="flex items-center gap-1 text-xs">
               <Plug className="h-3.5 w-3.5" />
               Intégrations
             </TabsTrigger>
-            <TabsTrigger value="presentation" className="flex items-center gap-1.5 text-xs">
+            <TabsTrigger value="presentation" className="flex items-center gap-1 text-xs">
               <Monitor className="h-3.5 w-3.5" />
               Présentation
             </TabsTrigger>
+            {isAdmin() && (
+              <TabsTrigger value="assistance" className="flex items-center gap-1 text-xs">
+                <LifeBuoy className="h-3.5 w-3.5" />
+                Assistance
+              </TabsTrigger>
+            )}
           </TabsList>
+          </div>
 
           {/* Users Tab */}
           <TabsContent value="users" className="space-y-4">
@@ -1062,6 +1138,48 @@ export default function AdminPage() {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Support contact */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <LifeBuoy className="h-5 w-5" />
+                  Contact support application
+                </CardTitle>
+                <CardDescription>
+                  Coordonnées affichées aux utilisateurs dans la section "Contacts utiles"
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-1.5">
+                  <Label>Email de support</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      type="email"
+                      value={supportEmail}
+                      onChange={e => setSupportEmail(e.target.value)}
+                      placeholder="controle-app@sncf.fr"
+                      className="flex-1"
+                    />
+                    <Button onClick={saveSupportContact} disabled={isSavingContact} size="sm">
+                      {isSavingContact ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+                    </Button>
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Téléphone (optionnel)</Label>
+                  <Input
+                    type="tel"
+                    value={supportPhone}
+                    onChange={e => setSupportPhone(e.target.value)}
+                    placeholder="3635"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Appuyez sur Enregistrer après avoir modifié les deux champs.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
 
           {/* Présentation Tab */}
@@ -1084,7 +1202,120 @@ export default function AdminPage() {
               </CardContent>
             </Card>
           </TabsContent>
+
+          {/* Assistance Tab */}
+          {isAdmin() && (
+            <TabsContent value="assistance" className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <LifeBuoy className="h-5 w-5" />
+                    Tickets d'assistance
+                    {tickets.filter(t => t.status === 'open').length > 0 && (
+                      <Badge className="ml-1">{tickets.filter(t => t.status === 'open').length} ouverts</Badge>
+                    )}
+                  </CardTitle>
+                  <CardDescription>Messages et signalements envoyés par les agents</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {tickets.length === 0 ? (
+                    <p className="text-sm text-muted-foreground text-center py-8">Aucun ticket pour le moment</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {tickets.map(ticket => {
+                        const sender = profiles.find(p => p.user_id === ticket.user_id);
+                        const senderName = sender ? `${sender.first_name} ${sender.last_name}` : 'Utilisateur inconnu';
+                        return (
+                          <div key={ticket.id} className={`flex items-center gap-3 p-3 border rounded-lg ${ticket.status === 'closed' ? 'opacity-60' : ''}`}>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <Badge variant={ticket.type === 'bug' ? 'destructive' : 'secondary'} className="text-xs shrink-0">
+                                  {ticket.type === 'bug' ? '🐛 Bug' : '💬 Message'}
+                                </Badge>
+                                <span className="text-sm font-medium truncate">{ticket.subject}</span>
+                                {ticket.status === 'closed' && <Badge variant="outline" className="text-xs shrink-0">Fermé</Badge>}
+                              </div>
+                              <div className="text-xs text-muted-foreground mt-0.5">
+                                {senderName} · {new Date(ticket.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                                {ticket.attachment_paths.length > 0 && ` · ${ticket.attachment_paths.length} p.j.`}
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-1 shrink-0">
+                              <Button size="sm" variant="outline" onClick={() => setViewingTicket(ticket)}>
+                                Voir
+                              </Button>
+                              {ticket.status === 'open' && (
+                                <Button size="sm" variant="ghost" onClick={() => closeTicket(ticket.id)} title="Fermer">
+                                  <X className="h-4 w-4" />
+                                </Button>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+          )}
         </Tabs>
+
+        {/* Ticket Detail Dialog */}
+        <Dialog open={!!viewingTicket} onOpenChange={(open) => { if (!open) setViewingTicket(null); }}>
+          <DialogContent className="max-h-[80vh] overflow-y-auto sm:max-w-lg">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                {viewingTicket?.type === 'bug' ? '🐛' : '💬'}
+                {viewingTicket?.subject}
+              </DialogTitle>
+              <DialogDescription>
+                {viewingTicket && (() => {
+                  const sender = profiles.find(p => p.user_id === viewingTicket.user_id);
+                  return sender
+                    ? `${sender.first_name} ${sender.last_name} · ${new Date(viewingTicket.created_at).toLocaleString('fr-FR')}`
+                    : new Date(viewingTicket.created_at).toLocaleString('fr-FR');
+                })()}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="p-4 bg-muted/30 rounded-lg text-sm whitespace-pre-wrap leading-relaxed">
+                {viewingTicket?.message}
+              </div>
+              {viewingTicket && viewingTicket.attachment_paths.length > 0 && (
+                <div className="space-y-2">
+                  <p className="text-sm font-medium flex items-center gap-1.5">
+                    <Paperclip className="h-4 w-4" />
+                    Pièces jointes ({viewingTicket.attachment_paths.length})
+                  </p>
+                  {viewingTicket.attachment_paths.map((path, i) => (
+                    <Button
+                      key={i}
+                      variant="outline"
+                      size="sm"
+                      className="w-full gap-2 justify-start font-normal"
+                      onClick={async () => {
+                        const { data } = await supabase.storage.from('support-attachments').createSignedUrl(path, 3600);
+                        if (data?.signedUrl) window.open(data.signedUrl, '_blank');
+                      }}
+                    >
+                      <Paperclip className="h-3.5 w-3.5 shrink-0" />
+                      <span className="truncate">{path.split('/').pop()}</span>
+                    </Button>
+                  ))}
+                </div>
+              )}
+            </div>
+            <DialogFooter>
+              {viewingTicket?.status === 'open' && (
+                <Button variant="outline" onClick={() => { closeTicket(viewingTicket!.id); setViewingTicket(null); }}>
+                  Fermer le ticket
+                </Button>
+              )}
+              <Button onClick={() => setViewingTicket(null)}>Fermer</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         {/* User Edit Dialog */}
         <Dialog open={roleDialogOpen} onOpenChange={(open) => { if (!open) resetRoleDialog(); }}>

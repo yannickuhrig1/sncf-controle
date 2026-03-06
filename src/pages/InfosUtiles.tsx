@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useAdminSettings } from '@/hooks/useAdminSettings';
@@ -19,6 +19,8 @@ import {
 } from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Info,
   Train,
@@ -51,9 +53,14 @@ import {
   RefreshCw,
   ChevronLeft,
   ChevronRight,
+  LifeBuoy,
+  Paperclip,
+  Send,
 } from 'lucide-react';
 import { Loader2 } from 'lucide-react';
 import { useStationDepartures, DepartureEntry } from '@/hooks/useStationDepartures';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 /* ─── Types ──────────────────────────────────────────────────────────────── */
 interface Tile {
@@ -128,6 +135,14 @@ const TILES: Tile[] = [
     icon: Train,
     label: 'Départs/Arrivées en gare',
     gradient: 'from-sky-400 to-blue-600',
+    iconBg: 'bg-white/20',
+    iconColor: 'text-white',
+  },
+  {
+    id: 'assistance',
+    icon: LifeBuoy,
+    label: 'Assistance',
+    gradient: 'from-orange-400 to-red-500',
     iconBg: 'bg-white/20',
     iconColor: 'text-white',
   },
@@ -308,6 +323,11 @@ function ContentFAQ() {
 }
 
 function ContentContacts() {
+  const { settings } = useAdminSettings();
+  const supportContact = settings?.find(s => s.key === 'support_contact')?.value as { email?: string; phone?: string } | undefined;
+  const supportEmail = supportContact?.email || 'controle-app@sncf.fr';
+  const supportPhone = supportContact?.phone;
+
   return (
     <div className="space-y-4">
       <h4 className="text-sm font-semibold">Numéros publics SNCF</h4>
@@ -355,9 +375,14 @@ function ContentContacts() {
           <Mail className="h-4 w-4 text-muted-foreground shrink-0" />
           <div>
             <p className="text-sm font-medium">Support application</p>
-            <a href="mailto:controle-app@sncf.fr" className="text-sm text-primary hover:underline">
-              controle-app@sncf.fr
+            <a href={`mailto:${supportEmail}`} className="text-sm text-primary hover:underline">
+              {supportEmail}
             </a>
+            {supportPhone && (
+              <a href={`tel:${supportPhone.replace(/\s/g, '')}`} className="text-xs text-primary hover:underline block mt-0.5">
+                {supportPhone}
+              </a>
+            )}
           </div>
         </div>
       </div>
@@ -764,6 +789,143 @@ function ContentDepartures() {
   );
 }
 
+function ContentAssistance() {
+  const { user } = useAuth();
+  const [type,    setType]    = useState<'bug' | 'message'>('bug');
+  const [subject, setSubject] = useState('');
+  const [message, setMessage] = useState('');
+  const [files,   setFiles]   = useState<File[]>([]);
+  const [isSending, setIsSending] = useState(false);
+  const [sent,      setSent]      = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  const handleSend = async () => {
+    if (!user || !subject.trim() || !message.trim()) return;
+    setIsSending(true);
+    try {
+      // Upload des pièces jointes
+      const paths: string[] = [];
+      for (const file of files) {
+        const path = `${user.id}/${Date.now()}-${file.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
+        const { error: upErr } = await supabase.storage.from('support-attachments').upload(path, file);
+        if (!upErr) paths.push(path);
+      }
+      // Insertion du ticket
+      const { error } = await supabase
+        .from('support_tickets' as any)
+        .insert({ user_id: user.id, type, subject: subject.trim(), message: message.trim(), attachment_paths: paths });
+      if (error) throw error;
+      setSent(true);
+    } catch (e: any) {
+      toast.error('Erreur lors de l\'envoi : ' + (e.message ?? 'Erreur inconnue'));
+    } finally {
+      setIsSending(false);
+    }
+  };
+
+  if (sent) {
+    return (
+      <div className="flex flex-col items-center gap-4 py-10 text-center">
+        <div className="p-4 bg-green-100 dark:bg-green-900/30 rounded-full">
+          <CheckCircle2 className="h-10 w-10 text-green-500" />
+        </div>
+        <div>
+          <p className="font-semibold text-base">Message envoyé !</p>
+          <p className="text-sm text-muted-foreground mt-1">L'administrateur traitera votre demande.</p>
+        </div>
+        <Button variant="outline" size="sm" onClick={() => { setSent(false); setSubject(''); setMessage(''); setFiles([]); }}>
+          Nouveau message
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <p className="text-sm text-muted-foreground">
+        Signalez un problème ou envoyez un message à l'administrateur de l'application.
+      </p>
+
+      {/* Type */}
+      <div className="flex gap-1 bg-muted/50 rounded-lg p-1">
+        {(['bug', 'message'] as const).map(t => (
+          <button
+            key={t}
+            type="button"
+            onClick={() => setType(t)}
+            className={`flex-1 text-sm py-1.5 rounded-md transition-colors font-medium ${
+              type === t ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            {t === 'bug' ? '🐛 Signaler un bug' : '💬 Message'}
+          </button>
+        ))}
+      </div>
+
+      {/* Sujet */}
+      <div className="space-y-1.5">
+        <Label>Sujet</Label>
+        <Input
+          value={subject}
+          onChange={e => setSubject(e.target.value)}
+          placeholder={type === 'bug' ? 'Décrivez le problème en bref…' : 'Sujet de votre message…'}
+        />
+      </div>
+
+      {/* Message */}
+      <div className="space-y-1.5">
+        <Label>Message</Label>
+        <Textarea
+          value={message}
+          onChange={e => setMessage(e.target.value)}
+          placeholder={type === 'bug'
+            ? 'Décrivez ce qui s\'est passé, comment reproduire le bug…'
+            : 'Votre message…'}
+          rows={5}
+          className="resize-none"
+        />
+      </div>
+
+      {/* Pièces jointes */}
+      <div className="space-y-2">
+        <Label>Pièces jointes <span className="text-muted-foreground font-normal">(optionnel)</span></Label>
+        <input
+          ref={fileRef}
+          type="file"
+          multiple
+          accept="image/*,application/pdf,.txt"
+          className="hidden"
+          onChange={e => setFiles(prev => [...prev, ...Array.from(e.target.files ?? [])])}
+        />
+        <Button type="button" variant="outline" size="sm" className="w-full gap-2" onClick={() => fileRef.current?.click()}>
+          <Paperclip className="h-4 w-4" />
+          Ajouter des fichiers
+        </Button>
+        {files.length > 0 && (
+          <div className="space-y-1">
+            {files.map((f, i) => (
+              <div key={i} className="flex items-center justify-between text-xs bg-muted/30 px-3 py-1.5 rounded-md">
+                <span className="truncate">{f.name}</span>
+                <button type="button" onClick={() => setFiles(files.filter((_, j) => j !== i))} className="ml-2 text-muted-foreground hover:text-destructive shrink-0">✕</button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Envoyer */}
+      <Button
+        className="w-full gap-2"
+        onClick={handleSend}
+        disabled={isSending || !subject.trim() || !message.trim()}
+      >
+        {isSending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+        Envoyer
+      </Button>
+    </div>
+  );
+}
+
 const DIALOG_CONTENT: Record<string, { title: string; Content: () => JSX.Element }> = {
   about:     { title: "À propos de l'application", Content: ContentAbout },
   fraude:    { title: 'Calcul du taux de fraude',   Content: ContentFraude },
@@ -773,6 +935,7 @@ const DIALOG_CONTENT: Record<string, { title: string; Content: () => JSX.Element
   partager:      { title: "Partager l'application",     Content: ContentPartager },
   presentation:  { title: 'Présentation de l\'application', Content: ContentPresentation },
   departures:    { title: 'Départs/Arrivées en gare',       Content: ContentDepartures },
+  assistance:    { title: 'Assistance',                      Content: ContentAssistance },
 };
 
 /* ─── Page principale ────────────────────────────────────────────────────── */
