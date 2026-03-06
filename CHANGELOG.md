@@ -5,6 +5,12 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/),
 et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.10.4] - 2026-03-06
+
+### Modifié
+- Présentation HTML : mise à jour v1.10.3 — multi-agents en gare, vignette fusionnée historique, colonne commentaire, dernière connexion + présence en ligne, édition profil complète managers
+- README : refonte complète reflétant toutes les fonctionnalités actuelles (v1.10.x)
+
 ## [1.10.3] - 2026-03-06
 
 ### Ajouté

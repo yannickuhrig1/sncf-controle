@@ -1,136 +1,106 @@
-# SNCF Contrôles
+# SNCF Contrôles — v1.10.3
 
 Application de gestion et suivi des contrôles ferroviaires pour les agents SNCF.
 
-## 🚆 Fonctionnalités
+## Fonctionnalités
 
-### Contrôles
-- **Contrôle à bord** : Saisie des contrôles effectués dans les trains (passagers, tarifs, PV)
-- **Contrôle en gare/quai** : Saisie des contrôles en gare ou sur quai
-- **Types de fraude complets** : STT 50€/100€, RNV, Titre tiers, Date de naissance, Autre
-- **Mode hors-ligne** : Synchronisation automatique des données à la reconnexion
-- **Historique dépliable** : Animation fluide avec framer-motion pour afficher/masquer l'historique
+### Contrôles à bord & en gare
+- **Contrôle à bord** : saisie en train — passagers, tarifs contrôle, PV, RI, tarifs à bord
+- **Contrôle en gare** : saisie sur quai ou en gare, modes débarquement et embarquement
+- **Mode compact** : 7 onglets (Info · STT rapides · TC · PV · Bord · RI · Notes) pour saisie terrain rapide
+- **Session multi-agents en gare** : créer / rejoindre un groupe via QR code, lien, SMS ou email — chaque agent saisit ses propres trains, l'historique agrège automatiquement
+- **API SNCF** : auto-remplissage Origine / Destination / Heure / Retard depuis l'API SNCF (proxy Vercel)
+- **Mode hors-ligne** : synchronisation automatique à la reconnexion
+- Flags "Train supprimé" et "Sur-occupation" par contrôle
 
-### Statistiques & Calculs
-- Tableau de bord avec indicateurs clés (taux de fraude, voyageurs, PV)
-- **Calcul du taux de fraude** : `(tarifsControle + PV + RI négatifs) / passagers × 100`
-  - Les tarifs à bord ne comptent pas dans le taux de fraude
-  - Les RI positifs ne comptent pas comme fraude (voyageur en règle)
-  - Les RI négatifs sont comptabilisés comme fraude
-- Filtrage par période (jour, semaine, mois, année)
-- Graphiques de répartition par type de contrôle
-- Historique complet avec pagination infinie
+### Statistiques & Tableau de bord
+- Indicateurs clés du jour : taux de fraude, voyageurs, PV, recettes
+- Calcul du taux de fraude : `(tarifsControle + PV + RI négatifs) / passagers × 100`
+- Filtrage par période : Aujourd'hui / Semaine / Mois / Année / Personnalisée
+- Graphiques Recharts : répartition fraude, taux par train, tendances
+- Seuils de couleur configurables (vert / jaune / rouge)
 
-### Exports
-- **HTML** : Rapport web interactif (format prioritaire)
-- **PDF** : Rapport détaillé avec statistiques et tableau des contrôles (Portrait, Paysage, Auto)
-- **Aperçu PDF** : Prévisualisation directe dans un dialogue avant téléchargement
-- **Export groupé embarquement** : Export PDF de toutes les missions filtrées en un seul document
-- Filtrage par période : Aujourd'hui, Ce mois, Mois spécifique, Cette année, Tout
-- Option d'inclusion des statistiques avec infobulle explicative
+### Historique
+- Vue Liste (mobile + desktop) : cartes groupées par date, badges Bord · TC · PV · RI
+- **Vignette multi-agents** : agrégation automatique quand ≥ 2 agents ont contrôlé le même train/jour; sous-lignes par agent + vue fusionnée au clic
+- Vue Tableau (desktop) : colonnes réorganisables/masquables dont **Commentaire**, tri multi-colonnes
+- Exports : HTML, PDF (portrait/paysage/auto), aperçu avant téléchargement, export groupé embarquement
 
-### Infos Utiles
-- **Page dédiée** (`/infos`) avec guides, FAQ et informations de référence
-- Calcul du taux de fraude expliqué
-- Types de tarification (STT, RNV, Titre tiers, D. naissance, RI+/RI-)
-- Questions fréquentes sur l'utilisation de l'application
-- **Contacts complets** : Numéros publics SNCF (3635, objets trouvés, accessibilité) et contacts internes (sûreté, urgences, support app)
-- **Contrôle admin** : Possibilité de masquer la page pour tous les utilisateurs
+### Gestion d'équipe (Manager)
+- Créer et gérer plusieurs équipes, ajouter/retirer des agents
+- Tableau de bord équipe avec KPIs, heatmap horaire, audit trail
+- Accès à `/admin` pour éditer les profils des membres de son équipe
+- **Présence en ligne** temps réel (point vert ●) + colonne "Dernière connexion"
 
-### Gestion d'équipe
-- Rôles : Agent, Manager, Admin
-- Gestion des équipes et des membres
-- Suivi des performances par équipe
+### Administration (Admin)
+- Gestion complète des utilisateurs : édition profil (nom, prénom, téléphone, matricule, email, rôle, équipe, approbation), suppression
+- Seuils de fraude configurables, durée de rétention, visibilité pages
+- Token API SNCF (proxy sécurisé)
+- **Présence en ligne** temps réel + dernière connexion pour chaque utilisateur
 
-### Administration
-- Gestion des utilisateurs et équipes
-- **Seuils de fraude configurables** : Définition des seuils vert/jaune/rouge
-- **Visibilité page Infos** : Toggle pour masquer/afficher la page Infos utiles
-- Durée de rétention des données (jusqu'à 10 ans)
+### Infos utiles
+- Tuiles : À propos · Taux de fraude · Tarification · FAQ · Contacts · Partager l'app · Présentation
+- **Partager l'app** : QR code + copie lien + SMS + email + Web Share API
+- **Présentation** : ouvrir, télécharger ou envoyer par email la présentation du projet
 
-## 🛠 Technologies
+## Technologies
 
-- **Frontend** : React 18, TypeScript, Vite
-- **UI** : Tailwind CSS, shadcn/ui, Framer Motion
-- **Backend** : Supabase (Auth, Database, Edge Functions)
-- **State** : TanStack Query
-- **Charts** : Recharts
-- **PDF** : jsPDF + jspdf-autotable
+| Couche | Technologies |
+|--------|-------------|
+| Frontend | React 18, TypeScript, Vite |
+| UI | Tailwind CSS, shadcn/ui, Framer Motion |
+| Backend | Supabase (Auth, PostgreSQL, RLS, Edge Functions, Realtime) |
+| State | TanStack Query v5 |
+| Charts | Recharts |
+| PDF | jsPDF + jspdf-autotable |
+| Déploiement | Vercel (auto depuis `main`) |
 
-## 📦 Installation
+## Installation
 
 ```bash
-# Cloner le repository
 git clone <YOUR_GIT_URL>
-cd <YOUR_PROJECT_NAME>
-
-# Installer les dépendances
+cd sncf-controle
 npm install
-
-# Lancer le serveur de développement
 npm run dev
 ```
 
-## 🔧 Configuration
-
-### Variables d'environnement
-
-Créer un fichier `.env` à la racine :
+## Configuration
 
 ```env
 VITE_SUPABASE_URL=your_supabase_url
 VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
 ```
 
-## 📱 PWA
-
-L'application est installable en tant que PWA avec :
-- Support offline
-- Synchronisation en arrière-plan
-- Notifications push (optionnel)
-
-## 🔐 Rôles et permissions
+## Rôles et permissions
 
 | Rôle | Permissions |
 |------|-------------|
-| Agent | Créer/voir ses contrôles |
-| Manager | Voir contrôles équipe, gérer membres |
-| Admin | Accès complet, gestion utilisateurs, configuration seuils |
+| Agent | Créer/voir/exporter ses propres contrôles |
+| Manager | + Voir équipe · Gérer membres · Accès /admin (membres équipe) |
+| Admin | Accès complet · Gestion utilisateurs · Configuration seuils |
 
-## 📊 Structure des données
+## Calcul de la fraude
 
-### Contrôle
-- Informations de base (date, heure, lieu)
-- Compteurs voyageurs (total, en règle)
-- Tarifs contrôle (STT 50€, STT 100€, RNV)
-- PV (absence titre, invalide, refus)
-- Tarifs bord (ventes exceptionnelles)
-- Relevés d'identité (RI positive/négative)
-
-### Calcul de la fraude
 ```
-Taux de fraude = (tarifsControle + PV + RI négatifs) / totalPassagers × 100
+Taux = (Tarifs contrôle + PV + RI négatifs) / Passagers × 100
 ```
 
 | Élément | Compte dans la fraude |
 |---------|----------------------|
-| Tarifs contrôle | ✅ Oui |
-| PV | ✅ Oui |
+| Tarifs contrôle (STT, RNV…) | ✅ Oui |
+| Procès-verbaux (PV) | ✅ Oui |
 | RI négatifs | ✅ Oui |
 | Tarifs à bord | ❌ Non |
 | RI positifs | ❌ Non |
 
-## 🚀 Déploiement
+## PWA
 
-L'application peut être déployée via :
-- **Lovable** : Publish directement depuis l'interface
-- **Netlify** : Configuration incluse (`netlify.toml`)
-- **Vercel** : Configuration incluse (`vercel.json`)
+Installable sur mobile et desktop avec support offline, icône sur l'écran d'accueil et raccourcis vers "À bord" et "En gare".
 
-## 📄 Licence
+## Déploiement
 
-Propriétaire - SNCF
+Push sur `main` → déploiement automatique Vercel.
 
 ---
 
-Développé avec [Lovable](https://lovable.dev)
+Propriétaire — SNCF · Usage interne

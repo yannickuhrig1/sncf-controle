@@ -408,7 +408,7 @@
   </div>
 
   <div class="cover-meta" style="margin-top:12mm">
-    Version 1.9.5 &nbsp;·&nbsp; Mars 2026 &nbsp;·&nbsp; Usage interne SNCF
+    Version 1.10.3 &nbsp;·&nbsp; Mars 2026 &nbsp;·&nbsp; Usage interne SNCF
   </div>
 
   <div class="cover-stripe-bottom"></div>
@@ -499,7 +499,7 @@
 
   <div class="page-footer">
     <span class="brand">SNCF Contrôles</span>
-    <span>Présentation de projet — v1.9.5</span>
+    <span>Présentation de projet — v1.10.3</span>
     <span>2 / 14</span>
   </div>
 </div>
@@ -593,7 +593,7 @@
 
   <div class="page-footer">
     <span class="brand">SNCF Contrôles</span>
-    <span>Présentation de projet — v1.9.5</span>
+    <span>Présentation de projet — v1.10.3</span>
     <span>3 / 14</span>
   </div>
 </div>
@@ -685,7 +685,7 @@
 
   <div class="page-footer">
     <span class="brand">SNCF Contrôles</span>
-    <span>Présentation de projet — v1.9.5</span>
+    <span>Présentation de projet — v1.10.3</span>
     <span>4 / 14</span>
   </div>
 </div>
@@ -770,7 +770,7 @@
 
   <div class="page-footer">
     <span class="brand">SNCF Contrôles</span>
-    <span>Présentation de projet — v1.9.5</span>
+    <span>Présentation de projet — v1.10.3</span>
     <span>5 / 14</span>
   </div>
 </div>
@@ -852,11 +852,40 @@
     </div>
   </div>
 
-  <div class="section-title">Trains préparés</div>
-  <p style="font-size:9pt;margin-bottom:3mm;">
-    Les trains préparés à l'avance (depuis la liste "Trains du jour" du contrôle à bord) apparaissent
-    dans une carte séparée pour un accès immédiat — évitant une nouvelle saisie lors de la prise de service.
-  </p>
+  <div class="section-title">Contrôle multi-agents (nouveau)</div>
+  <div class="card card-green" style="margin-bottom:3mm;">
+    <h3>👥 Session de groupe en gare</h3>
+    <p style="margin-bottom:2.5mm;">
+      Plusieurs agents peuvent rejoindre une même session de contrôle en gare. Chacun saisit
+      ses propres trains, et l'historique agrège automatiquement les résultats.
+    </p>
+    <div class="grid-3">
+      <div>
+        <p><strong>Créer un groupe :</strong></p>
+        <ul class="feat-list">
+          <li>Bouton "Partager" (actif si gare renseignée)</li>
+          <li>QR code généré automatiquement</li>
+          <li>Lien partageable par SMS ou email</li>
+        </ul>
+      </div>
+      <div>
+        <p><strong>Rejoindre un groupe :</strong></p>
+        <ul class="feat-list">
+          <li>Bouton "Rejoindre" + saisie du nom de gare</li>
+          <li>Ou scan du QR code / clic sur le lien</li>
+          <li>Pre-remplit automatiquement le champ gare</li>
+        </ul>
+      </div>
+      <div>
+        <p><strong>Dans l'historique :</strong></p>
+        <ul class="feat-list">
+          <li>Vignette agrégée multi-agents par gare/jour</li>
+          <li>Sous-lignes par agent avec stats individuelles</li>
+          <li>Clic sur l'en-tête → vue fusionnée complète</li>
+        </ul>
+      </div>
+    </div>
+  </div>
 
   <table>
     <thead><tr>
@@ -872,12 +901,13 @@
       <tr><td>Mode embarquement dédié</td><td>—</td><td>✅</td></tr>
       <tr><td>Mode compact (7 onglets)</td><td>✅</td><td>✅</td></tr>
       <tr><td>Historique intégré</td><td>✅</td><td>✅</td></tr>
+      <tr><td>Session multi-agents partageables</td><td>—</td><td>✅</td></tr>
     </tbody>
   </table>
 
   <div class="page-footer">
     <span class="brand">SNCF Contrôles</span>
-    <span>Présentation de projet — v1.9.5</span>
+    <span>Présentation de projet — v1.10.3</span>
     <span>6 / 14</span>
   </div>
 </div>
@@ -963,7 +993,7 @@
 
   <div class="page-footer">
     <span class="brand">SNCF Contrôles</span>
-    <span>Présentation de projet — v1.9.5</span>
+    <span>Présentation de projet — v1.10.3</span>
     <span>7 / 14</span>
   </div>
 </div>
@@ -997,6 +1027,8 @@
         <li>Taux de fraude coloré (vert / ambre / rouge)</li>
         <li>Click → Dialog de détail complet du contrôle</li>
         <li>Actions : Modifier · Supprimer · Dupliquer</li>
+        <li><strong>Vignette multi-agents</strong> : quand ≥2 agents ont controlé le même train/gare le même jour, une carte agrégée affiche les totaux + sous-lignes par agent</li>
+        <li>Clic sur l'en-tête agrégé → vue fusionnée complète (tous agents combinés)</li>
       </ul>
     </div>
     <div>
@@ -1022,6 +1054,7 @@
           <span class="badge badge-teal">RI+</span>
           <span class="badge badge-teal">RI-</span>
           <span class="badge badge-amber">Taux %</span>
+          <span class="badge badge-navy">Commentaire</span>
         </div>
       </div>
       <ul class="feat-list" style="margin-top:3mm;">
@@ -1053,7 +1086,7 @@
 
   <div class="page-footer">
     <span class="brand">SNCF Contrôles</span>
-    <span>Présentation de projet — v1.9.5</span>
+    <span>Présentation de projet — v1.10.3</span>
     <span>8 / 14</span>
   </div>
 </div>
@@ -1134,7 +1167,7 @@
 
   <div class="page-footer">
     <span class="brand">SNCF Contrôles</span>
-    <span>Présentation de projet — v1.9.5</span>
+    <span>Présentation de projet — v1.10.3</span>
     <span>9 / 14</span>
   </div>
 </div>
@@ -1229,7 +1262,7 @@
 
   <div class="page-footer">
     <span class="brand">SNCF Contrôles</span>
-    <span>Présentation de projet — v1.9.5</span>
+    <span>Présentation de projet — v1.10.3</span>
     <span>10 / 14</span>
   </div>
 </div>
@@ -1259,7 +1292,7 @@
           </tr>
           <tr>
             <td><span class="badge badge-amber">Manager</span></td>
-            <td>Tout l'Agent + voir les contrôles de son équipe · Gérer les membres d'équipe · Créer plusieurs équipes</td>
+            <td>Tout l'Agent + voir les contrôles de son équipe · Gérer les membres d'équipe · Créer plusieurs équipes · Accès /admin pour éditer les profils de son équipe</td>
           </tr>
           <tr>
             <td><span class="badge badge-red">Admin</span></td>
@@ -1281,7 +1314,9 @@
       <div class="card card-red">
         <h3>⚙️ Paramètres Admin</h3>
         <ul>
-          <li><strong>Gestion des utilisateurs</strong> : consulter tous les comptes, modifier les rôles, supprimer avec confirmation</li>
+          <li><strong>Gestion des utilisateurs</strong> : consulter tous les comptes, édition complète du profil (nom, prénom, téléphone, matricule, email, rôle, équipe, approbation), supprimer avec confirmation</li>
+          <li><strong>Présence en ligne</strong> : point vert ● en temps réel (Supabase Realtime) + colonne "Dernière connexion"</li>
+          <li><strong>Accès managers</strong> : les managers voient et éditent les membres de leur équipe depuis /admin</li>
           <li><strong>Seuils de fraude configurables</strong> :<br>
             <span class="badge badge-green">Vert &lt; 5%</span>&nbsp;
             <span class="badge badge-amber">Jaune 5–10%</span>&nbsp;
@@ -1329,7 +1364,7 @@
 
   <div class="page-footer">
     <span class="brand">SNCF Contrôles</span>
-    <span>Présentation de projet — v1.9.5</span>
+    <span>Présentation de projet — v1.10.3</span>
     <span>11 / 14</span>
   </div>
 </div>
@@ -1430,7 +1465,7 @@
 
   <div class="page-footer">
     <span class="brand">SNCF Contrôles</span>
-    <span>Présentation de projet — v1.9.5</span>
+    <span>Présentation de projet — v1.10.3</span>
     <span>12 / 14</span>
   </div>
 </div>
@@ -1523,7 +1558,7 @@
 
   <div class="page-footer">
     <span class="brand">SNCF Contrôles</span>
-    <span>Présentation de projet — v1.9.5</span>
+    <span>Présentation de projet — v1.10.3</span>
     <span>13 / 14</span>
   </div>
 </div>
@@ -1618,13 +1653,13 @@
   <div style="margin-top:5mm;border-top:0.5mm solid var(--border);padding-top:4mm;text-align:center;">
     <p style="font-size:9pt;color:var(--muted);">
       <strong style="color:var(--navy);">SNCF Contrôles</strong> — Application développée en React 18 / TypeScript / Supabase<br>
-      Version 1.9.5 · Mars 2026 · Usage interne SNCF · Propriétaire — Tous droits réservés
+      Version 1.10.3 · Mars 2026 · Usage interne SNCF · Propriétaire — Tous droits réservés
     </p>
   </div>
 
   <div class="page-footer">
     <span class="brand">SNCF Contrôles</span>
-    <span>Présentation de projet — v1.9.5</span>
+    <span>Présentation de projet — v1.10.3</span>
     <span>14 / 14</span>
   </div>
 </div>
