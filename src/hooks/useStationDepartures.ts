@@ -1,14 +1,15 @@
 import { useState } from 'react';
 
 export interface DepartureEntry {
-  trainNumber: string;
-  direction:   string;
-  scheduledTime: string;   // HH:MM théorique
-  realTime:      string;   // HH:MM temps réel
-  delayMinutes:  number;
-  status:        'on_time' | 'delayed' | 'cancelled';
-  trainType?:    string;
-  platform?:     string;
+  trainNumber:       string;
+  direction:         string;
+  scheduledTime:     string;   // HH:MM théorique (départ ou arrivée selon mode)
+  realTime:          string;   // HH:MM temps réel
+  delayMinutes:      number;
+  status:            'on_time' | 'delayed' | 'cancelled';
+  trainType?:        string;
+  platform?:         string;
+  vehicleJourneyId?: string;   // pour récupérer le détail des arrêts
 }
 
 function parseNavitiaTime(dt: string | undefined): string {
@@ -37,14 +38,18 @@ export function useStationDepartures() {
   const [departures,  setDepartures]  = useState<DepartureEntry[]>([]);
   const [stationName, setStationName] = useState('');
 
-  const fetchDepartures = async (station: string, datetime?: string) => {
+  const fetchDepartures = async (
+    station:  string,
+    datetime?: string,
+    mode: 'departures' | 'arrivals' = 'departures',
+  ) => {
     if (!station.trim()) return;
     setIsLoading(true);
     setError(null);
     setDepartures([]);
 
     try {
-      const params = new URLSearchParams({ station: station.trim() });
+      const params = new URLSearchParams({ station: station.trim(), mode });
       if (datetime) params.set('datetime', datetime);
 
       const res = await fetch(`/api/sncf-departures?${params}`);
@@ -55,28 +60,41 @@ export function useStationDepartures() {
       const json = await res.json();
       setStationName(json.stationName || station);
 
+      const isArrival = mode === 'arrivals';
+
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const deps: DepartureEntry[] = (json.departures as any[]).map(d => {
         const info = d.display_informations ?? {};
         const sdt  = d.stop_date_time       ?? {};
 
-        const scheduled = sdt.base_departure_date_time ?? sdt.departure_date_time ?? '';
-        const real      = sdt.departure_date_time      ?? scheduled;
-        const delay     = diffMinutes(real, scheduled);
+        // Pour les arrivées, utiliser les champs arrival ; pour les départs, departure
+        const scheduled = isArrival
+          ? (sdt.base_arrival_date_time   ?? sdt.arrival_date_time   ?? '')
+          : (sdt.base_departure_date_time ?? sdt.departure_date_time ?? '');
+        const real = isArrival
+          ? (sdt.arrival_date_time   ?? scheduled)
+          : (sdt.departure_date_time ?? scheduled);
+
+        const delay = diffMinutes(real, scheduled);
 
         const addInfo: string[] = sdt.additional_informations ?? [];
         let status: DepartureEntry['status'] = delay > 0 ? 'delayed' : 'on_time';
         if (addInfo.some((s: string) => /deleted|cancel|supprim/i.test(s))) status = 'cancelled';
 
+        // Extraire l'id du vehicle_journey depuis les links
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const vjLink = (d.links ?? []).find((l: any) => l.type === 'vehicle_journey');
+
         return {
-          trainNumber:   info.headsign       ?? '',
-          direction:     info.direction      ?? '',
-          scheduledTime: parseNavitiaTime(scheduled),
-          realTime:      parseNavitiaTime(real),
-          delayMinutes:  delay,
+          trainNumber:       info.headsign       ?? '',
+          direction:         info.direction      ?? '',
+          scheduledTime:     parseNavitiaTime(scheduled),
+          realTime:          parseNavitiaTime(real),
+          delayMinutes:      delay,
           status,
-          trainType:     info.commercial_mode || info.name || undefined,
-          platform:      d.stop_point?.platform_code || undefined,
+          trainType:         info.commercial_mode || info.name || undefined,
+          platform:          d.stop_point?.platform_code || undefined,
+          vehicleJourneyId:  vjLink?.id ?? undefined,
         } satisfies DepartureEntry;
       }).filter(d => d.trainNumber);
 

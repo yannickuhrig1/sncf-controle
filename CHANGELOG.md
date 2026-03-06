@@ -5,6 +5,11 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/),
 et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.10.6] - 2026-03-06
+
+### Amélioré
+- Infos / Départs en gare : toggle Départs ↔ Arrivées, clic sur un train → détail avec tous les arrêts + voie, proxy sncf-journey pour le vehicle_journey Navitia
+
 ## [1.10.5] - 2026-03-06
 
 ### Ajouté
