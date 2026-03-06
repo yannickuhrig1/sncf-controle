@@ -68,6 +68,7 @@ import {
   Plug,
   Check,
   Monitor,
+  Clock,
 } from 'lucide-react';
 import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
@@ -144,6 +145,17 @@ export default function AdminPage() {
         .order('last_name');
       if (error) throw error;
       return data as Profile[];
+    },
+    enabled: !!profile && (isAdmin() || isManager()),
+  });
+
+  // Fetch last sign-in dates for all users
+  const { data: lastSignInMap = {} } = useQuery({
+    queryKey: ['admin-last-sign-in'],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('get_users_last_sign_in');
+      if (error) return {} as Record<string, string>;
+      return Object.fromEntries((data as { user_id: string; last_sign_in_at: string }[]).map(r => [r.user_id, r.last_sign_in_at]));
     },
     enabled: !!profile && (isAdmin() || isManager()),
   });
@@ -553,6 +565,7 @@ export default function AdminPage() {
                           <TableHead>Nom</TableHead>
                           <TableHead>Rôle</TableHead>
                           <TableHead>Équipe</TableHead>
+                          <TableHead>Dernière connexion</TableHead>
                           <TableHead className="w-[100px]">Actions</TableHead>
                         </TableRow>
                       </TableHeader>
@@ -579,6 +592,30 @@ export default function AdminPage() {
                             </TableCell>
                             <TableCell className="text-sm">
                               {getTeamName(p.team_id)}
+                            </TableCell>
+                            <TableCell>
+                              {(() => {
+                                const raw = lastSignInMap[p.user_id];
+                                if (!raw) return <span className="text-xs text-muted-foreground">—</span>;
+                                const d = new Date(raw);
+                                const now = new Date();
+                                const diffMs = now.getTime() - d.getTime();
+                                const diffMin = Math.floor(diffMs / 60000);
+                                const diffH = Math.floor(diffMin / 60);
+                                const diffD = Math.floor(diffH / 24);
+                                let label = '';
+                                if (diffMin < 1) label = "À l'instant";
+                                else if (diffMin < 60) label = `il y a ${diffMin} min`;
+                                else if (diffH < 24) label = `il y a ${diffH} h`;
+                                else if (diffD < 7) label = `il y a ${diffD} j`;
+                                else label = d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: '2-digit' });
+                                return (
+                                  <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                                    <Clock className="h-3 w-3 shrink-0" />
+                                    <span title={d.toLocaleString('fr-FR')}>{label}</span>
+                                  </div>
+                                );
+                              })()}
                             </TableCell>
                             <TableCell>
                               <div className="flex items-center gap-1">

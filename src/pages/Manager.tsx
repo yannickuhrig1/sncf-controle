@@ -37,6 +37,7 @@ import {
   X,
   UserPlus,
   Search,
+  Clock,
 } from 'lucide-react';
 import { HourlyHeatmap } from '@/components/manager/HourlyHeatmap';
 import { AuditTrailView } from '@/components/manager/AuditTrailView';
@@ -106,6 +107,17 @@ export default function ManagerPage() {
         .order('last_name');
       if (error) throw error;
       return data as Profile[];
+    },
+    enabled: !!profile && canAccess,
+  });
+
+  // ── Fetch last sign-in dates ───────────────────────────────────────────────
+  const { data: lastSignInMap = {} } = useQuery({
+    queryKey: ['manager-last-sign-in'],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('get_users_last_sign_in');
+      if (error) return {} as Record<string, string>;
+      return Object.fromEntries((data as { user_id: string; last_sign_in_at: string }[]).map(r => [r.user_id, r.last_sign_in_at]));
     },
     enabled: !!profile && canAccess,
   });
@@ -357,11 +369,29 @@ export default function ManagerPage() {
                           <TableHead>Nom</TableHead>
                           <TableHead>Matricule</TableHead>
                           <TableHead>Rôle</TableHead>
+                          <TableHead>Dernière connexion</TableHead>
                           {managerTeams.length > 1 && <TableHead>Équipe</TableHead>}
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {teamMembers.map((member) => (
+                        {teamMembers.map((member) => {
+                          const raw = lastSignInMap[member.user_id];
+                          let lastSeenLabel = '—';
+                          let lastSeenTitle = '';
+                          if (raw) {
+                            const d = new Date(raw);
+                            const now = new Date();
+                            const diffMin = Math.floor((now.getTime() - d.getTime()) / 60000);
+                            const diffH = Math.floor(diffMin / 60);
+                            const diffD = Math.floor(diffH / 24);
+                            if (diffMin < 1) lastSeenLabel = "À l'instant";
+                            else if (diffMin < 60) lastSeenLabel = `il y a ${diffMin} min`;
+                            else if (diffH < 24) lastSeenLabel = `il y a ${diffH} h`;
+                            else if (diffD < 7) lastSeenLabel = `il y a ${diffD} j`;
+                            else lastSeenLabel = d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: '2-digit' });
+                            lastSeenTitle = d.toLocaleString('fr-FR');
+                          }
+                          return (
                           <TableRow key={member.id}>
                             <TableCell>
                               <div className="font-medium">{member.first_name} {member.last_name}</div>
@@ -373,13 +403,20 @@ export default function ManagerPage() {
                                 {member.role === 'manager' ? 'Manager' : 'Agent'}
                               </Badge>
                             </TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                                <Clock className="h-3 w-3 shrink-0" />
+                                <span title={lastSeenTitle}>{lastSeenLabel}</span>
+                              </div>
+                            </TableCell>
                             {managerTeams.length > 1 && (
                               <TableCell className="text-sm text-muted-foreground">
                                 {managerTeams.find(t => t.id === member.team_id)?.name || '-'}
                               </TableCell>
                             )}
                           </TableRow>
-                        ))}
+                          );
+                        })}
                       </TableBody>
                     </Table>
                   </div>

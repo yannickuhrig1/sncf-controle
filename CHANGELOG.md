@@ -5,6 +5,13 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/),
 et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.10.3] - 2026-03-06
+
+### Ajouté
+- Admin & Manager : colonne "Dernière connexion" dans la liste des utilisateurs (RPC `get_users_last_sign_in`)
+- Infos : tuile "Présentation" avec boutons Ouvrir, Télécharger et Envoyer par email
+- Logo : icône ClipboardCheck (contrôleur) remplace Train partout (favicon, connexion, sidebar, burger)
+
 ## [1.10.2] - 2026-03-04
 
 ### Ajouté
