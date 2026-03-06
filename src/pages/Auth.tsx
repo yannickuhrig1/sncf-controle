@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
-import { Train, Loader2, Phone } from 'lucide-react';
+import { ClipboardCheck, Loader2, Phone } from 'lucide-react';
 
 export default function Auth() {
   const { user, loading, signIn, signUp } = useAuth();
@@ -93,7 +93,7 @@ export default function Auth() {
       <div className="w-full max-w-md relative z-10">
         <div className="flex items-center justify-center gap-3 mb-8">
           <div className="p-3 bg-primary rounded-xl">
-            <Train className="h-8 w-8 text-primary-foreground" />
+            <ClipboardCheck className="h-8 w-8 text-primary-foreground" />
           </div>
           <div>
             <h1 className="text-2xl font-bold">SNCF Contrôles</h1>

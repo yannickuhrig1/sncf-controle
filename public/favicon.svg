@@ -1,14 +1,10 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
-  <!-- Fond rouge arrondi (même couleur que l'app) -->
+  <!-- Fond rouge arrondi -->
   <rect width="100" height="100" rx="20" fill="#C2185B"/>
-  <!-- Icône Train (TramFront Lucide) en blanc, centrée et agrandie -->
-  <g transform="translate(18, 14) scale(2.67)" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none">
-    <rect width="16" height="16" x="4" y="3" rx="2"/>
-    <path d="M4 11h16"/>
-    <path d="M12 3v8"/>
-    <path d="m8 19-2 3"/>
-    <path d="m18 22-2-3"/>
-    <path d="M8 15h.01"/>
-    <path d="M16 15h.01"/>
+  <!-- Icône ClipboardCheck (contrôleur) en blanc, centrée -->
+  <g transform="translate(20, 20) scale(2.5)" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none">
+    <rect width="8" height="4" x="8" y="2" rx="1" ry="1"/>
+    <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
+    <path d="m9 14 2 2 4-4"/>
   </g>
 </svg>

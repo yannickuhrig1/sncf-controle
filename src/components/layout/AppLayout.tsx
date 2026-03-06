@@ -1,6 +1,6 @@
 import { ReactNode, useState, useEffect, useMemo } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Train, Building2, History, User, BarChart3, Settings, Shield, Menu, UserCheck, Wifi, WifiOff, Download, Info } from 'lucide-react';
+import { LayoutDashboard, Train, Building2, History, User, BarChart3, Settings, Shield, Menu, UserCheck, Wifi, WifiOff, Download, Info, ClipboardCheck } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { cn } from '@/lib/utils';
@@ -320,7 +320,7 @@ export function AppLayout({ children }: AppLayoutProps) {
       <aside className="hidden md:flex flex-col w-60 shrink-0 bg-primary text-primary-foreground sticky top-0 h-screen overflow-y-auto">
         {/* Brand */}
         <div className="flex items-center gap-2.5 px-4 py-4 border-b border-white/10">
-          <Train className="h-5 w-5 shrink-0" />
+          <ClipboardCheck className="h-5 w-5 shrink-0" />
           <div>
             <div className="font-semibold text-base leading-tight">SNCF Contrôles</div>
             <div className="text-[10px] text-white/50 leading-tight">v{__APP_VERSION__} · {__BUILD_DATE__}</div>
@@ -359,7 +359,7 @@ export function AppLayout({ children }: AppLayoutProps) {
         >
           <div className="flex items-center justify-between px-4 py-3">
             <div className="flex items-center gap-2">
-              <Train className="h-5 w-5" />
+              <ClipboardCheck className="h-5 w-5" />
               <div>
                 <div className="font-semibold leading-tight">SNCF Contrôles</div>
                 <div className="text-[10px] text-white/60 leading-tight">v{__APP_VERSION__} · {__BUILD_DATE__}</div>
@@ -411,7 +411,7 @@ export function AppLayout({ children }: AppLayoutProps) {
                 <SheetContent side="right" className="w-72 p-0">
                   <SheetHeader className="p-4 border-b">
                     <SheetTitle className="flex items-center gap-2">
-                      <Train className="h-5 w-5 text-primary" />
+                      <ClipboardCheck className="h-5 w-5 text-primary" />
                       Navigation
                     </SheetTitle>
                   </SheetHeader>
