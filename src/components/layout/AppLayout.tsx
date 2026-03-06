@@ -59,6 +59,18 @@ export function AppLayout({ children }: AppLayoutProps) {
     };
   }, []);
 
+  // Broadcast presence so admins/managers can see who is online
+  useEffect(() => {
+    if (!user) return;
+    const channel = supabase.channel('sncf-presence', { config: { presence: { key: user.id } } });
+    channel.subscribe(async (status) => {
+      if (status === 'SUBSCRIBED') {
+        await channel.track({ user_id: user.id, online_at: new Date().toISOString() });
+      }
+    });
+    return () => { supabase.removeChannel(channel); };
+  }, [user]);
+
   // Detect scroll for header glass effect
   useEffect(() => {
     const handleScroll = () => {

@@ -97,7 +97,19 @@ export default function AdminPage() {
   const { user, profile, loading: authLoading, isAdmin, isManager } = useAuth();
   const queryClient = useQueryClient();
   const { preferences, updatePreferences, isUpdating } = useUserPreferences();
-  
+
+  // Real-time online presence
+  const [onlineUsers, setOnlineUsers] = useState<Set<string>>(new Set());
+  useEffect(() => {
+    const channel = supabase.channel('sncf-presence');
+    channel.on('presence', { event: 'sync' }, () => {
+      const state = channel.presenceState<{ user_id: string }>();
+      const ids = new Set(Object.values(state).flatMap(p => p.map((u: { user_id: string }) => u.user_id)));
+      setOnlineUsers(ids);
+    }).subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, []);
+
   // Team dialog state
   const [teamDialogOpen, setTeamDialogOpen] = useState(false);
   const [editingTeam, setEditingTeam] = useState<Team | null>(null);
@@ -574,6 +586,9 @@ export default function AdminPage() {
                           <TableRow key={p.id} className={!(p as any).is_approved ? 'bg-amber-50 dark:bg-amber-900/10' : ''}>
                             <TableCell>
                               <div className="font-medium flex items-center gap-2">
+                                {onlineUsers.has(p.user_id) && (
+                                  <span className="inline-block h-2 w-2 rounded-full bg-green-500 shrink-0" title="En ligne" />
+                                )}
                                 {p.first_name} {p.last_name}
                                 {!(p as any).is_approved && (
                                   <Badge variant="outline" className="text-[10px] text-amber-600 border-amber-300">

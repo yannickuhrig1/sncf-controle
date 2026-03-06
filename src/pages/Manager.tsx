@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -52,6 +52,18 @@ export default function ManagerPage() {
   const queryClient = useQueryClient();
 
   const canAccess = isManager() || isAdmin();
+
+  // Real-time online presence
+  const [onlineUsers, setOnlineUsers] = useState<Set<string>>(new Set());
+  useEffect(() => {
+    const channel = supabase.channel('sncf-presence');
+    channel.on('presence', { event: 'sync' }, () => {
+      const state = channel.presenceState<{ user_id: string }>();
+      const ids = new Set(Object.values(state).flatMap(p => p.map((u: { user_id: string }) => u.user_id)));
+      setOnlineUsers(ids);
+    }).subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, []);
 
   // ── Dialog state ───────────────────────────────────────────────────────────
   const [createTeamOpen, setCreateTeamOpen] = useState(false);
@@ -394,7 +406,12 @@ export default function ManagerPage() {
                           return (
                           <TableRow key={member.id}>
                             <TableCell>
-                              <div className="font-medium">{member.first_name} {member.last_name}</div>
+                              <div className="font-medium flex items-center gap-2">
+                                {onlineUsers.has(member.user_id) && (
+                                  <span className="inline-block h-2 w-2 rounded-full bg-green-500 shrink-0" title="En ligne" />
+                                )}
+                                {member.first_name} {member.last_name}
+                              </div>
                               <div className="text-xs text-muted-foreground">{member.phone_number || 'N/A'}</div>
                             </TableCell>
                             <TableCell className="text-sm">{member.matricule || '-'}</TableCell>
