@@ -41,6 +41,8 @@ import {
   Copy,
   MessageSquare,
   QrCode,
+  Monitor,
+  Download,
 } from 'lucide-react';
 import { Loader2 } from 'lucide-react';
 
@@ -101,6 +103,14 @@ const TILES: Tile[] = [
     icon: Share2,
     label: "Partager l'app",
     gradient: 'from-teal-400 to-cyan-500',
+    iconBg: 'bg-white/20',
+    iconColor: 'text-white',
+  },
+  {
+    id: 'presentation',
+    icon: Monitor,
+    label: 'Présentation',
+    gradient: 'from-rose-400 to-pink-600',
     iconBg: 'bg-white/20',
     iconColor: 'text-white',
   },
@@ -417,13 +427,71 @@ function ContentPartager() {
   );
 }
 
+function ContentPresentation() {
+  const presentationUrl = `${window.location.origin}/presentation_sncf_controles.html`;
+  const mailSub  = encodeURIComponent('SNCF Contrôles — Présentation de l\'application');
+  const mailBody = encodeURIComponent(
+    `Bonjour,\n\nVeuillez trouver ci-dessous le lien vers la présentation de l'application SNCF Contrôles :\n\n${presentationUrl}\n\nCette présentation détaille les fonctionnalités de l'outil de gestion des contrôles voyageurs.`
+  );
+
+  return (
+    <div className="space-y-4">
+      <p className="text-sm text-muted-foreground">
+        Présentation complète de l'application SNCF Contrôles : fonctionnalités, architecture,
+        guide d'utilisation. À partager avec votre équipe ou votre hiérarchie.
+      </p>
+
+      {/* Aperçu */}
+      <div className="flex items-center gap-3 p-4 bg-rose-50 dark:bg-rose-950/20 rounded-xl border border-rose-200 dark:border-rose-800">
+        <div className="p-2.5 bg-rose-100 dark:bg-rose-900/40 rounded-lg shrink-0">
+          <Monitor className="h-6 w-6 text-rose-600 dark:text-rose-400" />
+        </div>
+        <div>
+          <p className="text-sm font-semibold">Présentation interactive</p>
+          <p className="text-xs text-muted-foreground">Document HTML — slides animées</p>
+        </div>
+      </div>
+
+      {/* Actions */}
+      <div className="grid grid-cols-1 gap-2">
+        <Button
+          className="w-full gap-2"
+          onClick={() => window.open(presentationUrl, '_blank')}
+        >
+          <ExternalLink className="h-4 w-4" />
+          Ouvrir la présentation
+        </Button>
+        <Button
+          variant="outline"
+          className="w-full gap-2"
+          asChild
+        >
+          <a href="/presentation_sncf_controles.html" download="presentation_sncf_controles.html">
+            <Download className="h-4 w-4" />
+            Télécharger (HTML)
+          </a>
+        </Button>
+        <Button
+          variant="outline"
+          className="w-full gap-2"
+          onClick={() => window.open(`mailto:?subject=${mailSub}&body=${mailBody}`)}
+        >
+          <Mail className="h-4 w-4" />
+          Envoyer par email
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 const DIALOG_CONTENT: Record<string, { title: string; Content: () => JSX.Element }> = {
   about:     { title: "À propos de l'application", Content: ContentAbout },
   fraude:    { title: 'Calcul du taux de fraude',   Content: ContentFraude },
   tarifs:    { title: 'Types de tarification',       Content: ContentTarifs },
   faq:       { title: 'Questions fréquentes',        Content: ContentFAQ },
   contacts:  { title: 'Contacts utiles',             Content: ContentContacts },
-  partager:  { title: "Partager l'application",        Content: ContentPartager },
+  partager:      { title: "Partager l'application",     Content: ContentPartager },
+  presentation:  { title: 'Présentation de l\'application', Content: ContentPresentation },
 };
 
 /* ─── Page principale ────────────────────────────────────────────────────── */
