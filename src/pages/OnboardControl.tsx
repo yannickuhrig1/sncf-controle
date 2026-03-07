@@ -1696,12 +1696,11 @@ export default function OnboardControl() {
             <div className="flex justify-center py-12">
               <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
             </div>
-          ) : controls.length === 0 ? (
+          ) : !formState.trainNumber.trim() ? (
             <div className="text-center py-12">
               <Train className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-              <h3 className="text-lg font-semibold mb-2">Aucun contrôle</h3>
               <p className="text-muted-foreground">
-                Vous n'avez pas encore enregistré de contrôles à bord.
+                Saisissez un numéro de train pour consulter l'historique.
               </p>
             </div>
           ) : filteredControls.length === 0 ? (
@@ -1709,11 +1708,8 @@ export default function OnboardControl() {
               <Search className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
               <h3 className="text-lg font-semibold mb-2">Aucun résultat</h3>
               <p className="text-muted-foreground mb-4">
-                Aucun contrôle ne correspond à vos critères de recherche.
+                Aucun contrôle trouvé pour ce train.
               </p>
-              <Button variant="outline" onClick={clearFilters}>
-                Effacer les filtres
-              </Button>
             </div>
           ) : (
             <div className="space-y-6">
