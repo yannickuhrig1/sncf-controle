@@ -196,6 +196,7 @@ export default function AdminPage() {
       return data as Profile[];
     },
     enabled: !!profile && (isAdmin() || isManager()),
+    staleTime: 1000 * 60 * 5, // 5 min
   });
 
   // Fetch last sign-in dates for all users
@@ -207,6 +208,7 @@ export default function AdminPage() {
       return Object.fromEntries((data as { user_id: string; last_sign_in_at: string }[]).map(r => [r.user_id, r.last_sign_in_at]));
     },
     enabled: !!profile && (isAdmin() || isManager()),
+    staleTime: 1000 * 60 * 30, // 30 min — connexions ne changent pas souvent
   });
 
   // Fetch all teams
@@ -221,6 +223,7 @@ export default function AdminPage() {
       return data as Team[];
     },
     enabled: !!profile && (isAdmin() || isManager()),
+    staleTime: 1000 * 60 * 10, // 10 min
   });
 
   // Fetch hide_infos_page setting
@@ -234,6 +237,7 @@ export default function AdminPage() {
       return (data || []) as unknown as Array<{ id: string; key: string; value: any; description: string }>;
     },
     enabled: !!profile && isAdmin(),
+    staleTime: 1000 * 60 * 10, // 10 min
   });
 
   // Fetch support tickets (admin only)
@@ -247,6 +251,7 @@ export default function AdminPage() {
       return (data || []) as SupportTicket[];
     },
     enabled: !!profile && isAdmin(),
+    staleTime: 1000 * 60 * 2, // 2 min — mis à jour par realtime
   });
 
   // Load page visibility settings on mount
@@ -365,7 +370,7 @@ export default function AdminPage() {
     },
   });
 
-  const saveSupportContact = async () => {
+  const saveSupportContact = useCallback(async () => {
     setIsSavingContact(true);
     try {
       const { error } = await supabase
@@ -380,9 +385,9 @@ export default function AdminPage() {
     } finally {
       setIsSavingContact(false);
     }
-  };
+  }, [supportEmail, supportPhone, queryClient]);
 
-  const closeTicket = async (ticketId: string) => {
+  const closeTicket = useCallback(async (ticketId: string) => {
     const { error } = await supabase
       .from('support_tickets' as any)
       .update({ status: 'closed' })
@@ -391,7 +396,7 @@ export default function AdminPage() {
     queryClient.invalidateQueries({ queryKey: ['support-tickets'] });
     queryClient.invalidateQueries({ queryKey: ['open-tickets-count'] });
     toast.success('Ticket fermé');
-  };
+  }, [queryClient]);
 
   // Charger les réponses quand un ticket est ouvert
   useEffect(() => {
@@ -409,7 +414,7 @@ export default function AdminPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [viewingTicket?.id]);
 
-  const sendReply = async () => {
+  const sendReply = useCallback(async () => {
     if (!viewingTicket || !replyText.trim()) return;
     setIsSendingReply(true);
     const { data: { user: me } } = await supabase.auth.getUser();
@@ -420,7 +425,6 @@ export default function AdminPage() {
       is_admin: true,
     });
     if (error) { toast.error('Erreur : ' + error.message); setIsSendingReply(false); return; }
-    // Marquer le ticket comme ayant une réponse non lue pour l'agent
     await supabase.from('support_tickets' as any)
       .update({ has_unread_reply: true })
       .eq('id', viewingTicket.id);
@@ -434,7 +438,7 @@ export default function AdminPage() {
     queryClient.invalidateQueries({ queryKey: ['support-tickets'] });
     setIsSendingReply(false);
     toast.success('Réponse envoyée');
-  };
+  }, [viewingTicket, replyText, queryClient]);
 
   const resetTeamDialog = () => {
     setTeamDialogOpen(false);

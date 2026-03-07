@@ -5,6 +5,16 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/),
 et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.10.12] - 2026-03-07
+
+### Optimisé
+- `AppLayout` : `burgerNavItems` et `bottomNavItems` convertis en `useMemo` (évite recalcul à chaque rendu)
+- `AppLayout` : suppression du `refetchInterval: 60s` sur `openTicketsCount` (remplacé par `staleTime: 5min`, le realtime Supabase gère déjà l'invalidation)
+- `Admin` : ajout de `staleTime` sur les 5 requêtes (profiles 5min, last-sign-in 30min, teams 10min, settings 10min, tickets 2min)
+- `Admin` : `saveSupportContact`, `closeTicket`, `sendReply` enveloppés dans `useCallback`
+- `useStationDepartures` : `fetchDepartures` et `reset` enveloppés dans `useCallback` + `AbortController` pour annuler les requêtes en vol lors d'une nouvelle recherche
+- `useControls` : ajout de `staleTime: 2min` sur les 3 requêtes (controls, infinite, today)
+
 ## [1.10.11] - 2026-03-07
 
 ### Ajouté

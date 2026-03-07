@@ -113,7 +113,7 @@ export function AppLayout({ children }: AppLayoutProps) {
     refetchInterval: 30000,
   });
 
-  // Fetch open support tickets count for admin badge
+  // Fetch open support tickets count for admin badge (réel via invalidateQueries du realtime)
   const { data: openTicketsCount = 0 } = useQuery({
     queryKey: ['open-tickets-count'],
     queryFn: async () => {
@@ -124,7 +124,7 @@ export function AppLayout({ children }: AppLayoutProps) {
       return count || 0;
     },
     enabled: !!user && isAdmin(),
-    refetchInterval: 60_000,
+    staleTime: 1000 * 60 * 5, // 5 min — mis à jour par realtime
   });
 
   const adminBadgeCount = pendingApprovalCount + openTicketsCount;
@@ -155,37 +155,31 @@ export function AppLayout({ children }: AppLayoutProps) {
   const visiblePages = preferences?.visible_pages || DEFAULT_VISIBLE_PAGES;
   const bottomBarPages = preferences?.bottom_bar_pages || DEFAULT_BOTTOM_BAR_PAGES;
 
-  // Filter and order nav items for burger menu / sidebar
-  const burgerNavItems = (() => {
+  // Filter and order nav items for burger menu / sidebar (memoïsé — recalcul seulement si rôle/pages changent)
+  const burgerNavItems = useMemo(() => {
     const allowedItems = allNavItems.filter(item => {
       if (item.adminOnly && !isUserAdmin && !isUserManager) return false;
       if (item.managerOnly && !isUserManager && !isUserAdmin) return false;
       if (item.pageId === 'infos' && hideInfosPage) return false;
       return visiblePages.includes(item.pageId);
     });
+    return [...allowedItems].sort((a, b) =>
+      visiblePages.indexOf(a.pageId) - visiblePages.indexOf(b.pageId)
+    );
+  }, [isUserAdmin, isUserManager, hideInfosPage, visiblePages]);
 
-    return [...allowedItems].sort((a, b) => {
-      const indexA = visiblePages.indexOf(a.pageId);
-      const indexB = visiblePages.indexOf(b.pageId);
-      return indexA - indexB;
-    });
-  })();
-
-  // Filter and order nav items for bottom bar
-  const bottomNavItems = (() => {
+  // Filter and order nav items for bottom bar (memoïsé)
+  const bottomNavItems = useMemo(() => {
     const allowedItems = allNavItems.filter(item => {
       if (item.adminOnly && !isUserAdmin && !isUserManager) return false;
       if (item.managerOnly && !isUserManager && !isUserAdmin) return false;
       if (item.pageId === 'infos' && hideInfosPage) return false;
       return bottomBarPages.includes(item.pageId);
     });
-
-    return [...allowedItems].sort((a, b) => {
-      const indexA = bottomBarPages.indexOf(a.pageId);
-      const indexB = bottomBarPages.indexOf(b.pageId);
-      return indexA - indexB;
-    });
-  })();
+    return [...allowedItems].sort((a, b) =>
+      bottomBarPages.indexOf(a.pageId) - bottomBarPages.indexOf(b.pageId)
+    );
+  }, [isUserAdmin, isUserManager, hideInfosPage, bottomBarPages]);
 
   const renderBurgerLinks = () => (
     <>

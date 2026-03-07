@@ -27,6 +27,7 @@ export function useControls() {
       return data as Control[];
     },
     enabled: !!profile,
+    staleTime: 1000 * 60 * 2,
   });
 
   // Infinite query for paginated loading
@@ -53,6 +54,7 @@ export function useControls() {
     getNextPageParam: (lastPage) => lastPage.nextPage,
     initialPageParam: 0,
     enabled: !!profile,
+    staleTime: 1000 * 60 * 2,
   });
 
   const todayControlsQuery = useQuery({
@@ -69,6 +71,7 @@ export function useControls() {
       return data as Control[];
     },
     enabled: !!profile,
+    staleTime: 1000 * 60 * 2,
   });
 
   const createControlMutation = useMutation({

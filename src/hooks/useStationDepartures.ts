@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback, useRef } from 'react';
 
 export interface DepartureEntry {
   trainNumber:       string;
@@ -38,12 +38,21 @@ export function useStationDepartures() {
   const [departures,  setDepartures]  = useState<DepartureEntry[]>([]);
   const [stationName, setStationName] = useState('');
 
-  const fetchDepartures = async (
+  // Ref pour annuler un fetch en cours si un nouveau est lancé
+  const abortRef = useRef<AbortController | null>(null);
+
+  const fetchDepartures = useCallback(async (
     station:  string,
     datetime?: string,
     mode: 'departures' | 'arrivals' = 'departures',
   ) => {
     if (!station.trim()) return;
+
+    // Annuler le fetch précédent
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+
     setIsLoading(true);
     setError(null);
     setDepartures([]);
@@ -52,7 +61,9 @@ export function useStationDepartures() {
       const params = new URLSearchParams({ station: station.trim(), mode });
       if (datetime) params.set('datetime', datetime);
 
-      const res = await fetch(`/api/sncf-departures?${params}`);
+      const res = await fetch(`/api/sncf-departures?${params}`, {
+        signal: controller.signal,
+      });
       if (res.status === 503) throw new Error('Token SNCF non configuré sur le serveur');
       if (res.status === 404) throw new Error('Gare introuvable dans Navitia');
       if (!res.ok)            throw new Error(`Erreur API (${res.status})`);
@@ -118,13 +129,19 @@ export function useStationDepartures() {
 
       setDepartures(deps);
     } catch (err) {
+      if (err instanceof Error && err.name === 'AbortError') return; // fetch annulé, ne pas afficher d'erreur
       setError(err instanceof Error ? err.message : 'Erreur inconnue');
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
-  const reset = () => { setDepartures([]); setError(null); setStationName(''); };
+  const reset = useCallback(() => {
+    abortRef.current?.abort();
+    setDepartures([]);
+    setError(null);
+    setStationName('');
+  }, []);
 
   return { fetchDepartures, isLoading, error, departures, stationName, reset };
 }
