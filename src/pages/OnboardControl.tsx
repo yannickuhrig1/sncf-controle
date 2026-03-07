@@ -1,6 +1,5 @@
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { Navigate, useNavigate, useSearchParams } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserPreferences } from '@/hooks/useUserPreferences';
 import { useOnboardControls, type OnboardControl as OnboardControlType } from '@/hooks/useOnboardControls';
@@ -64,7 +63,6 @@ import {
   Clock,
   Users,
   ChevronRight,
-  ChevronDown,
   X,
   RefreshCw,
 } from 'lucide-react';
@@ -222,7 +220,6 @@ export default function OnboardControl() {
 
   // History filter states
   const [exportOpen, setExportOpen] = useState(false);
-  const [historyExpanded, setHistoryExpanded] = useState(false);
 
   // Dialog states
   const [selectedControl, setSelectedControl] = useState<Control | null>(null);
@@ -1553,16 +1550,8 @@ export default function OnboardControl() {
 
         {/* History Section */}
         <div className="mt-6 space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <button
-              onClick={() => setHistoryExpanded(!historyExpanded)}
-              className="text-base font-semibold flex items-center gap-2 hover:text-primary transition-colors text-left"
-            >
-              {historyExpanded ? (
-                <ChevronDown className="h-5 w-5 text-primary" />
-              ) : (
-                <ChevronRight className="h-5 w-5 text-primary" />
-              )}
+          <div className="flex items-center justify-between">
+            <p className="text-base font-semibold flex items-center gap-2">
               <Calendar className="h-5 w-5 text-primary" />
               {formState.trainNumber.trim()
                 ? `Historique — Train ${formState.trainNumber.trim()}`
@@ -1572,25 +1561,14 @@ export default function OnboardControl() {
                   {filteredControls.length}
                 </Badge>
               )}
-            </button>
-            {historyExpanded && filteredControls.length > 0 && (
+            </p>
+            {filteredControls.length > 0 && (
               <Button variant="outline" size="sm" onClick={() => setExportOpen(true)}>
                 <Download className="h-4 w-4 mr-2" />
                 Exporter
               </Button>
             )}
           </div>
-
-          {/* Filters and Controls - Animated with framer-motion */}
-          <AnimatePresence>
-            {historyExpanded && (
-              <motion.div
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: 'auto', opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
-                className="overflow-hidden"
-              >
 
                 {/* Controls list */}
                 <div>
@@ -1688,9 +1666,6 @@ export default function OnboardControl() {
             </div>
           )}
                 </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
         </div>
       </div>
       {/* Detail Dialog */}
