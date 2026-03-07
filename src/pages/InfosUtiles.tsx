@@ -56,6 +56,7 @@ import {
   LifeBuoy,
   Paperclip,
   Send,
+  LocateFixed,
 } from 'lucide-react';
 import { Loader2 } from 'lucide-react';
 import { useStationDepartures, DepartureEntry } from '@/hooks/useStationDepartures';
@@ -603,6 +604,8 @@ function TrainHeader({ dep, mode }: { dep: DepartureEntry; mode: 'departures' | 
   );
 }
 
+interface NearbyStation { id: string; name: string; distance: number; }
+
 function ContentDepartures() {
   const [station,     setStation]     = useState('');
   const [mode,        setMode]        = useState<'departures' | 'arrivals'>('departures');
@@ -610,10 +613,59 @@ function ContentDepartures() {
   const [stops,       setStops]       = useState<StopTime[]>([]);
   const [stopsLoading, setStopsLoading] = useState(false);
   const [stopsError,   setStopsError]   = useState<string | null>(null);
+  const [isLocating,   setIsLocating]   = useState(false);
+  const [nearbySuggestions, setNearbySuggestions] = useState<NearbyStation[]>([]);
 
   const { fetchDepartures, isLoading, error, departures, stationName } = useStationDepartures();
 
-  const load = () => { if (station.trim()) fetchDepartures(station, undefined, mode); };
+  const load = () => {
+    setNearbySuggestions([]);
+    if (station.trim()) fetchDepartures(station, undefined, mode);
+  };
+
+  const handleLocate = () => {
+    if (!navigator.geolocation) {
+      toast.error('Géolocalisation non disponible sur cet appareil');
+      return;
+    }
+    setIsLocating(true);
+    setNearbySuggestions([]);
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        try {
+          const { latitude: lat, longitude: lon } = pos.coords;
+          const res = await fetch(`/api/sncf-nearby?lat=${lat}&lon=${lon}&count=5`);
+          if (!res.ok) throw new Error(`Erreur API (${res.status})`);
+          const json = await res.json();
+          const stations: NearbyStation[] = json.stations ?? [];
+          if (stations.length === 0) {
+            toast.error('Aucune gare trouvée à proximité');
+          } else {
+            setNearbySuggestions(stations);
+          }
+        } catch {
+          toast.error('Impossible de trouver les gares à proximité');
+        } finally {
+          setIsLocating(false);
+        }
+      },
+      (err) => {
+        setIsLocating(false);
+        if (err.code === err.PERMISSION_DENIED) {
+          toast.error('Accès à la localisation refusé');
+        } else {
+          toast.error('Impossible d\'obtenir votre position');
+        }
+      },
+      { timeout: 10000, maximumAge: 60000 }
+    );
+  };
+
+  const selectNearbySuggestion = (s: NearbyStation) => {
+    setStation(s.name);
+    setNearbySuggestions([]);
+    fetchDepartures(s.name, undefined, mode);
+  };
 
   // Recharger automatiquement quand le mode change (si une gare est déjà cherchée)
   useEffect(() => {
@@ -717,19 +769,57 @@ function ContentDepartures() {
   return (
     <div className="space-y-4">
       {/* Recherche */}
-      <div className="flex gap-2">
-        <Input
-          placeholder="Nom de gare (ex : Paris Lyon)..."
-          value={station}
-          onChange={e => setStation(e.target.value)}
-          onKeyDown={e => e.key === 'Enter' && load()}
-          className="flex-1"
-        />
-        <Button type="button" size="icon" onClick={load} disabled={isLoading || !station.trim()}>
-          {isLoading
-            ? <Loader2 className="h-4 w-4 animate-spin" />
-            : <Search className="h-4 w-4" />}
-        </Button>
+      <div className="space-y-2">
+        <div className="flex gap-2">
+          <Input
+            placeholder="Nom de gare (ex : Paris Lyon)..."
+            value={station}
+            onChange={e => { setStation(e.target.value); setNearbySuggestions([]); }}
+            onKeyDown={e => e.key === 'Enter' && load()}
+            className="flex-1"
+          />
+          <Button
+            type="button"
+            size="icon"
+            variant="outline"
+            onClick={handleLocate}
+            disabled={isLocating || isLoading}
+            title="Gares proches de ma position"
+          >
+            {isLocating
+              ? <Loader2 className="h-4 w-4 animate-spin" />
+              : <LocateFixed className="h-4 w-4" />}
+          </Button>
+          <Button type="button" size="icon" onClick={load} disabled={isLoading || !station.trim()}>
+            {isLoading
+              ? <Loader2 className="h-4 w-4 animate-spin" />
+              : <Search className="h-4 w-4" />}
+          </Button>
+        </div>
+
+        {/* Suggestions de gares proches */}
+        {nearbySuggestions.length > 0 && (
+          <div className="border rounded-xl overflow-hidden divide-y">
+            {nearbySuggestions.map((s) => (
+              <button
+                key={s.id}
+                type="button"
+                className="w-full flex items-center justify-between px-3 py-2.5 text-left hover:bg-muted/50 transition-colors"
+                onClick={() => selectNearbySuggestion(s)}
+              >
+                <div className="flex items-center gap-2">
+                  <MapPin className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                  <span className="text-sm font-medium">{s.name}</span>
+                </div>
+                <span className="text-xs text-muted-foreground shrink-0 ml-2">
+                  {s.distance < 1000
+                    ? `${s.distance} m`
+                    : `${(s.distance / 1000).toFixed(1)} km`}
+                </span>
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Toggle Départs / Arrivées */}

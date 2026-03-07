@@ -5,6 +5,12 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/),
 et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.10.11] - 2026-03-07
+
+### Ajouté
+- Départs/Arrivées en gare : bouton de géolocalisation — propose les 5 gares SNCF les plus proches avec la distance, clic pour charger directement
+- Nouveau endpoint API `/api/sncf-nearby` (Navitia places_nearby par coordonnées GPS)
+
 ## [1.10.10] - 2026-03-06
 
 ### Ajouté
