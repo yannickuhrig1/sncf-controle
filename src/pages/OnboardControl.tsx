@@ -66,7 +66,6 @@ import {
   ChevronRight,
   ChevronDown,
   X,
-  ArrowUpDown,
   RefreshCw,
 } from 'lucide-react';
 import { format } from 'date-fns';
@@ -75,7 +74,6 @@ import { cn } from '@/lib/utils';
 import type { Database } from '@/integrations/supabase/types';
 
 type Control = Database['public']['Tables']['controls']['Row'];
-type SortOption = 'date' | 'fraud_desc' | 'fraud_asc' | 'passengers_desc' | 'passengers_asc';
 
 // Types
 const TARIF_TYPES = [
@@ -223,8 +221,6 @@ export default function OnboardControl() {
   const [pvTarifMontant, setPvTarifMontant] = useState('');
 
   // History filter states
-  const [searchQuery, setSearchQuery] = useState('');
-  const [sortOption, setSortOption] = useState<SortOption>('date');
   const [exportOpen, setExportOpen] = useState(false);
   const [historyExpanded, setHistoryExpanded] = useState(false);
 
@@ -403,48 +399,14 @@ export default function OnboardControl() {
     return control.nb_passagers > 0 ? (fraudCount / control.nb_passagers) * 100 : 0;
   };
 
-  // Filter and sort history
+  // Filter history by selected train number
   const filteredControls = useMemo(() => {
-    let result = controls.filter((control) => {
-      // Filter by selected train number
-      if (formState.trainNumber.trim()) {
-        const tn = formState.trainNumber.trim().toLowerCase();
-        if (!control.train_number?.toLowerCase().includes(tn)) return false;
-      }
-      // Search filter
-      if (searchQuery.trim()) {
-        const query = searchQuery.toLowerCase().trim();
-        const matchesTrain = control.train_number?.toLowerCase().includes(query);
-        const matchesOrigin = control.origin?.toLowerCase().includes(query);
-        const matchesDest = control.destination?.toLowerCase().includes(query);
-        const matchesLocation = control.location?.toLowerCase().includes(query);
-        if (!matchesTrain && !matchesOrigin && !matchesDest && !matchesLocation) return false;
-      }
-      return true;
-    });
-
-    // Sort based on selected option
-    switch (sortOption) {
-      case 'fraud_desc':
-        result = [...result].sort((a, b) => getFraudRate(b) - getFraudRate(a));
-        break;
-      case 'fraud_asc':
-        result = [...result].sort((a, b) => getFraudRate(a) - getFraudRate(b));
-        break;
-      case 'passengers_desc':
-        result = [...result].sort((a, b) => b.nb_passagers - a.nb_passagers);
-        break;
-      case 'passengers_asc':
-        result = [...result].sort((a, b) => a.nb_passagers - b.nb_passagers);
-        break;
-      case 'date':
-      default:
-        // Keep original order (by date desc)
-        break;
-    }
-
-    return result;
-  }, [controls, searchQuery, sortOption, formState.trainNumber]);
+    if (!formState.trainNumber.trim()) return [];
+    const tn = formState.trainNumber.trim().toLowerCase();
+    return controls.filter((control) =>
+      control.train_number?.toLowerCase().includes(tn)
+    );
+  }, [controls, formState.trainNumber]);
 
   // Group controls by date
   const groupedControls = useMemo(() => {
@@ -463,13 +425,6 @@ export default function OnboardControl() {
       new Date(b).getTime() - new Date(a).getTime()
     );
   }, [groupedControls]);
-
-  const hasActiveFilters = searchQuery.trim() !== '' || sortOption !== 'date';
-
-  const clearFilters = () => {
-    setSearchQuery('');
-    setSortOption('date');
-  };
 
   // Add tarif handlers
   const addTarifBord = useCallback(() => {
@@ -1636,59 +1591,6 @@ export default function OnboardControl() {
                 transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
                 className="overflow-hidden"
               >
-                <div className="space-y-3 pb-4">
-                  {/* Search */}
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      placeholder="Rechercher par train, trajet..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="pl-9 pr-9"
-                    />
-                    {searchQuery && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
-                        onClick={() => setSearchQuery('')}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    )}
-                  </div>
-
-                  {/* Sort options */}
-                  <div className="flex items-center gap-2">
-                    <ArrowUpDown className="h-4 w-4 text-muted-foreground shrink-0" />
-                    <Select value={sortOption} onValueChange={(v) => setSortOption(v as SortOption)}>
-                      <SelectTrigger className="w-[200px] h-8">
-                        <SelectValue placeholder="Trier par..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="date">Date (récent)</SelectItem>
-                        <SelectItem value="fraud_desc">Fraude ↓ (élevée)</SelectItem>
-                        <SelectItem value="fraud_asc">Fraude ↑ (faible)</SelectItem>
-                        <SelectItem value="passengers_desc">Voyageurs ↓</SelectItem>
-                        <SelectItem value="passengers_asc">Voyageurs ↑</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    
-                    {hasActiveFilters && (
-                      <Button variant="ghost" size="sm" onClick={clearFilters} className="ml-auto text-muted-foreground">
-                        <X className="h-3.5 w-3.5 mr-1" />
-                        Effacer
-                      </Button>
-                    )}
-                  </div>
-                  
-                  {/* Results count */}
-                  {hasActiveFilters && (
-                    <p className="text-sm text-muted-foreground">
-                      {filteredControls.length} résultat{filteredControls.length !== 1 ? 's' : ''} sur {controls.length} contrôle{controls.length !== 1 ? 's' : ''}
-                    </p>
-                  )}
-                </div>
 
                 {/* Controls list */}
                 <div>
@@ -1712,16 +1614,9 @@ export default function OnboardControl() {
               </p>
             </div>
           ) : (
-            <div className="space-y-6">
+            <div className="space-y-2">
               {sortedDates.map((date) => (
                 <div key={date} className="space-y-2">
-                  <h3 className="text-sm font-medium text-muted-foreground sticky top-0 bg-background py-2 flex items-center gap-2">
-                    <Calendar className="h-4 w-4" />
-                    {format(new Date(date), 'EEEE d MMMM yyyy', { locale: fr })}
-                    <Badge variant="secondary" className="ml-auto">
-                      {groupedControls[date].length} contrôle{groupedControls[date].length > 1 ? 's' : ''}
-                    </Badge>
-                  </h3>
                   <div className="space-y-2">
                     {groupedControls[date].map((control) => {
                       const fraudCount = control.tarifs_controle + control.pv;
