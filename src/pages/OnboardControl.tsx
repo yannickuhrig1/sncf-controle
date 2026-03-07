@@ -406,6 +406,11 @@ export default function OnboardControl() {
   // Filter and sort history
   const filteredControls = useMemo(() => {
     let result = controls.filter((control) => {
+      // Filter by selected train number
+      if (formState.trainNumber.trim()) {
+        const tn = formState.trainNumber.trim().toLowerCase();
+        if (!control.train_number?.toLowerCase().includes(tn)) return false;
+      }
       // Search filter
       if (searchQuery.trim()) {
         const query = searchQuery.toLowerCase().trim();
@@ -439,7 +444,7 @@ export default function OnboardControl() {
     }
 
     return result;
-  }, [controls, searchQuery, sortOption]);
+  }, [controls, searchQuery, sortOption, formState.trainNumber]);
 
   // Group controls by date
   const groupedControls = useMemo(() => {
@@ -1604,10 +1609,12 @@ export default function OnboardControl() {
                 <ChevronRight className="h-5 w-5 text-primary" />
               )}
               <Calendar className="h-5 w-5 text-primary" />
-              Historique des contrôles
-              {controls.length > 0 && (
+              {formState.trainNumber.trim()
+                ? `Historique — Train ${formState.trainNumber.trim()}`
+                : 'Historique des contrôles'}
+              {filteredControls.length > 0 && (
                 <Badge variant="secondary" className="ml-2">
-                  {controls.length}
+                  {filteredControls.length}
                 </Badge>
               )}
             </button>
