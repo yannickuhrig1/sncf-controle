@@ -5,6 +5,13 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/),
 et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.10.23] - 2026-03-08
+
+### Modifié
+- Historique : suppression des onglets "Contrôles" et "Embarquement"
+- Historique : filtre "Train" → affiche toujours les contrôles
+- Historique : filtre "Gare" → affiche les contrôles en gare + une section "Missions embarquement / débarquement" en dessous (avec header bleu distinctif)
+
 ## [1.10.22] - 2026-03-08
 
 ### Modifié

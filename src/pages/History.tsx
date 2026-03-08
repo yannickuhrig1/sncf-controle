@@ -16,7 +16,6 @@ import { Badge } from '@/components/ui/badge';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ControlDetailDialog } from '@/components/controls/ControlDetailDialog';
 import { ExportDialog } from '@/components/controls/ExportDialog';
@@ -55,7 +54,6 @@ import {
   List,
   TableIcon,
   FileText,
-  ArrowDownToLine,
   ArrowUpFromLine,
   Eye,
   ChevronDown,
@@ -70,8 +68,6 @@ import type { Database } from '@/integrations/supabase/types';
 type Control = Database['public']['Tables']['controls']['Row'];
 type LocationType = Database['public']['Enums']['location_type'];
 type SortOption = 'date' | 'fraud_desc' | 'fraud_asc' | 'passengers_desc' | 'passengers_asc';
-type HistoryTab = 'controls' | 'embarkment';
-
 /** Fusionne les contrôles du même train (ou gare) le même jour en un seul. */
 function mergeControlsByTrain(controls: Control[]): Control[] {
   const groups = new Map<string, Control[]>();
@@ -259,7 +255,6 @@ export default function HistoryPage() {
   const isUserAdmin   = isAdmin();
   const isUserManager = isManager();
 
-  const [activeTab, setActiveTab] = useState<HistoryTab>('controls');
   const [selectedControl, setSelectedControl] = useState<Control | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
@@ -740,25 +735,10 @@ export default function HistoryPage() {
             onViewModeChange={setDataViewMode}
           />
           
-          {/* History tabs */}
-          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as HistoryTab)} className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="controls" className="gap-2">
-                <ArrowDownToLine className="h-4 w-4" />
-                Contrôles
-                {totalCount > 0 && <Badge variant="secondary" className="text-xs ml-1">{totalCount}</Badge>}
-              </TabsTrigger>
-              <TabsTrigger value="embarkment" className="gap-2">
-                <ArrowUpFromLine className="h-4 w-4" />
-                Embarquement
-                {embarkmentMissions.length > 0 && <Badge variant="secondary" className="text-xs ml-1">{embarkmentMissions.length}</Badge>}
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
         </div>
 
-        {/* Controls tab content */}
-        {activeTab === 'controls' && (
+        {/* Controls content */}
+        {true && (
           <>
             {/* Filters */}
             {displayControls.length > 0 && (
@@ -956,23 +936,23 @@ export default function HistoryPage() {
           </>
         )}
 
-        {/* Embarkment tab content */}
-        {activeTab === 'embarkment' && (
-          <>
+        {/* Embarkment section — visible when Gare filter is active */}
+        {locationFilter === 'gare' && (
+          <div className="mt-4">
+            <div className="flex items-center gap-2 mb-3 px-1">
+              <ArrowUpFromLine className="h-4 w-4 text-blue-500" />
+              <span className="text-sm font-semibold text-blue-600">Missions embarquement / débarquement</span>
+              {embarkmentMissions.length > 0 && (
+                <Badge variant="secondary" className="text-xs">{embarkmentMissions.length}</Badge>
+              )}
+            </div>
             {isLoadingEmbarkment ? (
-              <div className="flex justify-center py-12">
+              <div className="flex justify-center py-8">
                 <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
               </div>
             ) : embarkmentMissions.length === 0 ? (
-              <div className="text-center py-12">
-                <ArrowUpFromLine className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                <h2 className="text-lg font-semibold mb-2">Aucune mission embarquement</h2>
-                <p className="text-muted-foreground mb-4">
-                  Vous n'avez pas encore enregistré de missions embarquement.
-                </p>
-                <Link to="/station" className={buttonVariants({})}>
-                  Nouvelle mission
-                </Link>
+              <div className="text-center py-8 text-muted-foreground text-sm">
+                Aucune mission embarquement enregistrée.
               </div>
             ) : (
               <EmbarkmentHistoryView
@@ -984,7 +964,7 @@ export default function HistoryPage() {
                 onDelete={deleteEmbarkmentMission}
               />
             )}
-          </>
+          </div>
         )}
       </div>
       
