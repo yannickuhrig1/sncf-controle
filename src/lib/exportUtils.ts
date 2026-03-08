@@ -826,13 +826,16 @@ export function exportTableToPDF({ controls, title, dateRange, mode = 'compact' 
         control.nb_passagers.toString(),
         control.nb_en_regle.toString(),
         tarifBordTotal.toString(),
-        // TC group (7-11)
+        // Bord detail (7-8)
+        (control.tarif_bord_stt_50 || 0).toString(),
+        (control.tarif_bord_stt_100 || 0).toString(),
+        // TC group (9-13)
         control.tarifs_controle.toString(),
         control.stt_50.toString(),
         control.rnv.toString(),
         (control.titre_tiers || 0).toString(),
         (control.doc_naissance || 0).toString(),
-        // PV group (12-16)
+        // PV group (14-18)
         control.pv.toString(),
         control.stt_100.toString(),
         (control.pv_rnv || 0).toString(),
@@ -842,18 +845,18 @@ export function exportTableToPDF({ controls, title, dateRange, mode = 'compact' 
         control.ri_positive.toString(),
         control.ri_negative.toString(),
         fraudRate,
-        fraudRateNum,  // index 20 – for coloring
+        fraudRateNum,  // index 22 – for coloring
       ];
     });
 
     const tableHeaders = mode === 'extended'
-      ? [['Date','Heure','Type','Trajet','Voyageurs','En règle','T. Bord','T. Contrôle','STT 50€','RNV','Titre tiers','D. Naiss.','PV total','PV 100€','PV RNV','PV Ti.','PV Naiss.','RI +','RI −','Taux fraude']]
-      : [['Date','Heure','Type','Trajet','V.','OK','Brd','TC','S50','RNV','Ti','Na','PV','S100','P.RNV','P.Ti','P.Na','R+','R−','%']];
+      ? [['Date','Heure','Type','Trajet','Voyageurs','En règle','T. Bord','Bord','Excep.','T. Contrôle','STT 50€','RNV','Titre tiers','D. Naiss.','PV total','PV 100€','PV RNV','PV Ti.','PV Naiss.','RI +','RI −','Taux fraude']]
+      : [['Date','Heure','Type','Trajet','V.','OK','Brd','Bo','Ex','TC','S50','RNV','Ti','Na','PV','S100','P.RNV','P.Ti','P.Na','R+','R−','%']];
 
     autoTable(doc, {
       startY: 31,
       head: tableHeaders,
-      body: tableData.map(r => r.slice(0, 20)),
+      body: tableData.map(r => r.slice(0, 22)),
       theme: 'plain',
       headStyles: {
         fillColor: C.navyMid,
@@ -869,32 +872,41 @@ export function exportTableToPDF({ controls, title, dateRange, mode = 'compact' 
       alternateRowStyles: { fillColor: C.gray50 },
       didParseCell: (data) => {
         if (data.section === 'head') {
-          // TC headers (7-11) → green
-          if (data.column.index >= 7 && data.column.index <= 11) {
+          // Bord detail headers (7-8) → blue
+          if (data.column.index >= 7 && data.column.index <= 8) {
+            data.cell.styles.fillColor = [29, 78, 216] as unknown as string;
+          }
+          // TC headers (9-13) → green
+          if (data.column.index >= 9 && data.column.index <= 13) {
             data.cell.styles.fillColor = [21, 128, 61] as unknown as string;
           }
-          // PV headers (12-16) → red
-          if (data.column.index >= 12 && data.column.index <= 16) {
+          // PV headers (14-18) → red
+          if (data.column.index >= 14 && data.column.index <= 18) {
             data.cell.styles.fillColor = [185, 28, 28] as unknown as string;
           }
         }
         if (data.section === 'body') {
-          const rate = tableData[data.row.index]?.[20] as number ?? 0;
-          // TC cells (7-11)
-          if (data.column.index >= 7 && data.column.index <= 11) {
+          const rate = tableData[data.row.index]?.[22] as number ?? 0;
+          // Bord detail cells (7-8)
+          if (data.column.index >= 7 && data.column.index <= 8) {
+            data.cell.styles.fillColor = [239, 246, 255] as unknown as string;
+            if (data.cell.text[0] !== '0') data.cell.styles.textColor = [29, 78, 216] as unknown as string;
+          }
+          // TC cells (9-13)
+          if (data.column.index >= 9 && data.column.index <= 13) {
             data.cell.styles.fillColor = [240, 253, 244] as unknown as string;
             if (data.cell.text[0] !== '0') data.cell.styles.textColor = C.green as unknown as string;
           }
-          // PV cells (12-16)
-          if (data.column.index >= 12 && data.column.index <= 16) {
+          // PV cells (14-18)
+          if (data.column.index >= 14 && data.column.index <= 18) {
             data.cell.styles.fillColor = [255, 241, 242] as unknown as string;
             if (data.cell.text[0] !== '0') {
               data.cell.styles.textColor = C.red as unknown as string;
-              if (data.column.index === 12) data.cell.styles.fontStyle = 'bold';
+              if (data.column.index === 14) data.cell.styles.fontStyle = 'bold';
             }
           }
-          // Fraud rate column (index 19)
-          if (data.column.index === 19) {
+          // Fraud rate column (index 21)
+          if (data.column.index === 21) {
             if (rate > 10) {
               data.cell.styles.textColor = C.red as unknown as string;
               data.cell.styles.fontStyle = 'bold';
@@ -913,23 +925,25 @@ export function exportTableToPDF({ controls, title, dateRange, mode = 'compact' 
         0:  { cellWidth: 13 },                    // Date
         1:  { cellWidth: 9  },                    // Heure
         2:  { cellWidth: 12 },                    // Type
-        3:  { cellWidth: 34 },                    // Trajet
+        3:  { cellWidth: 30 },                    // Trajet
         4:  { cellWidth: 7,  halign: 'center' }, // V.
         5:  { cellWidth: 7,  halign: 'center' }, // OK
-        6:  { cellWidth: 7,  halign: 'center' }, // Brd
-        7:  { cellWidth: 8,  halign: 'center' }, // TC
-        8:  { cellWidth: 7,  halign: 'center' }, // S50
-        9:  { cellWidth: 7,  halign: 'center' }, // RNV
-        10: { cellWidth: 7,  halign: 'center' }, // Ti
-        11: { cellWidth: 7,  halign: 'center' }, // Na
-        12: { cellWidth: 8,  halign: 'center' }, // PV
-        13: { cellWidth: 7,  halign: 'center' }, // S100
-        14: { cellWidth: 7,  halign: 'center' }, // P.RNV
-        15: { cellWidth: 7,  halign: 'center' }, // P.Ti
-        16: { cellWidth: 7,  halign: 'center' }, // P.Na
-        17: { cellWidth: 7,  halign: 'center' }, // R+
-        18: { cellWidth: 7,  halign: 'center' }, // R-
-        19: { cellWidth: 12, halign: 'center' }, // %
+        6:  { cellWidth: 7,  halign: 'center' }, // Brd total
+        7:  { cellWidth: 7,  halign: 'center' }, // Bord
+        8:  { cellWidth: 7,  halign: 'center' }, // Excep.
+        9:  { cellWidth: 8,  halign: 'center' }, // TC
+        10: { cellWidth: 7,  halign: 'center' }, // S50
+        11: { cellWidth: 7,  halign: 'center' }, // RNV
+        12: { cellWidth: 7,  halign: 'center' }, // Ti
+        13: { cellWidth: 7,  halign: 'center' }, // Na
+        14: { cellWidth: 8,  halign: 'center' }, // PV
+        15: { cellWidth: 7,  halign: 'center' }, // S100
+        16: { cellWidth: 7,  halign: 'center' }, // P.RNV
+        17: { cellWidth: 7,  halign: 'center' }, // P.Ti
+        18: { cellWidth: 7,  halign: 'center' }, // P.Na
+        19: { cellWidth: 7,  halign: 'center' }, // R+
+        20: { cellWidth: 7,  halign: 'center' }, // R-
+        21: { cellWidth: 12, halign: 'center' }, // %
       },
       margin: { left: 8, right: 8 },
       tableWidth: 'auto',
@@ -1891,18 +1905,19 @@ export function exportToHTML({ controls, title, dateRange, includeStats, exportM
         </div>
         <div class="kpi-card gold">
           <div class="kpi-value">${totalEncaisse.toFixed(0)} €</div>
-          <div class="kpi-label">Total encaissé</div>
+          <div class="kpi-label">Tarif contrôle</div>
         </div>
         <div class="kpi-card red">
           <div class="kpi-value">${totalPV.toFixed(0)} €</div>
           <div class="kpi-label">Montant PV</div>
         </div>
+        ${stats.totalTarifsBordAmount > 0 ? `<div class="kpi-card blue"><div class="kpi-value">${stats.totalTarifsBordAmount.toFixed(0)} €</div><div class="kpi-label">Montant bord exceptionnel</div></div>` : ''}
       </div>
       <table class="synth-table" style="margin-top:16px;">
         <tr><th>Catégorie</th><th>Nombre</th><th>Montant</th></tr>
         <tr><td>Tarifs contrôle</td><td><strong>${stats.tarifsControle}</strong></td><td><span class="amount-badge">${totalTarifsControle.toFixed(2)} €</span></td></tr>
         <tr><td>Procès-verbaux</td><td><strong>${stats.pv}</strong></td><td><span class="amount-badge">${totalPV.toFixed(2)} €</span></td></tr>
-        ${stats.totalTarifsBord > 0 ? `<tr><td>Tarifs à bord</td><td><strong>${stats.totalTarifsBord}</strong></td><td>—</td></tr>` : ''}
+        ${stats.totalTarifsBord > 0 ? `<tr><td>Tarifs à bord</td><td><strong>${stats.totalTarifsBord}</strong></td><td><span class="amount-badge">${stats.totalTarifsBordAmount.toFixed(2)} €</span></td></tr>` : ''}
         ${(stats.riPositive + stats.riNegative) > 0 ? `<tr><td>Relevés d'identité</td><td><strong>${stats.riPositive}+ / ${stats.riNegative}−</strong></td><td>—</td></tr>` : ''}
       </table>
     </div>

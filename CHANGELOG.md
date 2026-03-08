@@ -5,6 +5,14 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/),
 et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.10.21] - 2026-03-08
+
+### Modifié
+- Rapport HTML — section Synthèse : carte "Total encaissé" renommée "Tarif contrôle"
+- Rapport HTML — section Synthèse : nouvelle carte "Montant bord exceptionnel" affichée à côté de "Montant PV" (uniquement si > 0)
+- Rapport HTML — section Synthèse : le montant des tarifs à bord est maintenant affiché dans le tableau récapitulatif (au lieu de "—")
+- Tableau PDF : ajout des colonnes "Bord" (tarif_bord_stt_50) et "Excep." (tarif_bord_stt_100) avec coloration bleue
+
 ## [1.10.20] - 2026-03-08
 
 ### Modifié
