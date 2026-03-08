@@ -5,6 +5,13 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/),
 et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.10.18] - 2026-03-08
+
+### Modifié
+- Historique : suppression de l'option "Tableau compact (PDF)" du menu export — seul le tableau étendu est conservé
+- Historique : ajout de l'export "Tableau étendu (HTML)" — génère un fichier `.html` avec les noms de colonnes complets et les couleurs par groupe (TC vert, PV rouge, taux fraude dynamique)
+- Ajout de la fonction `exportTableToHTML` dans `exportUtils.ts`
+
 ## [1.10.17] - 2026-03-08
 
 ### Ajouté

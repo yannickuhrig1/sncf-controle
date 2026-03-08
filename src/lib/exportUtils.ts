@@ -956,6 +956,131 @@ export function exportTableToPDF({ controls, title, dateRange, mode = 'compact' 
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+//  exportTableToHTML  (tableau étendu)
+// ─────────────────────────────────────────────────────────────────────────────
+export function exportTableToHTML({ controls, title, dateRange }: Omit<TableExportOptions, 'mode'>) {
+  if (!controls || controls.length === 0) throw new Error('Aucun contrôle à exporter');
+
+  const rows = controls.map(control => {
+    const fraudCount = control.tarifs_controle + control.pv + control.ri_negative;
+    const fraudRate = control.nb_passagers > 0
+      ? ((fraudCount / control.nb_passagers) * 100).toFixed(1) + '%'
+      : '0.0%';
+    const fraudRateNum = control.nb_passagers > 0
+      ? (fraudCount / control.nb_passagers) * 100
+      : 0;
+    const locationInfo = control.location_type === 'train'
+      ? `T. ${control.train_number || '-'}`
+      : control.location_type === 'gare' ? 'Gare' : 'Quai';
+    const trajet = control.origin && control.destination
+      ? `${control.origin} → ${control.destination}`
+      : control.location;
+    const tarifBordTotal = (control.tarif_bord_stt_50 || 0)
+      + (control.tarif_bord_stt_100 || 0)
+      + (control.tarif_bord_rnv || 0)
+      + (control.tarif_bord_titre_tiers || 0)
+      + (control.tarif_bord_doc_naissance || 0)
+      + (control.tarif_bord_autre || 0);
+
+    const fraudColor = fraudRateNum > 10 ? '#b91c1c' : fraudRateNum > 5 ? '#d97706' : '#15803d';
+    const fraudBg    = fraudRateNum > 10 ? '#fee2e2' : fraudRateNum > 5 ? '#fef3c7' : 'transparent';
+
+    const td = (val: string | number, style = '') =>
+      `<td style="padding:5px 8px;text-align:center;border-bottom:1px solid #e5e7eb;${style}">${val}</td>`;
+    const tdL = (val: string | number, style = '') =>
+      `<td style="padding:5px 8px;text-align:left;border-bottom:1px solid #e5e7eb;${style}">${val}</td>`;
+
+    return `<tr>
+      ${tdL(format(new Date(control.control_date), 'dd/MM/yyyy', { locale: fr }))}
+      ${td(control.control_time.slice(0, 5))}
+      ${td(locationInfo)}
+      ${tdL(trajet)}
+      ${td(control.nb_passagers)}
+      ${td(control.nb_en_regle)}
+      ${td(tarifBordTotal)}
+      ${td(control.tarifs_controle, 'background:#f0fdf4;color:' + (control.tarifs_controle > 0 ? '#15803d' : '#374151') + ';font-weight:bold')}
+      ${td(control.stt_50, 'background:#f0fdf4;color:' + (control.stt_50 > 0 ? '#15803d' : '#374151'))}
+      ${td(control.rnv, 'background:#f0fdf4;color:' + (control.rnv > 0 ? '#15803d' : '#374151'))}
+      ${td(control.titre_tiers || 0, 'background:#f0fdf4;color:' + ((control.titre_tiers || 0) > 0 ? '#15803d' : '#374151'))}
+      ${td(control.doc_naissance || 0, 'background:#f0fdf4;color:' + ((control.doc_naissance || 0) > 0 ? '#15803d' : '#374151'))}
+      ${td(control.pv, 'background:#fff1f2;color:' + (control.pv > 0 ? '#b91c1c' : '#374151') + ';font-weight:bold')}
+      ${td(control.stt_100, 'background:#fff1f2;color:' + (control.stt_100 > 0 ? '#b91c1c' : '#374151'))}
+      ${td(control.pv_rnv || 0, 'background:#fff1f2;color:' + ((control.pv_rnv || 0) > 0 ? '#b91c1c' : '#374151'))}
+      ${td(control.pv_titre_tiers || 0, 'background:#fff1f2;color:' + ((control.pv_titre_tiers || 0) > 0 ? '#b91c1c' : '#374151'))}
+      ${td(control.pv_doc_naissance || 0, 'background:#fff1f2;color:' + ((control.pv_doc_naissance || 0) > 0 ? '#b91c1c' : '#374151'))}
+      ${td(control.ri_positive)}
+      ${td(control.ri_negative)}
+      ${td(fraudRate, `background:${fraudBg};color:${fraudColor};font-weight:bold`)}
+    </tr>`;
+  }).join('\n');
+
+  const thBase = 'padding:6px 8px;text-align:center;font-size:12px;font-weight:bold;color:#fff;';
+  const thL    = 'padding:6px 8px;text-align:left;font-size:12px;font-weight:bold;color:#fff;';
+  const navyBg = 'background:#1e3a5f;';
+  const greenBg = 'background:#15803d;';
+  const redBg   = 'background:#b91c1c;';
+
+  const html = `<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>${title}</title>
+<style>
+  body { font-family: Arial, sans-serif; font-size: 13px; color: #374151; margin: 20px; }
+  h1 { color: #1e3a5f; font-size: 20px; margin-bottom: 4px; }
+  .meta { color: #6b7280; font-size: 12px; margin-bottom: 16px; }
+  table { border-collapse: collapse; width: 100%; }
+  tr:hover td { background: #f9fafb !important; }
+  tr:nth-child(even) td:not([style*="background:#f0fdf4"]):not([style*="background:#fff1f2"]):not([style*="background:#fee2e2"]):not([style*="background:#fef3c7"]) { background: #f3f4f6; }
+</style>
+</head>
+<body>
+<h1>SNCF Contrôles — ${title}</h1>
+<p class="meta">${dateRange} &nbsp;|&nbsp; ${controls.length} contrôle(s) &nbsp;|&nbsp; Généré le ${format(new Date(), 'dd/MM/yyyy HH:mm', { locale: fr })}</p>
+<table>
+<thead>
+<tr>
+  <th style="${thL}${navyBg}">Date</th>
+  <th style="${thBase}${navyBg}">Heure</th>
+  <th style="${thBase}${navyBg}">Type</th>
+  <th style="${thL}${navyBg}">Trajet</th>
+  <th style="${thBase}${navyBg}">Voyageurs</th>
+  <th style="${thBase}${navyBg}">En règle</th>
+  <th style="${thBase}${navyBg}">T. Bord</th>
+  <th style="${thBase}${greenBg}">T. Contrôle</th>
+  <th style="${thBase}${greenBg}">STT 50€</th>
+  <th style="${thBase}${greenBg}">RNV</th>
+  <th style="${thBase}${greenBg}">Titre tiers</th>
+  <th style="${thBase}${greenBg}">D. Naiss.</th>
+  <th style="${thBase}${redBg}">PV total</th>
+  <th style="${thBase}${redBg}">PV 100€</th>
+  <th style="${thBase}${redBg}">PV RNV</th>
+  <th style="${thBase}${redBg}">PV Ti.</th>
+  <th style="${thBase}${redBg}">PV Naiss.</th>
+  <th style="${thBase}${navyBg}">RI +</th>
+  <th style="${thBase}${navyBg}">RI −</th>
+  <th style="${thBase}${navyBg}">Taux fraude</th>
+</tr>
+</thead>
+<tbody>
+${rows}
+</tbody>
+</table>
+</body>
+</html>`;
+
+  const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `tableau-controles-${format(new Date(), 'yyyy-MM-dd-HHmm')}.html`;
+  link.style.display = 'none';
+  document.body.appendChild(link);
+  link.click();
+  setTimeout(() => { document.body.removeChild(link); URL.revokeObjectURL(url); }, 1000);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 //  exportToHTML  (premium theme)
 // ─────────────────────────────────────────────────────────────────────────────
 export function exportToHTML({ controls, title, dateRange, includeStats, exportMode = 'detailed' }: ExportOptions): string {

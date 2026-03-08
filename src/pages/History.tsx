@@ -29,7 +29,7 @@ import { PeriodSelector } from '@/components/dashboard/PeriodSelector';
 import type { Period } from '@/components/dashboard/PeriodSelector';
 import { ViewModeToggle } from '@/components/dashboard/ViewModeToggle';
 import { getFraudRateColor } from '@/lib/stats';
-import { exportTableToPDF, exportToPDF, downloadPDF } from '@/lib/exportUtils';
+import { exportTableToPDF, exportTableToHTML, exportToPDF, downloadPDF } from '@/lib/exportUtils';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -60,7 +60,6 @@ import {
   Eye,
   ChevronDown,
   LayoutList,
-  Table2,
   FileDown,
 } from 'lucide-react';
 import { format, parseISO, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear } from 'date-fns';
@@ -520,31 +519,6 @@ export default function HistoryPage() {
     setCustomEnd('');
   };
 
-  const handleExportTablePDF = () => {
-    if (filteredControls.length === 0) {
-      toast.error('Aucune donnée à exporter');
-      return;
-    }
-
-    const { start: sd, end: ed } = periodDateRange;
-    const dateRange = sd && ed
-      ? `${format(sd, 'dd/MM/yyyy', { locale: fr })} - ${format(ed, 'dd/MM/yyyy', { locale: fr })}`
-      : sd
-        ? `Depuis ${format(sd, 'dd/MM/yyyy', { locale: fr })}`
-        : 'Toutes les dates';
-    
-    try {
-      exportTableToPDF({
-        controls: mergeControlsByTrain(filteredControls),
-        title: 'Export Tableau Historique',
-        dateRange,
-      });
-      toast.success('PDF exporté');
-    } catch (error) {
-      toast.error('Erreur lors de l\'export');
-    }
-  };
-
   const handleExportTableExtended = () => {
     if (filteredControls.length === 0) {
       toast.error('Aucune donnée à exporter');
@@ -564,6 +538,29 @@ export default function HistoryPage() {
         mode: 'extended',
       });
       toast.success('PDF étendu exporté');
+    } catch (error) {
+      toast.error("Erreur lors de l'export");
+    }
+  };
+
+  const handleExportTableExtendedHTML = () => {
+    if (filteredControls.length === 0) {
+      toast.error('Aucune donnée à exporter');
+      return;
+    }
+    const { start: sd, end: ed } = periodDateRange;
+    const dateRange = sd && ed
+      ? `${format(sd, 'dd/MM/yyyy', { locale: fr })} - ${format(ed, 'dd/MM/yyyy', { locale: fr })}`
+      : sd
+        ? `Depuis ${format(sd, 'dd/MM/yyyy', { locale: fr })}`
+        : 'Toutes les dates';
+    try {
+      exportTableToHTML({
+        controls: mergeControlsByTrain(filteredControls),
+        title: 'Export Tableau Historique — Étendu',
+        dateRange,
+      });
+      toast.success('HTML exporté');
     } catch (error) {
       toast.error("Erreur lors de l'export");
     }
@@ -723,13 +720,13 @@ export default function HistoryPage() {
                       Rapport complet
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={handleExportTablePDF}>
-                      <Table2 className="h-4 w-4 mr-2" />
-                      Tableau compact (PDF)
-                    </DropdownMenuItem>
                     <DropdownMenuItem onClick={handleExportTableExtended}>
                       <LayoutList className="h-4 w-4 mr-2" />
                       Tableau étendu (PDF)
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleExportTableExtendedHTML}>
+                      <FileDown className="h-4 w-4 mr-2" />
+                      Tableau étendu (HTML)
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
