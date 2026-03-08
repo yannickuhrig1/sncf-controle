@@ -180,6 +180,13 @@ function ControlRow({ control, onClick }: ControlRowProps) {
               </span>
             </div>
 
+            {/* Comment on PC: between voyageurs and badges — vertically centered */}
+            {control.notes && (
+              <p className="hidden sm:block text-sm text-center text-muted-foreground mt-2 italic font-medium">
+                {control.notes}
+              </p>
+            )}
+
             {/* Line 3: badges Bord / TC / PV / RI */}
             {(() => {
               const bordTotal = (control.tarif_bord_stt_50 || 0) + (control.tarif_bord_stt_100 || 0)
@@ -222,12 +229,6 @@ function ControlRow({ control, onClick }: ControlRowProps) {
             )}
           </div>
         </div>
-        {/* Comment on PC: centered, between voyageurs row and fraud count */}
-        {control.notes && (
-          <p className="hidden sm:block text-sm text-center text-muted-foreground mt-2 italic font-medium">
-            {control.notes}
-          </p>
-        )}
       </CardContent>
     </Card>
   );
