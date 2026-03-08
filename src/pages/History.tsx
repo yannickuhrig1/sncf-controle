@@ -722,11 +722,11 @@ export default function HistoryPage() {
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={handleExportTableExtended}>
                       <LayoutList className="h-4 w-4 mr-2" />
-                      Tableau étendu (PDF)
+                      Tableau (PDF)
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={handleExportTableExtendedHTML}>
                       <FileDown className="h-4 w-4 mr-2" />
-                      Tableau étendu (HTML)
+                      Tableau (HTML)
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>

@@ -5,6 +5,13 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/),
 et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.10.19] - 2026-03-08
+
+### Modifié
+- Historique : options de menu renommées "Tableau (PDF)" et "Tableau (HTML)" (suppression du mot "étendu")
+- Export HTML : refonte complète avec recherche interactive par numéro de train, filtre par date, et cases à cocher par groupe de colonnes (Heure, Type, Trajet, T. Bord, Tarifs contrôle, PV, RI)
+- L'export HTML est entièrement autonome (données embarquées en JSON, rendu dynamique côté navigateur)
+
 ## [1.10.18] - 2026-03-08
 
 ### Modifié

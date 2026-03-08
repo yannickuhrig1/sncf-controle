@@ -956,116 +956,227 @@ export function exportTableToPDF({ controls, title, dateRange, mode = 'compact' 
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-//  exportTableToHTML  (tableau étendu)
+//  exportTableToHTML  (tableau interactif)
 // ─────────────────────────────────────────────────────────────────────────────
 export function exportTableToHTML({ controls, title, dateRange }: Omit<TableExportOptions, 'mode'>) {
   if (!controls || controls.length === 0) throw new Error('Aucun contrôle à exporter');
 
-  const rows = controls.map(control => {
+  const data = controls.map(control => {
     const fraudCount = control.tarifs_controle + control.pv + control.ri_negative;
-    const fraudRate = control.nb_passagers > 0
-      ? ((fraudCount / control.nb_passagers) * 100).toFixed(1) + '%'
-      : '0.0%';
     const fraudRateNum = control.nb_passagers > 0
-      ? (fraudCount / control.nb_passagers) * 100
-      : 0;
-    const locationInfo = control.location_type === 'train'
-      ? `T. ${control.train_number || '-'}`
-      : control.location_type === 'gare' ? 'Gare' : 'Quai';
-    const trajet = control.origin && control.destination
-      ? `${control.origin} → ${control.destination}`
-      : control.location;
+      ? (fraudCount / control.nb_passagers) * 100 : 0;
     const tarifBordTotal = (control.tarif_bord_stt_50 || 0)
-      + (control.tarif_bord_stt_100 || 0)
-      + (control.tarif_bord_rnv || 0)
-      + (control.tarif_bord_titre_tiers || 0)
-      + (control.tarif_bord_doc_naissance || 0)
+      + (control.tarif_bord_stt_100 || 0) + (control.tarif_bord_rnv || 0)
+      + (control.tarif_bord_titre_tiers || 0) + (control.tarif_bord_doc_naissance || 0)
       + (control.tarif_bord_autre || 0);
+    return {
+      date:           format(new Date(control.control_date), 'dd/MM/yyyy', { locale: fr }),
+      dateRaw:        control.control_date,
+      heure:          control.control_time.slice(0, 5),
+      type:           control.location_type === 'train' ? 'T. ' + (control.train_number || '-') : control.location_type === 'gare' ? 'Gare' : 'Quai',
+      trainNumber:    control.location_type === 'train' ? (control.train_number || '') : '',
+      trajet:         control.origin && control.destination ? control.origin + ' \u2192 ' + control.destination : (control.location || ''),
+      voyageurs:      control.nb_passagers,
+      enRegle:        control.nb_en_regle,
+      tarifBord:      tarifBordTotal,
+      tc:             control.tarifs_controle,
+      stt50:          control.stt_50,
+      rnv:            control.rnv,
+      titreTiers:     control.titre_tiers || 0,
+      docNaissance:   control.doc_naissance || 0,
+      pv:             control.pv,
+      pvStt100:       control.stt_100,
+      pvRnv:          control.pv_rnv || 0,
+      pvTitreTiers:   control.pv_titre_tiers || 0,
+      pvDocNaissance: control.pv_doc_naissance || 0,
+      riPlus:         control.ri_positive,
+      riMoins:        control.ri_negative,
+      fraudRate:      fraudRateNum.toFixed(1) + '%',
+      fraudRateNum,
+    };
+  });
 
-    const fraudColor = fraudRateNum > 10 ? '#b91c1c' : fraudRateNum > 5 ? '#d97706' : '#15803d';
-    const fraudBg    = fraudRateNum > 10 ? '#fee2e2' : fraudRateNum > 5 ? '#fef3c7' : 'transparent';
+  const jsonData = JSON.stringify(data);
+  const genDate  = format(new Date(), 'dd/MM/yyyy HH:mm', { locale: fr });
 
-    const td = (val: string | number, style = '') =>
-      `<td style="padding:5px 8px;text-align:center;border-bottom:1px solid #e5e7eb;${style}">${val}</td>`;
-    const tdL = (val: string | number, style = '') =>
-      `<td style="padding:5px 8px;text-align:left;border-bottom:1px solid #e5e7eb;${style}">${val}</td>`;
+  // Embedded JS uses only single-quoted strings and concatenation (no backticks / ${})
+  // to avoid conflicts with the outer TypeScript template literal.
+  const embeddedJS = `
+var ROWS = ${jsonData};
+var hiddenCols = new Set();
 
-    return `<tr>
-      ${tdL(format(new Date(control.control_date), 'dd/MM/yyyy', { locale: fr }))}
-      ${td(control.control_time.slice(0, 5))}
-      ${td(locationInfo)}
-      ${tdL(trajet)}
-      ${td(control.nb_passagers)}
-      ${td(control.nb_en_regle)}
-      ${td(tarifBordTotal)}
-      ${td(control.tarifs_controle, 'background:#f0fdf4;color:' + (control.tarifs_controle > 0 ? '#15803d' : '#374151') + ';font-weight:bold')}
-      ${td(control.stt_50, 'background:#f0fdf4;color:' + (control.stt_50 > 0 ? '#15803d' : '#374151'))}
-      ${td(control.rnv, 'background:#f0fdf4;color:' + (control.rnv > 0 ? '#15803d' : '#374151'))}
-      ${td(control.titre_tiers || 0, 'background:#f0fdf4;color:' + ((control.titre_tiers || 0) > 0 ? '#15803d' : '#374151'))}
-      ${td(control.doc_naissance || 0, 'background:#f0fdf4;color:' + ((control.doc_naissance || 0) > 0 ? '#15803d' : '#374151'))}
-      ${td(control.pv, 'background:#fff1f2;color:' + (control.pv > 0 ? '#b91c1c' : '#374151') + ';font-weight:bold')}
-      ${td(control.stt_100, 'background:#fff1f2;color:' + (control.stt_100 > 0 ? '#b91c1c' : '#374151'))}
-      ${td(control.pv_rnv || 0, 'background:#fff1f2;color:' + ((control.pv_rnv || 0) > 0 ? '#b91c1c' : '#374151'))}
-      ${td(control.pv_titre_tiers || 0, 'background:#fff1f2;color:' + ((control.pv_titre_tiers || 0) > 0 ? '#b91c1c' : '#374151'))}
-      ${td(control.pv_doc_naissance || 0, 'background:#fff1f2;color:' + ((control.pv_doc_naissance || 0) > 0 ? '#b91c1c' : '#374151'))}
-      ${td(control.ri_positive)}
-      ${td(control.ri_negative)}
-      ${td(fraudRate, `background:${fraudBg};color:${fraudColor};font-weight:bold`)}
-    </tr>`;
-  }).join('\n');
+function applyFilters() {
+  var trainVal = document.getElementById('searchTrain').value.trim().toLowerCase();
+  var dateVal  = document.getElementById('searchDate').value;
+  var visible  = ROWS.filter(function(r) {
+    var trainOk = !trainVal || r.trainNumber.toLowerCase().indexOf(trainVal) !== -1;
+    var dateOk  = !dateVal  || r.dateRaw === dateVal;
+    return trainOk && dateOk;
+  });
+  renderRows(visible);
+}
 
-  const thBase = 'padding:6px 8px;text-align:center;font-size:12px;font-weight:bold;color:#fff;';
-  const thL    = 'padding:6px 8px;text-align:left;font-size:12px;font-weight:bold;color:#fff;';
-  const navyBg = 'background:#1e3a5f;';
-  const greenBg = 'background:#15803d;';
-  const redBg   = 'background:#b91c1c;';
+function resetFilters() {
+  document.getElementById('searchTrain').value = '';
+  document.getElementById('searchDate').value  = '';
+  renderRows(ROWS);
+}
+
+function toggleCols(indices, visible) {
+  indices.forEach(function(i) { visible ? hiddenCols.delete(i) : hiddenCols.add(i); });
+  applyColStyle();
+}
+
+function applyColStyle() {
+  var css = '';
+  hiddenCols.forEach(function(i) { css += '[data-col="' + i + '"] { display: none !important; }\\n'; });
+  document.getElementById('colStyle').textContent = css;
+}
+
+function renderRows(rows) {
+  var tbody = document.getElementById('tableBody');
+  tbody.innerHTML = rows.map(function(r, idx) {
+    var fc = r.fraudRateNum > 10 ? 'fraud-high' : r.fraudRateNum > 5 ? 'fraud-mid' : 'fraud-low';
+    var bg = idx % 2 === 1 ? 'background:#f3f4f6;' : '';
+    function td(val, col, cls, sty) {
+      var d = col !== null ? ' data-col="' + col + '"' : '';
+      var c = cls ? ' class="' + cls + '"' : '';
+      var s = (bg || sty) ? ' style="' + bg + (sty || '') + '"' : '';
+      return '<td' + c + d + s + '>' + val + '</td>';
+    }
+    function tdL(val, col) {
+      var d = col !== null ? ' data-col="' + col + '"' : '';
+      var s = bg ? ' style="' + bg + '"' : '';
+      return '<td class="tl"' + d + s + '>' + val + '</td>';
+    }
+    var tcBg = 'background:#f0fdf4;';
+    var pvBg = 'background:#fff1f2;';
+    return '<tr>'
+      + tdL(r.date, null)
+      + td(r.heure,         1,  'tc', '')
+      + td(r.type,          2,  'tc', '')
+      + tdL(r.trajet,       3)
+      + td(r.voyageurs,     null, 'tc', '')
+      + td(r.enRegle,       null, 'tc', '')
+      + td(r.tarifBord,     6,  'tc', '')
+      + td(r.tc,            7,  'tc', tcBg + (r.tc > 0 ? 'color:#15803d;font-weight:bold;' : ''))
+      + td(r.stt50,         8,  'tc', tcBg + (r.stt50 > 0 ? 'color:#15803d;' : ''))
+      + td(r.rnv,           9,  'tc', tcBg + (r.rnv > 0 ? 'color:#15803d;' : ''))
+      + td(r.titreTiers,    10, 'tc', tcBg + (r.titreTiers > 0 ? 'color:#15803d;' : ''))
+      + td(r.docNaissance,  11, 'tc', tcBg + (r.docNaissance > 0 ? 'color:#15803d;' : ''))
+      + td(r.pv,            12, 'tc', pvBg + (r.pv > 0 ? 'color:#b91c1c;font-weight:bold;' : ''))
+      + td(r.pvStt100,      13, 'tc', pvBg + (r.pvStt100 > 0 ? 'color:#b91c1c;' : ''))
+      + td(r.pvRnv,         14, 'tc', pvBg + (r.pvRnv > 0 ? 'color:#b91c1c;' : ''))
+      + td(r.pvTitreTiers,  15, 'tc', pvBg + (r.pvTitreTiers > 0 ? 'color:#b91c1c;' : ''))
+      + td(r.pvDocNaissance,16, 'tc', pvBg + (r.pvDocNaissance > 0 ? 'color:#b91c1c;' : ''))
+      + td(r.riPlus,        17, 'tc', '')
+      + td(r.riMoins,       18, 'tc', '')
+      + td(r.fraudRate,     null, fc, '')
+      + '</tr>';
+  }).join('');
+  document.getElementById('statsBar').textContent = rows.length + ' ligne(s) affich\\u00e9e(s) sur ${controls.length}';
+}
+
+renderRows(ROWS);
+`;
 
   const html = `<!DOCTYPE html>
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<title>${title}</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SNCF Contr\u00f4les \u2014 Tableau</title>
+<style id="colStyle"></style>
 <style>
-  body { font-family: Arial, sans-serif; font-size: 13px; color: #374151; margin: 20px; }
-  h1 { color: #1e3a5f; font-size: 20px; margin-bottom: 4px; }
-  .meta { color: #6b7280; font-size: 12px; margin-bottom: 16px; }
-  table { border-collapse: collapse; width: 100%; }
-  tr:hover td { background: #f9fafb !important; }
-  tr:nth-child(even) td:not([style*="background:#f0fdf4"]):not([style*="background:#fff1f2"]):not([style*="background:#fee2e2"]):not([style*="background:#fef3c7"]) { background: #f3f4f6; }
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Arial,sans-serif;font-size:13px;color:#374151;background:#f9fafb}
+.hdr{background:#1e3a5f;color:#fff;padding:14px 24px}
+.hdr h1{font-size:18px;margin-bottom:2px}
+.hdr .meta{font-size:11px;color:#93c5fd}
+.toolbar{background:#fff;border-bottom:1px solid #e5e7eb;padding:10px 24px;display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end}
+.field{display:flex;flex-direction:column;gap:3px}
+.field label{font-size:10px;font-weight:bold;color:#6b7280;text-transform:uppercase;letter-spacing:.05em}
+.field input{border:1px solid #d1d5db;border-radius:6px;padding:5px 10px;font-size:13px;outline:none}
+.field input:focus{border-color:#1e3a5f}
+.btn{background:#f3f4f6;border:1px solid #d1d5db;border-radius:6px;padding:6px 14px;cursor:pointer;font-size:12px;color:#374151;align-self:flex-end}
+.btn:hover{background:#e5e7eb}
+.cols{background:#fff;border-bottom:1px solid #e5e7eb;padding:8px 24px;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.cols span{font-size:10px;font-weight:bold;color:#6b7280;text-transform:uppercase;margin-right:4px}
+.ck{display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer;user-select:none}
+.ck input{cursor:pointer}
+.stats{background:#fff;border-bottom:1px solid #e5e7eb;padding:7px 24px;font-size:12px;color:#6b7280}
+.wrap{overflow-x:auto;padding-bottom:40px}
+table{border-collapse:collapse;width:100%;min-width:1100px}
+thead th{padding:7px 8px;font-size:11px;font-weight:bold;color:#fff;white-space:nowrap;position:sticky;top:0;z-index:1;background:#1e3a5f;text-align:center}
+thead th.tl{text-align:left}
+thead th.th-tc{background:#15803d}
+thead th.th-pv{background:#b91c1c}
+tbody td{padding:5px 8px;border-bottom:1px solid #e5e7eb;white-space:nowrap}
+td.tc{text-align:center}
+td.tl{text-align:left}
+.fraud-high{background:#fee2e2!important;color:#b91c1c;font-weight:bold;text-align:center}
+.fraud-mid{background:#fef3c7!important;color:#d97706;font-weight:bold;text-align:center}
+.fraud-low{color:#15803d;font-weight:bold;text-align:center}
+tbody tr:hover td{filter:brightness(.95)}
 </style>
 </head>
 <body>
-<h1>SNCF Contrôles — ${title}</h1>
-<p class="meta">${dateRange} &nbsp;|&nbsp; ${controls.length} contrôle(s) &nbsp;|&nbsp; Généré le ${format(new Date(), 'dd/MM/yyyy HH:mm', { locale: fr })}</p>
+<div class="hdr">
+  <h1>SNCF Contr\u00f4les \u2014 Tableau</h1>
+  <div class="meta">${dateRange} &nbsp;|\u00a0 G\u00e9n\u00e9r\u00e9 le ${genDate}</div>
+</div>
+<div class="toolbar">
+  <div class="field">
+    <label>Num\u00e9ro de train</label>
+    <input type="text" id="searchTrain" placeholder="ex\u00a0: 1234" oninput="applyFilters()">
+  </div>
+  <div class="field">
+    <label>Date</label>
+    <input type="date" id="searchDate" oninput="applyFilters()">
+  </div>
+  <button class="btn" onclick="resetFilters()">R\u00e9initialiser</button>
+</div>
+<div class="cols">
+  <span>Colonnes\u00a0:</span>
+  <label class="ck"><input type="checkbox" checked onchange="toggleCols([1],this.checked)"> Heure</label>
+  <label class="ck"><input type="checkbox" checked onchange="toggleCols([2],this.checked)"> Type</label>
+  <label class="ck"><input type="checkbox" checked onchange="toggleCols([3],this.checked)"> Trajet</label>
+  <label class="ck"><input type="checkbox" checked onchange="toggleCols([6],this.checked)"> T. Bord</label>
+  <label class="ck"><input type="checkbox" checked onchange="toggleCols([7,8,9,10,11],this.checked)"> Tarifs contr\u00f4le</label>
+  <label class="ck"><input type="checkbox" checked onchange="toggleCols([12,13,14,15,16],this.checked)"> PV</label>
+  <label class="ck"><input type="checkbox" checked onchange="toggleCols([17,18],this.checked)"> RI</label>
+</div>
+<div class="stats" id="statsBar"></div>
+<div class="wrap">
 <table>
 <thead>
 <tr>
-  <th style="${thL}${navyBg}">Date</th>
-  <th style="${thBase}${navyBg}">Heure</th>
-  <th style="${thBase}${navyBg}">Type</th>
-  <th style="${thL}${navyBg}">Trajet</th>
-  <th style="${thBase}${navyBg}">Voyageurs</th>
-  <th style="${thBase}${navyBg}">En règle</th>
-  <th style="${thBase}${navyBg}">T. Bord</th>
-  <th style="${thBase}${greenBg}">T. Contrôle</th>
-  <th style="${thBase}${greenBg}">STT 50€</th>
-  <th style="${thBase}${greenBg}">RNV</th>
-  <th style="${thBase}${greenBg}">Titre tiers</th>
-  <th style="${thBase}${greenBg}">D. Naiss.</th>
-  <th style="${thBase}${redBg}">PV total</th>
-  <th style="${thBase}${redBg}">PV 100€</th>
-  <th style="${thBase}${redBg}">PV RNV</th>
-  <th style="${thBase}${redBg}">PV Ti.</th>
-  <th style="${thBase}${redBg}">PV Naiss.</th>
-  <th style="${thBase}${navyBg}">RI +</th>
-  <th style="${thBase}${navyBg}">RI −</th>
-  <th style="${thBase}${navyBg}">Taux fraude</th>
+  <th class="tl">Date</th>
+  <th data-col="1">Heure</th>
+  <th data-col="2">Type</th>
+  <th class="tl" data-col="3">Trajet</th>
+  <th>Voyageurs</th>
+  <th>En r\u00e8gle</th>
+  <th data-col="6">T. Bord</th>
+  <th class="th-tc" data-col="7">T. Contr\u00f4le</th>
+  <th class="th-tc" data-col="8">STT 50\u20ac</th>
+  <th class="th-tc" data-col="9">RNV</th>
+  <th class="th-tc" data-col="10">Titre tiers</th>
+  <th class="th-tc" data-col="11">D. Naiss.</th>
+  <th class="th-pv" data-col="12">PV total</th>
+  <th class="th-pv" data-col="13">PV 100\u20ac</th>
+  <th class="th-pv" data-col="14">PV RNV</th>
+  <th class="th-pv" data-col="15">PV Ti.</th>
+  <th class="th-pv" data-col="16">PV Naiss.</th>
+  <th data-col="17">RI +</th>
+  <th data-col="18">RI \u2212</th>
+  <th>Taux fraude</th>
 </tr>
 </thead>
-<tbody>
-${rows}
-</tbody>
+<tbody id="tableBody"></tbody>
 </table>
+</div>
+<script>${embeddedJS}<\/script>
 </body>
 </html>`;
 
