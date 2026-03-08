@@ -5,6 +5,11 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/),
 et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.10.22] - 2026-03-08
+
+### Modifié
+- Rapport HTML — Synthèse : libellés des cartes "Montant PV" → "PV" et "Montant bord exceptionnel" → "Bord exceptionnel"
+
 ## [1.10.21] - 2026-03-08
 
 ### Modifié

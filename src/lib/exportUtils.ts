@@ -1909,9 +1909,9 @@ export function exportToHTML({ controls, title, dateRange, includeStats, exportM
         </div>
         <div class="kpi-card red">
           <div class="kpi-value">${totalPV.toFixed(0)} €</div>
-          <div class="kpi-label">Montant PV</div>
+          <div class="kpi-label">PV</div>
         </div>
-        ${stats.totalTarifsBordAmount > 0 ? `<div class="kpi-card blue"><div class="kpi-value">${stats.totalTarifsBordAmount.toFixed(0)} €</div><div class="kpi-label">Montant bord exceptionnel</div></div>` : ''}
+        ${stats.totalTarifsBordAmount > 0 ? `<div class="kpi-card blue"><div class="kpi-value">${stats.totalTarifsBordAmount.toFixed(0)} €</div><div class="kpi-label">Bord exceptionnel</div></div>` : ''}
       </div>
       <table class="synth-table" style="margin-top:16px;">
         <tr><th>Catégorie</th><th>Nombre</th><th>Montant</th></tr>
