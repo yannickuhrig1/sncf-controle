@@ -5,6 +5,11 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/),
 et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.10.24] - 2026-03-08
+
+### Modifié
+- Historique : commentaire affiché centré (police légèrement agrandie) entre la ligne voyageurs et le taux de fraude sur PC ; reste compact sur mobile
+
 ## [1.10.23] - 2026-03-08
 
 ### Modifié

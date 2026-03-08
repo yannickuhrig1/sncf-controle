@@ -206,13 +206,14 @@ function ControlRow({ control, onClick }: ControlRowProps) {
                 </div>
               );
             })()}
+            {/* Comment on mobile: compact, after badges */}
             {control.notes && (
-              <p className="text-[10px] text-muted-foreground mt-1.5 truncate italic">
+              <p className="sm:hidden text-[10px] text-muted-foreground mt-1.5 truncate italic">
                 {control.notes}
               </p>
             )}
           </div>
-          
+
           {/* Fraud rate — always visible */}
           <div className={`text-right shrink-0 ${getFraudRateColor(fraudRate)}`}>
             <div className="text-sm font-bold">{fraudRate.toFixed(1)}%</div>
@@ -221,6 +222,12 @@ function ControlRow({ control, onClick }: ControlRowProps) {
             )}
           </div>
         </div>
+        {/* Comment on PC: centered, between voyageurs row and fraud count */}
+        {control.notes && (
+          <p className="hidden sm:block text-sm text-center text-muted-foreground mt-2 italic font-medium">
+            {control.notes}
+          </p>
+        )}
       </CardContent>
     </Card>
   );
