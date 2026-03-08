@@ -96,9 +96,8 @@ export function ExportDialog({ controls, open, onOpenChange }: ExportDialogProps
   });
   const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth());
   const [selectedMonthYear, setSelectedMonthYear] = useState<number>(new Date().getFullYear());
-  const [exportFormat, setExportFormat] = useState<ExportFormat>('pdf');
+  const [exportFormat, setExportFormat] = useState<ExportFormat>('html');
   const [includeStats, setIncludeStats] = useState(true);
-  const [exportMode, setExportMode] = useState<ExportMode>('detailed');
   const [pdfOrientation, setPdfOrientation] = useState<PdfOrientation>(
     preferences?.pdf_orientation || 'auto'
   );
@@ -215,7 +214,7 @@ export function ExportDialog({ controls, open, onOpenChange }: ExportDialogProps
     dateRange: getDateRangeString(),
     includeStats,
     orientation: pdfOrientation,
-    exportMode,
+    exportMode: 'both' as ExportMode,
   });
 
   const handlePreview = () => {
@@ -468,34 +467,6 @@ export function ExportDialog({ controls, open, onOpenChange }: ExportDialogProps
             </div>
           </div>
           
-          {/* Export mode */}
-          <div className="space-y-3">
-            <Label>Type de rapport</Label>
-            <RadioGroup value={exportMode} onValueChange={(v) => setExportMode(v as ExportMode)}>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="detailed" id="mode-detailed" />
-                <div>
-                  <Label htmlFor="mode-detailed" className="font-normal cursor-pointer">Détaillé</Label>
-                  <p className="text-xs text-muted-foreground">Pour le manager LAF — tous les détails, taux de fraude mis en avant</p>
-                </div>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="simplified" id="mode-simplified" />
-                <div>
-                  <Label htmlFor="mode-simplified" className="font-normal cursor-pointer">Simplifié</Label>
-                  <p className="text-xs text-muted-foreground">Pour les responsables région — tarifs, montants et taux de fraude</p>
-                </div>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="both" id="mode-both" />
-                <div>
-                  <Label htmlFor="mode-both" className="font-normal cursor-pointer">Les deux</Label>
-                  <p className="text-xs text-muted-foreground">Les deux versions dans un seul fichier</p>
-                </div>
-              </div>
-            </RadioGroup>
-          </div>
-
           {/* Format selection */}
           <div className="space-y-3">
             <Label>Format d'export</Label>

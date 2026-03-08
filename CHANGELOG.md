@@ -5,6 +5,12 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/),
 et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.10.20] - 2026-03-08
+
+### Modifié
+- Export rapport complet : suppression du choix "Type de rapport" — le mode "Les deux" (détaillé + simplifié) est maintenant fixe
+- Export rapport complet : format par défaut passé de PDF à HTML
+
 ## [1.10.19] - 2026-03-08
 
 ### Modifié
