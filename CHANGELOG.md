@@ -5,6 +5,12 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/),
 et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.10.17] - 2026-03-08
+
+### Ajouté
+- Historique : le bouton "Exporter" est maintenant un menu déroulant avec 3 options : Rapport complet (ExportDialog existant), Tableau compact PDF (colonnes abrégées) et Tableau étendu PDF (noms de colonnes complets)
+- `exportTableToPDF` accepte un paramètre `mode: 'compact' | 'extended'` pour choisir les labels des en-têtes de colonnes
+
 ## [1.10.16] - 2026-03-07
 
 ### Modifié

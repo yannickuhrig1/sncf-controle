@@ -30,6 +30,13 @@ import type { Period } from '@/components/dashboard/PeriodSelector';
 import { ViewModeToggle } from '@/components/dashboard/ViewModeToggle';
 import { getFraudRateColor } from '@/lib/stats';
 import { exportTableToPDF, exportToPDF, downloadPDF } from '@/lib/exportUtils';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import type { ViewMode } from '@/hooks/useControlsWithFilter';
 import { 
   Loader2, 
@@ -51,6 +58,10 @@ import {
   ArrowDownToLine,
   ArrowUpFromLine,
   Eye,
+  ChevronDown,
+  LayoutList,
+  Table2,
+  FileDown,
 } from 'lucide-react';
 import { format, parseISO, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -534,6 +545,30 @@ export default function HistoryPage() {
     }
   };
 
+  const handleExportTableExtended = () => {
+    if (filteredControls.length === 0) {
+      toast.error('Aucune donnée à exporter');
+      return;
+    }
+    const { start: sd, end: ed } = periodDateRange;
+    const dateRange = sd && ed
+      ? `${format(sd, 'dd/MM/yyyy', { locale: fr })} - ${format(ed, 'dd/MM/yyyy', { locale: fr })}`
+      : sd
+        ? `Depuis ${format(sd, 'dd/MM/yyyy', { locale: fr })}`
+        : 'Toutes les dates';
+    try {
+      exportTableToPDF({
+        controls: mergeControlsByTrain(filteredControls),
+        title: 'Export Tableau Historique — Étendu',
+        dateRange,
+        mode: 'extended',
+      });
+      toast.success('PDF étendu exporté');
+    } catch (error) {
+      toast.error("Erreur lors de l'export");
+    }
+  };
+
   const getDateRangeString = () => {
     const { start: sd, end: ed } = periodDateRange;
     if (sd && ed) return `${format(sd, 'dd/MM/yyyy', { locale: fr })} - ${format(ed, 'dd/MM/yyyy', { locale: fr })}`;
@@ -674,12 +709,30 @@ export default function HistoryPage() {
                 onSync={handleSync}
               />
               {controls.length > 0 && (
-                <>
-              <Button variant="outline" size="sm" onClick={() => setExportOpen(true)}>
-                    <Download className="h-4 w-4 mr-2" />
-                    Exporter
-                  </Button>
-                </>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm">
+                      <Download className="h-4 w-4 mr-2" />
+                      Exporter
+                      <ChevronDown className="h-3 w-3 ml-1" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => setExportOpen(true)}>
+                      <FileDown className="h-4 w-4 mr-2" />
+                      Rapport complet
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={handleExportTablePDF}>
+                      <Table2 className="h-4 w-4 mr-2" />
+                      Tableau compact (PDF)
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleExportTableExtended}>
+                      <LayoutList className="h-4 w-4 mr-2" />
+                      Tableau étendu (PDF)
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               )}
             </div>
           </div>

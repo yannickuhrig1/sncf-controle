@@ -745,9 +745,10 @@ export interface TableExportOptions {
   controls: Control[];
   title: string;
   dateRange: string;
+  mode?: 'compact' | 'extended';
 }
 
-export function exportTableToPDF({ controls, title, dateRange }: TableExportOptions) {
+export function exportTableToPDF({ controls, title, dateRange, mode = 'compact' }: TableExportOptions) {
   if (!controls || controls.length === 0) throw new Error('Aucun contrôle à exporter');
 
   try {
@@ -845,9 +846,13 @@ export function exportTableToPDF({ controls, title, dateRange }: TableExportOpti
       ];
     });
 
+    const tableHeaders = mode === 'extended'
+      ? [['Date','Heure','Type','Trajet','Voyageurs','En règle','T. Bord','T. Contrôle','STT 50€','RNV','Titre tiers','D. Naiss.','PV total','PV 100€','PV RNV','PV Ti.','PV Naiss.','RI +','RI −','Taux fraude']]
+      : [['Date','Heure','Type','Trajet','V.','OK','Brd','TC','S50','RNV','Ti','Na','PV','S100','P.RNV','P.Ti','P.Na','R+','R−','%']];
+
     autoTable(doc, {
       startY: 31,
-      head: [['Date','Heure','Type','Trajet','V.','OK','Brd','TC','S50','RNV','Ti','Na','PV','S100','P.RNV','P.Ti','P.Na','R+','R−','%']],
+      head: tableHeaders,
       body: tableData.map(r => r.slice(0, 20)),
       theme: 'plain',
       headStyles: {
