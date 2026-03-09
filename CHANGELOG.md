@@ -5,6 +5,12 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/),
 et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.10.29] - 2026-03-09
+
+### Corrigé
+- Présence en ligne : heartbeat toutes les 30s dans AppLayout pour maintenir le statut actif (évite "hors ligne" après déconnexion WebSocket silencieuse)
+- Admin/Manager : écoute des events `join` et `leave` en plus de `sync` pour mise à jour instantanée
+
 ## [1.10.28] - 2026-03-09
 
 ### Modifié

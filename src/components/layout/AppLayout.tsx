@@ -65,13 +65,14 @@ export function AppLayout({ children }: AppLayoutProps) {
   useEffect(() => {
     if (!user) return;
     const channel = supabase.channel('sncf-presence', { config: { presence: { key: user.id } } });
+    const trackPresence = () => channel.track({ user_id: user.id, online_at: new Date().toISOString() });
     channel.subscribe(async (status) => {
-      if (status === 'SUBSCRIBED') {
-        await channel.track({ user_id: user.id, online_at: new Date().toISOString() });
-      }
+      if (status === 'SUBSCRIBED') await trackPresence();
     });
-    return () => { supabase.removeChannel(channel); };
-  }, [user]);
+    // Re-track every 30s to garder la présence vivante même si le WS se reconnecte
+    const heartbeat = setInterval(trackPresence, 30_000);
+    return () => { clearInterval(heartbeat); supabase.removeChannel(channel); };
+  }, [user?.id]);
 
   // Detect scroll for header glass effect
   useEffect(() => {

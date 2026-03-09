@@ -127,11 +127,16 @@ export default function AdminPage() {
   const [onlineUsers, setOnlineUsers] = useState<Set<string>>(new Set());
   useEffect(() => {
     const channel = supabase.channel('sncf-presence');
-    channel.on('presence', { event: 'sync' }, () => {
+    const syncState = () => {
       const state = channel.presenceState<{ user_id: string }>();
       const ids = new Set(Object.values(state).flatMap(p => p.map((u: { user_id: string }) => u.user_id)));
       setOnlineUsers(ids);
-    }).subscribe();
+    };
+    channel
+      .on('presence', { event: 'sync' },  syncState)
+      .on('presence', { event: 'join' },  syncState)
+      .on('presence', { event: 'leave' }, syncState)
+      .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, []);
 
