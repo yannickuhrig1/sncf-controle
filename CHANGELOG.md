@@ -5,6 +5,11 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/),
 et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.10.33] - 2026-03-09
+
+### Corrigé
+- Thèmes Pro et Moderne : dégradé d'ambiance désormais visible (règles CSS déplacées hors de `@layer base`, opacités en mode clair augmentées)
+
 ## [1.10.32] - 2026-03-09
 
 ### Modifié
