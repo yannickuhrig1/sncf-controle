@@ -1433,10 +1433,10 @@ export function exportToHTML({ controls, title, dateRange, includeStats, exportM
     .kpi-card.purple .kpi-value { color: var(--purple); }
     .kpi-card.teal   .kpi-value { color: var(--teal);   }
     .kpi-card.gold   .kpi-value { color: #92701a;        }
-    .kpi-sub { font-size: 11px; color: var(--text-muted); margin-top: 3px; }
-    .kpi-card.navy .kpi-sub { color: rgba(255,255,255,0.65); }
-    .kpi-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-faint); margin-top: 8px; }
-    .kpi-card.navy .kpi-label { color: rgba(255,255,255,0.45); }
+    .kpi-sub { font-size: 14px; font-weight: 600; color: #475569; margin-top: 4px; }
+    .kpi-card.navy .kpi-sub { color: rgba(255,255,255,0.85); }
+    .kpi-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.7px; color: var(--text-muted); margin-top: 6px; }
+    .kpi-card.navy .kpi-label { color: rgba(255,255,255,0.6); }
 
     /* ── Detail tables ────────────────────────────────────────────── */
     .ops-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 20px; }
