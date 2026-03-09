@@ -24,7 +24,6 @@ import { Textarea } from '@/components/ui/textarea';
 import {
   Info,
   Train,
-  Ticket,
   AlertTriangle,
   FileText,
   Users,
@@ -76,26 +75,10 @@ interface Tile {
 /* ─── Tuiles ─────────────────────────────────────────────────────────────── */
 const TILES: Tile[] = [
   {
-    id: 'about',
-    icon: Info,
-    label: "À propos de l'app",
-    gradient: 'from-primary/80 to-primary',
-    iconBg: 'bg-white/20',
-    iconColor: 'text-white',
-  },
-  {
     id: 'fraude',
     icon: Calculator,
     label: 'Taux de fraude',
     gradient: 'from-blue-400 to-indigo-500',
-    iconBg: 'bg-white/20',
-    iconColor: 'text-white',
-  },
-  {
-    id: 'tarifs',
-    icon: Ticket,
-    label: 'Tarification',
-    gradient: 'from-amber-400 to-orange-500',
     iconBg: 'bg-white/20',
     iconColor: 'text-white',
   },
@@ -136,6 +119,14 @@ const TILES: Tile[] = [
     icon: Train,
     label: 'Départs/Arrivées en gare',
     gradient: 'from-sky-400 to-blue-600',
+    iconBg: 'bg-white/20',
+    iconColor: 'text-white',
+  },
+  {
+    id: 'about',
+    icon: Info,
+    label: "À propos de l'app",
+    gradient: 'from-primary/80 to-primary',
     iconBg: 'bg-white/20',
     iconColor: 'text-white',
   },
@@ -1241,14 +1232,13 @@ function ContentAssistance() {
 }
 
 const DIALOG_CONTENT: Record<string, { title: string; Content: () => JSX.Element }> = {
-  about:     { title: "À propos de l'application", Content: ContentAbout },
   fraude:    { title: 'Calcul du taux de fraude',   Content: ContentFraude },
-  tarifs:    { title: 'Types de tarification',       Content: ContentTarifs },
   faq:       { title: 'Questions fréquentes',        Content: ContentFAQ },
   contacts:  { title: 'Contacts utiles',             Content: ContentContacts },
   partager:      { title: "Partager l'application",     Content: ContentPartager },
   presentation:  { title: 'Présentation de l\'application', Content: ContentPresentation },
   departures:    { title: 'Départs/Arrivées en gare',       Content: ContentDepartures },
+  about:         { title: "À propos de l'application",      Content: ContentAbout },
   assistance:    { title: 'Assistance',                      Content: ContentAssistance },
 };
 
