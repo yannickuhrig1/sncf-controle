@@ -5,6 +5,15 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/),
 et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.10.31] - 2026-03-09
+
+### Ajouté
+- Dégradé de couleur sur tous les thèmes : Coloré (teal/rose), SNCF (rouge/bleu), Pro (bleu acier), Moderne (violet/indigo)
+- Paramètres : slider "Dégradé" (0–200%) pour intensifier ou supprimer le dégradé de fond
+
+### Modifié
+- Animations Pro/Moderne : opacity retirée des keyframes pour permettre le contrôle via la variable CSS `--gi`
+
 ## [1.10.30] - 2026-03-09
 
 ### Ajouté

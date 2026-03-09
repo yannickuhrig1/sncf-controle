@@ -92,8 +92,10 @@ export default function Settings() {
     parseInt(localStorage.getItem('sncf_card_brightness') || '100'));
   const [navBrightness, setNavBrightness] = useState(() =>
     parseInt(localStorage.getItem('sncf_nav_brightness') || '100'));
+  const [gradientIntensity, setGradientIntensity] = useState(() =>
+    parseInt(localStorage.getItem('sncf_gradient_intensity') || '100'));
 
-  const applyBrightness = useCallback((bg: number, card: number, nav: number) => {
+  const applyBrightness = useCallback((bg: number, card: number, nav: number, gi: number) => {
     let el = document.getElementById('user-brightness-style') as HTMLStyleElement | null;
     if (!el) {
       el = document.createElement('style');
@@ -101,33 +103,40 @@ export default function Settings() {
       document.head.appendChild(el);
     }
     const bgF = bg / 100;
-    const cardF = card / bg; // compensate body filter then apply card target
-    const navF = nav / bg;   // compensate body filter then apply nav target
+    const cardF = card / bg;
+    const navF = nav / bg;
     const parts: string[] = [];
+    parts.push(`:root{--gi:${gi / 100}}`);
     if (bgF !== 1) parts.push(`#root{filter:brightness(${bgF})}`);
     if (Math.abs(cardF - 1) > 0.001) parts.push(`#root .bg-card{filter:brightness(${cardF.toFixed(4)})!important}`);
     if (Math.abs(navF - 1) > 0.001) parts.push(`#sncf-sidebar{filter:brightness(${navF.toFixed(4)})!important}`);
     el.textContent = parts.join('');
   }, []);
 
-  useEffect(() => { applyBrightness(bgBrightness, cardBrightness, navBrightness); }, []);
+  useEffect(() => { applyBrightness(bgBrightness, cardBrightness, navBrightness, gradientIntensity); }, []);
 
   const handleBgBrightness = (v: number) => {
     setBgBrightness(v);
     localStorage.setItem('sncf_bg_brightness', String(v));
-    applyBrightness(v, cardBrightness, navBrightness);
+    applyBrightness(v, cardBrightness, navBrightness, gradientIntensity);
   };
 
   const handleCardBrightness = (v: number) => {
     setCardBrightness(v);
     localStorage.setItem('sncf_card_brightness', String(v));
-    applyBrightness(bgBrightness, v, navBrightness);
+    applyBrightness(bgBrightness, v, navBrightness, gradientIntensity);
   };
 
   const handleNavBrightness = (v: number) => {
     setNavBrightness(v);
     localStorage.setItem('sncf_nav_brightness', String(v));
-    applyBrightness(bgBrightness, cardBrightness, v);
+    applyBrightness(bgBrightness, cardBrightness, v, gradientIntensity);
+  };
+
+  const handleGradientIntensity = (v: number) => {
+    setGradientIntensity(v);
+    localStorage.setItem('sncf_gradient_intensity', String(v));
+    applyBrightness(bgBrightness, cardBrightness, navBrightness, v);
   };
 
   const [openSections, setOpenSections] = useState({
@@ -472,17 +481,18 @@ export default function Settings() {
                     Luminosité
                   </Label>
                   {[
-                    { label: 'Arrière-plan', value: bgBrightness,   onChange: handleBgBrightness },
-                    { label: 'Cartes',        value: cardBrightness, onChange: handleCardBrightness },
-                    { label: 'Navigation',    value: navBrightness,  onChange: handleNavBrightness },
-                  ].map(({ label, value, onChange }) => {
-                    const pct = ((value - 40) / 120) * 100;
+                    { label: 'Arrière-plan', value: bgBrightness,      onChange: handleBgBrightness,      min: 40, max: 160 },
+                    { label: 'Cartes',        value: cardBrightness,    onChange: handleCardBrightness,    min: 40, max: 160 },
+                    { label: 'Navigation',    value: navBrightness,     onChange: handleNavBrightness,     min: 40, max: 160 },
+                    { label: 'Dégradé',       value: gradientIntensity, onChange: handleGradientIntensity, min: 0,  max: 200 },
+                  ].map(({ label, value, onChange, min, max }) => {
+                    const pct = ((value - min) / (max - min)) * 100;
                     return (
                       <div key={label} className="flex items-center gap-3">
                         <span className="text-xs text-muted-foreground w-24 shrink-0">{label}</span>
                         <div className="flex-1">
                           <input
-                            type="range" min="40" max="160" step="5"
+                            type="range" min={min} max={max} step="5"
                             value={value}
                             onChange={(e) => onChange(parseInt(e.target.value))}
                             style={{ background: `linear-gradient(to right, hsl(var(--primary)) ${pct}%, hsl(var(--muted)) ${pct}%)` }}
@@ -493,9 +503,9 @@ export default function Settings() {
                       </div>
                     );
                   })}
-                  {(bgBrightness !== 100 || cardBrightness !== 100 || navBrightness !== 100) && (
+                  {(bgBrightness !== 100 || cardBrightness !== 100 || navBrightness !== 100 || gradientIntensity !== 100) && (
                     <Button variant="ghost" size="sm" className="h-7 text-xs px-2"
-                      onClick={() => { handleBgBrightness(100); handleCardBrightness(100); handleNavBrightness(100); }}>
+                      onClick={() => { handleBgBrightness(100); handleCardBrightness(100); handleNavBrightness(100); handleGradientIntensity(100); }}>
                       Réinitialiser
                     </Button>
                   )}

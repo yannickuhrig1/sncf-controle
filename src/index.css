@@ -643,6 +643,7 @@
     inset: 0;
     z-index: -1;
     pointer-events: none;
+    opacity: var(--gi, 1);
     background:
       radial-gradient(ellipse 80% 60% at 20% 10%, hsl(262 60% 60% / 0.08) 0%, transparent 60%),
       radial-gradient(ellipse 60% 80% at 80% 90%, hsl(239 70% 65% / 0.10) 0%, transparent 55%),
@@ -659,10 +660,10 @@
   }
 
   @keyframes moderne-drift {
-    0%   { opacity: 1; transform: scale(1) translateX(0px) translateY(0px); }
-    33%  { opacity: 0.8; transform: scale(1.04) translateX(12px) translateY(-8px); }
-    66%  { opacity: 0.95; transform: scale(0.97) translateX(-8px) translateY(12px); }
-    100% { opacity: 1; transform: scale(1.02) translateX(6px) translateY(-4px); }
+    0%   { transform: scale(1)    translateX(0px)  translateY(0px);  }
+    33%  { transform: scale(1.04) translateX(12px) translateY(-8px); }
+    66%  { transform: scale(0.97) translateX(-8px) translateY(12px); }
+    100% { transform: scale(1.02) translateX(6px)  translateY(-4px); }
   }
 
   /* Glow sur les boutons primaires du thème Moderne — violet-indigo */
@@ -708,6 +709,7 @@
     inset: 0;
     z-index: -1;
     pointer-events: none;
+    opacity: var(--gi, 1);
     background:
       radial-gradient(ellipse 70% 55% at 15% 15%, hsl(214 90% 55% / 0.07) 0%, transparent 60%),
       radial-gradient(ellipse 55% 70% at 85% 85%, hsl(200 85% 50% / 0.08) 0%, transparent 55%),
@@ -724,10 +726,10 @@
   }
 
   @keyframes pro-drift {
-    0%   { opacity: 1; transform: scale(1) translateX(0px) translateY(0px); }
-    30%  { opacity: 0.75; transform: scale(1.05) translateX(-10px) translateY(10px); }
-    60%  { opacity: 0.90; transform: scale(0.97) translateX(14px) translateY(-6px); }
-    100% { opacity: 1; transform: scale(1.03) translateX(-4px) translateY(8px); }
+    0%   { transform: scale(1)    translateX(0px)   translateY(0px);  }
+    30%  { transform: scale(1.05) translateX(-10px) translateY(10px); }
+    60%  { transform: scale(0.97) translateX(14px)  translateY(-6px); }
+    100% { transform: scale(1.03) translateX(-4px)  translateY(8px);  }
   }
 
   /* Glow sur les boutons primaires du thème Pro */
@@ -1015,22 +1017,54 @@
 }
 
 /* ===== SNCF Default Theme — Ambient Background Gradient ===== */
-/* background-image se superpose à background-color de Tailwind sans conflit  */
-
-html:not([class*="theme-"]) body {
-  background-image:
+html:not([class*="theme-"]) body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: var(--gi, 1);
+  background:
     radial-gradient(ellipse 70% 50% at 100% 0%,   hsl(343 100% 45% / 0.20) 0%, transparent 55%),
     radial-gradient(ellipse 60% 65% at 0%   100%,  hsl(210 100% 40% / 0.18) 0%, transparent 55%),
     radial-gradient(ellipse 45% 35% at 55%  50%,   hsl(220 30%  55% / 0.07) 0%, transparent 50%);
-  background-attachment: fixed;
 }
 
-html.dark:not([class*="theme-"]) body {
-  background-image:
+html.dark:not([class*="theme-"]) body::before {
+  background:
     radial-gradient(ellipse 75% 55% at 100% 0%,   hsl(343 90%  58% / 0.18) 0%, transparent 58%),
     radial-gradient(ellipse 65% 70% at 0%   100%,  hsl(210 90%  55% / 0.20) 0%, transparent 58%),
     radial-gradient(ellipse 45% 35% at 55%  40%,   hsl(225 70%  38% / 0.08) 0%, transparent 45%);
-  background-attachment: fixed;
+}
+
+/* ===== GRADIENT ANIMÉ — Thème Coloré (Teal pastel / Rose) ===== */
+.theme-colore body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: var(--gi, 1);
+  background:
+    radial-gradient(ellipse 70% 55% at 95% 5%,   hsl(180 55% 45% / 0.18) 0%, transparent 55%),
+    radial-gradient(ellipse 60% 70% at 5%  95%,   hsl(350 65% 60% / 0.15) 0%, transparent 55%),
+    radial-gradient(ellipse 45% 40% at 50% 50%,   hsl(155 45% 50% / 0.07) 0%, transparent 50%);
+  animation: colore-drift 13s ease-in-out infinite alternate;
+}
+
+.theme-colore.dark body::before {
+  background:
+    radial-gradient(ellipse 75% 55% at 95% 5%,   hsl(180 60% 42% / 0.22) 0%, transparent 58%),
+    radial-gradient(ellipse 65% 70% at 5%  95%,   hsl(350 60% 55% / 0.20) 0%, transparent 58%),
+    radial-gradient(ellipse 45% 40% at 50% 45%,   hsl(155 50% 45% / 0.10) 0%, transparent 50%);
+  animation: colore-drift 13s ease-in-out infinite alternate;
+}
+
+@keyframes colore-drift {
+  0%   { transform: scale(1)    translateX(0px)  translateY(0px);  }
+  35%  { transform: scale(1.04) translateX(10px) translateY(-8px); }
+  70%  { transform: scale(0.97) translateX(-8px) translateY(12px); }
+  100% { transform: scale(1.02) translateX(5px)  translateY(-5px); }
 }
 
 /* Glassmorphism utilities */
