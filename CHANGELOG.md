@@ -5,6 +5,12 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/),
 et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.10.25] - 2026-03-09
+
+### Modifié
+- Export HTML : suppression de la carte "Total encaissé hors PV" (doublon)
+- Export HTML : ajout d'une carte "Total TC + PV + Bord" (nombre + montant €) à droite de "Ventes à bord"
+
 ## [1.10.24] - 2026-03-08
 
 ### Modifié

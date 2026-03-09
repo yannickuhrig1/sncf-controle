@@ -1737,11 +1737,6 @@ export function exportToHTML({ controls, title, dateRange, includeStats, exportM
           <div class="kpi-sub">+ ${stats.byLocationType.gare.length} gare(s)</div>
           <div class="kpi-label">Trains contrôlés</div>
         </div>
-        <div class="kpi-card gold">
-          <div class="kpi-value">${totalEncaisse.toFixed(0)} €</div>
-          <div class="kpi-sub">hors PV</div>
-          <div class="kpi-label">Total encaissé</div>
-        </div>
         <div class="kpi-card purple">
           <div class="kpi-value">${stats.riPositive}+ / ${stats.riNegative}−</div>
           <div class="kpi-sub">${stats.riPositive + stats.riNegative} total</div>
@@ -1751,6 +1746,11 @@ export function exportToHTML({ controls, title, dateRange, includeStats, exportM
           <div class="kpi-value">${stats.totalTarifsBord}</div>
           <div class="kpi-sub">ventes à bord</div>
           <div class="kpi-label">Tarifs bord</div>
+        </div>
+        <div class="kpi-card navy">
+          <div class="kpi-value">${stats.tarifsControle + stats.pv + stats.totalTarifsBord}</div>
+          <div class="kpi-sub">${(totalTarifsControle + totalPV + stats.totalTarifsBordAmount).toFixed(0)} €</div>
+          <div class="kpi-label">Total TC + PV + Bord</div>
         </div>
       </div>
     </div>
