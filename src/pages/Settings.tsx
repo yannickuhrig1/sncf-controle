@@ -71,10 +71,10 @@ const PAGE_OPTIONS: { id: PageId; label: string; canDisable: boolean; roleRequir
   { id: 'statistics', label: 'Statistiques', canDisable: true },
   { id: 'history', label: 'Historique', canDisable: true },
   { id: 'infos', label: 'Infos', canDisable: true },
-  { id: 'manager', label: 'Manager', canDisable: true, roleRequired: 'manager' },
-  { id: 'profile', label: 'Profil', canDisable: true },
-  { id: 'settings', label: 'Paramètres', canDisable: true },
-  { id: 'admin', label: 'Administration', canDisable: true, roleRequired: 'admin' },
+  { id: 'manager', label: 'Manager', canDisable: false, roleRequired: 'manager' },
+  { id: 'profile', label: 'Profil', canDisable: false },
+  { id: 'settings', label: 'Paramètres', canDisable: false },
+  { id: 'admin', label: 'Administration', canDisable: false, roleRequired: 'admin' },
 ];
 
 export default function Settings() {
