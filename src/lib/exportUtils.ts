@@ -1489,12 +1489,12 @@ export function exportToHTML({ controls, title, dateRange, includeStats, exportM
     .sensitive-card.medium { border-left: 5px solid var(--amber); background: var(--amber-light); }
     .sensitive-card.low    { border-left: 5px solid var(--green); background: var(--green-light); }
     .sensitive-name { font-weight: 700; font-size: 14px; }
-    .sensitive-info { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+    .sensitive-info { font-size: 13px; font-weight: 600; color: #475569; margin-top: 3px; }
     .sensitive-rate { font-size: 22px; font-weight: 800; text-align: right; }
     .sensitive-card.high   .sensitive-rate { color: var(--red);   }
     .sensitive-card.medium .sensitive-rate { color: var(--amber); }
     .sensitive-card.low    .sensitive-rate { color: var(--green); }
-    .sensitive-count { font-size: 10px; color: var(--text-muted); text-align: right; margin-top: 2px; }
+    .sensitive-count { font-size: 12px; font-weight: 600; color: #475569; text-align: right; margin-top: 3px; }
 
     /* ── Train nav ────────────────────────────────────────────────── */
     .train-nav { display: flex; flex-wrap: wrap; gap: 8px; }
