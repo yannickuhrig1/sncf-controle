@@ -175,6 +175,7 @@ function ContentAbout() {
             Application de gestion des contrôles voyageurs pour les agents SNCF.
           </p>
           <div className="flex gap-2 mt-1.5 flex-wrap">
+            <Badge variant="secondary">v{__APP_VERSION__}</Badge>
             <Badge variant="secondary">PWA</Badge>
             <Badge variant="secondary">Hors-ligne</Badge>
             <Badge variant="secondary">Supabase</Badge>
@@ -211,7 +212,10 @@ function ContentAbout() {
         <ul className="text-sm text-muted-foreground space-y-1 list-disc list-inside">
           <li>Calcul automatique du taux de fraude</li>
           <li>Lookup des trains en temps réel (API SNCF Navitia)</li>
-          <li>Export HTML et PDF des rapports</li>
+          <li>Export HTML interactif (recherche, filtres, colonnes masquables)</li>
+          <li>Export PDF tableau étendu multi-colonnes</li>
+          <li>Historique adaptatif (train → contrôles, gare → embarquement)</li>
+          <li>Rapport de synthèse avec cartes KPI (TC, PV, Bord, Total)</li>
           <li>Mode sombre / thèmes personnalisables</li>
           <li>Navigation personnalisable (sidebar + barre du bas)</li>
           <li>Compatible mobile, tablette et PC</li>

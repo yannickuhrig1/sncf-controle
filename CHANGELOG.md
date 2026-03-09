@@ -5,6 +5,11 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/),
 et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.10.28] - 2026-03-09
+
+### Modifié
+- À propos : badge version dynamique (`__APP_VERSION__`), liste fonctionnalités mise à jour (export HTML interactif, PDF, historique adaptatif, KPI)
+
 ## [1.10.27] - 2026-03-09
 
 ### Modifié
