@@ -94,49 +94,85 @@ export default function Settings() {
     parseInt(localStorage.getItem('sncf_nav_brightness') || '100'));
   const [gradientIntensity, setGradientIntensity] = useState(() =>
     parseInt(localStorage.getItem('sncf_gradient_intensity') || '100'));
+  const [bgContrast, setBgContrast] = useState(() =>
+    parseInt(localStorage.getItem('sncf_bg_contrast') || '100'));
+  const [cardContrast, setCardContrast] = useState(() =>
+    parseInt(localStorage.getItem('sncf_card_contrast') || '100'));
+  const [navContrast, setNavContrast] = useState(() =>
+    parseInt(localStorage.getItem('sncf_nav_contrast') || '100'));
 
-  const applyBrightness = useCallback((bg: number, card: number, nav: number, gi: number) => {
+  const applyFilters = useCallback((bg: number, card: number, nav: number, gi: number, bgC: number, cardC: number, navC: number) => {
     let el = document.getElementById('user-brightness-style') as HTMLStyleElement | null;
     if (!el) {
       el = document.createElement('style');
       el.id = 'user-brightness-style';
       document.head.appendChild(el);
     }
-    const bgF = bg / 100;
+    const bgF   = bg   / 100;
     const cardF = card / bg;
-    const navF = nav / bg;
+    const navF  = nav  / bg;
+    const bgCF   = bgC   / 100;
+    const cardCF = cardC / bgC;
+    const navCF  = navC  / bgC;
     const parts: string[] = [];
     parts.push(`:root{--gi:${gi / 100}}`);
-    if (bgF !== 1) parts.push(`#root{filter:brightness(${bgF})}`);
-    if (Math.abs(cardF - 1) > 0.001) parts.push(`#root .bg-card{filter:brightness(${cardF.toFixed(4)})!important}`);
-    if (Math.abs(navF - 1) > 0.001) parts.push(`#sncf-sidebar{filter:brightness(${navF.toFixed(4)})!important}`);
+    const rootF: string[] = [];
+    if (bgF !== 1)                    rootF.push(`brightness(${bgF})`);
+    if (Math.abs(bgCF  - 1) > 0.001) rootF.push(`contrast(${bgCF.toFixed(4)})`);
+    if (rootF.length) parts.push(`#root{filter:${rootF.join(' ')}}`);
+    const cardParts: string[] = [];
+    if (Math.abs(cardF  - 1) > 0.001) cardParts.push(`brightness(${cardF.toFixed(4)})`);
+    if (Math.abs(cardCF - 1) > 0.001) cardParts.push(`contrast(${cardCF.toFixed(4)})`);
+    if (cardParts.length) parts.push(`#root .bg-card{filter:${cardParts.join(' ')}!important}`);
+    const navParts: string[] = [];
+    if (Math.abs(navF  - 1) > 0.001) navParts.push(`brightness(${navF.toFixed(4)})`);
+    if (Math.abs(navCF - 1) > 0.001) navParts.push(`contrast(${navCF.toFixed(4)})`);
+    if (navParts.length) parts.push(`#sncf-sidebar{filter:${navParts.join(' ')}!important}`);
     el.textContent = parts.join('');
   }, []);
 
-  useEffect(() => { applyBrightness(bgBrightness, cardBrightness, navBrightness, gradientIntensity); }, []);
+  useEffect(() => { applyFilters(bgBrightness, cardBrightness, navBrightness, gradientIntensity, bgContrast, cardContrast, navContrast); }, []);
 
   const handleBgBrightness = (v: number) => {
     setBgBrightness(v);
     localStorage.setItem('sncf_bg_brightness', String(v));
-    applyBrightness(v, cardBrightness, navBrightness, gradientIntensity);
+    applyFilters(v, cardBrightness, navBrightness, gradientIntensity, bgContrast, cardContrast, navContrast);
   };
 
   const handleCardBrightness = (v: number) => {
     setCardBrightness(v);
     localStorage.setItem('sncf_card_brightness', String(v));
-    applyBrightness(bgBrightness, v, navBrightness, gradientIntensity);
+    applyFilters(bgBrightness, v, navBrightness, gradientIntensity, bgContrast, cardContrast, navContrast);
   };
 
   const handleNavBrightness = (v: number) => {
     setNavBrightness(v);
     localStorage.setItem('sncf_nav_brightness', String(v));
-    applyBrightness(bgBrightness, cardBrightness, v, gradientIntensity);
+    applyFilters(bgBrightness, cardBrightness, v, gradientIntensity, bgContrast, cardContrast, navContrast);
   };
 
   const handleGradientIntensity = (v: number) => {
     setGradientIntensity(v);
     localStorage.setItem('sncf_gradient_intensity', String(v));
-    applyBrightness(bgBrightness, cardBrightness, navBrightness, v);
+    applyFilters(bgBrightness, cardBrightness, navBrightness, v, bgContrast, cardContrast, navContrast);
+  };
+
+  const handleBgContrast = (v: number) => {
+    setBgContrast(v);
+    localStorage.setItem('sncf_bg_contrast', String(v));
+    applyFilters(bgBrightness, cardBrightness, navBrightness, gradientIntensity, v, cardContrast, navContrast);
+  };
+
+  const handleCardContrast = (v: number) => {
+    setCardContrast(v);
+    localStorage.setItem('sncf_card_contrast', String(v));
+    applyFilters(bgBrightness, cardBrightness, navBrightness, gradientIntensity, bgContrast, v, navContrast);
+  };
+
+  const handleNavContrast = (v: number) => {
+    setNavContrast(v);
+    localStorage.setItem('sncf_nav_contrast', String(v));
+    applyFilters(bgBrightness, cardBrightness, navBrightness, gradientIntensity, bgContrast, cardContrast, v);
   };
 
   const [openSections, setOpenSections] = useState({
@@ -503,13 +539,43 @@ export default function Settings() {
                       </div>
                     );
                   })}
-                  {(bgBrightness !== 100 || cardBrightness !== 100 || navBrightness !== 100 || gradientIntensity !== 100) && (
-                    <Button variant="ghost" size="sm" className="h-7 text-xs px-2"
-                      onClick={() => { handleBgBrightness(100); handleCardBrightness(100); handleNavBrightness(100); handleGradientIntensity(100); }}>
-                      Réinitialiser
-                    </Button>
-                  )}
                 </div>
+
+                <div className="space-y-3">
+                  <Label className="flex items-center gap-2">
+                    <Eye className="h-4 w-4" />
+                    Contraste
+                  </Label>
+                  {[
+                    { label: 'Arrière-plan', value: bgContrast,   onChange: handleBgContrast,   min: 50, max: 150 },
+                    { label: 'Cartes',        value: cardContrast, onChange: handleCardContrast, min: 50, max: 150 },
+                    { label: 'Navigation',    value: navContrast,  onChange: handleNavContrast,  min: 50, max: 150 },
+                  ].map(({ label, value, onChange, min, max }) => {
+                    const pct = ((value - min) / (max - min)) * 100;
+                    return (
+                      <div key={label} className="flex items-center gap-3">
+                        <span className="text-xs text-muted-foreground w-24 shrink-0">{label}</span>
+                        <div className="flex-1">
+                          <input
+                            type="range" min={min} max={max} step="5"
+                            value={value}
+                            onChange={(e) => onChange(parseInt(e.target.value))}
+                            style={{ background: `linear-gradient(to right, hsl(var(--primary)) ${pct}%, hsl(var(--muted)) ${pct}%)` }}
+                            className="w-full h-0.5 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3.5 [&::-webkit-slider-thumb]:h-3.5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-primary [&::-webkit-slider-thumb]:shadow-md [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-background"
+                          />
+                        </div>
+                        <span className="text-xs tabular-nums font-medium w-9 text-right">{value}%</span>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {(bgBrightness !== 100 || cardBrightness !== 100 || navBrightness !== 100 || gradientIntensity !== 100 || bgContrast !== 100 || cardContrast !== 100 || navContrast !== 100) && (
+                  <Button variant="ghost" size="sm" className="h-7 text-xs px-2"
+                    onClick={() => { handleBgBrightness(100); handleCardBrightness(100); handleNavBrightness(100); handleGradientIntensity(100); handleBgContrast(100); handleCardContrast(100); handleNavContrast(100); }}>
+                    Réinitialiser
+                  </Button>
+                )}
               </CardContent>
             </CollapsibleContent>
           </Card>
