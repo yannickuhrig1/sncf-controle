@@ -5,6 +5,11 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/),
 et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.10.30] - 2026-03-09
+
+### Ajouté
+- Paramètres : slider "Navigation" pour régler la luminosité de la sidebar indépendamment du reste
+
 ## [1.10.29] - 2026-03-09
 
 ### Corrigé

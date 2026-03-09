@@ -361,7 +361,7 @@ export function AppLayout({ children }: AppLayoutProps) {
     <div className={cn('min-h-screen flex flex-col md:flex-row', showBottomBar && 'pb-14 md:pb-0')}>
 
       {/* ── Sidebar — Tablette + Desktop ─────────────────────────────────────── */}
-      <aside className="hidden md:flex flex-col w-60 shrink-0 bg-primary text-primary-foreground sticky top-0 h-screen overflow-y-auto">
+      <aside id="sncf-sidebar" className="hidden md:flex flex-col w-60 shrink-0 bg-primary text-primary-foreground sticky top-0 h-screen overflow-y-auto">
         {/* Brand */}
         <div className="flex items-center gap-2.5 px-4 py-4 border-b border-white/10">
           <ClipboardCheck className="h-5 w-5 shrink-0" />

@@ -90,8 +90,10 @@ export default function Settings() {
     parseInt(localStorage.getItem('sncf_bg_brightness') || '100'));
   const [cardBrightness, setCardBrightness] = useState(() =>
     parseInt(localStorage.getItem('sncf_card_brightness') || '100'));
+  const [navBrightness, setNavBrightness] = useState(() =>
+    parseInt(localStorage.getItem('sncf_nav_brightness') || '100'));
 
-  const applyBrightness = useCallback((bg: number, card: number) => {
+  const applyBrightness = useCallback((bg: number, card: number, nav: number) => {
     let el = document.getElementById('user-brightness-style') as HTMLStyleElement | null;
     if (!el) {
       el = document.createElement('style');
@@ -100,24 +102,32 @@ export default function Settings() {
     }
     const bgF = bg / 100;
     const cardF = card / bg; // compensate body filter then apply card target
+    const navF = nav / bg;   // compensate body filter then apply nav target
     const parts: string[] = [];
     if (bgF !== 1) parts.push(`#root{filter:brightness(${bgF})}`);
     if (Math.abs(cardF - 1) > 0.001) parts.push(`#root .bg-card{filter:brightness(${cardF.toFixed(4)})!important}`);
+    if (Math.abs(navF - 1) > 0.001) parts.push(`#sncf-sidebar{filter:brightness(${navF.toFixed(4)})!important}`);
     el.textContent = parts.join('');
   }, []);
 
-  useEffect(() => { applyBrightness(bgBrightness, cardBrightness); }, []);
+  useEffect(() => { applyBrightness(bgBrightness, cardBrightness, navBrightness); }, []);
 
   const handleBgBrightness = (v: number) => {
     setBgBrightness(v);
     localStorage.setItem('sncf_bg_brightness', String(v));
-    applyBrightness(v, cardBrightness);
+    applyBrightness(v, cardBrightness, navBrightness);
   };
 
   const handleCardBrightness = (v: number) => {
     setCardBrightness(v);
     localStorage.setItem('sncf_card_brightness', String(v));
-    applyBrightness(bgBrightness, v);
+    applyBrightness(bgBrightness, v, navBrightness);
+  };
+
+  const handleNavBrightness = (v: number) => {
+    setNavBrightness(v);
+    localStorage.setItem('sncf_nav_brightness', String(v));
+    applyBrightness(bgBrightness, cardBrightness, v);
   };
 
   const [openSections, setOpenSections] = useState({
@@ -464,6 +474,7 @@ export default function Settings() {
                   {[
                     { label: 'Arrière-plan', value: bgBrightness,   onChange: handleBgBrightness },
                     { label: 'Cartes',        value: cardBrightness, onChange: handleCardBrightness },
+                    { label: 'Navigation',    value: navBrightness,  onChange: handleNavBrightness },
                   ].map(({ label, value, onChange }) => {
                     const pct = ((value - 40) / 120) * 100;
                     return (
@@ -482,9 +493,9 @@ export default function Settings() {
                       </div>
                     );
                   })}
-                  {(bgBrightness !== 100 || cardBrightness !== 100) && (
+                  {(bgBrightness !== 100 || cardBrightness !== 100 || navBrightness !== 100) && (
                     <Button variant="ghost" size="sm" className="h-7 text-xs px-2"
-                      onClick={() => { handleBgBrightness(100); handleCardBrightness(100); }}>
+                      onClick={() => { handleBgBrightness(100); handleCardBrightness(100); handleNavBrightness(100); }}>
                       Réinitialiser
                     </Button>
                   )}
