@@ -526,7 +526,7 @@ function ContentPresentation() {
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-sm font-semibold">Présentation de l'application</p>
-          <p className="text-xs text-muted-foreground">Version destinée à la hiérarchie</p>
+          <p className="text-xs text-muted-foreground">Présentation en images de l'application</p>
         </div>
       </div>
       <div className="grid grid-cols-2 gap-2">
