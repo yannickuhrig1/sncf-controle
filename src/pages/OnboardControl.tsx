@@ -21,6 +21,8 @@ import { TrainFraudCompact } from '@/components/charts/TrainFraudCompact';
 import { SubmitProgress } from '@/components/controls/SubmitProgress';
 import { TrainLookupButton } from '@/components/controls/TrainLookupButton';
 import { useDailyTrains, DailyTrain } from '@/hooks/useDailyTrains';
+import { useTrainShareSession } from '@/hooks/useTrainShareSession';
+import { TrainShareDialog } from '@/components/controls/TrainShareDialog';
 import { LastSyncIndicator } from '@/components/controls/LastSyncIndicator';
 import { OfflineIndicator } from '@/components/controls/OfflineIndicator';
 import { Button } from '@/components/ui/button';
@@ -186,7 +188,26 @@ export default function OnboardControl() {
   const [trainStops, setTrainStops] = useState<import('@/hooks/useTrainLookup').TrainStop[]>([]);
 
   // Trains du jour
-  const { trains: dailyTrains, addTrain: addDailyTrain, updateTrain: updateDailyTrain, removeTrain: removeDailyTrain, isSharing, toggleSharing, teamTrains } = useDailyTrains(formState.controlDate);
+  const [shareDialogOpen, setShareDialogOpen] = useState(false);
+  const { session: shareSession, isLoading: shareLoading, error: shareError, setError: setShareError, createSession, joinSession, leaveSession, refreshMemberCount } = useTrainShareSession(formState.controlDate);
+  const { trains: dailyTrains, addTrain: addDailyTrain, updateTrain: updateDailyTrain, removeTrain: removeDailyTrain, isSharing, toggleSharing, teamTrains, applyShareCode } = useDailyTrains(formState.controlDate, shareSession?.code ?? null);
+
+  const handleCreateSession = async () => {
+    const code = await createSession();
+    if (code) applyShareCode(code);
+    return code;
+  };
+
+  const handleJoinSession = async (code: string) => {
+    const ok = await joinSession(code);
+    if (ok) applyShareCode(code);
+    return ok;
+  };
+
+  const handleLeaveSession = async () => {
+    applyShareCode(null);
+    await leaveSession();
+  };
 
   const handleLoadDailyTrain = (t: DailyTrain) => {
     setFormState(p => ({
@@ -898,17 +919,15 @@ export default function OnboardControl() {
                         <div className="space-y-1.5">
                           <div className="flex items-center justify-between">
                             <Label className="text-xs text-muted-foreground">Trains du jour</Label>
-                            {dailyTrains.length > 0 && (
-                              <button
-                                type="button"
-                                onClick={toggleSharing}
-                                title={isSharing ? 'Partage actif — cliquer pour arrêter' : 'Partager mes trains avec l\'équipe'}
-                                className={cn('flex items-center gap-1 text-[10px] rounded-full px-1.5 py-0.5 transition-colors', isSharing ? 'text-blue-500 bg-blue-50 dark:bg-blue-950/40' : 'text-muted-foreground hover:text-blue-400')}
-                              >
-                                <Users2 className="h-3 w-3" />
-                                {isSharing && <span>Partagé</span>}
-                              </button>
-                            )}
+                            <button
+                              type="button"
+                              onClick={() => setShareDialogOpen(true)}
+                              title="Partage par code privé"
+                              className={cn('flex items-center gap-1 text-[10px] rounded-full px-1.5 py-0.5 transition-colors', shareSession ? 'text-blue-500 bg-blue-50 dark:bg-blue-950/40' : 'text-muted-foreground hover:text-blue-400')}
+                            >
+                              <Users2 className="h-3 w-3" />
+                              {shareSession && <span>{shareSession.isOwner ? 'Partagé' : 'Rejoint'}</span>}
+                            </button>
                           </div>
                           <div className="flex flex-wrap gap-1.5">
                             {dailyTrains.map(t => (
@@ -955,6 +974,16 @@ export default function OnboardControl() {
                               </span>
                             ))}
                           </div>
+                        </div>
+                      )}
+                      {dailyTrains.length === 0 && teamTrains.length === 0 && (
+                        <div className="flex justify-end">
+                          <button type="button" onClick={() => setShareDialogOpen(true)}
+                            className={cn('flex items-center gap-1 text-[10px] rounded-full px-1.5 py-0.5 transition-colors', shareSession ? 'text-blue-500 bg-blue-50 dark:bg-blue-950/40' : 'text-muted-foreground hover:text-blue-400')}
+                          >
+                            <Users2 className="h-3 w-3" />
+                            <span>{shareSession ? (shareSession.isOwner ? 'Session active' : 'Session rejointe') : 'Partager / Rejoindre'}</span>
+                          </button>
                         </div>
                       )}
                       <div className="space-y-2">
@@ -1183,17 +1212,15 @@ export default function OnboardControl() {
                       <div className="space-y-1.5">
                         <div className="flex items-center justify-between">
                           <Label className="text-xs text-muted-foreground">Trains du jour</Label>
-                          {dailyTrains.length > 0 && (
-                            <button
-                              type="button"
-                              onClick={toggleSharing}
-                              title={isSharing ? 'Partage actif — cliquer pour arrêter' : 'Partager mes trains avec l\'équipe'}
-                              className={cn('flex items-center gap-1 text-[10px] rounded-full px-1.5 py-0.5 transition-colors', isSharing ? 'text-blue-500 bg-blue-50 dark:bg-blue-950/40' : 'text-muted-foreground hover:text-blue-400')}
-                            >
-                              <Users2 className="h-3 w-3" />
-                              {isSharing && <span>Partagé</span>}
-                            </button>
-                          )}
+                          <button
+                            type="button"
+                            onClick={() => setShareDialogOpen(true)}
+                            title="Partage par code privé"
+                            className={cn('flex items-center gap-1 text-[10px] rounded-full px-1.5 py-0.5 transition-colors', shareSession ? 'text-blue-500 bg-blue-50 dark:bg-blue-950/40' : 'text-muted-foreground hover:text-blue-400')}
+                          >
+                            <Users2 className="h-3 w-3" />
+                            {shareSession && <span>{shareSession.isOwner ? 'Partagé' : 'Rejoint'}</span>}
+                          </button>
                         </div>
                         <div className="flex flex-wrap gap-1.5">
                           {dailyTrains.map(t => (
@@ -1240,6 +1267,16 @@ export default function OnboardControl() {
                             </span>
                           ))}
                         </div>
+                      </div>
+                    )}
+                    {dailyTrains.length === 0 && teamTrains.length === 0 && (
+                      <div className="flex justify-end">
+                        <button type="button" onClick={() => setShareDialogOpen(true)}
+                          className={cn('flex items-center gap-1 text-[10px] rounded-full px-1.5 py-0.5 transition-colors', shareSession ? 'text-blue-500 bg-blue-50 dark:bg-blue-950/40' : 'text-muted-foreground hover:text-blue-400')}
+                        >
+                          <Users2 className="h-3 w-3" />
+                          <span>{shareSession ? (shareSession.isOwner ? 'Session active' : 'Session rejointe') : 'Partager / Rejoindre'}</span>
+                        </button>
                       </div>
                     )}
                     <div className="space-y-2">
@@ -1763,6 +1800,19 @@ export default function OnboardControl() {
         controls={controls as Control[]}
         open={exportOpen}
         onOpenChange={setExportOpen}
+      />
+
+      {/* Train Share Dialog */}
+      <TrainShareDialog
+        open={shareDialogOpen}
+        onOpenChange={setShareDialogOpen}
+        session={shareSession}
+        isLoading={shareLoading}
+        error={shareError}
+        onCreateSession={handleCreateSession}
+        onJoinSession={handleJoinSession}
+        onLeaveSession={handleLeaveSession}
+        onRefreshCount={refreshMemberCount}
       />
     </AppLayout>
   );

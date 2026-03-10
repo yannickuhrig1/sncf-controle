@@ -209,6 +209,7 @@ function ContentAbout() {
           <li>Rapport de synthèse avec cartes KPI (TC, PV, Bord, Total)</li>
           <li>Mode sombre / thèmes personnalisables</li>
           <li>Navigation personnalisable (sidebar + barre du bas)</li>
+          <li>Trains du jour partagés par code privé ou QR code (équipe)</li>
           <li>Compatible mobile, tablette et PC</li>
         </ul>
       </div>

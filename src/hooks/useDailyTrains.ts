@@ -8,7 +8,7 @@ export interface DailyTrain {
   trainInfo?: TrainInfo;
 }
 
-export function useDailyTrains(date: string) {
+export function useDailyTrains(date: string, shareCode?: string | null) {
   const { user } = useAuth();
   const key = `daily_trains_${date}`;
 
@@ -40,12 +40,18 @@ export function useDailyTrains(date: string) {
       setIsSharing((own as any[]).some(r => r.shared));
     }
 
-    // Team trains (shared by other users, deduplicated)
+    // Team trains (shared via same code session, deduplicated)
+    if (!shareCode) {
+      setTeamTrains([]);
+      return;
+    }
+
     const { data: team } = await supabase
       .from('daily_trains' as any)
       .select('train_number, train_info')
       .eq('date', date)
       .eq('shared', true)
+      .eq('share_code', shareCode)
       .neq('user_id', user.id);
 
     if (team) {
@@ -59,18 +65,18 @@ export function useDailyTrains(date: string) {
       }
       setTeamTrains(deduped);
     }
-  }, [user, date, key]);
+  }, [user, date, key, shareCode]);
 
-  // On date / user change: show localStorage immediately, then sync
+  // On date / user / shareCode change: show localStorage immediately, then sync
   useEffect(() => {
     try { setTrains(JSON.parse(localStorage.getItem(key) || '[]')); }
     catch { setTrains([]); }
     setTeamTrains([]);
     setIsSharing(false);
     fetchFromDb();
-  }, [date, user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [date, user?.id, shareCode]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Realtime: refresh on any change for today
+  // Realtime: refresh on any change
   useEffect(() => {
     if (!user) return;
     const channel = supabase
@@ -101,6 +107,7 @@ export function useDailyTrains(date: string) {
         train_number: trainNumber,
         train_info: trainInfo ?? null,
         shared: isSharing,
+        share_code: shareCode ?? null,
       }, { onConflict: 'user_id,date,train_number' }).then(() => {});
     }
   };
@@ -145,12 +152,23 @@ export function useDailyTrains(date: string) {
     if (!user) return;
     const next = !isSharing;
     setIsSharing(next);
+    // Update all trains for this day
     supabase.from('daily_trains' as any)
-      .update({ shared: next })
+      .update({ shared: next, share_code: next ? (shareCode ?? null) : null })
       .eq('user_id', user.id)
       .eq('date', date)
       .then(() => {});
   };
 
-  return { trains, addTrain, updateTrain, removeTrain, isSharing, toggleSharing, teamTrains };
+  // Apply shareCode to existing trains when joining a session
+  const applyShareCode = (code: string | null) => {
+    if (!user) return;
+    supabase.from('daily_trains' as any)
+      .update({ share_code: code, shared: code ? isSharing : false })
+      .eq('user_id', user.id)
+      .eq('date', date)
+      .then(() => {});
+  };
+
+  return { trains, addTrain, updateTrain, removeTrain, isSharing, toggleSharing, teamTrains, applyShareCode };
 }

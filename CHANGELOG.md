@@ -5,6 +5,16 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/),
 et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.10.42] - 2026-03-10
+
+### Ajouté
+- Trains du jour : partage privé par code (6 caractères) ou QR code — rejoindre via code ou QR, session propriétaire ou membre, fermer/quitter la session
+- Migration Supabase : tables `train_share_sessions` + `train_share_members`, colonne `share_code` sur `daily_trains`, RLS privé (visible uniquement aux membres de la session)
+- Bouton "Partager / Rejoindre" discret visible même quand aucun train n'est encore ajouté
+
+### Modifié
+- Remplacement du partage visible-par-tous par un système de session privée par code
+
 ## [1.10.41] - 2026-03-10
 
 ### Ajouté
