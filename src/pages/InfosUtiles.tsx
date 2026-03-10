@@ -490,7 +490,7 @@ function ContentPresentation() {
         </div>
       </div>
 
-      {/* Actions */}
+      {/* Actions — présentation générale */}
       <div className="grid grid-cols-1 gap-2">
         <Button
           className="w-full gap-2"
@@ -516,6 +516,37 @@ function ContentPresentation() {
         >
           <Mail className="h-4 w-4" />
           Envoyer par email
+        </Button>
+      </div>
+
+      {/* Présentation Direction */}
+      <div className="flex items-center gap-3 p-4 bg-amber-50 dark:bg-amber-950/20 rounded-xl border border-amber-200 dark:border-amber-800">
+        <div className="p-2.5 bg-amber-100 dark:bg-amber-900/40 rounded-lg shrink-0">
+          <Monitor className="h-6 w-6 text-amber-600 dark:text-amber-400" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-semibold">Présentation Direction</p>
+          <p className="text-xs text-muted-foreground">Version destinée à la hiérarchie</p>
+        </div>
+      </div>
+      <div className="grid grid-cols-2 gap-2">
+        <Button
+          variant="outline"
+          className="w-full gap-2"
+          onClick={() => window.open('/Présentation_SNCF_Controles_Direction.html', '_blank')}
+        >
+          <ExternalLink className="h-4 w-4" />
+          Ouvrir
+        </Button>
+        <Button
+          variant="outline"
+          className="w-full gap-2"
+          asChild
+        >
+          <a href="/Présentation_SNCF_Controles_Direction.html" download="Présentation_SNCF_Controles_Direction.html">
+            <Download className="h-4 w-4" />
+            Télécharger
+          </a>
         </Button>
       </div>
     </div>

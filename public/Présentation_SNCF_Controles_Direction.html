@@ -1,0 +1,1074 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1280">
+<title>SNCF Contrôles – Présentation Direction</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Inter',system-ui,Arial,sans-serif;background:#e8e8e8;color:#222;}
+.page-title{text-align:center;padding:40px 20px 20px;background:#1a1a2e;color:white;}
+.page-title h1{font-size:28px;font-weight:700;letter-spacing:2px;text-transform:uppercase;}
+.page-title p{color:#aaa;font-size:14px;margin-top:8px;}
+.nav-pills{display:flex;justify-content:center;gap:8px;padding:15px;background:#1a1a2e;flex-wrap:wrap;}
+.nav-pill{background:rgba(255,255,255,0.1);color:white;padding:6px 16px;border-radius:20px;font-size:12px;cursor:pointer;text-decoration:none;}
+.slide{width:1280px;min-height:720px;margin:15px auto;background:white;box-shadow:0 8px 30px rgba(0,0,0,0.2);position:relative;overflow:hidden;page-break-after:always;}
+
+/* SLIDE 1 - Couverture */
+.s1{background:linear-gradient(135deg,#C5003D 0%,#7a0025 40%,#1a1a2e 100%);display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:80px;}
+.s1 .logo-area{margin-bottom:40px;}
+.s1 .train-icon{font-size:80px;filter:drop-shadow(0 10px 30px rgba(0,0,0,0.5));}
+.s1 h1{font-size:64px;font-weight:900;color:white;letter-spacing:-1px;line-height:1.1;margin-bottom:15px;text-shadow:0 4px 20px rgba(0,0,0,0.3);}
+.s1 .subtitle{font-size:26px;color:rgba(255,255,255,0.85);font-weight:300;margin-bottom:50px;}
+.s1 .badges{display:flex;gap:15px;flex-wrap:wrap;justify-content:center;margin-bottom:50px;}
+.s1 .badge{background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);color:white;padding:10px 22px;border-radius:30px;font-size:15px;font-weight:500;backdrop-filter:blur(5px);}
+.s1 .author{color:rgba(255,255,255,0.5);font-size:14px;}
+.s1 .deco-circle{position:absolute;border-radius:50%;opacity:0.05;background:white;}
+
+/* HEADERS */
+.slide-header{background:linear-gradient(90deg,#C5003D,#a00030);color:white;padding:28px 60px;display:flex;align-items:center;gap:15px;}
+.slide-header h2{font-size:30px;font-weight:700;}
+.slide-header .header-icon{font-size:34px;}
+.slide-header .slide-num-h{margin-left:auto;background:rgba(255,255,255,0.2);padding:4px 14px;border-radius:20px;font-size:13px;}
+
+/* CONTENT */
+.content{padding:40px 60px;}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:start;}
+.three-col{display:grid;grid-template-columns:1fr 1fr 1fr;gap:25px;}
+.four-col{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:20px;}
+
+/* CARDS */
+.card{background:#f8f9fa;border-radius:14px;padding:25px;border-left:5px solid #C5003D;}
+.card.blue{border-left-color:#3B82F6;}
+.card.green{border-left-color:#10B981;}
+.card.orange{border-left-color:#F97316;}
+.card.purple{border-left-color:#8B5CF6;}
+.card h3{font-size:17px;font-weight:700;color:#C5003D;margin-bottom:12px;}
+.card.blue h3{color:#3B82F6;}
+.card.green h3{color:#10B981;}
+.card.orange h3{color:#F97316;}
+.card.purple h3{color:#8B5CF6;}
+.card p{font-size:14px;color:#555;line-height:1.7;}
+
+/* STAT CARDS */
+.stat-card{border-radius:14px;padding:25px 20px;text-align:center;color:white;position:relative;overflow:hidden;}
+.stat-card::before{content:'';position:absolute;top:-20px;right:-20px;width:80px;height:80px;border-radius:50%;background:rgba(255,255,255,0.1);}
+.stat-card.blue{background:linear-gradient(135deg,#3B82F6,#1d4ed8);}
+.stat-card.orange{background:linear-gradient(135deg,#F97316,#c2410c);}
+.stat-card.green{background:linear-gradient(135deg,#10B981,#047857);}
+.stat-card.red{background:linear-gradient(135deg,#EF4444,#b91c1c);}
+.stat-card.purple{background:linear-gradient(135deg,#8B5CF6,#6d28d9);}
+.stat-val{font-size:46px;font-weight:900;line-height:1;}
+.stat-lbl{font-size:12px;opacity:0.9;margin-top:8px;font-weight:500;text-transform:uppercase;letter-spacing:1px;}
+.stat-sub{font-size:11px;opacity:0.7;margin-top:4px;}
+
+/* FEATURE LIST */
+.feat-list{list-style:none;margin-top:15px;}
+.feat-list li{padding:10px 0;border-bottom:1px solid #eee;display:flex;align-items:flex-start;gap:12px;font-size:14px;color:#444;line-height:1.5;}
+.feat-list li:last-child{border-bottom:none;}
+.feat-check{background:#C5003D;color:white;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;margin-top:1px;}
+
+/* HIGHLIGHT */
+.highlight{background:linear-gradient(135deg,#C5003D,#7a0025);color:white;border-radius:14px;padding:28px;}
+.highlight h3{font-size:20px;font-weight:700;margin-bottom:12px;}
+.highlight p{font-size:14px;line-height:1.8;opacity:0.95;}
+.highlight ul{list-style:none;margin-top:10px;}
+.highlight ul li{padding:5px 0;font-size:14px;opacity:0.9;}
+
+/* APP MOCKUP */
+.mockup-container{border-radius:12px;overflow:hidden;border:2px solid #e5e7eb;box-shadow:0 8px 25px rgba(0,0,0,0.12);}
+.mockup-bar{background:#1f2937;padding:10px 16px;display:flex;gap:7px;align-items:center;}
+.mockup-dot{width:12px;height:12px;border-radius:50%;}
+.mockup-url{flex:1;background:rgba(255,255,255,0.1);border-radius:20px;padding:4px 12px;color:rgba(255,255,255,0.6);font-size:11px;margin-left:10px;}
+.mockup-body{display:flex;background:#f5f5f5;min-height:380px;}
+.mockup-sidebar{background:#C5003D;width:190px;flex-shrink:0;padding:15px 10px;}
+.mockup-logo{color:white;font-size:13px;font-weight:700;padding:10px 8px 15px;border-bottom:1px solid rgba(255,255,255,0.2);margin-bottom:10px;}
+.mockup-logo span{font-size:10px;display:block;opacity:0.6;font-weight:400;margin-top:2px;}
+.m-nav{color:rgba(255,255,255,0.75);padding:9px 12px;border-radius:8px;font-size:12px;display:flex;align-items:center;gap:8px;margin-bottom:3px;}
+.m-nav.active{background:rgba(255,255,255,0.2);color:white;font-weight:600;}
+.m-nav-icon{width:16px;text-align:center;font-size:14px;}
+.mockup-main{flex:1;padding:20px;background:white;}
+.mockup-page-title{font-size:18px;font-weight:700;color:#111;margin-bottom:4px;display:flex;align-items:center;gap:8px;}
+.mockup-page-sub{font-size:11px;color:#888;margin-bottom:16px;}
+
+/* TAGS */
+.tag{display:inline-block;background:#C5003D;color:white;padding:3px 10px;border-radius:12px;font-size:11px;margin:2px;font-weight:500;}
+.tag.blue{background:#3B82F6;}
+.tag.green{background:#10B981;}
+.tag.orange{background:#F97316;}
+
+/* FOOTER */
+.slide-footer{background:#f0f0f0;padding:18px 60px;display:flex;justify-content:space-between;align-items:center;border-top:3px solid #C5003D;margin-top:auto;}
+.sf-logo{color:#C5003D;font-weight:700;font-size:16px;}
+.sf-info{color:#888;font-size:12px;}
+
+/* ROLES */
+.role-badge{display:inline-block;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:600;}
+.role-admin{background:#fde8ee;color:#C5003D;}
+.role-manager{background:#e8f0fe;color:#3B82F6;}
+.role-agent{background:#e8f8f1;color:#10B981;}
+
+/* TIMELINE */
+.timeline{position:relative;margin-top:20px;}
+.timeline::before{content:'';position:absolute;left:20px;top:0;bottom:0;width:2px;background:#e5e7eb;}
+.tl-item{display:flex;gap:20px;margin-bottom:20px;position:relative;}
+.tl-dot{width:40px;height:40px;border-radius:50%;background:#C5003D;color:white;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;z-index:1;}
+.tl-content{flex:1;background:#f9f9f9;border-radius:10px;padding:14px 18px;}
+.tl-content h4{font-size:15px;font-weight:600;color:#111;margin-bottom:5px;}
+.tl-content p{font-size:13px;color:#666;line-height:1.6;}
+
+/* PROCESS FLOW */
+.process-flow{display:flex;align-items:center;gap:0;margin-top:25px;}
+.process-step{flex:1;text-align:center;padding:20px 10px;}
+.process-step .step-icon{font-size:32px;margin-bottom:10px;}
+.process-step .step-title{font-size:13px;font-weight:700;color:#111;margin-bottom:6px;}
+.process-step .step-desc{font-size:11px;color:#666;line-height:1.5;}
+.process-arrow{color:#C5003D;font-size:24px;flex-shrink:0;}
+
+/* METRIC ROW */
+.metric-row{display:flex;gap:20px;margin-top:20px;}
+.metric-item{flex:1;background:linear-gradient(135deg,#fff5f7,#fff);border:1px solid #fcc;border-radius:12px;padding:18px;text-align:center;}
+.metric-item .m-val{font-size:36px;font-weight:800;color:#C5003D;}
+.metric-item .m-label{font-size:12px;color:#888;margin-top:4px;}
+
+/* SCREEN PREVIEW CARDS */
+.screen-card{background:white;border-radius:12px;border:2px solid #e5e7eb;overflow:hidden;}
+.screen-header{background:#C5003D;padding:12px 16px;color:white;font-size:13px;font-weight:600;display:flex;align-items:center;gap:8px;}
+.screen-body{padding:16px;}
+
+/* COMPARISON TABLE */
+.comp-table{width:100%;border-collapse:collapse;margin-top:15px;}
+.comp-table th{background:#C5003D;color:white;padding:12px 16px;text-align:left;font-size:13px;}
+.comp-table th:first-child{border-radius:8px 0 0 0;}
+.comp-table th:last-child{border-radius:0 8px 0 0;}
+.comp-table td{padding:12px 16px;font-size:13px;border-bottom:1px solid #f0f0f0;}
+.comp-table tr:nth-child(even) td{background:#fafafa;}
+.check-yes{color:#10B981;font-weight:700;font-size:16px;}
+.check-no{color:#EF4444;font-weight:700;font-size:16px;}
+
+/* LARGE NUMBER DISPLAY */
+.big-numbers{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;margin-top:30px;}
+.big-num-card{background:linear-gradient(135deg,#fff5f7,#fff);border:2px solid #fdd;border-radius:14px;padding:25px;text-align:center;}
+.big-num-val{font-size:52px;font-weight:900;color:#C5003D;line-height:1;}
+.big-num-label{font-size:13px;color:#888;margin-top:8px;font-weight:500;}
+.big-num-icon{font-size:28px;margin-bottom:8px;}
+
+/* SECTION DIVIDER */
+.section-divider{height:4px;background:linear-gradient(90deg,#C5003D,#F97316,#10B981,#3B82F6);border-radius:2px;margin:25px 0;}
+
+/* QUOTE */
+.quote-box{background:#f8f9fa;border-left:5px solid #C5003D;padding:20px 25px;border-radius:0 10px 10px 0;margin:20px 0;}
+.quote-box p{font-style:italic;font-size:15px;color:#444;line-height:1.8;}
+.quote-box cite{font-size:12px;color:#888;display:block;margin-top:8px;}
+
+/* ICON GRID */
+.icon-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:15px;margin-top:20px;}
+.icon-item{display:flex;align-items:flex-start;gap:12px;background:#f9f9f9;border-radius:10px;padding:15px;}
+.icon-item .ii-icon{font-size:24px;flex-shrink:0;}
+.icon-item h4{font-size:13px;font-weight:700;color:#111;margin-bottom:4px;}
+.icon-item p{font-size:12px;color:#666;line-height:1.5;}
+
+/* PWA VISUAL */
+.pwa-visual{display:flex;gap:20px;align-items:center;margin-top:20px;}
+.device{border-radius:20px;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,0.2);}
+.device-phone{width:140px;}
+.device-tablet{width:220px;}
+.device-header{background:#1f2937;height:30px;display:flex;align-items:center;justify-content:center;}
+.device-dot{width:8px;height:8px;border-radius:50%;background:#555;margin:0 2px;}
+.device-screen{background:white;min-height:200px;}
+.device-screen-phone{min-height:260px;}
+
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- SLIDE 1 – COUVERTURE -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="slide s1">
+  <div style="position:absolute;width:500px;height:500px;border-radius:50%;background:rgba(255,255,255,0.04);top:-200px;right:-200px;"></div>
+  <div style="position:absolute;width:300px;height:300px;border-radius:50%;background:rgba(255,255,255,0.04);bottom:-100px;left:-100px;"></div>
+  <div style="position:absolute;width:200px;height:200px;border-radius:50%;background:rgba(255,255,255,0.06);top:200px;left:50px;"></div>
+  
+  <div class="logo-area">
+    <div style="background:rgba(255,255,255,0.15);border:2px solid rgba(255,255,255,0.3);border-radius:20px;padding:20px 40px;backdrop-filter:blur(10px);">
+      <span style="font-size:24px;font-weight:900;color:white;letter-spacing:2px;">🚆 SNCF</span>
+      <span style="font-size:24px;font-weight:300;color:rgba(255,255,255,0.8);letter-spacing:2px;"> CONTRÔLES</span>
+    </div>
+  </div>
+  
+  <div class="train-icon">🚄</div>
+  
+  <h1>Application de Suivi<br>des Contrôles</h1>
+  <div class="subtitle">Digitalisation de la saisie et du suivi de la fraude</div>
+  
+  <div class="badges">
+    <div class="badge">📱 Progressive Web App</div>
+    <div class="badge">☁️ Cloud synchronisé</div>
+    <div class="badge">📊 Statistiques temps réel</div>
+    <div class="badge">👥 Multi-agents</div>
+    <div class="badge">🔒 Sécurisé</div>
+  </div>
+  
+  <div style="width:600px;height:1px;background:rgba(255,255,255,0.2);margin-bottom:25px;"></div>
+  
+  <div class="author">
+    Présenté par <strong style="color:rgba(255,255,255,0.9);">Yannick UHRIG</strong> — ASCT SNCF &nbsp;|&nbsp; 
+    Version 1.10.35 &nbsp;|&nbsp; Mars 2026
+  </div>
+  
+  <div style="position:absolute;bottom:30px;right:40px;color:rgba(255,255,255,0.3);font-size:12px;">1 / 9</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- SLIDE 2 – SOMMAIRE -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="slide">
+  <div class="slide-header">
+    <span class="header-icon">📋</span>
+    <h2>Sommaire</h2>
+    <span class="slide-num-h">2 / 9</span>
+  </div>
+  <div class="content">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:30px;margin-top:10px;">
+      <div>
+        <div style="display:flex;align-items:center;gap:15px;padding:20px;background:linear-gradient(135deg,#fff5f7,#fff);border-radius:12px;margin-bottom:15px;border:1px solid #fdd;">
+          <div style="width:50px;height:50px;background:#C5003D;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;color:white;flex-shrink:0;">🎯</div>
+          <div><div style="font-weight:700;font-size:16px;color:#111;">Contexte & Problématique</div><div style="font-size:12px;color:#888;margin-top:3px;">Genèse du projet — Slide 3</div></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:15px;padding:20px;background:linear-gradient(135deg,#f0f7ff,#fff);border-radius:12px;margin-bottom:15px;border:1px solid #ddf;">
+          <div style="width:50px;height:50px;background:#3B82F6;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;color:white;flex-shrink:0;">📊</div>
+          <div><div style="font-weight:700;font-size:16px;color:#111;">Tableau de Bord</div><div style="font-size:12px;color:#888;margin-top:3px;">Vue d'ensemble — Slide 4</div></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:15px;padding:20px;background:linear-gradient(135deg,#f0fff7,#fff);border-radius:12px;margin-bottom:15px;border:1px solid #dfd;">
+          <div style="width:50px;height:50px;background:#10B981;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;color:white;flex-shrink:0;">🚂</div>
+          <div><div style="font-weight:700;font-size:16px;color:#111;">Contrôle à Bord</div><div style="font-size:12px;color:#888;margin-top:3px;">Saisie en train — Slide 5</div></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:15px;padding:20px;background:linear-gradient(135deg,#fff8f0,#fff);border-radius:12px;border:1px solid #fed;">
+          <div style="width:50px;height:50px;background:#F97316;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;color:white;flex-shrink:0;">🏢</div>
+          <div><div style="font-weight:700;font-size:16px;color:#111;">Contrôle en Gare</div><div style="font-size:12px;color:#888;margin-top:3px;">Saisie en station — Slide 6</div></div>
+        </div>
+      </div>
+      <div>
+        <div style="display:flex;align-items:center;gap:15px;padding:20px;background:linear-gradient(135deg,#f5f0ff,#fff);border-radius:12px;margin-bottom:15px;border:1px solid #ede;">
+          <div style="width:50px;height:50px;background:#8B5CF6;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;color:white;flex-shrink:0;">📈</div>
+          <div><div style="font-weight:700;font-size:16px;color:#111;">Statistiques</div><div style="font-size:12px;color:#888;margin-top:3px;">Analyse de l'activité — Slide 7</div></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:15px;padding:20px;background:linear-gradient(135deg,#fff5f7,#fff);border-radius:12px;margin-bottom:15px;border:1px solid #fdd;">
+          <div style="width:50px;height:50px;background:#C5003D;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;color:white;flex-shrink:0;">👔</div>
+          <div><div style="font-weight:700;font-size:16px;color:#111;">Espace Manager</div><div style="font-size:12px;color:#888;margin-top:3px;">Pilotage d'équipe — Slide 8</div></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:15px;padding:20px;background:linear-gradient(135deg,#f0f7ff,#fff);border-radius:12px;margin-bottom:15px;border:1px solid #ddf;">
+          <div style="width:50px;height:50px;background:#0EA5E9;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;color:white;flex-shrink:0;">🗂️</div>
+          <div><div style="font-weight:700;font-size:16px;color:#111;">Historique</div><div style="font-size:12px;color:#888;margin-top:3px;">Archives & export — Slide 8</div></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:15px;padding:20px;background:linear-gradient(135deg,#f0fff7,#fff);border-radius:12px;border:1px solid #dfd;">
+          <div style="width:50px;height:50px;background:#10B981;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;color:white;flex-shrink:0;">🚀</div>
+          <div><div style="font-weight:700;font-size:16px;color:#111;">Points Forts & Perspectives</div><div style="font-size:12px;color:#888;margin-top:3px;">Bénéfices & évolutions — Slide 9</div></div>
+        </div>
+      </div>
+    </div>
+    
+    <div style="margin-top:25px;background:linear-gradient(90deg,#C5003D,#7a0025);border-radius:12px;padding:20px 30px;display:flex;align-items:center;gap:20px;">
+      <span style="font-size:28px;">💡</span>
+      <div>
+        <div style="color:white;font-weight:700;font-size:16px;">Application disponible sur</div>
+        <div style="color:rgba(255,255,255,0.85);font-size:14px;margin-top:4px;">🌐 sncf-controle.vercel.app — Accessible sur smartphone, tablette et ordinateur</div>
+      </div>
+    </div>
+  </div>
+  <div class="slide-footer">
+    <div class="sf-logo">🚆 SNCF Contrôles</div>
+    <div class="sf-info">Yannick UHRIG — ASCT SNCF — Mars 2026</div>
+    <div class="sf-info">sncf-controle.vercel.app</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- SLIDE 3 – CONTEXTE -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="slide">
+  <div class="slide-header">
+    <span class="header-icon">🎯</span>
+    <h2>Contexte & Problématique</h2>
+    <span class="slide-num-h">3 / 9</span>
+  </div>
+  <div class="content">
+    <div class="two-col">
+      <div>
+        <h3 style="font-size:20px;font-weight:700;color:#111;margin-bottom:15px;">La réalité du terrain</h3>
+        <p style="font-size:14px;color:#555;line-height:1.8;margin-bottom:20px;">En tant qu'ASCT (Agent Commercial Train), le quotidien du contrôle génère un volume important de données : voyageurs contrôlés, infractions constatées, procès-verbaux rédigés... Avant cet outil, la gestion de ces informations restait fragmentée.</p>
+        
+        <div style="background:#fff5f5;border:1px solid #fdd;border-radius:12px;padding:20px;margin-bottom:20px;">
+          <div style="font-weight:700;font-size:15px;color:#c0392b;margin-bottom:12px;display:flex;align-items:center;gap:8px;"><span>⚠️</span> Problèmes identifiés</div>
+          <ul style="list-style:none;">
+            <li style="padding:7px 0;border-bottom:1px solid #fcc;font-size:13px;color:#444;display:flex;align-items:center;gap:10px;"><span style="color:#e74c3c;font-size:16px;">✗</span> Saisie papier chronophage et source d'erreurs</li>
+            <li style="padding:7px 0;border-bottom:1px solid #fcc;font-size:13px;color:#444;display:flex;align-items:center;gap:10px;"><span style="color:#e74c3c;font-size:16px;">✗</span> Données non centralisées, suivi difficile</li>
+            <li style="padding:7px 0;border-bottom:1px solid #fcc;font-size:13px;color:#444;display:flex;align-items:center;gap:10px;"><span style="color:#e74c3c;font-size:16px;">✗</span> Absence de statistiques en temps réel</li>
+            <li style="padding:7px 0;border-bottom:1px solid #fcc;font-size:13px;color:#444;display:flex;align-items:center;gap:10px;"><span style="color:#e74c3c;font-size:16px;">✗</span> Coordination difficile lors des contrôles multi-agents</li>
+            <li style="padding:7px 0;font-size:13px;color:#444;display:flex;align-items:center;gap:10px;"><span style="color:#e74c3c;font-size:16px;">✗</span> Reporting manuel vers la hiérarchie fastidieux</li>
+          </ul>
+        </div>
+      </div>
+      
+      <div>
+        <div class="highlight" style="margin-bottom:20px;">
+          <h3>💡 La Solution Développée</h3>
+          <p>Une application web progressive (PWA) spécifiquement conçue pour les ASCT, accessible sur n'importe quel appareil, qui digitalise l'intégralité du processus de contrôle : de la saisie sur le terrain jusqu'au reporting direction.</p>
+        </div>
+        
+        <div style="background:#f0fff7;border:1px solid #c3e6cb;border-radius:12px;padding:20px;">
+          <div style="font-weight:700;font-size:15px;color:#155724;margin-bottom:12px;display:flex;align-items:center;gap:8px;"><span>✅</span> Objectifs atteints</div>
+          <ul style="list-style:none;">
+            <li style="padding:7px 0;border-bottom:1px solid #b8dfc4;font-size:13px;color:#444;display:flex;align-items:center;gap:10px;"><span style="color:#10B981;font-size:16px;">✓</span> Saisie rapide et intuitive, même en mouvement</li>
+            <li style="padding:7px 0;border-bottom:1px solid #b8dfc4;font-size:13px;color:#444;display:flex;align-items:center;gap:10px;"><span style="color:#10B981;font-size:16px;">✓</span> Toutes les données centralisées dans le cloud</li>
+            <li style="padding:7px 0;border-bottom:1px solid #b8dfc4;font-size:13px;color:#444;display:flex;align-items:center;gap:10px;"><span style="color:#10B981;font-size:16px;">✓</span> Statistiques et graphiques automatiques</li>
+            <li style="padding:7px 0;border-bottom:1px solid #b8dfc4;font-size:13px;color:#444;display:flex;align-items:center;gap:10px;"><span style="color:#10B981;font-size:16px;">✓</span> Contrôle multi-agents synchronisé en direct</li>
+            <li style="padding:7px 0;font-size:13px;color:#444;display:flex;align-items:center;gap:10px;"><span style="color:#10B981;font-size:16px;">✓</span> Export automatique pour la direction</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    
+    <div class="section-divider"></div>
+    
+    <div class="process-flow">
+      <div class="process-step">
+        <div class="step-icon">🚂</div>
+        <div class="step-title">Contrôle terrain</div>
+        <div class="step-desc">Agent saisit les données en temps réel</div>
+      </div>
+      <div class="process-arrow">→</div>
+      <div class="process-step">
+        <div class="step-icon">📱</div>
+        <div class="step-title">Application</div>
+        <div class="step-desc">Saisie rapide, guidée et structurée</div>
+      </div>
+      <div class="process-arrow">→</div>
+      <div class="process-step">
+        <div class="step-icon">☁️</div>
+        <div class="step-title">Cloud sync</div>
+        <div class="step-desc">Données synchronisées instantanément</div>
+      </div>
+      <div class="process-arrow">→</div>
+      <div class="process-step">
+        <div class="step-icon">📊</div>
+        <div class="step-title">Statistiques</div>
+        <div class="step-desc">Analyse automatique de l'activité</div>
+      </div>
+      <div class="process-arrow">→</div>
+      <div class="process-step">
+        <div class="step-icon">👔</div>
+        <div class="step-title">Direction</div>
+        <div class="step-desc">Reporting clair et exportable</div>
+      </div>
+    </div>
+  </div>
+  <div class="slide-footer">
+    <div class="sf-logo">🚆 SNCF Contrôles</div>
+    <div class="sf-info">Yannick UHRIG — ASCT SNCF — Mars 2026</div>
+    <div class="sf-info">sncf-controle.vercel.app</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- SLIDE 4 – TABLEAU DE BORD -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="slide">
+  <div class="slide-header">
+    <span class="header-icon">📊</span>
+    <h2>Tableau de Bord — Vue d'ensemble instantanée</h2>
+    <span class="slide-num-h">4 / 9</span>
+  </div>
+  <div class="content">
+    <div class="two-col">
+      <div>
+        <p style="font-size:14px;color:#555;line-height:1.8;margin-bottom:20px;">Le tableau de bord est la page d'accueil de l'application. Il centralise en un seul coup d'œil tous les indicateurs clés du jour, de la semaine, du mois ou de l'année. Chaque agent peut basculer entre sa propre vue et celle de l'équipe entière.</p>
+        
+        <!-- Mockup du tableau de bord -->
+        <div class="mockup-container">
+          <div class="mockup-bar">
+            <div class="mockup-dot" style="background:#ff5f57;"></div>
+            <div class="mockup-dot" style="background:#ffbd2e;"></div>
+            <div class="mockup-dot" style="background:#28c940;"></div>
+            <div class="mockup-url">sncf-controle.vercel.app</div>
+          </div>
+          <div class="mockup-body">
+            <div class="mockup-sidebar">
+              <div class="mockup-logo">🚆 SNCF Contrôles<span>v1.10.35 · 09/03/26</span></div>
+              <div class="m-nav active"><span class="m-nav-icon">⊞</span>Accueil</div>
+              <div class="m-nav"><span class="m-nav-icon">🚂</span>À bord</div>
+              <div class="m-nav"><span class="m-nav-icon">🏢</span>En gare</div>
+              <div class="m-nav"><span class="m-nav-icon">📈</span>Stats</div>
+              <div class="m-nav"><span class="m-nav-icon">👔</span>Manager</div>
+              <div class="m-nav"><span class="m-nav-icon">📋</span>Historique</div>
+              <div class="m-nav"><span class="m-nav-icon">⚙️</span>Paramètres</div>
+            </div>
+            <div class="mockup-main">
+              <div class="mockup-page-title">⊞ Tableau de bord</div>
+              <div class="mockup-page-sub">Bonjour Yannick !</div>
+              <div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap;">
+                <span style="background:#C5003D;color:white;padding:3px 10px;border-radius:8px;font-size:10px;">Jour</span>
+                <span style="background:#f5f5f5;color:#666;padding:3px 10px;border-radius:8px;font-size:10px;">Semaine</span>
+                <span style="background:#f5f5f5;color:#666;padding:3px 10px;border-radius:8px;font-size:10px;">Mois</span>
+                <span style="background:#f5f5f5;color:#666;padding:3px 10px;border-radius:8px;font-size:10px;">Année</span>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;margin-bottom:12px;">
+                <div style="background:#3B82F6;border-radius:8px;padding:10px;color:white;text-align:center;"><div style="font-size:20px;font-weight:800;">378</div><div style="font-size:9px;opacity:0.8;">Voyageurs</div></div>
+                <div style="background:#F97316;border-radius:8px;padding:10px;color:white;text-align:center;"><div style="font-size:20px;font-weight:800;">8.47%</div><div style="font-size:9px;opacity:0.8;">Fraude</div></div>
+                <div style="background:#10B981;border-radius:8px;padding:10px;color:white;text-align:center;"><div style="font-size:20px;font-weight:800;">346</div><div style="font-size:9px;opacity:0.8;">En règle</div></div>
+                <div style="background:#EF4444;border-radius:8px;padding:10px;color:white;text-align:center;"><div style="font-size:20px;font-weight:800;">20</div><div style="font-size:9px;opacity:0.8;">PV</div></div>
+              </div>
+              <div style="background:#f9f9f9;border-radius:8px;padding:10px;font-size:11px;color:#555;">
+                <div style="font-weight:600;margin-bottom:6px;color:#111;">Détails</div>
+                <div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid #eee;">
+                  <span>🟢 Tarifs contrôle</span><span style="font-weight:600;">12</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid #eee;">
+                  <span>🔴 Procès-verbaux</span><span style="font-weight:600;">20</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;padding:3px 0;">
+                  <span>🔵 Tarifs à bord</span><span style="font-weight:600;">8</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div>
+        <h3 style="font-size:18px;font-weight:700;color:#111;margin-bottom:15px;">Fonctionnalités du tableau de bord</h3>
+        <ul class="feat-list">
+          <li><span class="feat-check">✓</span><div><strong>4 métriques clés en temps réel</strong> — Voyageurs, taux de fraude, en règle, PV</div></li>
+          <li><span class="feat-check">✓</span><div><strong>Filtres temporels flexibles</strong> — Jour, Semaine, Mois, Année, Personnalisé</div></li>
+          <li><span class="feat-check">✓</span><div><strong>Vue individuelle ou équipe</strong> — "Mes données" vs "Tout voir"</div></li>
+          <li><span class="feat-check">✓</span><div><strong>Filtres par type</strong> — Tous / À bord / En gare</div></li>
+          <li><span class="feat-check">✓</span><div><strong>Détail par catégorie</strong> — STT, RNV, PV, Tarifs bord, Relevés d'identité</div></li>
+          <li><span class="feat-check">✓</span><div><strong>Accès rapide aux saisies</strong> — Boutons "Contrôle à bord" et "En gare"</div></li>
+          <li><span class="feat-check">✓</span><div><strong>Synchronisation cloud</strong> — Données mises à jour en direct</div></li>
+        </ul>
+        
+        <div style="margin-top:20px;background:linear-gradient(135deg,#f0f7ff,#fff);border:1px solid #ddf;border-radius:12px;padding:18px;">
+          <div style="font-weight:700;font-size:14px;color:#3B82F6;margin-bottom:10px;">📅 Navigation temporelle intuitive</div>
+          <p style="font-size:13px;color:#555;line-height:1.7;">Naviguez facilement entre les jours, semaines et mois avec les flèches directionnelles. La date actuelle est toujours mise en évidence pour un repérage immédiat.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="slide-footer">
+    <div class="sf-logo">🚆 SNCF Contrôles</div>
+    <div class="sf-info">Yannick UHRIG — ASCT SNCF — Mars 2026</div>
+    <div class="sf-info">sncf-controle.vercel.app</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- SLIDE 5 – CONTRÔLE À BORD -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="slide">
+  <div class="slide-header">
+    <span class="header-icon">🚂</span>
+    <h2>Contrôle à Bord — Saisie en train</h2>
+    <span class="slide-num-h">5 / 9</span>
+  </div>
+  <div class="content">
+    <div class="two-col">
+      <div>
+        <!-- Mockup À bord -->
+        <div class="mockup-container">
+          <div class="mockup-bar">
+            <div class="mockup-dot" style="background:#ff5f57;"></div>
+            <div class="mockup-dot" style="background:#ffbd2e;"></div>
+            <div class="mockup-dot" style="background:#28c940;"></div>
+            <div class="mockup-url">sncf-controle.vercel.app/onboard</div>
+          </div>
+          <div class="mockup-body">
+            <div class="mockup-sidebar">
+              <div class="mockup-logo">🚆 SNCF Contrôles<span>v1.10.35</span></div>
+              <div class="m-nav"><span class="m-nav-icon">⊞</span>Accueil</div>
+              <div class="m-nav active"><span class="m-nav-icon">🚂</span>À bord</div>
+              <div class="m-nav"><span class="m-nav-icon">🏢</span>En gare</div>
+              <div class="m-nav"><span class="m-nav-icon">📈</span>Stats</div>
+            </div>
+            <div class="mockup-main">
+              <div class="mockup-page-title">🚂 Contrôle à bord</div>
+              <div class="mockup-page-sub">Saisissez les données du contrôle</div>
+              
+              <div style="display:flex;gap:8px;margin-bottom:10px;">
+                <span style="background:#C5003D;color:white;padding:4px 12px;border-radius:8px;font-size:10px;font-weight:600;">Étendu</span>
+                <span style="background:#f5f5f5;color:#666;padding:4px 12px;border-radius:8px;font-size:10px;">Compact</span>
+              </div>
+              
+              <div style="background:#f5f5f5;border-radius:8px;padding:10px;margin-bottom:8px;">
+                <div style="font-size:10px;font-weight:600;color:#111;margin-bottom:6px;">📋 Informations du contrôle</div>
+                <div style="background:white;border-radius:6px;padding:6px 10px;font-size:10px;color:#aaa;margin-bottom:5px;border:1px solid #eee;">N° de train (ex: TGV 6201)</div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:5px;">
+                  <div style="background:white;border-radius:6px;padding:6px;font-size:10px;color:#aaa;border:1px solid #eee;">🔍 Gare départ</div>
+                  <div style="background:white;border-radius:6px;padding:6px;font-size:10px;color:#aaa;border:1px solid #eee;">🔍 Gare arrivée</div>
+                </div>
+                <div style="display:flex;align-items:center;gap:6px;background:white;border-radius:6px;padding:6px;border:1px solid #eee;">
+                  <span style="font-size:10px;color:#555;">Passagers :</span>
+                  <span style="background:#eee;padding:2px 8px;border-radius:4px;font-size:10px;">—10</span>
+                  <span style="background:#eee;padding:2px 8px;border-radius:4px;font-size:10px;">—1</span>
+                  <span style="flex:1;text-align:center;font-size:12px;font-weight:700;">0</span>
+                  <span style="background:#C5003D;color:white;padding:2px 8px;border-radius:4px;font-size:10px;">+1</span>
+                  <span style="background:#C5003D;color:white;padding:2px 8px;border-radius:4px;font-size:10px;">+10</span>
+                </div>
+              </div>
+              
+              <div style="background:#fff8e8;border:1px solid #fde;border-radius:8px;padding:10px;margin-bottom:8px;">
+                <div style="font-size:10px;font-weight:700;color:#F97316;margin-bottom:6px;">⚡ STT Rapides</div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+                  <div style="background:white;border-radius:6px;padding:8px;text-align:center;border:1px solid #fed;">
+                    <div style="font-size:11px;font-weight:700;color:#555;">STT 50€</div>
+                    <div style="font-size:9px;color:#888;">Tarif contrôle</div>
+                    <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-top:5px;">
+                      <span style="background:#eee;padding:2px 8px;border-radius:4px;font-size:10px;">−</span>
+                      <span style="font-weight:700;font-size:13px;">0</span>
+                      <span style="background:#C5003D;color:white;padding:2px 8px;border-radius:4px;font-size:10px;">+</span>
+                    </div>
+                  </div>
+                  <div style="background:white;border-radius:6px;padding:8px;text-align:center;border:1px solid #fdd;">
+                    <div style="font-size:11px;font-weight:700;color:#C5003D;">PV 100€</div>
+                    <div style="font-size:9px;color:#888;">Procès-verbal</div>
+                    <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-top:5px;">
+                      <span style="background:#eee;padding:2px 8px;border-radius:4px;font-size:10px;">−</span>
+                      <span style="font-weight:700;font-size:13px;color:#C5003D;">0</span>
+                      <span style="background:#C5003D;color:white;padding:2px 8px;border-radius:4px;font-size:10px;">+</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div style="background:#f5f5f5;border-radius:8px;padding:10px;">
+                <div style="font-size:10px;font-weight:700;color:#555;margin-bottom:6px;">📄 Tarif contrôle (infractions régularisées)</div>
+                <div style="display:flex;gap:4px;flex-wrap:wrap;">
+                  <span style="background:#C5003D;color:white;padding:2px 8px;border-radius:8px;font-size:9px;">STT</span>
+                  <span style="background:#eee;color:#555;padding:2px 8px;border-radius:8px;font-size:9px;">RNV</span>
+                  <span style="background:#eee;color:#555;padding:2px 8px;border-radius:8px;font-size:9px;">Titre tiers</span>
+                  <span style="background:#eee;color:#555;padding:2px 8px;border-radius:8px;font-size:9px;">D. naissance</span>
+                  <span style="background:#eee;color:#555;padding:2px 8px;border-radius:8px;font-size:9px;">Autre</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div>
+        <h3 style="font-size:18px;font-weight:700;color:#111;margin-bottom:15px;">Tous les types de saisie couverts</h3>
+        <ul class="feat-list">
+          <li><span class="feat-check">✓</span><div><strong>Informations train</strong> — N°, origine, destination, date, heure, passagers</div></li>
+          <li><span class="feat-check">✓</span><div><strong>STT Rapides</strong> — Boutons 50€ et PV 100€ pour les cas les plus fréquents</div></li>
+          <li><span class="feat-check">✓</span><div><strong>Tarifs contrôle détaillés</strong> — STT, RNV, Titre tiers, Date de naissance, Autre</div></li>
+          <li><span class="feat-check">✓</span><div><strong>Procès-verbaux (PV)</strong> — Infractions verbalisées avec motif</div></li>
+          <li><span class="feat-check">✓</span><div><strong>Tarif à bord / Exceptionnel</strong> — Ne comptent pas dans le taux de fraude</div></li>
+          <li><span class="feat-check">✓</span><div><strong>Relevés d'identité</strong> — RI positif (identité vérifiée) et RI négatif</div></li>
+          <li><span class="feat-check">✓</span><div><strong>Situations spéciales</strong> — Train supprimé, sur-occupation</div></li>
+        </ul>
+        
+        <div style="margin-top:20px;display:grid;grid-template-columns:1fr 1fr;gap:15px;">
+          <div style="background:linear-gradient(135deg,#fff5f7,#fff);border:1px solid #fdd;border-radius:10px;padding:15px;text-align:center;">
+            <div style="font-size:28px;margin-bottom:5px;">📱</div>
+            <div style="font-weight:700;font-size:13px;color:#C5003D;">Mode Étendu</div>
+            <div style="font-size:11px;color:#666;margin-top:5px;">Tous les champs visibles, saisie complète et détaillée</div>
+          </div>
+          <div style="background:linear-gradient(135deg,#f0f7ff,#fff);border:1px solid #ddf;border-radius:10px;padding:15px;text-align:center;">
+            <div style="font-size:28px;margin-bottom:5px;">⚡</div>
+            <div style="font-weight:700;font-size:13px;color:#3B82F6;">Mode Compact</div>
+            <div style="font-size:11px;color:#666;margin-top:5px;">Interface réduite pour saisie ultra-rapide sur le terrain</div>
+          </div>
+        </div>
+        
+        <div style="margin-top:15px;background:#f0fff7;border:1px solid #c3e6cb;border-radius:10px;padding:15px;">
+          <div style="font-weight:700;font-size:13px;color:#10B981;margin-bottom:6px;">🔍 Info SNCF automatique</div>
+          <p style="font-size:12px;color:#555;line-height:1.6;">Saisissez un numéro de train et l'application récupère automatiquement les informations SNCF associées (trajet, horaires).</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="slide-footer">
+    <div class="sf-logo">🚆 SNCF Contrôles</div>
+    <div class="sf-info">Yannick UHRIG — ASCT SNCF — Mars 2026</div>
+    <div class="sf-info">sncf-controle.vercel.app</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- SLIDE 6 – CONTRÔLE EN GARE -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="slide">
+  <div class="slide-header">
+    <span class="header-icon">🏢</span>
+    <h2>Contrôle en Gare — Multi-agents synchronisé</h2>
+    <span class="slide-num-h">6 / 9</span>
+  </div>
+  <div class="content">
+    <div class="two-col">
+      <div>
+        <!-- Mockup En gare -->
+        <div class="mockup-container">
+          <div class="mockup-bar">
+            <div class="mockup-dot" style="background:#ff5f57;"></div>
+            <div class="mockup-dot" style="background:#ffbd2e;"></div>
+            <div class="mockup-dot" style="background:#28c940;"></div>
+            <div class="mockup-url">sncf-controle.vercel.app/station</div>
+          </div>
+          <div class="mockup-body">
+            <div class="mockup-sidebar">
+              <div class="mockup-logo">🚆 SNCF Contrôles<span>v1.10.35</span></div>
+              <div class="m-nav"><span class="m-nav-icon">⊞</span>Accueil</div>
+              <div class="m-nav"><span class="m-nav-icon">🚂</span>À bord</div>
+              <div class="m-nav active"><span class="m-nav-icon">🏢</span>En gare</div>
+              <div class="m-nav"><span class="m-nav-icon">📈</span>Stats</div>
+            </div>
+            <div class="mockup-main">
+              <div class="mockup-page-title">🏢 Contrôle en gare</div>
+              <div class="mockup-page-sub">Saisissez les données du contrôle en gare</div>
+              
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;">
+                <div style="background:#C5003D;border-radius:8px;padding:12px;text-align:center;color:white;">
+                  <div style="font-size:14px;">↓</div>
+                  <div style="font-size:11px;font-weight:700;margin-top:4px;">Débarquement</div>
+                  <div style="font-size:9px;opacity:0.8;">Contrôle complet</div>
+                </div>
+                <div style="background:#f5f5f5;border-radius:8px;padding:12px;text-align:center;color:#555;border:1px solid #eee;">
+                  <div style="font-size:14px;">↑</div>
+                  <div style="font-size:11px;font-weight:700;margin-top:4px;">Embarquement</div>
+                  <div style="font-size:9px;color:#888;">Refoulement & stats</div>
+                </div>
+              </div>
+              
+              <div style="background:#f5f5f5;border-radius:8px;padding:10px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;">
+                <div style="font-size:10px;color:#555;display:flex;align-items:center;gap:5px;"><span>👥</span>Contrôle multi-agents</div>
+                <div style="display:flex;gap:5px;">
+                  <span style="background:#3B82F6;color:white;padding:3px 8px;border-radius:6px;font-size:9px;">🔗 Rejoindre</span>
+                  <span style="background:#10B981;color:white;padding:3px 8px;border-radius:6px;font-size:9px;">↗ Partager</span>
+                </div>
+              </div>
+              
+              <div style="background:#f5f5f5;border-radius:8px;padding:10px;margin-bottom:8px;">
+                <div style="font-size:10px;font-weight:700;color:#111;margin-bottom:8px;">🏢 Informations gare & train</div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;">
+                  <div style="background:white;border-radius:5px;padding:6px;font-size:10px;color:#aaa;border:1px solid #eee;">🔍 Sélectionner gare</div>
+                  <div style="background:white;border-radius:5px;padding:6px;font-size:10px;color:#aaa;border:1px solid #eee;">N° Train</div>
+                </div>
+                <div style="margin-top:5px;background:white;border-radius:5px;padding:6px;font-size:10px;color:#aaa;border:1px solid #eee;">Numéro de quai (ex: 1A)</div>
+              </div>
+              
+              <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
+                <div style="background:#3B82F6;border-radius:6px;padding:8px;color:white;text-align:center;"><div style="font-size:16px;font-weight:800;">0</div><div style="font-size:8px;opacity:0.9;">Voyageurs</div></div>
+                <div style="background:#F97316;border-radius:6px;padding:8px;color:white;text-align:center;"><div style="font-size:16px;font-weight:800;">0</div><div style="font-size:8px;opacity:0.9;">Infractions</div></div>
+                <div style="background:#10B981;border-radius:6px;padding:8px;color:white;text-align:center;"><div style="font-size:16px;font-weight:800;">0.0%</div><div style="font-size:8px;opacity:0.9;">Taux fraude</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div>
+        <h3 style="font-size:18px;font-weight:700;color:#111;margin-bottom:15px;">Deux modes de contrôle en gare</h3>
+        
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:15px;margin-bottom:20px;">
+          <div style="background:linear-gradient(135deg,#fff5f7,#fff);border:2px solid #C5003D;border-radius:12px;padding:18px;text-align:center;">
+            <div style="font-size:32px;margin-bottom:8px;">↓</div>
+            <div style="font-weight:700;font-size:14px;color:#C5003D;">Débarquement</div>
+            <div style="font-size:12px;color:#666;margin-top:6px;line-height:1.5;">Contrôle complet à quai lors de la descente des voyageurs</div>
+          </div>
+          <div style="background:linear-gradient(135deg,#f0f7ff,#fff);border:2px solid #3B82F6;border-radius:12px;padding:18px;text-align:center;">
+            <div style="font-size:32px;margin-bottom:8px;">↑</div>
+            <div style="font-weight:700;font-size:14px;color:#3B82F6;">Embarquement</div>
+            <div style="font-size:12px;color:#666;margin-top:6px;line-height:1.5;">Refoulement des voyageurs sans titre valide à l'entrée</div>
+          </div>
+        </div>
+        
+        <div class="highlight" style="margin-bottom:20px;">
+          <h3>👥 Contrôle Multi-Agents en temps réel</h3>
+          <p>L'une des fonctionnalités phares : un responsable crée une session de contrôle et partage le lien. Chaque agent rejoint et saisit ses données depuis son propre appareil. <strong>Tout est agrégé et synchronisé instantanément.</strong></p>
+        </div>
+        
+        <ul class="feat-list">
+          <li><span class="feat-check">✓</span><div><strong>Préparation de mission intégrée</strong> — Section dédiée pour anticiper le contrôle</div></li>
+          <li><span class="feat-check">✓</span><div><strong>Sélection de gare</strong> — Base de données complète des gares SNCF</div></li>
+          <li><span class="feat-check">✓</span><div><strong>Numéro de quai</strong> — Pour identifier précisément le lieu du contrôle</div></li>
+          <li><span class="feat-check">✓</span><div><strong>Même richesse de saisie qu'à bord</strong> — STT, RNV, PV, RI, tarifs bord...</div></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class="slide-footer">
+    <div class="sf-logo">🚆 SNCF Contrôles</div>
+    <div class="sf-info">Yannick UHRIG — ASCT SNCF — Mars 2026</div>
+    <div class="sf-info">sncf-controle.vercel.app</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- SLIDE 7 – STATISTIQUES -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="slide">
+  <div class="slide-header">
+    <span class="header-icon">📈</span>
+    <h2>Statistiques — Analyse de l'activité de contrôle</h2>
+    <span class="slide-num-h">7 / 9</span>
+  </div>
+  <div class="content">
+    <div class="two-col">
+      <div>
+        <p style="font-size:14px;color:#555;line-height:1.8;margin-bottom:20px;">Le module Statistiques offre une vision analytique complète de l'activité de contrôle. Toutes les données saisies sont automatiquement agrégées et transformées en indicateurs visuels.</p>
+        
+        <!-- Chiffres de la semaine -->
+        <div style="background:linear-gradient(135deg,#1a1a2e,#2d2d5e);border-radius:14px;padding:25px;color:white;margin-bottom:20px;">
+          <div style="font-size:13px;opacity:0.7;margin-bottom:15px;font-weight:600;text-transform:uppercase;letter-spacing:1px;">Semaine 11 · 9–15 mars 2026</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:15px;">
+            <div style="text-align:center;">
+              <div style="font-size:38px;font-weight:900;color:#60A5FA;">378</div>
+              <div style="font-size:11px;opacity:0.7;margin-top:4px;">Voyageurs</div>
+              <div style="font-size:10px;opacity:0.5;">4 contrôles</div>
+            </div>
+            <div style="text-align:center;">
+              <div style="font-size:38px;font-weight:900;color:#FB923C;">8.47%</div>
+              <div style="font-size:11px;opacity:0.7;margin-top:4px;">Fraude</div>
+              <div style="font-size:10px;opacity:0.5;">32 infractions</div>
+            </div>
+            <div style="text-align:center;">
+              <div style="font-size:38px;font-weight:900;color:#34D399;">346</div>
+              <div style="font-size:11px;opacity:0.7;margin-top:4px;">En règle</div>
+              <div style="font-size:10px;opacity:0.5;">91.5%</div>
+            </div>
+            <div style="text-align:center;">
+              <div style="font-size:38px;font-weight:900;color:#F87171;">20</div>
+              <div style="font-size:11px;opacity:0.7;margin-top:4px;">PV</div>
+              <div style="font-size:10px;opacity:0.5;">procès-verbaux</div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Graphique simulé -->
+        <div style="background:white;border:1px solid #e5e7eb;border-radius:12px;padding:20px;">
+          <div style="font-weight:600;font-size:13px;color:#111;margin-bottom:15px;">📉 Tendance du taux de fraude</div>
+          <div style="position:relative;height:120px;background:#f9f9f9;border-radius:8px;overflow:hidden;">
+            <div style="position:absolute;bottom:0;left:0;right:0;height:100%;display:flex;align-items:flex-end;padding:5px;">
+              <!-- Simulated chart bars -->
+              <div style="flex:1;margin:0 2px;background:linear-gradient(to top,#C5003D,#ff6b8a);border-radius:3px 3px 0 0;height:60%;opacity:0.8;"></div>
+              <div style="flex:1;margin:0 2px;background:linear-gradient(to top,#C5003D,#ff6b8a);border-radius:3px 3px 0 0;height:40%;opacity:0.8;"></div>
+              <div style="flex:1;margin:0 2px;background:linear-gradient(to top,#C5003D,#ff6b8a);border-radius:3px 3px 0 0;height:75%;opacity:0.8;"></div>
+              <div style="flex:1;margin:0 2px;background:linear-gradient(to top,#C5003D,#ff6b8a);border-radius:3px 3px 0 0;height:50%;opacity:0.8;"></div>
+              <div style="flex:1;margin:0 2px;background:linear-gradient(to top,#C5003D,#ff6b8a);border-radius:3px 3px 0 0;height:85%;opacity:0.9;"></div>
+              <div style="flex:1;margin:0 2px;background:linear-gradient(to top,#C5003D,#ff6b8a);border-radius:3px 3px 0 0;height:35%;opacity:0.8;"></div>
+              <div style="flex:1;margin:0 2px;background:linear-gradient(to top,#C5003D,#ff6b8a);border-radius:3px 3px 0 0;height:55%;opacity:0.8;"></div>
+            </div>
+            <div style="position:absolute;top:5px;right:8px;background:#C5003D;color:white;padding:2px 8px;border-radius:6px;font-size:10px;font-weight:700;">8.47%</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;margin-top:8px;">
+            <div style="width:12px;height:3px;background:#C5003D;border-radius:2px;"></div>
+            <span style="font-size:10px;color:#888;">Taux de fraude · Semaine 11</span>
+          </div>
+        </div>
+      </div>
+      
+      <div>
+        <h3 style="font-size:18px;font-weight:700;color:#111;margin-bottom:15px;">Graphiques et analyses disponibles</h3>
+        
+        <div class="icon-grid" style="grid-template-columns:1fr 1fr;">
+          <div class="icon-item">
+            <div class="ii-icon">📉</div>
+            <div>
+              <h4>Tendance fraude</h4>
+              <p>Évolution du taux de fraude dans le temps</p>
+            </div>
+          </div>
+          <div class="icon-item">
+            <div class="ii-icon">📊</div>
+            <div>
+              <h4>Volume contrôles</h4>
+              <p>Nombre de voyageurs par période</p>
+            </div>
+          </div>
+          <div class="icon-item">
+            <div class="ii-icon">🧑‍🤝‍🧑</div>
+            <div>
+              <h4>Voyageurs / jour</h4>
+              <p>Détail journalier de l'activité</p>
+            </div>
+          </div>
+          <div class="icon-item">
+            <div class="ii-icon">📋</div>
+            <div>
+              <h4>Répartition PV</h4>
+              <p>Types d'infractions verbalisées</p>
+            </div>
+          </div>
+        </div>
+        
+        <div style="margin-top:20px;">
+          <div style="font-weight:700;font-size:14px;color:#111;margin-bottom:12px;">⏱️ Périodes d'analyse</div>
+          <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:15px;">
+            <div style="background:#C5003D;color:white;padding:8px 16px;border-radius:20px;font-size:12px;font-weight:600;">Jour</div>
+            <div style="background:#f5f5f5;color:#555;padding:8px 16px;border-radius:20px;font-size:12px;">Semaine</div>
+            <div style="background:#f5f5f5;color:#555;padding:8px 16px;border-radius:20px;font-size:12px;">Mois</div>
+            <div style="background:#f5f5f5;color:#555;padding:8px 16px;border-radius:20px;font-size:12px;">Année</div>
+            <div style="background:#f5f5f5;color:#555;padding:8px 16px;border-radius:20px;font-size:12px;">Personnalisé</div>
+          </div>
+        </div>
+        
+        <div style="background:linear-gradient(135deg,#f0fff7,#fff);border:1px solid #c3e6cb;border-radius:12px;padding:18px;">
+          <div style="font-weight:700;font-size:14px;color:#10B981;margin-bottom:10px;display:flex;align-items:center;gap:8px;"><span>📤</span>Export des statistiques</div>
+          <p style="font-size:13px;color:#555;line-height:1.7;">Toutes les statistiques peuvent être exportées en un clic pour être partagées avec la hiérarchie ou intégrées dans des rapports d'activité.</p>
+          <div style="margin-top:10px;display:flex;gap:10px;">
+            <span style="background:#10B981;color:white;padding:6px 14px;border-radius:8px;font-size:12px;font-weight:600;">📤 Exporter</span>
+            <span style="background:#3B82F6;color:white;padding:6px 14px;border-radius:8px;font-size:12px;font-weight:600;">👤 Mes données</span>
+            <span style="background:#8B5CF6;color:white;padding:6px 14px;border-radius:8px;font-size:12px;font-weight:600;">👥 Tout voir</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="slide-footer">
+    <div class="sf-logo">🚆 SNCF Contrôles</div>
+    <div class="sf-info">Yannick UHRIG — ASCT SNCF — Mars 2026</div>
+    <div class="sf-info">sncf-controle.vercel.app</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- SLIDE 8 – MANAGER + HISTORIQUE -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="slide">
+  <div class="slide-header">
+    <span class="header-icon">👔</span>
+    <h2>Espace Manager & Historique — Pilotage d'équipe</h2>
+    <span class="slide-num-h">8 / 9</span>
+  </div>
+  <div class="content">
+    <div class="two-col">
+      <div>
+        <h3 style="font-size:16px;font-weight:700;color:#111;margin-bottom:12px;">👔 Espace Manager</h3>
+        
+        <!-- Chiffres manager -->
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;margin-bottom:15px;">
+          <div style="background:linear-gradient(135deg,#3B82F6,#1d4ed8);border-radius:10px;padding:15px;color:white;text-align:center;">
+            <div style="font-size:28px;font-weight:800;">3</div>
+            <div style="font-size:10px;opacity:0.85;margin-top:3px;">Équipe</div>
+          </div>
+          <div style="background:linear-gradient(135deg,#8B5CF6,#6d28d9);border-radius:10px;padding:15px;color:white;text-align:center;">
+            <div style="font-size:28px;font-weight:800;">4</div>
+            <div style="font-size:10px;opacity:0.85;margin-top:3px;">Contrôles</div>
+          </div>
+          <div style="background:linear-gradient(135deg,#10B981,#047857);border-radius:10px;padding:15px;color:white;text-align:center;">
+            <div style="font-size:28px;font-weight:800;">378</div>
+            <div style="font-size:10px;opacity:0.85;margin-top:3px;">Passagers</div>
+          </div>
+          <div style="background:linear-gradient(135deg,#F97316,#c2410c);border-radius:10px;padding:15px;color:white;text-align:center;">
+            <div style="font-size:28px;font-weight:800;">8.5%</div>
+            <div style="font-size:10px;opacity:0.85;margin-top:3px;">Fraude</div>
+          </div>
+        </div>
+        
+        <!-- Tableau équipe -->
+        <div style="background:white;border:1px solid #e5e7eb;border-radius:10px;overflow:hidden;margin-bottom:15px;">
+          <div style="background:#C5003D;color:white;padding:10px 15px;font-size:12px;font-weight:700;display:flex;align-items:center;gap:8px;justify-content:space-between;">
+            <span>👥 Membres de l'équipe</span><span style="background:rgba(255,255,255,0.2);padding:2px 8px;border-radius:10px;">3</span>
+          </div>
+          <table style="width:100%;border-collapse:collapse;">
+            <thead><tr style="background:#f9f9f9;"><th style="padding:8px 12px;text-align:left;font-size:11px;color:#888;font-weight:600;">NOM</th><th style="padding:8px 12px;font-size:11px;color:#888;font-weight:600;">RÔLE</th><th style="padding:8px 12px;font-size:11px;color:#888;font-weight:600;">CONNEXION</th><th style="padding:8px 12px;font-size:11px;color:#888;font-weight:600;">ÉQUIPE</th></tr></thead>
+            <tbody>
+              <tr style="border-top:1px solid #f0f0f0;">
+                <td style="padding:10px 12px;font-size:12px;color:#111;font-weight:600;">jean dupont<br><span style="color:#aaa;font-weight:400;font-size:10px;">0625813944</span></td>
+                <td style="padding:10px 12px;"><span class="role-badge role-agent">Agent</span></td>
+                <td style="padding:10px 12px;font-size:11px;color:#888;">il y a 5 j</td>
+                <td style="padding:10px 12px;font-size:11px;color:#555;">EA Metz</td>
+              </tr>
+              <tr style="border-top:1px solid #f0f0f0;background:#fafafa;">
+                <td style="padding:10px 12px;font-size:12px;color:#111;font-weight:600;">Fabrice GEORGES<br><span style="color:#aaa;font-weight:400;font-size:10px;">0626917442</span></td>
+                <td style="padding:10px 12px;"><span class="role-badge role-manager">Manager</span></td>
+                <td style="padding:10px 12px;font-size:11px;color:#888;">il y a 1 j</td>
+                <td style="padding:10px 12px;font-size:11px;color:#555;">—</td>
+              </tr>
+              <tr style="border-top:1px solid #f0f0f0;">
+                <td style="padding:10px 12px;font-size:12px;color:#111;font-weight:600;">Yannick UHRIG<br><span style="color:#aaa;font-weight:400;font-size:10px;">0619303146</span></td>
+                <td style="padding:10px 12px;"><span class="role-badge role-admin">Administrateur</span></td>
+                <td style="padding:10px 12px;font-size:11px;color:#888;">il y a 6 min</td>
+                <td style="padding:10px 12px;font-size:11px;color:#555;">—</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        
+        <div style="display:flex;gap:8px;">
+          <div style="background:#f5f5f5;border-radius:8px;padding:10px;flex:1;text-align:center;font-size:11px;color:#555;font-weight:600;">🗺️ Heatmap</div>
+          <div style="background:#f5f5f5;border-radius:8px;padding:10px;flex:1;text-align:center;font-size:11px;color:#555;font-weight:600;">📋 Audit Trail</div>
+          <div style="background:#f5f5f5;border-radius:8px;padding:10px;flex:1;text-align:center;font-size:11px;color:#555;font-weight:600;">👥 Équipes</div>
+        </div>
+      </div>
+      
+      <div>
+        <h3 style="font-size:16px;font-weight:700;color:#111;margin-bottom:12px;">🗂️ Historique des contrôles</h3>
+        
+        <div style="background:white;border:1px solid #e5e7eb;border-radius:10px;overflow:hidden;margin-bottom:15px;">
+          <div style="background:#0EA5E9;color:white;padding:10px 15px;font-size:12px;font-weight:700;display:flex;align-items:center;gap:8px;justify-content:space-between;">
+            <span>📋 Historique</span><span style="background:rgba(255,255,255,0.2);padding:2px 8px;border-radius:10px;">64 contrôles</span>
+          </div>
+          <div style="padding:10px;">
+            <div style="background:#f5f5f5;border-radius:6px;padding:7px 12px;font-size:10px;color:#aaa;margin-bottom:8px;">🔍 Rechercher par train, lieu, trajet...</div>
+            <div style="display:flex;gap:5px;margin-bottom:8px;">
+              <span style="background:#C5003D;color:white;padding:3px 10px;border-radius:8px;font-size:9px;font-weight:600;">Tous</span>
+              <span style="background:#f5f5f5;color:#555;padding:3px 10px;border-radius:8px;font-size:9px;">Train</span>
+              <span style="background:#f5f5f5;color:#555;padding:3px 10px;border-radius:8px;font-size:9px;">Gare</span>
+            </div>
+            
+            <!-- Entrées historique -->
+            <div style="padding:10px;border-bottom:1px solid #f0f0f0;border-radius:8px;background:#fff5f5;margin-bottom:6px;">
+              <div style="display:flex;justify-content:space-between;align-items:center;">
+                <div><div style="font-size:12px;font-weight:700;color:#111;">Metz → Thionville <span style="background:#eee;padding:1px 6px;border-radius:4px;font-size:9px;color:#666;">N°88720</span></div><div style="font-size:10px;color:#888;margin-top:2px;">09/03/26 · 11:55 · 80 pax</div></div>
+                <div style="text-align:right;"><div style="color:#F97316;font-weight:800;font-size:13px;">5.0%</div><div style="font-size:9px;color:#888;">4 fraudes</div></div>
+              </div>
+            </div>
+            <div style="padding:10px;border-bottom:1px solid #f0f0f0;border-radius:8px;background:#fff;margin-bottom:6px;">
+              <div style="display:flex;justify-content:space-between;align-items:center;">
+                <div><div style="font-size:12px;font-weight:700;color:#111;">Metz → Bettembourg <span style="background:#eee;padding:1px 6px;border-radius:4px;font-size:9px;color:#666;">N°88722</span></div><div style="font-size:10px;color:#888;margin-top:2px;">09/03/26 · 09:45 · 100 pax</div></div>
+                <div style="text-align:right;"><div style="color:#C5003D;font-weight:800;font-size:13px;">17.0%</div><div style="font-size:9px;color:#888;">17 fraudes</div></div>
+              </div>
+            </div>
+            <div style="padding:10px;border-radius:8px;background:#f0fff7;">
+              <div style="display:flex;justify-content:space-between;align-items:center;">
+                <div><div style="font-size:12px;font-weight:700;color:#111;">Thionville → Metz <span style="background:#eee;padding:1px 6px;border-radius:4px;font-size:9px;color:#666;">N°88622</span></div><div style="font-size:10px;color:#888;margin-top:2px;">09/03/26 · 07:34 · 88 pax</div></div>
+                <div style="text-align:right;"><div style="color:#F97316;font-weight:800;font-size:13px;">8.0%</div><div style="font-size:9px;color:#888;">7 fraudes</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="highlight">
+          <h3>📤 Export & Synchronisation</h3>
+          <p>L'historique complet (64 contrôles) est exportable en un clic. La synchronisation cloud assure que toutes les données sont toujours à jour, même après une connexion intermittente sur le terrain.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="slide-footer">
+    <div class="sf-logo">🚆 SNCF Contrôles</div>
+    <div class="sf-info">Yannick UHRIG — ASCT SNCF — Mars 2026</div>
+    <div class="sf-info">sncf-controle.vercel.app</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- SLIDE 9 – POINTS FORTS & CONCLUSION -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="slide">
+  <div class="slide-header">
+    <span class="header-icon">🚀</span>
+    <h2>Points Forts, Bénéfices & Perspectives</h2>
+    <span class="slide-num-h">9 / 9</span>
+  </div>
+  <div class="content">
+    <!-- Atouts techniques -->
+    <div style="margin-bottom:25px;">
+      <h3 style="font-size:17px;font-weight:700;color:#111;margin-bottom:15px;">🔧 Atouts techniques</h3>
+      <div class="icon-grid">
+        <div class="icon-item">
+          <div class="ii-icon">📱</div>
+          <div>
+            <h4>Progressive Web App (PWA)</h4>
+            <p>Installable comme une app native sur tout appareil (smartphone, tablette, PC) sans passer par un store.</p>
+          </div>
+        </div>
+        <div class="icon-item">
+          <div class="ii-icon">🔌</div>
+          <div>
+            <h4>Mode hors-ligne</h4>
+            <p>L'app fonctionne même sans connexion. Les données sont synchronisées automatiquement à la reconnexion.</p>
+          </div>
+        </div>
+        <div class="icon-item">
+          <div class="ii-icon">☁️</div>
+          <div>
+            <h4>Cloud synchronisé</h4>
+            <p>Toutes les données sont stockées de façon sécurisée dans le cloud, accessibles depuis n'importe quel appareil.</p>
+          </div>
+        </div>
+        <div class="icon-item">
+          <div class="ii-icon">🔒</div>
+          <div>
+            <h4>Gestion des accès</h4>
+            <p>3 niveaux de rôles : Agent, Manager, Administrateur. Chaque utilisateur voit uniquement ce qu'il est autorisé à voir.</p>
+          </div>
+        </div>
+        <div class="icon-item">
+          <div class="ii-icon">📤</div>
+          <div>
+            <h4>Données exportables</h4>
+            <p>Statistiques, historique et données d'équipe exportables à tout moment pour les rapports de direction.</p>
+          </div>
+        </div>
+        <div class="icon-item">
+          <div class="ii-icon">🔄</div>
+          <div>
+            <h4>Mises à jour continues</h4>
+            <p>Application en constante évolution (v1.10.35 actuelle). Les améliorations sont déployées automatiquement.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="section-divider"></div>
+    
+    <div class="two-col">
+      <div>
+        <h3 style="font-size:17px;font-weight:700;color:#111;margin-bottom:15px;">💚 Bénéfices concrets</h3>
+        <div class="timeline">
+          <div class="tl-item">
+            <div class="tl-dot" style="background:#3B82F6;">⏱️</div>
+            <div class="tl-content">
+              <h4>Gain de temps significatif</h4>
+              <p>La saisie guidée et les boutons rapides (STT 50€, PV 100€) réduisent drastiquement le temps de saisie par rapport au papier.</p>
+            </div>
+          </div>
+          <div class="tl-item">
+            <div class="tl-dot" style="background:#10B981;">📊</div>
+            <div class="tl-content">
+              <h4>Données fiables et centralisées</h4>
+              <p>Plus de perte de données ou d'erreurs de transcription. Tout est numérique, synchronisé et traçable.</p>
+            </div>
+          </div>
+          <div class="tl-item">
+            <div class="tl-dot" style="background:#F97316;">👔</div>
+            <div class="tl-content">
+              <h4>Pilotage facilité pour la direction</h4>
+              <p>Les managers ont accès en temps réel aux performances de leur équipe, sans attendre les rapports manuels.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div>
+        <h3 style="font-size:17px;font-weight:700;color:#111;margin-bottom:15px;">🔮 Perspectives d'évolution</h3>
+        
+        <div class="card" style="margin-bottom:15px;">
+          <h3>🌍 Déploiement élargi</h3>
+          <p>Extension de l'outil à d'autres équipes et d'autres lignes SNCF pour une couverture plus large du réseau.</p>
+        </div>
+        
+        <div class="card blue" style="margin-bottom:15px;">
+          <h3 style="color:#3B82F6;">🔗 Intégrations SNCF</h3>
+          <p>Connexion avec les systèmes d'information SNCF existants pour l'import automatique des données train.</p>
+        </div>
+        
+        <div class="card green">
+          <h3 style="color:#10B981;">📊 Comparatifs nationaux</h3>
+          <p>Enrichissement des statistiques avec des comparatifs par ligne, région et niveau national pour un meilleur benchmarking.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="slide-footer">
+    <div class="sf-logo">🚆 SNCF Contrôles</div>
+    <div class="sf-info">Yannick UHRIG — ASCT SNCF — Mars 2026</div>
+    <div class="sf-info">sncf-controle.vercel.app</div>
+  </div>
+</div>
+
+</body>
+</html>
