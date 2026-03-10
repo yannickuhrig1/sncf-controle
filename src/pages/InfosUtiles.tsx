@@ -519,13 +519,13 @@ function ContentPresentation() {
         </Button>
       </div>
 
-      {/* Présentation Direction */}
+      {/* Présentation de l'application */}
       <div className="flex items-center gap-3 p-4 bg-amber-50 dark:bg-amber-950/20 rounded-xl border border-amber-200 dark:border-amber-800">
         <div className="p-2.5 bg-amber-100 dark:bg-amber-900/40 rounded-lg shrink-0">
           <Monitor className="h-6 w-6 text-amber-600 dark:text-amber-400" />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold">Présentation Direction</p>
+          <p className="text-sm font-semibold">Présentation de l'application</p>
           <p className="text-xs text-muted-foreground">Version destinée à la hiérarchie</p>
         </div>
       </div>
