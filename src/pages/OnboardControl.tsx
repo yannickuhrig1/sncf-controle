@@ -186,7 +186,7 @@ export default function OnboardControl() {
   const [trainStops, setTrainStops] = useState<import('@/hooks/useTrainLookup').TrainStop[]>([]);
 
   // Trains du jour
-  const { trains: dailyTrains, addTrain: addDailyTrain, removeTrain: removeDailyTrain, isSharing, toggleSharing, teamTrains } = useDailyTrains(formState.controlDate);
+  const { trains: dailyTrains, addTrain: addDailyTrain, updateTrain: updateDailyTrain, removeTrain: removeDailyTrain, isSharing, toggleSharing, teamTrains } = useDailyTrains(formState.controlDate);
 
   const handleLoadDailyTrain = (t: DailyTrain) => {
     setFormState(p => ({
@@ -200,6 +200,20 @@ export default function OnboardControl() {
     }));
     if (t.trainInfo?.stops?.length) setTrainStops(t.trainInfo.stops);
   };
+
+  // Persist origin/destination changes back to the daily train entry
+  useEffect(() => {
+    const matched = dailyTrains.find(t => t.trainNumber === formState.trainNumber);
+    if (!matched) return;
+    if (
+      matched.trainInfo?.origin === formState.origin &&
+      matched.trainInfo?.destination === formState.destination
+    ) return;
+    updateDailyTrain(formState.trainNumber, {
+      origin: formState.origin,
+      destination: formState.destination,
+    });
+  }, [formState.trainNumber, formState.origin, formState.destination]); // eslint-disable-line react-hooks/exhaustive-deps
   
   // Auto-update date/time when not in edit mode and form is fresh
   useEffect(() => {

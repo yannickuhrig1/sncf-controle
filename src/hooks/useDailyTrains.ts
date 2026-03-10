@@ -105,6 +105,26 @@ export function useDailyTrains(date: string) {
     }
   };
 
+  const updateTrain = (trainNumber: string, updates: { origin?: string; destination?: string }) => {
+    setTrains(prev => {
+      const updated = prev.map(t => {
+        if (t.trainNumber !== trainNumber) return t;
+        const newInfo = { ...(t.trainInfo ?? {}), ...updates } as TrainInfo;
+        if (user) {
+          supabase.from('daily_trains' as any)
+            .update({ train_info: newInfo })
+            .eq('user_id', user.id)
+            .eq('date', date)
+            .eq('train_number', trainNumber)
+            .then(() => {});
+        }
+        return { ...t, trainInfo: newInfo };
+      });
+      localStorage.setItem(key, JSON.stringify(updated));
+      return updated;
+    });
+  };
+
   const removeTrain = (trainNumber: string) => {
     setTrains(prev => {
       const updated = prev.filter(t => t.trainNumber !== trainNumber);
@@ -132,5 +152,5 @@ export function useDailyTrains(date: string) {
       .then(() => {});
   };
 
-  return { trains, addTrain, removeTrain, isSharing, toggleSharing, teamTrains };
+  return { trains, addTrain, updateTrain, removeTrain, isSharing, toggleSharing, teamTrains };
 }
