@@ -62,6 +62,7 @@ import {
   Calendar,
   Clock,
   Users,
+  Users2,
   ChevronRight,
   X,
   RefreshCw,
@@ -185,7 +186,7 @@ export default function OnboardControl() {
   const [trainStops, setTrainStops] = useState<import('@/hooks/useTrainLookup').TrainStop[]>([]);
 
   // Trains du jour
-  const { trains: dailyTrains, addTrain: addDailyTrain, removeTrain: removeDailyTrain } = useDailyTrains(formState.controlDate);
+  const { trains: dailyTrains, addTrain: addDailyTrain, removeTrain: removeDailyTrain, isSharing, toggleSharing, teamTrains } = useDailyTrains(formState.controlDate);
 
   const handleLoadDailyTrain = (t: DailyTrain) => {
     setFormState(p => ({
@@ -879,9 +880,22 @@ export default function OnboardControl() {
                   {activeSection === 'info' && (
                     <>
                       {/* Trains du jour */}
-                      {dailyTrains.length > 0 && (
+                      {(dailyTrains.length > 0 || teamTrains.length > 0) && (
                         <div className="space-y-1.5">
-                          <Label className="text-xs text-muted-foreground">Trains du jour</Label>
+                          <div className="flex items-center justify-between">
+                            <Label className="text-xs text-muted-foreground">Trains du jour</Label>
+                            {dailyTrains.length > 0 && (
+                              <button
+                                type="button"
+                                onClick={toggleSharing}
+                                title={isSharing ? 'Partage actif — cliquer pour arrêter' : 'Partager mes trains avec l\'équipe'}
+                                className={cn('flex items-center gap-1 text-[10px] rounded-full px-1.5 py-0.5 transition-colors', isSharing ? 'text-blue-500 bg-blue-50 dark:bg-blue-950/40' : 'text-muted-foreground hover:text-blue-400')}
+                              >
+                                <Users2 className="h-3 w-3" />
+                                {isSharing && <span>Partagé</span>}
+                              </button>
+                            )}
+                          </div>
                           <div className="flex flex-wrap gap-1.5">
                             {dailyTrains.map(t => (
                               <span
@@ -903,6 +917,26 @@ export default function OnboardControl() {
                                 </button>
                                 <button type="button" onClick={() => removeDailyTrain(t.trainNumber)} className="ml-0.5 hover:opacity-60" aria-label="Supprimer">
                                   <X className="h-3 w-3" />
+                                </button>
+                              </span>
+                            ))}
+                            {teamTrains.filter(t => !dailyTrains.some(d => d.trainNumber === t.trainNumber)).map(t => (
+                              <span
+                                key={`team-${t.trainNumber}`}
+                                className={cn(
+                                  'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium border opacity-60',
+                                  t.trainInfo?.status === 'on_time'   && 'bg-green-100 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800',
+                                  t.trainInfo?.status === 'delayed'   && 'bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-800',
+                                  t.trainInfo?.status === 'cancelled' && 'bg-red-100 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800',
+                                  !t.trainInfo && 'bg-muted text-muted-foreground border-border',
+                                )}
+                              >
+                                <button type="button" onClick={() => handleLoadDailyTrain(t)} className="inline-flex items-center gap-1 hover:opacity-80" title="Train partagé par l'équipe">
+                                  <Users2 className="h-3 w-3" />
+                                  {t.trainNumber}
+                                  {t.trainInfo?.status === 'delayed' && t.trainInfo.delayMinutes && (
+                                    <span className="font-bold">+{t.trainInfo.delayMinutes}m</span>
+                                  )}
                                 </button>
                               </span>
                             ))}
@@ -1131,9 +1165,22 @@ export default function OnboardControl() {
                   </CardHeader>
                   <CardContent className="space-y-4">
                     {/* Trains du jour */}
-                    {dailyTrains.length > 0 && (
+                    {(dailyTrains.length > 0 || teamTrains.length > 0) && (
                       <div className="space-y-1.5">
-                        <Label className="text-xs text-muted-foreground">Trains du jour</Label>
+                        <div className="flex items-center justify-between">
+                          <Label className="text-xs text-muted-foreground">Trains du jour</Label>
+                          {dailyTrains.length > 0 && (
+                            <button
+                              type="button"
+                              onClick={toggleSharing}
+                              title={isSharing ? 'Partage actif — cliquer pour arrêter' : 'Partager mes trains avec l\'équipe'}
+                              className={cn('flex items-center gap-1 text-[10px] rounded-full px-1.5 py-0.5 transition-colors', isSharing ? 'text-blue-500 bg-blue-50 dark:bg-blue-950/40' : 'text-muted-foreground hover:text-blue-400')}
+                            >
+                              <Users2 className="h-3 w-3" />
+                              {isSharing && <span>Partagé</span>}
+                            </button>
+                          )}
+                        </div>
                         <div className="flex flex-wrap gap-1.5">
                           {dailyTrains.map(t => (
                             <span
@@ -1155,6 +1202,26 @@ export default function OnboardControl() {
                               </button>
                               <button type="button" onClick={() => removeDailyTrain(t.trainNumber)} className="ml-0.5 hover:opacity-60" aria-label="Supprimer">
                                 <X className="h-3 w-3" />
+                              </button>
+                            </span>
+                          ))}
+                          {teamTrains.filter(t => !dailyTrains.some(d => d.trainNumber === t.trainNumber)).map(t => (
+                            <span
+                              key={`team-${t.trainNumber}`}
+                              className={cn(
+                                'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium border opacity-60',
+                                t.trainInfo?.status === 'on_time'   && 'bg-green-100 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800',
+                                t.trainInfo?.status === 'delayed'   && 'bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-800',
+                                t.trainInfo?.status === 'cancelled' && 'bg-red-100 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800',
+                                !t.trainInfo && 'bg-muted text-muted-foreground border-border',
+                              )}
+                            >
+                              <button type="button" onClick={() => handleLoadDailyTrain(t)} className="inline-flex items-center gap-1 hover:opacity-80" title="Train partagé par l'équipe">
+                                <Users2 className="h-3 w-3" />
+                                {t.trainNumber}
+                                {t.trainInfo?.status === 'delayed' && t.trainInfo.delayMinutes && (
+                                  <span className="font-bold">+{t.trainInfo.delayMinutes}m</span>
+                                )}
                               </button>
                             </span>
                           ))}

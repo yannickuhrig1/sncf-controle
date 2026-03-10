@@ -16,34 +16,61 @@ export function useDailyTrains(date: string) {
     try { return JSON.parse(localStorage.getItem(key) || '[]'); }
     catch { return []; }
   });
+  const [isSharing, setIsSharing] = useState(false);
+  const [teamTrains, setTeamTrains] = useState<DailyTrain[]>([]);
 
-  // Fetch from Supabase and update local state + localStorage cache
   const fetchFromDb = useCallback(async () => {
     if (!user) return;
-    const { data } = await supabase
+
+    // Own trains
+    const { data: own } = await supabase
       .from('daily_trains' as any)
-      .select('train_number, train_info')
+      .select('train_number, train_info, shared')
       .eq('user_id', user.id)
       .eq('date', date)
       .order('created_at');
-    if (data) {
-      const fetched: DailyTrain[] = (data as any[]).map(r => ({
+
+    if (own) {
+      const fetched: DailyTrain[] = (own as any[]).map(r => ({
         trainNumber: r.train_number,
         trainInfo: r.train_info ?? undefined,
       }));
       setTrains(fetched);
       localStorage.setItem(key, JSON.stringify(fetched));
+      setIsSharing((own as any[]).some(r => r.shared));
+    }
+
+    // Team trains (shared by other users, deduplicated)
+    const { data: team } = await supabase
+      .from('daily_trains' as any)
+      .select('train_number, train_info')
+      .eq('date', date)
+      .eq('shared', true)
+      .neq('user_id', user.id);
+
+    if (team) {
+      const seen = new Set<string>();
+      const deduped: DailyTrain[] = [];
+      for (const r of team as any[]) {
+        if (!seen.has(r.train_number)) {
+          seen.add(r.train_number);
+          deduped.push({ trainNumber: r.train_number, trainInfo: r.train_info ?? undefined });
+        }
+      }
+      setTeamTrains(deduped);
     }
   }, [user, date, key]);
 
-  // On date or user change: show localStorage immediately, then sync from DB
+  // On date / user change: show localStorage immediately, then sync
   useEffect(() => {
     try { setTrains(JSON.parse(localStorage.getItem(key) || '[]')); }
     catch { setTrains([]); }
+    setTeamTrains([]);
+    setIsSharing(false);
     fetchFromDb();
   }, [date, user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Realtime: refresh when any row changes for this user
+  // Realtime: refresh on any change for today
   useEffect(() => {
     if (!user) return;
     const channel = supabase
@@ -52,14 +79,12 @@ export function useDailyTrains(date: string) {
         event: '*',
         schema: 'public',
         table: 'daily_trains',
-        filter: `user_id=eq.${user.id}`,
       }, () => { fetchFromDb(); })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [user?.id, date, fetchFromDb]);
 
   const addTrain = (trainNumber: string, trainInfo?: TrainInfo) => {
-    // Optimistic local update
     setTrains(prev => {
       const idx = prev.findIndex(t => t.trainNumber === trainNumber);
       const entry: DailyTrain = { trainNumber, trainInfo };
@@ -69,25 +94,23 @@ export function useDailyTrains(date: string) {
       localStorage.setItem(key, JSON.stringify(updated));
       return updated;
     });
-    // Persist to Supabase (fire and forget)
     if (user) {
       supabase.from('daily_trains' as any).upsert({
         user_id: user.id,
         date,
         train_number: trainNumber,
         train_info: trainInfo ?? null,
+        shared: isSharing,
       }, { onConflict: 'user_id,date,train_number' }).then(() => {});
     }
   };
 
   const removeTrain = (trainNumber: string) => {
-    // Optimistic local update
     setTrains(prev => {
       const updated = prev.filter(t => t.trainNumber !== trainNumber);
       localStorage.setItem(key, JSON.stringify(updated));
       return updated;
     });
-    // Delete from Supabase (fire and forget)
     if (user) {
       supabase.from('daily_trains' as any)
         .delete()
@@ -98,5 +121,16 @@ export function useDailyTrains(date: string) {
     }
   };
 
-  return { trains, addTrain, removeTrain };
+  const toggleSharing = () => {
+    if (!user) return;
+    const next = !isSharing;
+    setIsSharing(next);
+    supabase.from('daily_trains' as any)
+      .update({ shared: next })
+      .eq('user_id', user.id)
+      .eq('date', date)
+      .then(() => {});
+  };
+
+  return { trains, addTrain, removeTrain, isSharing, toggleSharing, teamTrains };
 }
