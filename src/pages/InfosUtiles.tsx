@@ -59,6 +59,7 @@ import {
 } from 'lucide-react';
 import { Loader2 } from 'lucide-react';
 import { useStationDepartures, DepartureEntry } from '@/hooks/useStationDepartures';
+import { useWantedPersons } from '@/hooks/useWantedPersons';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -83,10 +84,10 @@ const TILES: Tile[] = [
     iconColor: 'text-white',
   },
   {
-    id: 'faq',
-    icon: HelpCircle,
-    label: 'FAQ',
-    gradient: 'from-violet-400 to-purple-500',
+    id: 'wanted',
+    icon: AlertTriangle,
+    label: 'Personnes recherchées',
+    gradient: 'from-red-500 to-rose-700',
     iconBg: 'bg-white/20',
     iconColor: 'text-white',
   },
@@ -210,6 +211,8 @@ function ContentAbout() {
           <li>Mode sombre / thèmes personnalisables</li>
           <li>Navigation personnalisable (sidebar + barre du bas)</li>
           <li>Trains du jour partagés par code privé ou QR code (équipe)</li>
+          <li>Personnes recherchées (fiches photo, gérées par le manager)</li>
+          <li>Compteur voyageurs grand écran (maintien appui)</li>
           <li>Compatible mobile, tablette et PC</li>
         </ul>
       </div>
@@ -285,37 +288,59 @@ function ContentTarifs() {
   );
 }
 
-function ContentFAQ() {
+function ContentWantedPersons() {
+  const { persons, isLoading } = useWantedPersons(true);
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center py-8">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (persons.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-10 text-center gap-3 text-muted-foreground">
+        <AlertTriangle className="h-10 w-10 opacity-30" />
+        <p className="text-sm">Aucune personne recherchée en ce moment.</p>
+      </div>
+    );
+  }
+
   return (
-    <Accordion type="single" collapsible className="w-full">
-      {[
-        {
-          q: 'Comment saisir un contrôle hors ligne ?',
-          a: "L'application fonctionne en mode hors ligne. Vos contrôles sont enregistrés localement et synchronisés automatiquement dès que la connexion est rétablie.",
-        },
-        {
-          q: 'Quelle est la différence entre RI+ et RI- ?',
-          a: 'RI+ : pièce d\'identité valide → ne compte pas comme fraude. RI- : pas de pièce d\'identité valide → compte dans le taux de fraude.',
-        },
-        {
-          q: 'Comment modifier un contrôle déjà enregistré ?',
-          a: 'Rendez-vous dans l\'Historique, cliquez sur le contrôle puis utilisez le bouton "Modifier".',
-        },
-        {
-          q: 'Comment exporter mes contrôles ?',
-          a: 'Utilisez le bouton "Exporter" dans l\'Historique ou sur les pages de contrôle. Formats disponibles : HTML et PDF.',
-        },
-        {
-          q: 'Comment sont calculés les seuils de couleur ?',
-          a: 'Configurables par l\'admin. Par défaut : Vert < 5%, Jaune 5-10%, Rouge ≥ 10%.',
-        },
-      ].map((item, i) => (
-        <AccordionItem key={i} value={`item-${i}`}>
-          <AccordionTrigger className="text-sm text-left">{item.q}</AccordionTrigger>
-          <AccordionContent className="text-sm text-muted-foreground">{item.a}</AccordionContent>
-        </AccordionItem>
+    <div className="space-y-3">
+      <p className="text-xs text-muted-foreground bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900 rounded-lg px-3 py-2 flex items-center gap-2">
+        <AlertTriangle className="h-3.5 w-3.5 text-red-500 shrink-0" />
+        Informations confidentielles — Usage professionnel uniquement.
+      </p>
+      {persons.map((p) => (
+        <div key={p.id} className="flex gap-3 p-3 bg-muted/30 border border-border rounded-lg">
+          {p.photo_url ? (
+            <img
+              src={p.photo_url}
+              alt={`${p.prenom} ${p.nom}`}
+              className="w-16 h-20 object-cover rounded-md border shrink-0"
+            />
+          ) : (
+            <div className="w-16 h-20 bg-muted rounded-md border flex items-center justify-center shrink-0">
+              <Users className="h-6 w-6 text-muted-foreground" />
+            </div>
+          )}
+          <div className="flex-1 min-w-0">
+            <p className="font-bold text-base text-foreground">{p.prenom} {p.nom}</p>
+            {p.date_naissance && (
+              <p className="text-sm text-muted-foreground mt-0.5">
+                Né(e) le {new Date(p.date_naissance).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })}
+              </p>
+            )}
+            {p.notes && (
+              <p className="text-xs text-muted-foreground mt-1.5 line-clamp-3 italic">{p.notes}</p>
+            )}
+          </div>
+        </div>
       ))}
-    </Accordion>
+    </div>
   );
 }
 
@@ -1265,7 +1290,7 @@ function ContentAssistance() {
 
 const DIALOG_CONTENT: Record<string, { title: string; Content: () => JSX.Element }> = {
   fraude:    { title: 'Calcul du taux de fraude',   Content: ContentFraude },
-  faq:       { title: 'Questions fréquentes',        Content: ContentFAQ },
+  wanted:    { title: 'Personnes recherchées',        Content: ContentWantedPersons },
   contacts:  { title: 'Contacts utiles',             Content: ContentContacts },
   partager:      { title: "Partager l'application",     Content: ContentPartager },
   presentation:  { title: 'Présentation de l\'application', Content: ContentPresentation },

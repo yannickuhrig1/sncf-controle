@@ -23,6 +23,7 @@ import { TrainLookupButton } from '@/components/controls/TrainLookupButton';
 import { useDailyTrains, DailyTrain } from '@/hooks/useDailyTrains';
 import { useTrainShareSession } from '@/hooks/useTrainShareSession';
 import { TrainShareDialog } from '@/components/controls/TrainShareDialog';
+import { BigPassengerCounterDialog } from '@/components/controls/BigPassengerCounterDialog';
 import { LastSyncIndicator } from '@/components/controls/LastSyncIndicator';
 import { OfflineIndicator } from '@/components/controls/OfflineIndicator';
 import { Button } from '@/components/ui/button';
@@ -186,6 +187,9 @@ export default function OnboardControl() {
 
   // Train stops from SNCF API lookup
   const [trainStops, setTrainStops] = useState<import('@/hooks/useTrainLookup').TrainStop[]>([]);
+
+  // Grand compteur voyageurs
+  const [bigCounterOpen, setBigCounterOpen] = useState(false);
 
   // Trains du jour
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
@@ -1095,7 +1099,7 @@ export default function OnboardControl() {
                           </div>
                         </div>
                       </div>
-                      <CounterInput label="Nombre de passagers *" value={formState.passengers} onChange={(v) => setFormState((p) => ({ ...p, passengers: v }))} min={0} max={9999} steps={[1, 10]} />
+                      <CounterInput label="Nombre de passagers *" value={formState.passengers} onChange={(v) => setFormState((p) => ({ ...p, passengers: v }))} min={0} max={9999} steps={[1, 10]} onLongPress={() => setBigCounterOpen(true)} />
                       <div className="flex items-center gap-4 flex-wrap pt-1">
                         <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
                           <Checkbox checked={formState.isCancelled} onCheckedChange={(v) => setFormState(p => ({...p, isCancelled: !!v}))} />
@@ -1420,6 +1424,7 @@ export default function OnboardControl() {
                       min={0}
                       max={9999}
                       steps={[1, 10]}
+                      onLongPress={() => setBigCounterOpen(true)}
                     />
                     <div className="flex items-center gap-4 flex-wrap pt-1">
                       <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
@@ -1800,6 +1805,16 @@ export default function OnboardControl() {
         controls={controls as Control[]}
         open={exportOpen}
         onOpenChange={setExportOpen}
+      />
+
+      {/* Grand compteur voyageurs */}
+      <BigPassengerCounterDialog
+        open={bigCounterOpen}
+        onOpenChange={setBigCounterOpen}
+        value={formState.passengers}
+        onChange={(v) => setFormState((p) => ({ ...p, passengers: v }))}
+        min={0}
+        max={9999}
       />
 
       {/* Train Share Dialog */}

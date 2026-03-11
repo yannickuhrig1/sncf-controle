@@ -38,7 +38,13 @@ import {
   UserPlus,
   Search,
   Clock,
+  Pencil,
+  Trash2,
+  Eye,
+  EyeOff,
+  Upload,
 } from 'lucide-react';
+import { useWantedPersons, type WantedPerson } from '@/hooks/useWantedPersons';
 import { HourlyHeatmap } from '@/components/manager/HourlyHeatmap';
 import { AuditTrailView } from '@/components/manager/AuditTrailView';
 import type { Database } from '@/integrations/supabase/types';
@@ -69,6 +75,68 @@ export default function ManagerPage() {
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, []);
+
+  // ── Personnes recherchées ──────────────────────────────────────────────────
+  const { persons: wantedPersons, isLoading: wantedLoading, addPerson, updatePerson, deletePerson, toggleActive } = useWantedPersons(false);
+  const [wantedDialogOpen, setWantedDialogOpen] = useState(false);
+  const [editingPerson, setEditingPerson] = useState<WantedPerson | null>(null);
+  const [wantedForm, setWantedForm] = useState({ nom: '', prenom: '', date_naissance: '', notes: '' });
+  const [wantedPhotoFile, setWantedPhotoFile] = useState<File | null>(null);
+  const [wantedPhotoPreview, setWantedPhotoPreview] = useState<string | null>(null);
+  const [wantedSaving, setWantedSaving] = useState(false);
+
+  const openAddWanted = () => {
+    setEditingPerson(null);
+    setWantedForm({ nom: '', prenom: '', date_naissance: '', notes: '' });
+    setWantedPhotoFile(null);
+    setWantedPhotoPreview(null);
+    setWantedDialogOpen(true);
+  };
+
+  const openEditWanted = (p: WantedPerson) => {
+    setEditingPerson(p);
+    setWantedForm({ nom: p.nom, prenom: p.prenom, date_naissance: p.date_naissance || '', notes: p.notes || '' });
+    setWantedPhotoFile(null);
+    setWantedPhotoPreview(p.photo_url);
+    setWantedDialogOpen(true);
+  };
+
+  const handleWantedPhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setWantedPhotoFile(file);
+    const reader = new FileReader();
+    reader.onload = () => setWantedPhotoPreview(reader.result as string);
+    reader.readAsDataURL(file);
+  };
+
+  const handleWantedSave = async () => {
+    if (!wantedForm.nom.trim() || !wantedForm.prenom.trim()) return;
+    setWantedSaving(true);
+    let ok: boolean;
+    if (editingPerson) {
+      ok = await updatePerson(editingPerson.id, {
+        nom: wantedForm.nom.trim(), prenom: wantedForm.prenom.trim(),
+        date_naissance: wantedForm.date_naissance || null,
+        notes: wantedForm.notes || null,
+        ...(wantedPhotoFile ? { photoFile: wantedPhotoFile } : {}),
+      });
+    } else {
+      ok = await addPerson({
+        nom: wantedForm.nom.trim(), prenom: wantedForm.prenom.trim(),
+        date_naissance: wantedForm.date_naissance || null,
+        photo_url: null, notes: wantedForm.notes || null,
+        ...(wantedPhotoFile ? { photoFile: wantedPhotoFile } : {}),
+      });
+    }
+    setWantedSaving(false);
+    if (ok) {
+      setWantedDialogOpen(false);
+      toast.success(editingPerson ? 'Fiche mise à jour' : 'Personne ajoutée');
+    } else {
+      toast.error('Erreur lors de la sauvegarde');
+    }
+  };
 
   // ── Dialog state ───────────────────────────────────────────────────────────
   const [createTeamOpen, setCreateTeamOpen] = useState(false);
@@ -342,11 +410,15 @@ export default function ManagerPage() {
 
         {/* Tabs */}
         <Tabs defaultValue="overview" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="overview">Vue d'ensemble</TabsTrigger>
             <TabsTrigger value="heatmap">Heatmap</TabsTrigger>
             <TabsTrigger value="audit">Audit Trail</TabsTrigger>
             <TabsTrigger value="teams">Équipes</TabsTrigger>
+            <TabsTrigger value="wanted" className="gap-1">
+              <AlertTriangle className="h-3.5 w-3.5" />
+              Recherchées
+            </TabsTrigger>
           </TabsList>
 
           {/* ── Vue d'ensemble ── */}
@@ -607,6 +679,65 @@ export default function ManagerPage() {
               </div>
             )}
           </TabsContent>
+
+          {/* ── Personnes recherchées ── */}
+          <TabsContent value="wanted" className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-semibold text-sm">Personnes recherchées</h3>
+                <p className="text-xs text-muted-foreground">Visible par tous les agents dans Infos utiles</p>
+              </div>
+              <Button size="sm" className="gap-1.5" onClick={openAddWanted}>
+                <Plus className="h-4 w-4" />
+                Ajouter
+              </Button>
+            </div>
+
+            {wantedLoading ? (
+              <div className="flex justify-center py-8"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
+            ) : wantedPersons.length === 0 ? (
+              <div className="text-center py-10 text-muted-foreground text-sm">
+                Aucune fiche. Cliquez sur "Ajouter" pour créer la première.
+              </div>
+            ) : (
+              <div className="grid gap-3 sm:grid-cols-2">
+                {wantedPersons.map(p => (
+                  <Card key={p.id} className={cn('border-0 shadow-sm overflow-hidden', !p.active && 'opacity-50')}>
+                    <div className={cn('h-1', p.active ? 'bg-gradient-to-r from-red-500 to-rose-600' : 'bg-muted')} />
+                    <CardContent className="p-3 flex gap-3">
+                      {p.photo_url ? (
+                        <img src={p.photo_url} alt="" className="w-14 h-18 object-cover rounded border shrink-0" style={{ height: '4.5rem' }} />
+                      ) : (
+                        <div className="w-14 bg-muted rounded border flex items-center justify-center shrink-0" style={{ height: '4.5rem' }}>
+                          <Users className="h-5 w-5 text-muted-foreground" />
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-sm">{p.prenom} {p.nom}</p>
+                        {p.date_naissance && (
+                          <p className="text-xs text-muted-foreground">
+                            Né(e) le {new Date(p.date_naissance).toLocaleDateString('fr-FR')}
+                          </p>
+                        )}
+                        {p.notes && <p className="text-xs text-muted-foreground mt-1 line-clamp-2 italic">{p.notes}</p>}
+                        <div className="flex gap-1.5 mt-2">
+                          <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => openEditWanted(p)} title="Modifier">
+                            <Pencil className="h-3.5 w-3.5" />
+                          </Button>
+                          <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => toggleActive(p.id, !p.active)} title={p.active ? 'Désactiver' : 'Réactiver'}>
+                            {p.active ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                          </Button>
+                          <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => { if (confirm('Supprimer cette fiche ?')) deletePerson(p.id); }} title="Supprimer">
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </TabsContent>
         </Tabs>
 
         {/* ── Dialog : Créer une équipe ── */}
@@ -720,6 +851,55 @@ export default function ManagerPage() {
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setAddAgentTeamId(null)}>Fermer</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* ── Dialog : Personne recherchée ── */}
+        <Dialog open={wantedDialogOpen} onOpenChange={setWantedDialogOpen}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>{editingPerson ? 'Modifier la fiche' : 'Nouvelle personne recherchée'}</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-3 py-2">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium">Prénom *</label>
+                  <Input placeholder="Jean" value={wantedForm.prenom} onChange={e => setWantedForm(p => ({ ...p, prenom: e.target.value }))} />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium">Nom *</label>
+                  <Input placeholder="DUPONT" value={wantedForm.nom} onChange={e => setWantedForm(p => ({ ...p, nom: e.target.value }))} />
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium text-muted-foreground">Date de naissance</label>
+                <Input type="date" value={wantedForm.date_naissance} onChange={e => setWantedForm(p => ({ ...p, date_naissance: e.target.value }))} />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium text-muted-foreground">Photo</label>
+                <div className="flex items-center gap-3">
+                  {wantedPhotoPreview && (
+                    <img src={wantedPhotoPreview} alt="preview" className="w-14 h-18 object-cover rounded border" style={{ height: '4.5rem' }} />
+                  )}
+                  <label className="flex items-center gap-2 cursor-pointer bg-muted hover:bg-muted/70 text-sm px-3 py-2 rounded-md border transition-colors">
+                    <Upload className="h-4 w-4" />
+                    {wantedPhotoPreview ? 'Changer la photo' : 'Importer une photo'}
+                    <input type="file" accept="image/*" className="hidden" onChange={handleWantedPhotoChange} />
+                  </label>
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium text-muted-foreground">Notes / Signalement</label>
+                <Input placeholder="Ex : Fraude récurrente ligne Metz-Thionville…" value={wantedForm.notes} onChange={e => setWantedForm(p => ({ ...p, notes: e.target.value }))} />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setWantedDialogOpen(false)}>Annuler</Button>
+              <Button onClick={handleWantedSave} disabled={wantedSaving || !wantedForm.nom.trim() || !wantedForm.prenom.trim()}>
+                {wantedSaving && <Loader2 className="h-4 w-4 animate-spin mr-1.5" />}
+                {editingPerson ? 'Enregistrer' : 'Ajouter'}
+              </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>

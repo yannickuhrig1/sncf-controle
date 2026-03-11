@@ -15,6 +15,7 @@ interface CounterInputProps {
   showTotal?: { unitPrice: number; label: string };
   steps?: number[]; // e.g., [1, 10] for ±1 and ±10 buttons
   allowManualInput?: boolean;
+  onLongPress?: () => void;
 }
 
 export function CounterInput({
@@ -28,10 +29,25 @@ export function CounterInput({
   showTotal,
   steps,
   allowManualInput = true,
+  onLongPress,
 }: CounterInputProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [inputValue, setInputValue] = useState(String(value));
   const inputRef = useRef<HTMLInputElement>(null);
+  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const didLongPress = useRef(false);
+
+  const startPress = () => {
+    if (!onLongPress) return;
+    didLongPress.current = false;
+    longPressTimer.current = setTimeout(() => {
+      didLongPress.current = true;
+      onLongPress();
+    }, 600);
+  };
+  const cancelPress = () => {
+    if (longPressTimer.current) { clearTimeout(longPressTimer.current); longPressTimer.current = null; }
+  };
 
   const colorClasses = {
     default: 'text-foreground',
@@ -103,14 +119,20 @@ export function CounterInput({
 
     return (
       <div
-        onClick={() => allowManualInput && setIsEditing(true)}
+        onClick={() => { if (didLongPress.current) { didLongPress.current = false; return; } allowManualInput && setIsEditing(true); }}
+        onMouseDown={startPress}
+        onMouseUp={cancelPress}
+        onMouseLeave={cancelPress}
+        onTouchStart={startPress}
+        onTouchEnd={cancelPress}
+        onTouchCancel={cancelPress}
         className={cn(
-          'flex-1 h-9 flex items-center justify-center rounded-md font-semibold text-lg min-w-[60px] transition-colors',
+          'flex-1 h-9 flex items-center justify-center rounded-md font-semibold text-lg min-w-[60px] transition-colors select-none',
           bgClasses[variant],
           colorClasses[variant],
-          allowManualInput && 'cursor-pointer hover:ring-2 hover:ring-primary/50'
+          (allowManualInput || onLongPress) && 'cursor-pointer hover:ring-2 hover:ring-primary/50'
         )}
-        title={allowManualInput ? 'Cliquer pour saisir manuellement' : undefined}
+        title={onLongPress ? 'Maintenir pour afficher en grand' : allowManualInput ? 'Cliquer pour saisir manuellement' : undefined}
       >
         {value}
       </div>

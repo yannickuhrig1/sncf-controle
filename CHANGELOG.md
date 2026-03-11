@@ -5,6 +5,19 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/),
 et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.10.44] - 2026-03-11
+
+### Ajouté
+- Compteur voyageurs grand écran : maintien appui → plein écran avec chiffre géant + boutons ±1/±10
+- Onglet "Personnes recherchées" dans Manager : fiches (nom, prénom, date de naissance, photo, notes)
+- Tuile "Personnes recherchées" dans Infos utiles : fiches actives visibles par tous les agents
+- Migration Supabase : table `wanted_persons` + bucket `wanted-photos` (RLS managers/admins)
+- README.md mis à jour
+
+### Modifié
+- Infos utiles : FAQ supprimée → remplacée par "Personnes recherchées"
+- Présentation de l'application : version mise à jour (v1.10.44)
+
 ## [1.10.43] - 2026-03-11
 
 ### Modifié
