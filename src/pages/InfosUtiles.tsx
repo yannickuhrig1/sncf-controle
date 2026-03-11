@@ -534,7 +534,7 @@ function ContentPresentation() {
         <Button
           variant="outline"
           className="w-full gap-2"
-          onClick={() => window.open('/Présentation_SNCF_Controles_Direction.html', '_blank')}
+          onClick={() => window.open('/Présentation_de_l_application.html', '_blank')}
         >
           <ExternalLink className="h-4 w-4" />
           Ouvrir
@@ -544,7 +544,7 @@ function ContentPresentation() {
           className="w-full gap-2"
           asChild
         >
-          <a href="/Présentation_SNCF_Controles_Direction.html" download="Présentation_SNCF_Controles_Direction.html">
+          <a href="/Présentation_de_l_application.html" download="Présentation_de_l_application.html">
             <Download className="h-4 w-4" />
             Télécharger
           </a>
