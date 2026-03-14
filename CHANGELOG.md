@@ -5,6 +5,13 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/),
 et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.10.47] - 2026-03-14
+
+### Ajouté
+- Stats : boutons de sélection de plage sur les graphiques "Tendance" et "Évolution du taux de fraude"
+  - Jour → 7j / 30j / 90j ; Semaine → 4 sem / 12 sem / 26 sem ; Mois → 3 mois / 6 mois / 12 mois ; Année → 2 ans / 5 ans
+  - Plage indépendante des KPI (fetch séparé), réinitialisée à la plage médiane au changement de période
+
 ## [1.10.46] - 2026-03-14
 
 ### Ajouté

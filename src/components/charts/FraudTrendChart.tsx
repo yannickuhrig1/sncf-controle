@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import React, { useMemo } from 'react';
 import {
   LineChart,
   Line,
@@ -20,6 +20,7 @@ type Control = Database['public']['Tables']['controls']['Row'];
 
 interface FraudTrendChartProps {
   controls: Control[];
+  headerExtra?: React.ReactNode;
 }
 
 interface PeriodStats {
@@ -31,7 +32,7 @@ interface PeriodStats {
   controlCount: number;
 }
 
-export function FraudTrendChart({ controls }: FraudTrendChartProps) {
+export function FraudTrendChart({ controls, headerExtra }: FraudTrendChartProps) {
   const chartData = useMemo(() => {
     const periodMap = new Map<string, PeriodStats>();
 
@@ -67,15 +68,17 @@ export function FraudTrendChart({ controls }: FraudTrendChartProps) {
     });
 
     return Array.from(periodMap.values())
-      .sort((a, b) => a.key.localeCompare(b.key))
-      .slice(-12);
+      .sort((a, b) => a.key.localeCompare(b.key));
   }, [controls]);
 
   if (chartData.length === 0) {
     return (
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Tendance du taux de fraude</CardTitle>
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            <CardTitle className="text-base">Tendance du taux de fraude</CardTitle>
+            {headerExtra}
+          </div>
         </CardHeader>
         <CardContent>
           <div className="h-[200px] flex items-center justify-center text-muted-foreground">
@@ -89,7 +92,10 @@ export function FraudTrendChart({ controls }: FraudTrendChartProps) {
   return (
     <Card>
       <CardHeader className="pb-2">
-        <CardTitle className="text-base">Tendance du taux de fraude</CardTitle>
+        <div className="flex items-center justify-between gap-2 flex-wrap">
+          <CardTitle className="text-base">Tendance du taux de fraude</CardTitle>
+          {headerExtra}
+        </div>
       </CardHeader>
       <CardContent>
         <div className="h-[280px]">

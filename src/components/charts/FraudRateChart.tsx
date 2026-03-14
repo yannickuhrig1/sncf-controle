@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import React, { useMemo } from 'react';
 import {
   LineChart,
   Line,
@@ -19,6 +19,7 @@ type Control = Database['public']['Tables']['controls']['Row'];
 interface FraudRateChartProps {
   controls: Control[];
   title?: string;
+  headerExtra?: React.ReactNode;
 }
 
 interface DailyStats {
@@ -30,7 +31,7 @@ interface DailyStats {
   controlCount: number;
 }
 
-export function FraudRateChart({ controls, title = "Évolution du taux de fraude" }: FraudRateChartProps) {
+export function FraudRateChart({ controls, title = "Évolution du taux de fraude", headerExtra }: FraudRateChartProps) {
   const chartData = useMemo(() => {
     // Group controls by date
     const dailyMap = new Map<string, DailyStats>();
@@ -66,15 +67,17 @@ export function FraudRateChart({ controls, title = "Évolution du taux de fraude
 
     // Sort by date and return array
     return Array.from(dailyMap.values())
-      .sort((a, b) => a.date.localeCompare(b.date))
-      .slice(-14); // Last 14 days
+      .sort((a, b) => a.date.localeCompare(b.date));
   }, [controls]);
 
   if (chartData.length === 0) {
     return (
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">{title}</CardTitle>
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            <CardTitle className="text-base">{title}</CardTitle>
+            {headerExtra}
+          </div>
         </CardHeader>
         <CardContent>
           <div className="h-[200px] flex items-center justify-center text-muted-foreground">
@@ -88,7 +91,10 @@ export function FraudRateChart({ controls, title = "Évolution du taux de fraude
   return (
     <Card>
       <CardHeader className="pb-2">
-        <CardTitle className="text-base">{title}</CardTitle>
+        <div className="flex items-center justify-between gap-2 flex-wrap">
+          <CardTitle className="text-base">{title}</CardTitle>
+          {headerExtra}
+        </div>
       </CardHeader>
       <CardContent>
         <div className="h-[250px]">

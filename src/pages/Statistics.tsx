@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useControlsWithFilter, ViewMode, Period } from '@/hooks/useControlsWithFilter';
@@ -19,7 +19,7 @@ import {
 import { calculateStats, formatFraudRate, getFraudRateColor } from '@/lib/stats';
 import { buildStatsText, buildStatsHTML, buildStatsPDF } from '@/lib/statsExport';
 import type { StatsShareData, WeeklyTrendPoint } from '@/lib/statsExport';
-import { format, parseISO, startOfWeek } from 'date-fns';
+import { format, parseISO, startOfWeek, subDays } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { PeriodSelector } from '@/components/dashboard/PeriodSelector';
 import { ViewModeToggle } from '@/components/dashboard/ViewModeToggle';
@@ -51,6 +51,15 @@ function StatRow({ label, value }: { label: string; value: number }) {
   );
 }
 
+// ── Chart range options per main period ───────────────────────────────────────
+
+const CHART_RANGES: Partial<Record<Period, { label: string; days: number }[]>> = {
+  day:   [{ label: '7j', days: 7 }, { label: '30j', days: 30 }, { label: '90j', days: 90 }],
+  week:  [{ label: '4 sem', days: 28 }, { label: '12 sem', days: 84 }, { label: '26 sem', days: 182 }],
+  month: [{ label: '3 mois', days: 90 }, { label: '6 mois', days: 180 }, { label: '12 mois', days: 365 }],
+  year:  [{ label: '2 ans', days: 730 }, { label: '5 ans', days: 1825 }],
+};
+
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 const periodLabels: Record<Period, string> = {
@@ -72,6 +81,29 @@ export default function StatisticsPage() {
     period,
     customStart: period === 'custom' ? customStart : null,
     customEnd:   period === 'custom' ? customEnd   : null,
+  });
+
+  // Chart-specific range (independent from KPI period)
+  const [chartRangeIdx, setChartRangeIdx] = useState(1);
+  useEffect(() => { setChartRangeIdx(1); }, [period]);
+
+  const chartRangeOptions = CHART_RANGES[period] ?? [];
+  const safeChartIdx = Math.min(chartRangeIdx, Math.max(0, chartRangeOptions.length - 1));
+  const activeChartRange = chartRangeOptions[safeChartIdx] ?? null;
+
+  const chartStart = activeChartRange
+    ? format(subDays(selectedDate, activeChartRange.days - 1), 'yyyy-MM-dd')
+    : (period === 'custom' ? customStart : null);
+  const chartEnd = activeChartRange
+    ? format(selectedDate, 'yyyy-MM-dd')
+    : (period === 'custom' ? customEnd : null);
+
+  const { controls: chartControls } = useControlsWithFilter({
+    date: selectedDate,
+    viewMode,
+    period: 'custom',
+    customStart: chartStart,
+    customEnd: chartEnd,
   });
 
   const stats = useMemo(() => calculateStats(controls), [controls]);
@@ -303,8 +335,29 @@ export default function StatisticsPage() {
             </div>
 
             {/* Charts */}
-            <FraudTrendChart controls={controls} />
-            <FraudRateChart controls={controls} />
+            {(() => {
+              const rangeButtons = chartRangeOptions.length > 0 ? (
+                <div className="flex gap-1">
+                  {chartRangeOptions.map((opt, idx) => (
+                    <Button
+                      key={opt.label}
+                      size="sm"
+                      variant={safeChartIdx === idx ? 'default' : 'outline'}
+                      className="h-6 px-2 text-xs"
+                      onClick={() => setChartRangeIdx(idx)}
+                    >
+                      {opt.label}
+                    </Button>
+                  ))}
+                </div>
+              ) : null;
+              return (
+                <>
+                  <FraudTrendChart controls={chartControls} headerExtra={rangeButtons} />
+                  <FraudRateChart controls={chartControls} headerExtra={rangeButtons} />
+                </>
+              );
+            })()}
             <PassengersChart controls={controls} />
             <TrainNumberFraudChart controls={controls} />
 
