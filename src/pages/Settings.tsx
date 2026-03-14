@@ -830,7 +830,12 @@ export default function Settings() {
                 {/* Add shortcut */}
                 {(() => {
                   const usedIds = shortcuts.map(s => s.id);
-                  const available = SHORTCUT_OPTIONS.filter(o => !usedIds.includes(o.id));
+                  const available = SHORTCUT_OPTIONS.filter(o => {
+                    if (usedIds.includes(o.id)) return false;
+                    if (o.roleRequired === 'admin' && !isAdmin) return false;
+                    if (o.roleRequired === 'manager' && !isManager) return false;
+                    return true;
+                  });
                   if (available.length === 0) return null;
                   return (
                     <div className="space-y-1.5">

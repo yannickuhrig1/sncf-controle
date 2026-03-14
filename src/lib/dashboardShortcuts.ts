@@ -11,14 +11,18 @@ export interface ShortcutOption {
   defaultDescription: string;
   href: string;
   iconName: string;
+  /** If set, only show this option to users with this role or above */
+  roleRequired?: 'manager' | 'admin';
 }
 
 export const SHORTCUT_OPTIONS: ShortcutOption[] = [
-  { id: 'onboard',    defaultLabel: 'Contrôle à bord',  defaultDescription: 'Nouveau contrôle en train',      href: '/onboard',    iconName: 'Train' },
-  { id: 'station',    defaultLabel: 'Contrôle en gare', defaultDescription: 'Nouveau contrôle en gare',       href: '/station',    iconName: 'Building2' },
-  { id: 'history',    defaultLabel: 'Historique',       defaultDescription: 'Consulter les contrôles passés', href: '/history',    iconName: 'Clock' },
-  { id: 'statistics', defaultLabel: 'Statistiques',     defaultDescription: 'Voir les statistiques',          href: '/statistics', iconName: 'BarChart3' },
-  { id: 'infos',      defaultLabel: 'Infos utiles',     defaultDescription: 'Informations et ressources',     href: '/infos',      iconName: 'Info' },
+  { id: 'onboard',    defaultLabel: 'Contrôle à bord',       defaultDescription: 'Nouveau contrôle en train',      href: '/onboard',               iconName: 'Train' },
+  { id: 'station',    defaultLabel: 'Contrôle en gare',      defaultDescription: 'Nouveau contrôle en gare',       href: '/station',               iconName: 'Building2' },
+  { id: 'embarkment', defaultLabel: 'Départ / Arrivée',      defaultDescription: 'Embarquement & refoulement',     href: '/station?mode=embarkment', iconName: 'ArrowUpFromLine' },
+  { id: 'history',    defaultLabel: 'Historique',            defaultDescription: 'Consulter les contrôles passés', href: '/history',               iconName: 'Clock' },
+  { id: 'statistics', defaultLabel: 'Statistiques',          defaultDescription: 'Voir les statistiques',          href: '/statistics',            iconName: 'BarChart3' },
+  { id: 'infos',      defaultLabel: 'Infos utiles',          defaultDescription: 'Informations et ressources',     href: '/infos',                 iconName: 'Info' },
+  { id: 'manager',    defaultLabel: 'Manager',               defaultDescription: 'Espace manager',                 href: '/manager',               iconName: 'Shield', roleRequired: 'manager' },
 ];
 
 export const DEFAULT_SHORTCUTS: DashboardShortcut[] = [

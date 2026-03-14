@@ -35,6 +35,7 @@ import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import {
   AlertTriangle,
+  ArrowUpFromLine,
   BarChart3,
   Building2,
   CheckCircle2,
@@ -45,6 +46,7 @@ import {
   LayoutDashboard,
   Loader2,
   Share2,
+  Shield,
   Train,
   UserCheck,
   Users,
@@ -56,7 +58,7 @@ import {
 } from '@/lib/dashboardShortcuts';
 
 type IconComponent = React.ComponentType<LucideProps>;
-const SHORTCUT_ICONS: Record<string, IconComponent> = { Train, Building2, BarChart3, Clock, Info };
+const SHORTCUT_ICONS: Record<string, IconComponent> = { Train, Building2, ArrowUpFromLine, BarChart3, Clock, Info, Shield };
 
 type LocationFilter = 'all' | 'train' | 'station';
 type EmailFormat = 'text' | 'html' | 'pdf';

@@ -92,8 +92,10 @@ export default function StationControl() {
   // Paris timezone auto-refresh
   const { date: parisDate, time: parisTime } = useParisTime(60000);
 
-  // Control mode selection
-  const [controlMode, setControlMode] = useState<ControlMode>('disembarkment');
+  // Control mode selection (supports ?mode=embarkment deep-link)
+  const [controlMode, setControlMode] = useState<ControlMode>(
+    searchParams.get('mode') === 'embarkment' ? 'embarkment' : 'disembarkment'
+  );
 
   // Edit/Duplicate mode
   const editId = searchParams.get('edit');

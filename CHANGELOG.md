@@ -5,6 +5,12 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/),
 et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.10.53] - 2026-03-14
+
+### Ajouté
+- Raccourcis tableau de bord : nouvelles options "Départ / Arrivée" (embarquement, ouvre `/station?mode=embarkment`) et "Manager" (managers uniquement)
+- StationControl : support deep-link `?mode=embarkment` pour accès direct à la vue embarquement
+
 ## [1.10.52] - 2026-03-14
 
 ### Ajouté
