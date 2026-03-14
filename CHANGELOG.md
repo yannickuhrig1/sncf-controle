@@ -5,6 +5,12 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/),
 et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.10.52] - 2026-03-14
+
+### Ajouté
+- Accueil : tuiles de raccourcis dynamiques (plus hardcodées)
+- Paramètres → "Raccourcis tableau de bord" : renommer les tuiles, activer/désactiver, ajouter d'autres raccourcis (Historique, Statistiques, Infos), réinitialiser
+
 ## [1.10.51] - 2026-03-14
 
 ### Ajouté

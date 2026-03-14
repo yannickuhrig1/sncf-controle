@@ -37,6 +37,11 @@ import {
   FileText,
   ChevronDown,
   Smartphone,
+  LayoutDashboard,
+  Pencil,
+  Plus,
+  X,
+  RotateCcw,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -63,6 +68,11 @@ import {
 import { SortablePageItem } from '@/components/settings/SortablePageItem';
 import { InstallAppButton } from '@/components/InstallAppButton';
 import { useState, useEffect, useCallback } from 'react';
+import { Input } from '@/components/ui/input';
+import {
+  loadShortcuts, saveShortcuts, resetShortcuts, SHORTCUT_OPTIONS,
+  type DashboardShortcut,
+} from '@/lib/dashboardShortcuts';
 
 const PAGE_OPTIONS: { id: PageId; label: string; canDisable: boolean; roleRequired?: 'manager' | 'admin' }[] = [
   { id: 'dashboard', label: 'Accueil', canDisable: false },
@@ -178,10 +188,21 @@ export default function Settings() {
   const [openSections, setOpenSections] = useState({
     appearance: false,
     navigation: false,
+    shortcuts: false,
     notifications: false,
     data: false,
     app: false,
   });
+
+  const [shortcuts, setShortcutsState] = useState<DashboardShortcut[]>(() => loadShortcuts());
+  const [editingIdx, setEditingIdx] = useState<number | null>(null);
+  const [editLabel, setEditLabel] = useState('');
+  const [editDesc, setEditDesc] = useState('');
+
+  const saveAndDispatch = (newShortcuts: DashboardShortcut[]) => {
+    setShortcutsState(newShortcuts);
+    saveShortcuts(newShortcuts);
+  };
 
   const toggleSection = (key: keyof typeof openSections) => {
     setOpenSections(prev => ({ ...prev, [key]: !prev[key] }));
@@ -705,6 +726,147 @@ export default function Settings() {
                     </DndContext>
                   </div>
                 )}
+              </CardContent>
+            </CollapsibleContent>
+          </Card>
+        </Collapsible>
+
+        {/* Raccourcis tableau de bord */}
+        <Collapsible open={openSections.shortcuts} onOpenChange={() => toggleSection('shortcuts')}>
+          <Card>
+            <CollapsibleTrigger asChild>
+              <CardHeader className="cursor-pointer hover:bg-muted/30 transition-colors rounded-t-lg">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <LayoutDashboard className="h-4 w-4" />
+                  Raccourcis tableau de bord
+                  <ChevronDown className={`h-4 w-4 ml-auto transition-transform ${openSections.shortcuts ? 'rotate-180' : ''}`} />
+                </CardTitle>
+                <CardDescription>Personnalisez les tuiles d'accès rapide de l'accueil</CardDescription>
+              </CardHeader>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <CardContent className="space-y-3 pt-0">
+                {/* Shortcut list */}
+                {shortcuts.map((sc, idx) => {
+                  const option = SHORTCUT_OPTIONS.find(o => o.id === sc.id);
+                  const isEditing = editingIdx === idx;
+                  return (
+                    <div key={`${sc.id}-${idx}`} className="rounded-lg border bg-muted/20 p-3 space-y-2">
+                      <div className="flex items-center gap-2">
+                        {/* Toggle */}
+                        <Switch
+                          checked={sc.enabled}
+                          onCheckedChange={(checked) => {
+                            const next = shortcuts.map((s, i) => i === idx ? { ...s, enabled: checked } : s);
+                            saveAndDispatch(next);
+                          }}
+                        />
+                        {/* Label display / edit */}
+                        {isEditing ? (
+                          <div className="flex-1 flex flex-col gap-1.5">
+                            <Input
+                              value={editLabel}
+                              onChange={e => setEditLabel(e.target.value)}
+                              placeholder="Titre du raccourci"
+                              className="h-8 text-sm"
+                            />
+                            <Input
+                              value={editDesc}
+                              onChange={e => setEditDesc(e.target.value)}
+                              placeholder="Description"
+                              className="h-8 text-sm"
+                            />
+                          </div>
+                        ) : (
+                          <div className="flex-1 min-w-0">
+                            <p className={cn('text-sm font-medium truncate', !sc.enabled && 'text-muted-foreground line-through')}>{sc.label}</p>
+                            {sc.description && <p className="text-xs text-muted-foreground truncate">{sc.description}</p>}
+                          </div>
+                        )}
+                        {/* Action buttons */}
+                        {isEditing ? (
+                          <>
+                            <Button size="sm" variant="default" className="h-7 px-2 text-xs"
+                              onClick={() => {
+                                const next = shortcuts.map((s, i) => i === idx
+                                  ? { ...s, label: editLabel.trim() || (option?.defaultLabel ?? s.label), description: editDesc.trim() }
+                                  : s);
+                                saveAndDispatch(next);
+                                setEditingIdx(null);
+                              }}>
+                              <Check className="h-3.5 w-3.5" />
+                            </Button>
+                            <Button size="sm" variant="ghost" className="h-7 px-2 text-xs"
+                              onClick={() => setEditingIdx(null)}>
+                              <X className="h-3.5 w-3.5" />
+                            </Button>
+                          </>
+                        ) : (
+                          <>
+                            <Button size="sm" variant="ghost" className="h-7 px-2"
+                              onClick={() => {
+                                setEditingIdx(idx);
+                                setEditLabel(sc.label);
+                                setEditDesc(sc.description);
+                              }}>
+                              <Pencil className="h-3.5 w-3.5" />
+                            </Button>
+                            <Button size="sm" variant="ghost" className="h-7 px-2 text-destructive hover:text-destructive"
+                              onClick={() => {
+                                setEditingIdx(null);
+                                saveAndDispatch(shortcuts.filter((_, i) => i !== idx));
+                              }}>
+                              <X className="h-3.5 w-3.5" />
+                            </Button>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+
+                <Separator />
+
+                {/* Add shortcut */}
+                {(() => {
+                  const usedIds = shortcuts.map(s => s.id);
+                  const available = SHORTCUT_OPTIONS.filter(o => !usedIds.includes(o.id));
+                  if (available.length === 0) return null;
+                  return (
+                    <div className="space-y-1.5">
+                      <p className="text-xs text-muted-foreground font-medium">Ajouter un raccourci</p>
+                      <div className="flex flex-wrap gap-2">
+                        {available.map(option => (
+                          <Button key={option.id} size="sm" variant="outline" className="h-8 text-xs gap-1.5"
+                            onClick={() => {
+                              saveAndDispatch([...shortcuts, {
+                                id: option.id,
+                                label: option.defaultLabel,
+                                description: option.defaultDescription,
+                                enabled: true,
+                              }]);
+                            }}>
+                            <Plus className="h-3 w-3" />
+                            {option.defaultLabel}
+                          </Button>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                {/* Reset */}
+                <div className="flex justify-end pt-1">
+                  <Button size="sm" variant="ghost" className="h-7 text-xs text-muted-foreground gap-1.5"
+                    onClick={() => {
+                      resetShortcuts();
+                      setShortcutsState(loadShortcuts());
+                      setEditingIdx(null);
+                    }}>
+                    <RotateCcw className="h-3 w-3" />
+                    Réinitialiser
+                  </Button>
+                </div>
               </CardContent>
             </CollapsibleContent>
           </Card>

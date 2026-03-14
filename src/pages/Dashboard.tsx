@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -35,17 +35,28 @@ import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import {
   AlertTriangle,
+  BarChart3,
   Building2,
   CheckCircle2,
+  Clock,
   CreditCard,
   IdCard,
+  Info,
   LayoutDashboard,
   Loader2,
   Share2,
   Train,
   UserCheck,
   Users,
+  type LucideProps,
 } from 'lucide-react';
+import {
+  loadShortcuts, SHORTCUT_OPTIONS, SHORTCUTS_CHANGE_EVENT,
+  type DashboardShortcut,
+} from '@/lib/dashboardShortcuts';
+
+type IconComponent = React.ComponentType<LucideProps>;
+const SHORTCUT_ICONS: Record<string, IconComponent> = { Train, Building2, BarChart3, Clock, Info };
 
 type LocationFilter = 'all' | 'train' | 'station';
 type EmailFormat = 'text' | 'html' | 'pdf';
@@ -600,6 +611,14 @@ export default function Dashboard() {
   const [emailDialogOpen, setEmailDialogOpen] = useState(false);
   const [emailFormat, setEmailFormat] = useState<EmailFormat>('text');
 
+  // Dashboard shortcuts (from localStorage)
+  const [shortcuts, setShortcuts] = useState<DashboardShortcut[]>(() => loadShortcuts());
+  useEffect(() => {
+    const handler = () => setShortcuts(loadShortcuts());
+    window.addEventListener(SHORTCUTS_CHANGE_EVENT, handler);
+    return () => window.removeEventListener(SHORTCUTS_CHANGE_EVENT, handler);
+  }, []);
+
   const { controls, isLoading: controlsLoading, isFetching, refetch, startDate, endDate } = useControlsWithFilter({
     date: selectedDate,
     viewMode,
@@ -836,35 +855,48 @@ export default function Dashboard() {
         <PendingControlsPanel />
 
         {/* Raccourcis */}
-        <div className="grid grid-cols-2 gap-3">
-          <Link
-            to="/onboard"
-            className="group relative overflow-hidden rounded-xl bg-primary p-4 shadow-md hover:shadow-lg transition-all hover:scale-[1.01] text-primary-foreground flex flex-col gap-1.5"
-          >
-            <div className="absolute right-2 top-2 opacity-10 group-hover:opacity-20 transition-opacity pointer-events-none">
-              <Train className="h-16 w-16" />
+        {(() => {
+          const activeShortcuts = shortcuts.filter(s => s.enabled);
+          if (activeShortcuts.length === 0) return null;
+          return (
+            <div className="grid grid-cols-2 gap-3">
+              {activeShortcuts.map((shortcut, idx) => {
+                const option = SHORTCUT_OPTIONS.find(o => o.id === shortcut.id);
+                if (!option) return null;
+                const Icon = SHORTCUT_ICONS[option.iconName] ?? Train;
+                const isPrimary = idx === 0;
+                return (
+                  <Link
+                    key={shortcut.id}
+                    to={option.href}
+                    className={cn(
+                      'group relative overflow-hidden rounded-xl p-4 transition-all hover:scale-[1.01] flex flex-col gap-1.5',
+                      isPrimary
+                        ? 'bg-primary shadow-md hover:shadow-lg text-primary-foreground'
+                        : 'border-2 border-primary/15 bg-card shadow-sm hover:shadow-md',
+                    )}
+                  >
+                    <div className={cn(
+                      'absolute right-2 top-2 transition-opacity pointer-events-none',
+                      isPrimary ? 'opacity-10 group-hover:opacity-20' : 'opacity-5 group-hover:opacity-10',
+                    )}>
+                      <Icon className={cn('h-16 w-16', !isPrimary && 'text-primary')} />
+                    </div>
+                    <div className={cn('p-2 rounded-lg w-fit', isPrimary ? 'bg-white/20' : 'bg-primary/10')}>
+                      <Icon className={cn('h-4 w-4', !isPrimary && 'text-primary')} />
+                    </div>
+                    <span className={cn('font-semibold text-sm mt-1', !isPrimary && 'text-foreground')}>
+                      {shortcut.label}
+                    </span>
+                    <span className={cn('text-xs', isPrimary ? 'text-white/60' : 'text-muted-foreground')}>
+                      {shortcut.description}
+                    </span>
+                  </Link>
+                );
+              })}
             </div>
-            <div className="p-2 rounded-lg bg-white/20 w-fit">
-              <Train className="h-4 w-4" />
-            </div>
-            <span className="font-semibold text-sm mt-1">Contrôle à bord</span>
-            <span className="text-xs text-white/60">Nouveau contrôle en train</span>
-          </Link>
-
-          <Link
-            to="/station"
-            className="group relative overflow-hidden rounded-xl border-2 border-primary/15 bg-card p-4 shadow-sm hover:shadow-md transition-all hover:scale-[1.01] flex flex-col gap-1.5"
-          >
-            <div className="absolute right-2 top-2 opacity-5 group-hover:opacity-10 transition-opacity pointer-events-none">
-              <Building2 className="h-16 w-16 text-primary" />
-            </div>
-            <div className="p-2 rounded-lg bg-primary/10 w-fit">
-              <Building2 className="h-4 w-4 text-primary" />
-            </div>
-            <span className="font-semibold text-sm mt-1">Contrôle en gare</span>
-            <span className="text-xs text-muted-foreground">Nouveau contrôle en gare</span>
-          </Link>
-        </div>
+          );
+        })()}
 
         {/* KPIs principaux */}
         <div className="space-y-2">
