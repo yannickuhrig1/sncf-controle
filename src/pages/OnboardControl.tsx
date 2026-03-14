@@ -213,31 +213,52 @@ export default function OnboardControl() {
     await leaveSession();
   };
 
+  // Auto-join via deep link ?join=CODE
+  const joinParam = searchParams.get('join');
+  useEffect(() => {
+    if (!joinParam || shareSession || shareLoading || authLoading || !user) return;
+    setShareDialogOpen(true);
+    handleJoinSession(joinParam).then(() => {
+      setSearchParams(p => { p.delete('join'); return p; }, { replace: true });
+    });
+  }, [joinParam, shareSession, shareLoading, authLoading, user]);
+
+  // Per-train origin/destination overrides (localStorage, keyed by date+trainNumber)
+  const getTrainOverrides = (date: string): Record<string, { origin: string; destination: string }> => {
+    try { return JSON.parse(localStorage.getItem(`train_overrides_${date}`) || '{}'); }
+    catch { return {}; }
+  };
+  const saveTrainOverride = (date: string, trainNumber: string, origin: string, destination: string) => {
+    const overrides = getTrainOverrides(date);
+    localStorage.setItem(`train_overrides_${date}`, JSON.stringify({ ...overrides, [trainNumber]: { origin, destination } }));
+  };
+
   const handleLoadDailyTrain = (t: DailyTrain) => {
+    const override = getTrainOverrides(formState.controlDate)[t.trainNumber];
     setFormState(p => ({
       ...p,
       trainNumber: t.trainNumber,
       ...(t.trainInfo ? {
-        origin:      t.trainInfo.origin,
-        destination: t.trainInfo.destination,
+        origin:      override?.origin      ?? t.trainInfo.origin,
+        destination: override?.destination ?? t.trainInfo.destination,
         controlTime: t.trainInfo.departureTime,
+      } : override ? {
+        origin:      override.origin,
+        destination: override.destination,
       } : {}),
     }));
     if (t.trainInfo?.stops?.length) setTrainStops(t.trainInfo.stops);
   };
 
-  // Persist origin/destination changes back to the daily train entry
+  // Persist origin/destination changes per train (works for own trains AND team trains)
   useEffect(() => {
+    if (!formState.trainNumber) return;
+    saveTrainOverride(formState.controlDate, formState.trainNumber, formState.origin, formState.destination);
+    // Also sync to DB for own trains
     const matched = dailyTrains.find(t => t.trainNumber === formState.trainNumber);
-    if (!matched) return;
-    if (
-      matched.trainInfo?.origin === formState.origin &&
-      matched.trainInfo?.destination === formState.destination
-    ) return;
-    updateDailyTrain(formState.trainNumber, {
-      origin: formState.origin,
-      destination: formState.destination,
-    });
+    if (matched && (matched.trainInfo?.origin !== formState.origin || matched.trainInfo?.destination !== formState.destination)) {
+      updateDailyTrain(formState.trainNumber, { origin: formState.origin, destination: formState.destination });
+    }
   }, [formState.trainNumber, formState.origin, formState.destination]); // eslint-disable-line react-hooks/exhaustive-deps
   
   // Auto-update date/time when not in edit mode and form is fresh
@@ -1083,19 +1104,19 @@ export default function OnboardControl() {
                           )}
                         </div>
                       </div>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-2 min-w-0">
                           <Label htmlFor="controlDate">Date</Label>
                           <div className="relative">
-                            <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                            <Input id="controlDate" type="date" className="pl-10" value={formState.controlDate} onChange={(e) => setFormState((p) => ({ ...p, controlDate: e.target.value }))} />
+                            <Calendar className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                            <Input id="controlDate" type="date" className="pl-7 text-sm" value={formState.controlDate} onChange={(e) => setFormState((p) => ({ ...p, controlDate: e.target.value }))} />
                           </div>
                         </div>
-                        <div className="space-y-2">
+                        <div className="space-y-2 min-w-0">
                           <Label htmlFor="controlTime">Heure</Label>
                           <div className="relative">
-                            <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                            <Input id="controlTime" type="time" className="pl-10" value={formState.controlTime} onChange={(e) => setFormState((p) => ({ ...p, controlTime: e.target.value }))} />
+                            <Clock className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                            <Input id="controlTime" type="time" className="pl-7 text-sm" value={formState.controlTime} onChange={(e) => setFormState((p) => ({ ...p, controlTime: e.target.value }))} />
                           </div>
                         </div>
                       </div>
@@ -1388,28 +1409,28 @@ export default function OnboardControl() {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-2 min-w-0">
                         <Label htmlFor="controlDate">Date</Label>
                         <div className="relative">
-                          <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                          <Calendar className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
                           <Input
                             id="controlDate"
                             type="date"
-                            className="pl-10"
+                            className="pl-7 text-sm"
                             value={formState.controlDate}
                             onChange={(e) => setFormState((p) => ({ ...p, controlDate: e.target.value }))}
                           />
                         </div>
                       </div>
-                      <div className="space-y-2">
+                      <div className="space-y-2 min-w-0">
                         <Label htmlFor="controlTime">Heure</Label>
                         <div className="relative">
-                          <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                          <Clock className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
                           <Input
                             id="controlTime"
                             type="time"
-                            className="pl-10"
+                            className="pl-7 text-sm"
                             value={formState.controlTime}
                             onChange={(e) => setFormState((p) => ({ ...p, controlTime: e.target.value }))}
                           />

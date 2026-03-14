@@ -5,6 +5,19 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/),
 et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.10.45] - 2026-03-14
+
+### Corrigé
+- Partage équipe (À bord) : correction RLS Supabase qui empêchait de rejoindre une session (cercle vicieux membre/session)
+- Partage équipe : activer le partage automatiquement à la création/adhésion (trains visibles sans toggle manuel)
+- QR code de partage : encode désormais l'URL complète `/onboard?join=CODE` pour rejoindre directement en scannant
+- Auto-join via deep link : ouvrir `/onboard?join=CODE` rejoint la session et ouvre le dialog automatiquement
+- Gares À bord : mémorisation de l'origine/destination personnalisée par train (survit au changement de train et aux trains équipe)
+- Export HTML : carte "Tarifs bord" affiche le montant € au lieu de "ventes à bord"
+
+### Modifié
+- Affichage petit écran (Crosscall) : champ date/heure plus compact (`pl-7`, icône `h-3.5`), compteur passagers boutons réduits (`px-1.5`)
+
 ## [1.10.44] - 2026-03-11
 
 ### Ajouté

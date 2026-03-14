@@ -153,7 +153,7 @@ export function CounterInput({
             )}
           </div>
         )}
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1">
           {/* Minus buttons (largest step first) */}
           {[...steps].reverse().map((step) => (
             <Button
@@ -161,18 +161,18 @@ export function CounterInput({
               type="button"
               variant="outline"
               size="sm"
-              className="h-9 px-2.5 text-xs font-medium"
+              className="h-9 px-1.5 text-xs font-medium shrink-0"
               onClick={() => handleChange(-step)}
               disabled={value <= min}
             >
-              <Minus className="h-3 w-3 mr-0.5" />
+              <Minus className="h-3 w-3" />
               {step}
             </Button>
           ))}
-          
+
           {/* Value display */}
           {renderValueDisplay()}
-          
+
           {/* Plus buttons (smallest step first) */}
           {steps.map((step) => (
             <Button
@@ -180,11 +180,11 @@ export function CounterInput({
               type="button"
               variant="outline"
               size="sm"
-              className="h-9 px-2.5 text-xs font-medium"
+              className="h-9 px-1.5 text-xs font-medium shrink-0"
               onClick={() => handleChange(step)}
               disabled={value >= max}
             >
-              <Plus className="h-3 w-3 mr-0.5" />
+              <Plus className="h-3 w-3" />
               {step}
             </Button>
           ))}

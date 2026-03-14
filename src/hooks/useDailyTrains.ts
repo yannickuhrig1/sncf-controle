@@ -160,11 +160,14 @@ export function useDailyTrains(date: string, shareCode?: string | null) {
       .then(() => {});
   };
 
-  // Apply shareCode to existing trains when joining a session
+  // Apply shareCode to existing trains when joining/creating a session
+  // Always enable sharing when a code is provided
   const applyShareCode = (code: string | null) => {
     if (!user) return;
+    const shouldShare = code !== null;
+    if (shouldShare) setIsSharing(true);
     supabase.from('daily_trains' as any)
-      .update({ share_code: code, shared: code ? isSharing : false })
+      .update({ share_code: code, shared: shouldShare })
       .eq('user_id', user.id)
       .eq('date', date)
       .then(() => {});

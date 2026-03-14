@@ -33,7 +33,8 @@ export function TrainShareDialog({
 
   useEffect(() => {
     if (!session?.code) { setQrDataUrl(null); return; }
-    QRCode.toDataURL(session.code, { width: 180, margin: 1, color: { dark: '#000', light: '#fff' } })
+    const joinUrl = `${window.location.origin}/onboard?join=${session.code}`;
+    QRCode.toDataURL(joinUrl, { width: 180, margin: 1, color: { dark: '#000', light: '#fff' } })
       .then(setQrDataUrl)
       .catch(() => setQrDataUrl(null));
   }, [session?.code]);

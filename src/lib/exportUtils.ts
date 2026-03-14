@@ -1744,8 +1744,8 @@ export function exportToHTML({ controls, title, dateRange, includeStats, exportM
         </div>
         <div class="kpi-card teal">
           <div class="kpi-value">${stats.totalTarifsBord}</div>
-          <div class="kpi-sub">ventes à bord</div>
-          <div class="kpi-label">Tarifs bord</div>
+          <div class="kpi-sub">${stats.totalTarifsBordAmount.toFixed(0)} €</div>
+          <div class="kpi-label">Tarifs bord / exceptionnel</div>
         </div>
         <div class="kpi-card navy">
           <div class="kpi-value">${stats.tarifsControle + stats.pv + stats.totalTarifsBord}</div>
