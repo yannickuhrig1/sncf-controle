@@ -18,7 +18,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { calculateStats, formatFraudRate, getFraudRateColor } from '@/lib/stats';
 import { buildStatsText, buildStatsHTML, buildStatsPDF } from '@/lib/statsExport';
-import type { StatsShareData, WeeklyTrendPoint, DailyRatePoint, DailyPassengersPoint } from '@/lib/statsExport';
+import type { StatsShareData, WeeklyTrendPoint, DailyRatePoint, DailyPassengersPoint, TrainFraudPoint } from '@/lib/statsExport';
 import { format, parseISO, startOfWeek, subDays } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { PeriodSelector } from '@/components/dashboard/PeriodSelector';
@@ -184,12 +184,34 @@ export default function StatisticsPage() {
       }));
   }, [chartControls]);
 
+  const trainFraudData = useMemo((): TrainFraudPoint[] => {
+    const map = new Map<string, { passengers: number; fraud: number }>();
+    controls.forEach(c => {
+      if (!c.train_number?.trim()) return;
+      const key = c.train_number.trim().toUpperCase();
+      const fraud = c.tarifs_controle + c.pv + (c.ri_negative || 0);
+      const ex = map.get(key);
+      if (ex) { ex.passengers += c.nb_passagers; ex.fraud += fraud; }
+      else map.set(key, { passengers: c.nb_passagers, fraud });
+    });
+    return Array.from(map.entries())
+      .map(([trainNumber, { passengers, fraud }]): TrainFraudPoint => ({
+        trainNumber,
+        fraudRate: passengers > 0 ? (fraud / passengers) * 100 : 0,
+        fraudCount: fraud,
+        passengers,
+      }))
+      .sort((a, b) => b.fraudRate - a.fraudRate)
+      .slice(0, 15);
+  }, [controls]);
+
   const shareData: StatsShareData = useMemo(() => ({
     stats,
     detailedStats,
     trendData,
     dailyRateData,
     dailyPassengersData,
+    trainFraudData,
     periodLabel:    periodLabels[period],
     dateRangeLabel: (() => {
       const fmt = (iso: string) => iso ? iso.split('-').reverse().join('-') : iso;
@@ -197,7 +219,7 @@ export default function StatisticsPage() {
     })(),
     pageTitle:      'Statistiques Contrôles',
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }), [stats, detailedStats, trendData, dailyRateData, dailyPassengersData, period, startDate, endDate]);
+  }), [stats, detailedStats, trendData, dailyRateData, dailyPassengersData, trainFraudData, period, startDate, endDate]);
 
   const filenameSuffix = startDate === endDate ? startDate : `${startDate}-${endDate}`;
 

@@ -5,6 +5,13 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/),
 et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.10.50] - 2026-03-14
+
+### Ajouté
+- Export HTML stats : section "Fraude par numéro de train" avec graphique à barres horizontales (top 15 trains, couleur par seuil de taux)
+- Export HTML stats : favicon contrôleur SNCF avec appareil de contrôle dans la barre d'adresse
+- Favicon app : redesign avec contrôleur SNCF (badge, appareil scanner, faisceau laser rouge, ticket)
+
 ## [1.10.49] - 2026-03-14
 
 ### Corrigé / Ajouté

@@ -1,10 +1,35 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
-  <!-- Fond rouge arrondi -->
-  <rect width="100" height="100" rx="20" fill="#C2185B"/>
-  <!-- Icône ClipboardCheck (contrôleur) en blanc, centrée -->
-  <g transform="translate(20, 20) scale(2.5)" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none">
-    <rect width="8" height="4" x="8" y="2" rx="1" ry="1"/>
-    <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
-    <path d="m9 14 2 2 4-4"/>
-  </g>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#1a237e"/>
+      <stop offset="100%" stop-color="#311b92"/>
+    </linearGradient>
+  </defs>
+  <!-- Background -->
+  <rect width="100" height="100" rx="20" fill="url(#bg)"/>
+  <!-- Cap brim -->
+  <ellipse cx="50" cy="32" rx="21" ry="5.5" fill="#1565c0"/>
+  <!-- Cap body -->
+  <path d="M29 32 Q50 16 71 32" fill="#1565c0"/>
+  <!-- Cap band -->
+  <rect x="29" y="29" width="42" height="5" fill="#0d47a1"/>
+  <!-- SNCF badge on cap -->
+  <rect x="42" y="19" width="16" height="8" rx="2" fill="#c62828"/>
+  <text x="50" y="25" font-size="4.5" fill="white" text-anchor="middle" font-weight="900" font-family="Arial,sans-serif">SNCF</text>
+  <!-- Head -->
+  <circle cx="50" cy="44" r="10" fill="#FFCC80"/>
+  <!-- Body (uniform) -->
+  <path d="M32 82 Q32 58 50 58 Q68 58 68 82" fill="#1565c0"/>
+  <!-- Tie -->
+  <polygon points="48,58 50,64 52,58 51,54 49,54" fill="#c62828"/>
+  <!-- Phone/scanner device -->
+  <rect x="57" y="61" width="11" height="15" rx="2" fill="#212121"/>
+  <rect x="58.5" y="63" width="8" height="9" rx="1" fill="#42a5f5"/>
+  <!-- Red scan beam -->
+  <line x1="68" y1="64" x2="78" y2="59" stroke="#ff1744" stroke-width="2.2" stroke-linecap="round" opacity="0.95"/>
+  <line x1="68" y1="68" x2="80" y2="68" stroke="#ff1744" stroke-width="2.2" stroke-linecap="round" opacity="0.95"/>
+  <!-- Ticket -->
+  <rect x="74" y="55" width="15" height="9" rx="2" fill="white" opacity="0.9"/>
+  <line x1="76" y1="58" x2="87" y2="58" stroke="#bbb" stroke-width="0.8"/>
+  <line x1="76" y1="61" x2="87" y2="61" stroke="#bbb" stroke-width="0.8"/>
 </svg>

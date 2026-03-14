@@ -29,6 +29,13 @@ export interface DailyPassengersPoint {
   fraud: number;
 }
 
+export interface TrainFraudPoint {
+  trainNumber: string;
+  fraudRate: number;
+  fraudCount: number;
+  passengers: number;
+}
+
 export interface StatsShareData {
   stats: ControlStats;
   detailedStats: StatsDetailedData;
@@ -39,6 +46,7 @@ export interface StatsShareData {
   trendData?: WeeklyTrendPoint[];
   dailyRateData?: DailyRatePoint[];
   dailyPassengersData?: DailyPassengersPoint[];
+  trainFraudData?: TrainFraudPoint[];
 }
 
 // ── Texte brut ─────────────────────────────────────────────────────────────────
@@ -132,7 +140,7 @@ export function buildStatsText({
 
 // ── HTML ───────────────────────────────────────────────────────────────────────
 
-const FAVICON_SVG = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%23C2185B'/%3E%3Cg transform='translate(20%2C20) scale(2.5)' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' fill='none'%3E%3Crect width='8' height='4' x='8' y='2' rx='1' ry='1'/%3E%3Cpath d='M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2'/%3E%3Cpath d='m9 14 2 2 4-4'/%3E%3C/g%3E%3C/svg%3E`;
+const FAVICON_SVG = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='bg' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0%25' stop-color='%231a237e'/%3E%3Cstop offset='100%25' stop-color='%23311b92'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='100' height='100' rx='20' fill='url(%23bg)'/%3E%3Cellipse cx='50' cy='32' rx='21' ry='5.5' fill='%231565c0'/%3E%3Cpath d='M29 32 Q50 16 71 32' fill='%231565c0'/%3E%3Crect x='29' y='29' width='42' height='5' fill='%230d47a1'/%3E%3Crect x='42' y='19' width='16' height='8' rx='2' fill='%23c62828'/%3E%3Ctext x='50' y='25' font-size='4.5' fill='white' text-anchor='middle' font-weight='900' font-family='Arial%2Csans-serif'%3ESNCF%3C/text%3E%3Ccircle cx='50' cy='44' r='10' fill='%23FFCC80'/%3E%3Cpath d='M32 82 Q32 58 50 58 Q68 58 68 82' fill='%231565c0'/%3E%3Cpolygon points='48%2C58 50%2C64 52%2C58 51%2C54 49%2C54' fill='%23c62828'/%3E%3Crect x='57' y='61' width='11' height='15' rx='2' fill='%23212121'/%3E%3Crect x='58.5' y='63' width='8' height='9' rx='1' fill='%2342a5f5'/%3E%3Cline x1='68' y1='64' x2='78' y2='59' stroke='%23ff1744' stroke-width='2.2' stroke-linecap='round' opacity='0.95'/%3E%3Cline x1='68' y1='68' x2='80' y2='68' stroke='%23ff1744' stroke-width='2.2' stroke-linecap='round' opacity='0.95'/%3E%3Crect x='74' y='55' width='15' height='9' rx='2' fill='white' opacity='0.9'/%3E%3Cline x1='76' y1='58' x2='87' y2='58' stroke='%23bbb' stroke-width='0.8'/%3E%3Cline x1='76' y1='61' x2='87' y2='61' stroke='%23bbb' stroke-width='0.8'/%3E%3C/svg%3E`;
 
 function buildTrendSVG(trendData: WeeklyTrendPoint[]): string {
   if (!trendData || trendData.length === 0) return '';
@@ -218,10 +226,35 @@ function buildDailyPassengersSVG(data: DailyPassengersPoint[]): string {
 </svg>`;
 }
 
+function buildTrainFraudSVG(data: TrainFraudPoint[]): string {
+  if (!data || data.length === 0) return '';
+  const W = 760, ROW = 22, LABW = 60, PADX = 8, PADY = 6;
+  const H = data.length * ROW + PADY * 2;
+  const chartW = W - LABW - PADX * 2;
+  const maxRate = Math.max(...data.map(d => d.fraudRate), 1);
+
+  const rows = data.map((d, i) => {
+    const y = PADY + i * ROW;
+    const barW = Math.max((d.fraudRate / maxRate) * chartW, 2);
+    const color = d.fraudRate >= 10 ? '#ef4444' : d.fraudRate >= 5 ? '#f59e0b' : '#22c55e';
+    const midY = y + ROW / 2;
+    return [
+      i % 2 === 0 ? `<rect x="0" y="${y}" width="${W}" height="${ROW}" fill="#f9fafb" opacity="0.6"/>` : '',
+      `<text x="${PADX}" y="${midY + 4}" font-size="8" fill="#374151" font-weight="600" font-family="Arial,sans-serif">${d.trainNumber}</text>`,
+      `<rect x="${LABW}" y="${y + 4}" width="${barW.toFixed(1)}" height="${ROW - 8}" fill="${color}" rx="3" opacity="0.85"/>`,
+      d.fraudRate > 0 ? `<text x="${(LABW + barW + 5).toFixed(1)}" y="${midY + 4}" font-size="7.5" fill="#374151" font-family="Arial,sans-serif">${d.fraudRate.toFixed(1)}% · ${d.fraudCount}/${d.passengers}</text>` : '',
+    ].join('');
+  });
+
+  return `<svg viewBox="0 0 ${W} ${H}" width="100%" xmlns="http://www.w3.org/2000/svg" style="display:block">
+  ${rows.join('')}
+</svg>`;
+}
+
 export function buildStatsHTML({
   stats, detailedStats, periodLabel, dateRangeLabel,
   locationLabel, pageTitle = 'Tableau de bord', trendData,
-  dailyRateData, dailyPassengersData,
+  dailyRateData, dailyPassengersData, trainFraudData,
 }: StatsShareData): string {
   const fraudColor = stats.fraudRate >= 10 ? 'red' : stats.fraudRate >= 5 ? 'amber' : 'emerald';
   const pvColor = stats.pv > 0 ? 'rose' : 'slate';
@@ -424,6 +457,18 @@ footer{text-align:center;color:#9ca3af;font-size:.68rem;padding:1.5rem;border-to
     <div style="display:flex;gap:1rem;justify-content:center;margin-top:0.5rem">
       <span style="font-size:.65rem;color:#9ca3af;display:flex;align-items:center;gap:.3rem"><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:#10b981"></span>En règle</span>
       <span style="font-size:.65rem;color:#9ca3af;display:flex;align-items:center;gap:.3rem"><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:#ef4444"></span>Fraude</span>
+    </div>
+  </div>` : ''}
+
+  ${trainFraudData && trainFraudData.length > 0 ? `
+  <div class="sec-ttl" style="margin-top:1.5rem">Fraude par numéro de train</div>
+  <div class="card" style="padding:1rem 1.25rem 0.75rem;margin-bottom:1.5rem">
+    <p style="font-size:.65rem;color:#9ca3af;margin-bottom:.5rem">Top ${trainFraudData.length} trains — taux · fraudes / voyageurs</p>
+    ${buildTrainFraudSVG(trainFraudData)}
+    <div style="display:flex;gap:1rem;justify-content:flex-end;margin-top:0.5rem">
+      <span style="font-size:.65rem;color:#9ca3af;display:flex;align-items:center;gap:.3rem"><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:#22c55e"></span>&lt; 5%</span>
+      <span style="font-size:.65rem;color:#9ca3af;display:flex;align-items:center;gap:.3rem"><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:#f59e0b"></span>5–10%</span>
+      <span style="font-size:.65rem;color:#9ca3af;display:flex;align-items:center;gap:.3rem"><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:#ef4444"></span>≥ 10%</span>
     </div>
   </div>` : ''}
 
