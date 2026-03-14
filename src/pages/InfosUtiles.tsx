@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useAdminSettings } from '@/hooks/useAdminSettings';
 import { AppLayout } from '@/components/layout/AppLayout';
@@ -1303,7 +1303,11 @@ const DIALOG_CONTENT: Record<string, { title: string; Content: () => JSX.Element
 export default function InfosUtilesPage() {
   const { user, loading: authLoading } = useAuth();
   const { settings, isLoading: settingsLoading } = useAdminSettings();
-  const [openTile, setOpenTile] = useState<string | null>(null);
+  const [searchParams] = useSearchParams();
+  const [openTile, setOpenTile] = useState<string | null>(() => {
+    const tile = searchParams.get('tile');
+    return tile && DIALOG_CONTENT[tile] ? tile : null;
+  });
   const [unreadRepliesCount, setUnreadRepliesCount] = useState(0);
 
   const hideInfosPage = settings?.find(s => s.key === 'hide_infos_page')?.value === true;

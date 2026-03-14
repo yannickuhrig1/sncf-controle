@@ -18,7 +18,7 @@ export interface ShortcutOption {
 export const SHORTCUT_OPTIONS: ShortcutOption[] = [
   { id: 'onboard',    defaultLabel: 'Contrôle à bord',       defaultDescription: 'Nouveau contrôle en train',      href: '/onboard',               iconName: 'Train' },
   { id: 'station',    defaultLabel: 'Contrôle en gare',      defaultDescription: 'Nouveau contrôle en gare',       href: '/station',               iconName: 'Building2' },
-  { id: 'embarkment', defaultLabel: 'Départ / Arrivée',      defaultDescription: 'Embarquement & refoulement',     href: '/station?mode=embarkment', iconName: 'ArrowUpFromLine' },
+  { id: 'embarkment', defaultLabel: 'Départs / Arrivées',     defaultDescription: 'Infos départs & arrivées en gare', href: '/infos?tile=departures',   iconName: 'ArrowUpFromLine' },
   { id: 'history',    defaultLabel: 'Historique',            defaultDescription: 'Consulter les contrôles passés', href: '/history',               iconName: 'Clock' },
   { id: 'statistics', defaultLabel: 'Statistiques',          defaultDescription: 'Voir les statistiques',          href: '/statistics',            iconName: 'BarChart3' },
   { id: 'infos',      defaultLabel: 'Infos utiles',          defaultDescription: 'Informations et ressources',     href: '/infos',                 iconName: 'Info' },

@@ -5,6 +5,12 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/),
 et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.10.54] - 2026-03-14
+
+### Corrigé
+- Raccourci "Départs / Arrivées" : pointe désormais vers la tuile Infos utiles (`/infos?tile=departures`) plutôt que l'embarquement en gare
+- InfosUtiles : support du paramètre `?tile=xxx` pour ouvrir directement une tuile via deep-link
+
 ## [1.10.53] - 2026-03-14
 
 ### Ajouté
