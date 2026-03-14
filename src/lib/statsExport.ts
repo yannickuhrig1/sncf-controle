@@ -251,6 +251,71 @@ function buildTrainFraudSVG(data: TrainFraudPoint[]): string {
 </svg>`;
 }
 
+function buildInfractionHTML(stats: ControlStats, detailedStats: StatsDetailedData): string {
+  const grandTotal = stats.pv + stats.tarifsControle + detailedStats.totalBord;
+  if (grandTotal === 0) return '';
+  const pct = (n: number) => `${(n / grandTotal * 100).toFixed(0)}%`;
+  const dot = (color: string) =>
+    `<span style="width:8px;height:8px;border-radius:2px;background:${color};display:inline-block;flex-shrink:0"></span>`;
+  const itemRow = (color: string, label: string, value: number) =>
+    value === 0 ? '' :
+    `<div style="display:flex;justify-content:space-between;align-items:center;font-size:.7rem;padding:.22rem 0;border-bottom:1px solid #f3f4f6">
+      <span style="color:#6b7280;display:flex;align-items:center;gap:.35rem">${dot(color)}${label}</span>
+      <span style="font-weight:700;color:#111827">${value}&nbsp;<span style="color:#9ca3af;font-weight:400">(${pct(value)})</span></span>
+    </div>`;
+
+  const pvRows = [
+    itemRow('#dc2626','STT 100€', stats.stt100),
+    itemRow('#ef4444','STT autre montant', stats.pvStt100),
+    itemRow('#f97316','RNV', stats.pvRnv),
+    itemRow('#eab308','Titre tiers', stats.pvTitreTiers),
+    itemRow('#8b5cf6','D.naissance', stats.pvDocNaissance),
+    itemRow('#6b7280','Autre', stats.pvAutre),
+  ].join('');
+
+  const tcRows = [
+    itemRow('#16a34a','STT 50€', detailedStats.tarifsControle.stt50),
+    itemRow('#15803d','RNV', detailedStats.tarifsControle.rnv),
+    itemRow('#22c55e','Titre tiers', detailedStats.tarifsControle.titreTiers),
+    itemRow('#86efac','D.naissance', detailedStats.tarifsControle.docNaissance),
+    itemRow('#9ca3af','Autre', detailedStats.tarifsControle.autre),
+  ].join('');
+
+  const bordRows = [
+    itemRow('#1d4ed8','Tarif bord', detailedStats.tarifsBord.stt50),
+    itemRow('#3b82f6','Tarif exceptionnel', detailedStats.tarifsBord.stt100),
+    itemRow('#60a5fa','RNV', detailedStats.tarifsBord.rnv),
+    itemRow('#818cf8','Titre tiers', detailedStats.tarifsBord.titreTiers),
+    itemRow('#a78bfa','D.naissance', detailedStats.tarifsBord.docNaissance),
+    itemRow('#cbd5e1','Autre', detailedStats.tarifsBord.autre),
+  ].join('');
+
+  const col = (color: string, title: string, total: number, rows: string) =>
+    total === 0 ? '' :
+    `<div>
+      <p style="font-size:.65rem;text-transform:uppercase;letter-spacing:.06em;font-weight:700;color:#9ca3af;margin-bottom:.4rem;display:flex;align-items:center;gap:.4rem">${dot(color)}${title}&nbsp;<strong style="color:#374151">${total}</strong>&nbsp;<span style="font-weight:400">(${pct(total)})</span></p>
+      ${rows}
+    </div>`;
+
+  return `
+  <div style="display:flex;height:14px;border-radius:7px;overflow:hidden;margin-bottom:.875rem;background:#f3f4f6">
+    ${stats.pv > 0 ? `<div style="background:#ef4444;width:${pct(stats.pv)}" title="PV : ${stats.pv}"></div>` : ''}
+    ${stats.tarifsControle > 0 ? `<div style="background:#22c55e;width:${pct(stats.tarifsControle)}" title="TC : ${stats.tarifsControle}"></div>` : ''}
+    ${detailedStats.totalBord > 0 ? `<div style="background:#3b82f6;width:${pct(detailedStats.totalBord)}" title="Bord : ${detailedStats.totalBord}"></div>` : ''}
+  </div>
+  <div style="display:flex;gap:.4rem 1.5rem;flex-wrap:wrap;margin-bottom:1rem;align-items:center">
+    ${stats.pv > 0 ? `<span style="font-size:.72rem;color:#374151;display:flex;align-items:center;gap:.35rem">${dot('#ef4444')}PV&nbsp;:&nbsp;<strong>${stats.pv}</strong>&nbsp;(${pct(stats.pv)})</span>` : ''}
+    ${stats.tarifsControle > 0 ? `<span style="font-size:.72rem;color:#374151;display:flex;align-items:center;gap:.35rem">${dot('#22c55e')}TC&nbsp;:&nbsp;<strong>${stats.tarifsControle}</strong>&nbsp;(${pct(stats.tarifsControle)})</span>` : ''}
+    ${detailedStats.totalBord > 0 ? `<span style="font-size:.72rem;color:#374151;display:flex;align-items:center;gap:.35rem">${dot('#3b82f6')}Bord&nbsp;:&nbsp;<strong>${detailedStats.totalBord}</strong>&nbsp;(${pct(detailedStats.totalBord)})</span>` : ''}
+    <span style="font-size:.72rem;font-weight:700;color:#374151;margin-left:auto">Total&nbsp;:&nbsp;${grandTotal}</span>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1rem">
+    ${col('#ef4444', 'Procès-verbaux', stats.pv, pvRows)}
+    ${col('#22c55e', 'Tarifs contrôle', stats.tarifsControle, tcRows)}
+    ${col('#3b82f6', 'Tarifs à bord', detailedStats.totalBord, bordRows)}
+  </div>`;
+}
+
 export function buildStatsHTML({
   stats, detailedStats, periodLabel, dateRangeLabel,
   locationLabel, pageTitle = 'Tableau de bord', trendData,
@@ -426,6 +491,12 @@ footer{text-align:center;color:#9ca3af;font-size:.68rem;padding:1.5rem;border-to
         </div>
       </div>
     </div>
+  </div>` : ''}
+
+  ${(stats.pv > 0 || stats.tarifsControle > 0 || detailedStats.totalBord > 0) ? `
+  <div class="sec-ttl" style="margin-top:2rem">Répartition des infractions</div>
+  <div class="card" style="padding:1rem 1.25rem 1.25rem;margin-bottom:1.5rem">
+    ${buildInfractionHTML(stats, detailedStats)}
   </div>` : ''}
 
   ${trendData && trendData.length > 1 ? `

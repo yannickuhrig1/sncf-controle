@@ -5,6 +5,11 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/),
 et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.10.51] - 2026-03-14
+
+### Ajouté
+- Export HTML stats : section "Répartition des infractions" — barre de proportion colorée (PV/TC/Bord) + détail par sous-type avec pourcentages
+
 ## [1.10.50] - 2026-03-14
 
 ### Ajouté
