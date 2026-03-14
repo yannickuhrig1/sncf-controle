@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import QRCode from 'qrcode';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Copy, Users, LogOut, QrCode, Link2Off } from 'lucide-react';
+import { Copy, Users, LogOut, QrCode, Link2Off, Camera, X } from 'lucide-react';
 import { toast } from 'sonner';
 import type { TrainShareSession } from '@/hooks/useTrainShareSession';
 
@@ -29,7 +29,12 @@ export function TrainShareDialog({
 }: Props) {
   const [joinCode, setJoinCode] = useState('');
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [scanning, setScanning] = useState(false);
+  const [scanError, setScanError] = useState<string | null>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const detectorRef = useRef<any>(null);
+  const scanLoopRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (!session?.code) { setQrDataUrl(null); return; }
@@ -43,15 +48,74 @@ export function TrainShareDialog({
     if (open && session) onRefreshCount();
   }, [open]);
 
+  // Stop camera when dialog closes or session is joined
+  useEffect(() => {
+    if (!open || session) stopScan();
+  }, [open, session]);
+
+  const stopScan = useCallback(() => {
+    if (scanLoopRef.current) { cancelAnimationFrame(scanLoopRef.current); scanLoopRef.current = null; }
+    if (streamRef.current) { streamRef.current.getTracks().forEach(t => t.stop()); streamRef.current = null; }
+    setScanning(false);
+    setScanError(null);
+  }, []);
+
+  const startScan = async () => {
+    setScanError(null);
+    try {
+      // Check BarcodeDetector support
+      if (!('BarcodeDetector' in window)) {
+        setScanError('Scanner non disponible sur ce navigateur. Saisir le code manuellement.');
+        return;
+      }
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'environment', width: { ideal: 640 }, height: { ideal: 480 } },
+      });
+      streamRef.current = stream;
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        await videoRef.current.play();
+      }
+      detectorRef.current = new (window as any).BarcodeDetector({ formats: ['qr_code'] });
+      setScanning(true);
+      scanFrame();
+    } catch {
+      setScanError('Impossible d\'accéder à la caméra. Vérifiez les permissions.');
+    }
+  };
+
+  const scanFrame = async () => {
+    if (!videoRef.current || !detectorRef.current) return;
+    try {
+      const barcodes = await detectorRef.current.detect(videoRef.current);
+      if (barcodes.length > 0) {
+        const raw: string = barcodes[0].rawValue;
+        // Extract 6-char code from URL or use raw value directly
+        const urlMatch = raw.match(/[?&]join=([A-Z2-9]{6})/i);
+        const code = urlMatch ? urlMatch[1].toUpperCase() : raw.toUpperCase().trim();
+        if (/^[A-Z2-9]{6}$/.test(code)) {
+          stopScan();
+          setJoinCode(code);
+          // Auto-join
+          const ok = await onJoinSession(code);
+          if (ok) {
+            setJoinCode('');
+            toast.success('Session rejointe !');
+          }
+          return;
+        }
+      }
+    } catch { /* continue */ }
+    scanLoopRef.current = requestAnimationFrame(scanFrame);
+  };
+
   const handleCopy = () => {
     if (!session?.code) return;
     navigator.clipboard.writeText(session.code);
     toast.success('Code copié !');
   };
 
-  const handleCreate = async () => {
-    await onCreateSession();
-  };
+  const handleCreate = async () => { await onCreateSession(); };
 
   const handleJoin = async () => {
     if (!joinCode.trim()) return;
@@ -115,10 +179,35 @@ export function TrainShareDialog({
                   maxLength={6}
                   onKeyDown={e => e.key === 'Enter' && handleJoin()}
                 />
+                <Button
+                  size="icon"
+                  variant="outline"
+                  onClick={scanning ? stopScan : startScan}
+                  title={scanning ? 'Arrêter le scan' : 'Scanner un QR code'}
+                  disabled={isLoading}
+                >
+                  {scanning ? <X className="h-4 w-4" /> : <Camera className="h-4 w-4" />}
+                </Button>
                 <Button onClick={handleJoin} disabled={isLoading || joinCode.length < 6}>
                   {isLoading ? '…' : 'Rejoindre'}
                 </Button>
               </div>
+
+              {/* Viewfinder */}
+              {scanning && (
+                <div className="relative rounded-lg overflow-hidden border bg-black">
+                  <video ref={videoRef} className="w-full h-40 object-cover" muted playsInline />
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <div className="w-28 h-28 border-2 border-white/70 rounded-lg" />
+                  </div>
+                  <p className="absolute bottom-1 w-full text-center text-[10px] text-white/80">
+                    Pointez le QR code vers la caméra
+                  </p>
+                </div>
+              )}
+              {scanError && (
+                <p className="text-xs text-destructive">{scanError}</p>
+              )}
             </div>
           </div>
         ) : (

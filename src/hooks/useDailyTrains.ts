@@ -173,5 +173,5 @@ export function useDailyTrains(date: string, shareCode?: string | null) {
       .then(() => {});
   };
 
-  return { trains, addTrain, updateTrain, removeTrain, isSharing, toggleSharing, teamTrains, applyShareCode };
+  return { trains, addTrain, updateTrain, removeTrain, isSharing, toggleSharing, teamTrains, applyShareCode, refresh: fetchFromDb };
 }

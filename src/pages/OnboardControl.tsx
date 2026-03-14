@@ -194,7 +194,7 @@ export default function OnboardControl() {
   // Trains du jour
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const { session: shareSession, isLoading: shareLoading, error: shareError, setError: setShareError, createSession, joinSession, leaveSession, refreshMemberCount } = useTrainShareSession(formState.controlDate);
-  const { trains: dailyTrains, addTrain: addDailyTrain, updateTrain: updateDailyTrain, removeTrain: removeDailyTrain, isSharing, toggleSharing, teamTrains, applyShareCode } = useDailyTrains(formState.controlDate, shareSession?.code ?? null);
+  const { trains: dailyTrains, addTrain: addDailyTrain, updateTrain: updateDailyTrain, removeTrain: removeDailyTrain, isSharing, toggleSharing, teamTrains, applyShareCode, refresh: refreshDailyTrains } = useDailyTrains(formState.controlDate, shareSession?.code ?? null);
 
   const handleCreateSession = async () => {
     const code = await createSession();
@@ -203,9 +203,18 @@ export default function OnboardControl() {
   };
 
   const handleJoinSession = async (code: string) => {
-    const ok = await joinSession(code);
-    if (ok) applyShareCode(code);
-    return ok;
+    const sessionDate = await joinSession(code);
+    if (sessionDate) {
+      // Sync form date to session date so we query the right trains
+      if (sessionDate !== formState.controlDate) {
+        setFormState(p => ({ ...p, controlDate: sessionDate }));
+      }
+      applyShareCode(code);
+      // Explicit refresh after a short delay to let DB settle
+      setTimeout(() => refreshDailyTrains(), 800);
+      return true;
+    }
+    return false;
   };
 
   const handleLeaveSession = async () => {

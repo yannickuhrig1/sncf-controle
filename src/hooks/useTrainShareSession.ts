@@ -78,7 +78,8 @@ export function useTrainShareSession(date: string) {
     return code;
   };
 
-  const joinSession = async (code: string): Promise<boolean> => {
+  // Returns the session date on success, false on failure
+  const joinSession = async (code: string): Promise<string | false> => {
     if (!user) return false;
     setIsLoading(true);
     setError(null);
@@ -105,9 +106,15 @@ export function useTrainShareSession(date: string) {
     }
 
     // Insert member (ignore duplicate)
-    await supabase
+    const { error: upsertErr } = await supabase
       .from('train_share_members' as any)
       .upsert({ code: cleanCode, user_id: user.id }, { onConflict: 'code,user_id' });
+
+    if (upsertErr) {
+      setError('Erreur lors de l\'adhésion à la session');
+      setIsLoading(false);
+      return false;
+    }
 
     const { count } = await supabase
       .from('train_share_members' as any)
@@ -117,7 +124,7 @@ export function useTrainShareSession(date: string) {
     localStorage.setItem(storageKey, cleanCode);
     setSession({ code: cleanCode, isOwner: false, memberCount: count || 0 });
     setIsLoading(false);
-    return true;
+    return (sess as any).date as string;
   };
 
   const leaveSession = async () => {

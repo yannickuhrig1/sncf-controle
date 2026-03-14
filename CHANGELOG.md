@@ -5,6 +5,15 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/),
 et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.10.46] - 2026-03-14
+
+### Ajouté
+- Scanner QR code intégré dans "Rejoindre une session" (bouton caméra, viewfinder, auto-join à la détection)
+
+### Corrigé
+- Trains équipe non visibles après join : sync automatique de la date du formulaire avec celle de la session + refresh explicite après join
+- joinSession retourne la date de session et gère l'erreur d'upsert explicitement
+
 ## [1.10.45] - 2026-03-14
 
 ### Corrigé
