@@ -355,10 +355,10 @@ export default function StatisticsPage() {
                 <>
                   <FraudTrendChart controls={chartControls} headerExtra={rangeButtons} />
                   <FraudRateChart controls={chartControls} headerExtra={rangeButtons} />
+                  <PassengersChart controls={chartControls} headerExtra={rangeButtons} />
                 </>
               );
             })()}
-            <PassengersChart controls={controls} />
             <TrainNumberFraudChart controls={controls} />
 
             {/* Détails (si données présentes) */}
