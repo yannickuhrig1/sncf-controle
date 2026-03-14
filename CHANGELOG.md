@@ -5,6 +5,12 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/),
 et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.10.49] - 2026-03-14
+
+### Corrigé / Ajouté
+- Export HTML stats : ajout des graphiques "Évolution du taux de fraude (par jour)" et "Voyageurs par jour" (données de la plage graphique)
+- Export HTML stats : favicon SNCF Contrôles dans la barre d'adresse du navigateur
+
 ## [1.10.48] - 2026-03-14
 
 ### Ajouté

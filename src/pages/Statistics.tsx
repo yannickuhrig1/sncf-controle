@@ -18,7 +18,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { calculateStats, formatFraudRate, getFraudRateColor } from '@/lib/stats';
 import { buildStatsText, buildStatsHTML, buildStatsPDF } from '@/lib/statsExport';
-import type { StatsShareData, WeeklyTrendPoint } from '@/lib/statsExport';
+import type { StatsShareData, WeeklyTrendPoint, DailyRatePoint, DailyPassengersPoint } from '@/lib/statsExport';
 import { format, parseISO, startOfWeek, subDays } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { PeriodSelector } from '@/components/dashboard/PeriodSelector';
@@ -152,10 +152,44 @@ export default function StatisticsPage() {
     return Array.from(map.values()).sort((a, b) => a.label.localeCompare(b.label)).slice(-16);
   }, [controls]);
 
+  const dailyRateData = useMemo((): DailyRatePoint[] => {
+    const map = new Map<string, { total: number; fraud: number }>();
+    chartControls.forEach(c => {
+      const fraud = c.tarifs_controle + c.pv;
+      const d = map.get(c.control_date);
+      if (d) { d.total += c.nb_passagers; d.fraud += fraud; }
+      else map.set(c.control_date, { total: c.nb_passagers, fraud });
+    });
+    return Array.from(map.entries())
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([date, d]) => ({
+        label: format(parseISO(date), 'dd/MM', { locale: fr }),
+        fraudRate: d.total > 0 ? (d.fraud / d.total) * 100 : 0,
+      }));
+  }, [chartControls]);
+
+  const dailyPassengersData = useMemo((): DailyPassengersPoint[] => {
+    const map = new Map<string, { total: number; inRule: number; fraud: number }>();
+    chartControls.forEach(c => {
+      const fraud = c.tarifs_controle + c.pv;
+      const d = map.get(c.control_date);
+      if (d) { d.total += c.nb_passagers; d.inRule += c.nb_en_regle; d.fraud += fraud; }
+      else map.set(c.control_date, { total: c.nb_passagers, inRule: c.nb_en_regle, fraud });
+    });
+    return Array.from(map.entries())
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([date, d]) => ({
+        label: format(parseISO(date), 'dd/MM', { locale: fr }),
+        total: d.total, inRule: d.inRule, fraud: d.fraud,
+      }));
+  }, [chartControls]);
+
   const shareData: StatsShareData = useMemo(() => ({
     stats,
     detailedStats,
     trendData,
+    dailyRateData,
+    dailyPassengersData,
     periodLabel:    periodLabels[period],
     dateRangeLabel: (() => {
       const fmt = (iso: string) => iso ? iso.split('-').reverse().join('-') : iso;
@@ -163,7 +197,7 @@ export default function StatisticsPage() {
     })(),
     pageTitle:      'Statistiques Contrôles',
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }), [stats, detailedStats, trendData, period, startDate, endDate]);
+  }), [stats, detailedStats, trendData, dailyRateData, dailyPassengersData, period, startDate, endDate]);
 
   const filenameSuffix = startDate === endDate ? startDate : `${startDate}-${endDate}`;
 

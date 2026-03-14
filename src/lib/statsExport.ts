@@ -17,6 +17,18 @@ export interface WeeklyTrendPoint {
   fraudCount: number;
 }
 
+export interface DailyRatePoint {
+  label: string;
+  fraudRate: number;
+}
+
+export interface DailyPassengersPoint {
+  label: string;
+  total: number;
+  inRule: number;
+  fraud: number;
+}
+
 export interface StatsShareData {
   stats: ControlStats;
   detailedStats: StatsDetailedData;
@@ -25,6 +37,8 @@ export interface StatsShareData {
   locationLabel?: string; // optionnel (absent sur Stats)
   pageTitle?: string;     // 'Tableau de bord' | 'Statistiques'
   trendData?: WeeklyTrendPoint[];
+  dailyRateData?: DailyRatePoint[];
+  dailyPassengersData?: DailyPassengersPoint[];
 }
 
 // ── Texte brut ─────────────────────────────────────────────────────────────────
@@ -118,6 +132,8 @@ export function buildStatsText({
 
 // ── HTML ───────────────────────────────────────────────────────────────────────
 
+const FAVICON_SVG = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%23C2185B'/%3E%3Cg transform='translate(20%2C20) scale(2.5)' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' fill='none'%3E%3Crect width='8' height='4' x='8' y='2' rx='1' ry='1'/%3E%3Cpath d='M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2'/%3E%3Cpath d='m9 14 2 2 4-4'/%3E%3C/g%3E%3C/svg%3E`;
+
 function buildTrendSVG(trendData: WeeklyTrendPoint[]): string {
   if (!trendData || trendData.length === 0) return '';
   const W = 760, H = 130, PADX = 8, PADY = 14, PADB = 22;
@@ -146,9 +162,66 @@ function buildTrendSVG(trendData: WeeklyTrendPoint[]): string {
 </svg>`;
 }
 
+function buildDailyRateSVG(data: DailyRatePoint[]): string {
+  if (!data || data.length === 0) return '';
+  const W = 760, H = 130, PADX = 8, PADY = 14, PADB = 22;
+  const chartW = W - PADX * 2;
+  const chartH = H - PADY - PADB;
+  const maxRate = Math.max(...data.map(d => d.fraudRate), 1);
+  const gap = chartW / data.length;
+  const barW = Math.max(gap * 0.6, 4);
+
+  const bars = data.map((d, i) => {
+    const x = PADX + i * gap + (gap - barW) / 2;
+    const bh = Math.max((d.fraudRate / maxRate) * chartH, 2);
+    const y = PADY + chartH - bh;
+    const color = d.fraudRate >= 10 ? '#ef4444' : d.fraudRate >= 5 ? '#f59e0b' : '#10b981';
+    return [
+      `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${barW.toFixed(1)}" height="${bh.toFixed(1)}" fill="${color}" rx="2" opacity="0.85"/>`,
+      d.fraudRate > 0 ? `<text x="${(x + barW / 2).toFixed(1)}" y="${(y - 3).toFixed(1)}" font-size="7" text-anchor="middle" fill="#374151">${d.fraudRate.toFixed(1)}%</text>` : '',
+      `<text x="${(x + barW / 2).toFixed(1)}" y="${(H - 4).toFixed(1)}" font-size="7" text-anchor="middle" fill="#9ca3af">${d.label}</text>`,
+    ].join('');
+  });
+
+  return `<svg viewBox="0 0 ${W} ${H}" width="100%" xmlns="http://www.w3.org/2000/svg" style="display:block;overflow:visible">
+  <line x1="${PADX}" y1="${PADY + chartH}" x2="${W - PADX}" y2="${PADY + chartH}" stroke="#e5e7eb" stroke-width="0.8"/>
+  ${bars.join('')}
+</svg>`;
+}
+
+function buildDailyPassengersSVG(data: DailyPassengersPoint[]): string {
+  if (!data || data.length === 0) return '';
+  const W = 760, H = 130, PADX = 8, PADY = 14, PADB = 22;
+  const chartW = W - PADX * 2;
+  const chartH = H - PADY - PADB;
+  const maxTotal = Math.max(...data.map(d => d.total), 1);
+  const gap = chartW / data.length;
+  const barW = Math.max(gap * 0.6, 4);
+
+  const bars = data.map((d, i) => {
+    const x = PADX + i * gap + (gap - barW) / 2;
+    const totalH = Math.max((d.total / maxTotal) * chartH, 2);
+    const fraudH = d.total > 0 ? Math.max((d.fraud / maxTotal) * chartH, d.fraud > 0 ? 2 : 0) : 0;
+    const inRuleH = totalH - fraudH;
+    const baseY = PADY + chartH;
+    return [
+      inRuleH > 0 ? `<rect x="${x.toFixed(1)}" y="${(baseY - totalH).toFixed(1)}" width="${barW.toFixed(1)}" height="${inRuleH.toFixed(1)}" fill="#10b981" rx="2" opacity="0.75"/>` : '',
+      fraudH > 0 ? `<rect x="${x.toFixed(1)}" y="${(baseY - fraudH).toFixed(1)}" width="${barW.toFixed(1)}" height="${fraudH.toFixed(1)}" fill="#ef4444" rx="2" opacity="0.85"/>` : '',
+      d.total > 0 ? `<text x="${(x + barW / 2).toFixed(1)}" y="${(baseY - totalH - 3).toFixed(1)}" font-size="7" text-anchor="middle" fill="#374151">${d.total}</text>` : '',
+      `<text x="${(x + barW / 2).toFixed(1)}" y="${(H - 4).toFixed(1)}" font-size="7" text-anchor="middle" fill="#9ca3af">${d.label}</text>`,
+    ].join('');
+  });
+
+  return `<svg viewBox="0 0 ${W} ${H}" width="100%" xmlns="http://www.w3.org/2000/svg" style="display:block;overflow:visible">
+  <line x1="${PADX}" y1="${PADY + chartH}" x2="${W - PADX}" y2="${PADY + chartH}" stroke="#e5e7eb" stroke-width="0.8"/>
+  ${bars.join('')}
+</svg>`;
+}
+
 export function buildStatsHTML({
   stats, detailedStats, periodLabel, dateRangeLabel,
   locationLabel, pageTitle = 'Tableau de bord', trendData,
+  dailyRateData, dailyPassengersData,
 }: StatsShareData): string {
   const fraudColor = stats.fraudRate >= 10 ? 'red' : stats.fraudRate >= 5 ? 'amber' : 'emerald';
   const pvColor = stats.pv > 0 ? 'rose' : 'slate';
@@ -185,6 +258,7 @@ export function buildStatsHTML({
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>${pageTitle} — SNCF Contrôles</title>
+<link rel="icon" type="image/svg+xml" href="${FAVICON_SVG}">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;background:#f0f4f8;color:#1a1a2e;min-height:100vh}
@@ -329,6 +403,27 @@ footer{text-align:center;color:#9ca3af;font-size:.68rem;padding:1.5rem;border-to
       <span style="font-size:.65rem;color:#9ca3af;display:flex;align-items:center;gap:.3rem"><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:#10b981"></span>Faible</span>
       <span style="font-size:.65rem;color:#9ca3af;display:flex;align-items:center;gap:.3rem"><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:#f59e0b"></span>Modéré</span>
       <span style="font-size:.65rem;color:#9ca3af;display:flex;align-items:center;gap:.3rem"><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:#ef4444"></span>Élevé</span>
+    </div>
+  </div>` : ''}
+
+  ${dailyRateData && dailyRateData.length > 1 ? `
+  <div class="sec-ttl" style="margin-top:1.5rem">Évolution du taux de fraude (par jour)</div>
+  <div class="card" style="padding:1rem 1.25rem 0.75rem;margin-bottom:1.5rem">
+    ${buildDailyRateSVG(dailyRateData)}
+    <div style="display:flex;gap:1rem;justify-content:center;margin-top:0.5rem">
+      <span style="font-size:.65rem;color:#9ca3af;display:flex;align-items:center;gap:.3rem"><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:#10b981"></span>Faible</span>
+      <span style="font-size:.65rem;color:#9ca3af;display:flex;align-items:center;gap:.3rem"><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:#f59e0b"></span>Modéré</span>
+      <span style="font-size:.65rem;color:#9ca3af;display:flex;align-items:center;gap:.3rem"><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:#ef4444"></span>Élevé</span>
+    </div>
+  </div>` : ''}
+
+  ${dailyPassengersData && dailyPassengersData.length > 1 ? `
+  <div class="sec-ttl" style="margin-top:1.5rem">Voyageurs par jour</div>
+  <div class="card" style="padding:1rem 1.25rem 0.75rem;margin-bottom:1.5rem">
+    ${buildDailyPassengersSVG(dailyPassengersData)}
+    <div style="display:flex;gap:1rem;justify-content:center;margin-top:0.5rem">
+      <span style="font-size:.65rem;color:#9ca3af;display:flex;align-items:center;gap:.3rem"><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:#10b981"></span>En règle</span>
+      <span style="font-size:.65rem;color:#9ca3af;display:flex;align-items:center;gap:.3rem"><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:#ef4444"></span>Fraude</span>
     </div>
   </div>` : ''}
 
