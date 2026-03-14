@@ -1,4 +1,4 @@
-# SNCF Contrôles — v1.10.44
+# SNCF Contrôles — v1.10.47
 
 Application de gestion et suivi des contrôles ferroviaires pour les agents SNCF.
 
@@ -20,6 +20,7 @@ Application de gestion et suivi des contrôles ferroviaires pour les agents SNCF
 - Calcul du taux de fraude : `(tarifsControle + PV + RI négatifs) / passagers × 100`
 - Filtrage par période : Aujourd'hui / Semaine / Mois / Année / Personnalisée
 - Graphiques Recharts : répartition fraude, taux par train, tendances
+- **Sélecteur de plage sur les graphiques de tendance** : boutons 7j/30j/90j (jour), 4-12-26 sem (semaine), 3-6-12 mois, 2-5 ans — indépendants des KPI
 - Seuils de couleur configurables (vert / jaune / rouge)
 
 ### Historique
