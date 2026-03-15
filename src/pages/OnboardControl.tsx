@@ -67,12 +67,10 @@ import {
   Users,
   Users2,
   ChevronRight,
-  ChevronDown,
+
   X,
   RefreshCw,
-  ArrowUpFromLine,
 } from 'lucide-react';
-import { DeparturesWidget } from '@/components/controls/DeparturesWidget';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
@@ -162,8 +160,6 @@ export default function OnboardControl() {
   const [isDuplicateMode, setIsDuplicateMode] = useState(false);
   const [compactMode, setCompactMode] = useState(false);
   const [activeSection, setActiveSection] = useState<'info' | 'stt' | 'controle' | 'pv' | 'bord' | 'ri' | 'notes'>('info');
-  const [showDepartures, setShowDepartures] = useState(false);
-
   // Initial form state using Paris time
   const getInitialFormState = useCallback((): FormState => ({
     trainNumber: '',
@@ -884,25 +880,6 @@ export default function OnboardControl() {
             trainNumber={formState.trainNumber}
           />
         )}
-
-        {/* Départs / Arrivées en gare - collapsible */}
-        <div className="max-w-3xl mx-auto w-full">
-          <button
-            onClick={() => setShowDepartures(v => !v)}
-            className="w-full flex items-center justify-between px-4 py-3 bg-card border border-border rounded-lg text-sm font-medium text-foreground hover:bg-muted/50 transition-colors"
-          >
-            <span className="flex items-center gap-2">
-              <ArrowUpFromLine className="h-4 w-4 text-primary" />
-              Départs / Arrivées en gare
-            </span>
-            <ChevronDown className={cn('h-4 w-4 transition-transform', showDepartures && 'rotate-180')} />
-          </button>
-          {showDepartures && (
-            <div className="mt-2 border border-border rounded-lg overflow-hidden">
-              <DeparturesWidget />
-            </div>
-          )}
-        </div>
 
         {/* Main Content - Centered */}
         <div className="max-w-3xl mx-auto w-full space-y-4">

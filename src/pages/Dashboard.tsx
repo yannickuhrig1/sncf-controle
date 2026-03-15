@@ -56,6 +56,7 @@ import {
   loadShortcuts, SHORTCUT_OPTIONS, SHORTCUTS_CHANGE_EVENT,
   type DashboardShortcut,
 } from '@/lib/dashboardShortcuts';
+import { DeparturesWidget } from '@/components/controls/DeparturesWidget';
 
 type IconComponent = React.ComponentType<LucideProps>;
 const SHORTCUT_ICONS: Record<string, IconComponent> = { Train, Building2, ArrowUpFromLine, BarChart3, Clock, Info, Shield };
@@ -613,6 +614,8 @@ export default function Dashboard() {
   const [emailDialogOpen, setEmailDialogOpen] = useState(false);
   const [emailFormat, setEmailFormat] = useState<EmailFormat>('text');
 
+  const [showDepartures, setShowDepartures] = useState(false);
+
   // Dashboard shortcuts (from localStorage)
   const [shortcuts, setShortcuts] = useState<DashboardShortcut[]>(() => loadShortcuts());
   useEffect(() => {
@@ -860,42 +863,68 @@ export default function Dashboard() {
         {(() => {
           const activeShortcuts = shortcuts.filter(s => s.enabled);
           if (activeShortcuts.length === 0) return null;
+          const tileClass = (isPrimary: boolean) => cn(
+            'group relative overflow-hidden rounded-xl p-4 transition-all hover:scale-[1.01] flex flex-col gap-1.5 text-left w-full',
+            isPrimary
+              ? 'bg-primary shadow-md hover:shadow-lg text-primary-foreground'
+              : 'border-2 border-primary/15 bg-card shadow-sm hover:shadow-md',
+          );
+          const tileInner = (shortcut: DashboardShortcut, option: (typeof SHORTCUT_OPTIONS)[number], isPrimary: boolean) => {
+            const Icon = SHORTCUT_ICONS[option.iconName] ?? Train;
+            return (
+              <>
+                <div className={cn(
+                  'absolute right-2 top-2 transition-opacity pointer-events-none',
+                  isPrimary ? 'opacity-10 group-hover:opacity-20' : 'opacity-5 group-hover:opacity-10',
+                )}>
+                  <Icon className={cn('h-16 w-16', !isPrimary && 'text-primary')} />
+                </div>
+                <div className={cn('p-2 rounded-lg w-fit', isPrimary ? 'bg-white/20' : 'bg-primary/10')}>
+                  <Icon className={cn('h-4 w-4', !isPrimary && 'text-primary')} />
+                </div>
+                <span className={cn('font-semibold text-sm mt-1', !isPrimary && 'text-foreground')}>
+                  {shortcut.label}
+                </span>
+                <span className={cn('text-xs', isPrimary ? 'text-white/60' : 'text-muted-foreground')}>
+                  {shortcut.description}
+                </span>
+              </>
+            );
+          };
           return (
-            <div className="grid grid-cols-2 gap-3">
-              {activeShortcuts.map((shortcut, idx) => {
-                const option = SHORTCUT_OPTIONS.find(o => o.id === shortcut.id);
-                if (!option) return null;
-                const Icon = SHORTCUT_ICONS[option.iconName] ?? Train;
-                const isPrimary = idx === 0;
-                return (
-                  <Link
-                    key={shortcut.id}
-                    to={option.href}
-                    className={cn(
-                      'group relative overflow-hidden rounded-xl p-4 transition-all hover:scale-[1.01] flex flex-col gap-1.5',
-                      isPrimary
-                        ? 'bg-primary shadow-md hover:shadow-lg text-primary-foreground'
-                        : 'border-2 border-primary/15 bg-card shadow-sm hover:shadow-md',
-                    )}
-                  >
-                    <div className={cn(
-                      'absolute right-2 top-2 transition-opacity pointer-events-none',
-                      isPrimary ? 'opacity-10 group-hover:opacity-20' : 'opacity-5 group-hover:opacity-10',
-                    )}>
-                      <Icon className={cn('h-16 w-16', !isPrimary && 'text-primary')} />
-                    </div>
-                    <div className={cn('p-2 rounded-lg w-fit', isPrimary ? 'bg-white/20' : 'bg-primary/10')}>
-                      <Icon className={cn('h-4 w-4', !isPrimary && 'text-primary')} />
-                    </div>
-                    <span className={cn('font-semibold text-sm mt-1', !isPrimary && 'text-foreground')}>
-                      {shortcut.label}
-                    </span>
-                    <span className={cn('text-xs', isPrimary ? 'text-white/60' : 'text-muted-foreground')}>
-                      {shortcut.description}
-                    </span>
-                  </Link>
-                );
-              })}
+            <div className="space-y-2">
+              <div className="grid grid-cols-2 gap-3">
+                {activeShortcuts.map((shortcut, idx) => {
+                  const option = SHORTCUT_OPTIONS.find(o => o.id === shortcut.id);
+                  if (!option) return null;
+                  const isPrimary = idx === 0;
+                  if (option.id === 'embarkment') {
+                    return (
+                      <button
+                        key={shortcut.id}
+                        onClick={() => setShowDepartures(v => !v)}
+                        className={tileClass(isPrimary)}
+                      >
+                        {tileInner(shortcut, option, isPrimary)}
+                      </button>
+                    );
+                  }
+                  return (
+                    <Link
+                      key={shortcut.id}
+                      to={option.href}
+                      className={tileClass(isPrimary)}
+                    >
+                      {tileInner(shortcut, option, isPrimary)}
+                    </Link>
+                  );
+                })}
+              </div>
+              {showDepartures && (
+                <div className="border border-border rounded-xl overflow-hidden">
+                  <DeparturesWidget />
+                </div>
+              )}
             </div>
           );
         })()}
