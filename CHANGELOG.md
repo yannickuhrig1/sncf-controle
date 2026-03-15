@@ -5,6 +5,11 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/),
 et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.10.55] - 2026-03-14
+
+### Ajouté
+- OnboardControl : section "Départs / Arrivées en gare" collapsible intégrée directement dans la page contrôle à bord
+
 ## [1.10.54] - 2026-03-14
 
 ### Corrigé
