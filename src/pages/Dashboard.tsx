@@ -863,29 +863,32 @@ export default function Dashboard() {
         {(() => {
           const activeShortcuts = shortcuts.filter(s => s.enabled);
           if (activeShortcuts.length === 0) return null;
-          const tileClass = (isPrimary: boolean) => cn(
+          const tileClass = (isPrimary: boolean, isGradient?: boolean) => cn(
             'group relative overflow-hidden rounded-xl p-4 transition-all hover:scale-[1.01] flex flex-col gap-1.5 text-left w-full',
-            isPrimary
-              ? 'bg-primary shadow-md hover:shadow-lg text-primary-foreground'
-              : 'border-2 border-primary/15 bg-card shadow-sm hover:shadow-md',
+            isGradient
+              ? 'bg-gradient-to-br from-sky-400 to-blue-600 shadow-md hover:shadow-lg text-white'
+              : isPrimary
+                ? 'bg-primary shadow-md hover:shadow-lg text-primary-foreground'
+                : 'border-2 border-primary/15 bg-card shadow-sm hover:shadow-md',
           );
-          const tileInner = (shortcut: DashboardShortcut, option: (typeof SHORTCUT_OPTIONS)[number], isPrimary: boolean) => {
+          const tileInner = (shortcut: DashboardShortcut, option: (typeof SHORTCUT_OPTIONS)[number], isPrimary: boolean, isGradient?: boolean) => {
             const Icon = SHORTCUT_ICONS[option.iconName] ?? Train;
+            const colored = isPrimary || isGradient;
             return (
               <>
                 <div className={cn(
                   'absolute right-2 top-2 transition-opacity pointer-events-none',
-                  isPrimary ? 'opacity-10 group-hover:opacity-20' : 'opacity-5 group-hover:opacity-10',
+                  colored ? 'opacity-10 group-hover:opacity-20' : 'opacity-5 group-hover:opacity-10',
                 )}>
-                  <Icon className={cn('h-16 w-16', !isPrimary && 'text-primary')} />
+                  <Icon className={cn('h-16 w-16', !colored && 'text-primary')} />
                 </div>
-                <div className={cn('p-2 rounded-lg w-fit', isPrimary ? 'bg-white/20' : 'bg-primary/10')}>
-                  <Icon className={cn('h-4 w-4', !isPrimary && 'text-primary')} />
+                <div className={cn('p-2 rounded-lg w-fit', colored ? 'bg-white/20' : 'bg-primary/10')}>
+                  <Icon className={cn('h-4 w-4', !colored && 'text-primary')} />
                 </div>
-                <span className={cn('font-semibold text-sm mt-1', !isPrimary && 'text-foreground')}>
+                <span className={cn('font-semibold text-sm mt-1', !colored && 'text-foreground')}>
                   {shortcut.label}
                 </span>
-                <span className={cn('text-xs', isPrimary ? 'text-white/60' : 'text-muted-foreground')}>
+                <span className={cn('text-xs', colored ? 'text-white/60' : 'text-muted-foreground')}>
                   {shortcut.description}
                 </span>
               </>
@@ -903,9 +906,9 @@ export default function Dashboard() {
                       <button
                         key={shortcut.id}
                         onClick={() => setShowDepartures(v => !v)}
-                        className={tileClass(isPrimary)}
+                        className={tileClass(isPrimary, true)}
                       >
-                        {tileInner(shortcut, option, isPrimary)}
+                        {tileInner(shortcut, option, isPrimary, true)}
                       </button>
                     );
                   }
