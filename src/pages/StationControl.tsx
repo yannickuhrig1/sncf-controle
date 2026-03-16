@@ -27,7 +27,7 @@ import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
-import { Loader2, Building2, ArrowLeft, Save, ArrowRight, X, Clock, Calendar, ArrowDownToLine, ArrowUpFromLine, Users, UserCheck, MessageSquare, FileText, AlertTriangle, Plus, User, Ticket, Train, LayoutList, Layers, Share2, Copy, Mail, Link2 } from 'lucide-react';
+import { Loader2, Building2, ArrowLeft, Save, ArrowRight, X, Clock, Calendar, ArrowDownToLine, ArrowUpFromLine, Users, UserCheck, MessageSquare, FileText, AlertTriangle, Plus, Ticket, Train, Share2, Copy, Mail, Link2, ChevronDown } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -35,7 +35,6 @@ import {
   DialogTitle,
   DialogDescription,
 } from '@/components/ui/dialog';
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { cn } from '@/lib/utils';
 
 const TARIF_TYPES = [
@@ -134,9 +133,9 @@ export default function StationControl() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Compact/Extended mode
-  const [compactMode, setCompactMode] = useState(false);
-  const [activeSection, setActiveSection] = useState<'info' | 'voyageurs' | 'supplements' | 'controle' | 'pv' | 'ri' | 'notes'>('info');
+  // Collapsible infractions subsections
+  const [tarifsOpen, setTarifsOpen] = useState(false);
+  const [pvOpen, setPvOpen] = useState(false);
 
   // Prepared trains (exposed from MissionPreparation for separate tile card)
   const [preparedArrivals, setPreparedArrivals] = useState<PreparedTrain[]>([]);
@@ -508,8 +507,8 @@ export default function StationControl() {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <OfflineIndicator 
-              isOnline={isOnline} 
+            <OfflineIndicator
+              isOnline={isOnline}
               pendingCount={pendingCount}
               offlineControlsCount={offlineCount}
               isSyncing={isSyncing || isOfflineSyncing}
@@ -590,25 +589,6 @@ export default function StationControl() {
               </Card>
             )}
 
-            {/* Compact/Extended Toggle */}
-            <div className="flex items-center gap-2">
-              <ToggleGroup
-                type="single"
-                value={compactMode ? 'compact' : 'extended'}
-                onValueChange={(v) => v && setCompactMode(v === 'compact')}
-                className="border rounded-md"
-              >
-                <ToggleGroupItem value="extended" aria-label="Mode étendu" size="sm" className="gap-1.5 px-3">
-                  <LayoutList className="h-4 w-4" />
-                  <span className="hidden sm:inline text-xs">Étendu</span>
-                </ToggleGroupItem>
-                <ToggleGroupItem value="compact" aria-label="Mode compact" size="sm" className="gap-1.5 px-3">
-                  <Layers className="h-4 w-4" />
-                  <span className="hidden sm:inline text-xs">Compact</span>
-                </ToggleGroupItem>
-              </ToggleGroup>
-            </div>
-
             {/* Fraud Summary - Sticky */}
             <div className="sticky top-16 z-30">
               <FraudSummary
@@ -617,7 +597,7 @@ export default function StationControl() {
                 fraudRate={fraudStats.fraudRate}
               />
             </div>
-            
+
             {/* Mission Preparation - collapsible form only (tiles rendered separately) */}
             {!isEditMode && (
               <MissionPreparation
@@ -670,368 +650,348 @@ export default function StationControl() {
               </Card>
             )}
 
-            <form onSubmit={handleSubmit} className="space-y-6">
-              {/* ===== COMPACT MODE ===== */}
-              {compactMode ? (
-                <Card>
-                  <CardHeader className="pb-3">
-                    <div className="flex flex-wrap gap-1.5">
-                      {([
-                        { key: 'info'        as const, icon: Building2,    label: 'Info',
-                          inactive: 'border-cyan-200 bg-cyan-50 text-cyan-700 hover:bg-cyan-100 hover:text-cyan-700',
-                          active:   'bg-cyan-500 border-cyan-500 text-white hover:bg-cyan-600 hover:text-white' },
-                        { key: 'voyageurs'   as const, icon: Users,        label: 'Voyageurs',
-                          inactive: 'border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 hover:text-emerald-700',
-                          active:   'bg-emerald-500 border-emerald-500 text-white hover:bg-emerald-600 hover:text-white' },
-                        { key: 'supplements' as const, icon: Ticket,       label: 'Suppl.',
-                          inactive: 'border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100 hover:text-amber-700',
-                          active:   'bg-amber-500 border-amber-500 text-white hover:bg-amber-600 hover:text-white' },
-                        { key: 'controle'    as const, icon: FileText,     label: 'Tarif C.',
-                          inactive: 'border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100 hover:text-amber-700',
-                          active:   'bg-amber-500 border-amber-500 text-white hover:bg-amber-600 hover:text-white' },
-                        { key: 'pv'          as const, icon: AlertTriangle, label: 'PV',
-                          inactive: 'border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100 hover:text-rose-700',
-                          active:   'bg-rose-500 border-rose-500 text-white hover:bg-rose-600 hover:text-white' },
-                        { key: 'ri'          as const, icon: UserCheck,    label: 'RI',
-                          inactive: 'border-violet-200 bg-violet-50 text-violet-700 hover:bg-violet-100 hover:text-violet-700',
-                          active:   'bg-violet-500 border-violet-500 text-white hover:bg-violet-600 hover:text-white' },
-                        { key: 'notes'       as const, icon: MessageSquare, label: 'Notes',
-                          inactive: 'border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100 hover:text-slate-700',
-                          active:   'bg-slate-500 border-slate-500 text-white hover:bg-slate-600 hover:text-white' },
-                      ] as const).map(({ key, icon: SectionIcon, label, inactive, active }) => (
-                        <Button
-                          key={key}
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          className={cn('gap-1 text-xs border', activeSection === key ? active : inactive)}
-                          onClick={() => setActiveSection(key)}
-                        >
-                          <SectionIcon className="h-3.5 w-3.5" />
-                          {label}
-                        </Button>
-                      ))}
+            <form onSubmit={handleSubmit} className="space-y-4">
+
+              {/* ── Info train card ─────────────────────────────────────────── */}
+              <Card className="border-0 shadow-sm overflow-hidden">
+                <div className="h-1 bg-gradient-to-r from-cyan-400 to-teal-500" />
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <div className="p-1.5 rounded-lg bg-cyan-100 dark:bg-cyan-900/30">
+                      <Building2 className="h-3.5 w-3.5 text-cyan-600 dark:text-cyan-400" />
                     </div>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    {/* Info */}
-                    {activeSection === 'info' && (
-                      <>
-                        <div className="grid grid-cols-2 gap-3">
-                          <div className="space-y-1">
-                            <Label className="text-xs">Gare *</Label>
-                            <Input list="gares-c" placeholder="Sélectionner ou saisir" value={stationName} onChange={(e) => setStationName(e.target.value)} required />
-                            <datalist id="gares-c">{GARES_PRINCIPALES.map((g) => <option key={g} value={g} />)}</datalist>
-                          </div>
-                          <div className="space-y-1">
-                            <Label className="text-xs">N° Train</Label>
-                            <Input placeholder="Ex: 6231" value={trainNumber} onChange={(e) => setTrainNumber(e.target.value)} inputMode="numeric" />
-                            <TrainLookupButton
-                              trainNumber={trainNumber}
-                              date={controlDate}
-                              onResult={(info) => {
-                                setOrigin(info.origin || origin);
-                                setDestination(info.destination || destination);
-                                if (info.departureTime) setControlTime(info.departureTime);
-                                if (info.stops[0]?.platform) setPlatformNumber(info.stops[0].platform);
-                              }}
-                            />
-                          </div>
-                          <div className="space-y-1">
-                            <Label className="text-xs">Quai</Label>
-                            <Input placeholder="1A" value={platformNumber} onChange={(e) => setPlatformNumber(e.target.value)} />
-                          </div>
-                          <div className="space-y-1">
-                            <Label className="text-xs">Date</Label>
-                            <Input type="date" value={controlDate} onChange={(e) => setControlDate(e.target.value)} />
-                          </div>
-                          <div className="space-y-1">
-                            <Label className="text-xs">Heure</Label>
-                            <Input type="time" value={controlTime} onChange={(e) => setControlTime(e.target.value)} />
-                          </div>
-                          <div className="space-y-1">
-                            <Label className="text-xs">Origine</Label>
-                            <Input placeholder="Paris" value={origin} onChange={(e) => setOrigin(e.target.value)} />
-                          </div>
-                          <div className="space-y-1 col-span-2">
-                            <Label className="text-xs">Destination</Label>
-                            <Input placeholder="Lyon" value={destination} onChange={(e) => setDestination(e.target.value)} />
-                          </div>
-                          <div className="space-y-1">
-                            <Label className="text-xs flex items-center gap-1"><Clock className="h-3 w-3" />Départ origine</Label>
-                            <Input type="time" value={departureTime} onChange={(e) => setDepartureTime(e.target.value)} />
-                          </div>
-                          <div className="col-span-2 flex items-center gap-4 flex-wrap pt-1">
-                            <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
-                              <Checkbox checked={isCancelled} onCheckedChange={(v) => setIsCancelled(!!v)} />
-                              <span>Train supprimé</span>
-                            </label>
-                            <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
-                              <Checkbox checked={isOvercrowded} onCheckedChange={(v) => setIsOvercrowded(!!v)} />
-                              <span>Sur-occupation</span>
-                            </label>
-                          </div>
-                        </div>
-                      </>
-                    )}
-                    {/* Voyageurs */}
-                    {activeSection === 'voyageurs' && (
-                      <CounterInput label="Nombre contrôlés" value={nbPassagers} onChange={setNbPassagers} min={0} max={9999} steps={[1, 10]} />
-                    )}
-                    {/* Suppléments */}
-                    {activeSection === 'supplements' && (
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg">
-                          <CounterInput label="STT 50€" sublabel="Tarif contrôle" value={stt50Count} onChange={setStt50Count} showTotal={{ unitPrice: 50, label: 'Total' }} />
-                        </div>
-                        <div className="p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
-                          <CounterInput label="PV 100€" sublabel="Procès-verbal" value={stt100Count} onChange={setStt100Count} showTotal={{ unitPrice: 100, label: 'Total' }} variant="danger" />
-                        </div>
+                    Info train
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {/* Row 1: Gare full width */}
+                  <div className="space-y-1.5">
+                    <Label htmlFor="stationName">Gare *</Label>
+                    <Input
+                      id="stationName"
+                      list="gares"
+                      placeholder="Sélectionner ou saisir une gare"
+                      value={stationName}
+                      onChange={(e) => setStationName(e.target.value)}
+                      required
+                    />
+                    <datalist id="gares">
+                      {GARES_PRINCIPALES.map((gare) => <option key={gare} value={gare} />)}
+                    </datalist>
+                  </div>
+
+                  {/* Row 2: N° Train + Quai */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="trainNumber">N° Train</Label>
+                      <div className="flex flex-col gap-1">
+                        <Input
+                          id="trainNumber"
+                          placeholder="Ex: 6231"
+                          value={trainNumber}
+                          onChange={(e) => setTrainNumber(e.target.value)}
+                          inputMode="numeric"
+                        />
+                        <TrainLookupButton
+                          trainNumber={trainNumber}
+                          date={controlDate}
+                          onResult={(info) => {
+                            setOrigin(info.origin || origin);
+                            setDestination(info.destination || destination);
+                            if (info.departureTime) setControlTime(info.departureTime);
+                            if (info.stops[0]?.platform) setPlatformNumber(info.stops[0].platform);
+                          }}
+                        />
                       </div>
-                    )}
-                    {/* Tarif contrôle */}
-                    {activeSection === 'controle' && (
-                      <>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="platformNumber">Quai</Label>
+                      <Input
+                        id="platformNumber"
+                        placeholder="1A"
+                        value={platformNumber}
+                        onChange={(e) => setPlatformNumber(e.target.value)}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Row 3: Origine → Destination */}
+                  <div className="grid grid-cols-[1fr_auto_1fr] items-end gap-2">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="origin">Origine</Label>
+                      <Input
+                        id="origin"
+                        placeholder="Paris"
+                        value={origin}
+                        onChange={(e) => setOrigin(e.target.value)}
+                      />
+                    </div>
+                    <div className="pb-2">
+                      <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="destination">Destination</Label>
+                      <Input
+                        id="destination"
+                        placeholder="Lyon"
+                        value={destination}
+                        onChange={(e) => setDestination(e.target.value)}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Row 4: Départ origine + Date + Heure contrôle */}
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="departureTime" className="flex items-center gap-1">
+                        <Clock className="h-3 w-3" />
+                        Départ origine
+                      </Label>
+                      <Input
+                        id="departureTime"
+                        type="time"
+                        value={departureTime}
+                        onChange={(e) => setDepartureTime(e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="controlDate" className="flex items-center gap-1">
+                        <Calendar className="h-3 w-3" />
+                        Date
+                      </Label>
+                      <Input
+                        id="controlDate"
+                        type="date"
+                        value={controlDate}
+                        onChange={(e) => setControlDate(e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="controlTime" className="flex items-center gap-1">
+                        <Clock className="h-3 w-3" />
+                        Heure
+                      </Label>
+                      <Input
+                        id="controlTime"
+                        type="time"
+                        value={controlTime}
+                        onChange={(e) => setControlTime(e.target.value)}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Row 5: Checkboxes */}
+                  <div className="flex items-center gap-4 flex-wrap pt-1">
+                    <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
+                      <Checkbox checked={isCancelled} onCheckedChange={(v) => setIsCancelled(!!v)} />
+                      <span>Train supprimé</span>
+                    </label>
+                    <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
+                      <Checkbox checked={isOvercrowded} onCheckedChange={(v) => setIsOvercrowded(!!v)} />
+                      <span>Sur-occupation</span>
+                    </label>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* ── Voyageurs card ───────────────────────────────────────────── */}
+              <Card className="border-0 shadow-sm overflow-hidden">
+                <div className="h-1 bg-gradient-to-r from-teal-400 to-green-500" />
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <div className="p-1.5 rounded-lg bg-teal-100 dark:bg-teal-900/30">
+                      <Users className="h-3.5 w-3.5 text-teal-600 dark:text-teal-400" />
+                    </div>
+                    Voyageurs
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="flex justify-center py-2">
+                  <CounterInput label="Nombre contrôlés" value={nbPassagers} onChange={setNbPassagers} min={0} max={9999} steps={[1, 10]} />
+                </CardContent>
+              </Card>
+
+              {/* ── Infractions card (unified) ───────────────────────────────── */}
+              <Card className="border-0 shadow-sm overflow-hidden">
+                <div className="h-1 bg-gradient-to-r from-amber-400 to-rose-500" />
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <div className="p-1.5 rounded-lg bg-amber-100 dark:bg-amber-900/30">
+                      <Ticket className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
+                    </div>
+                    Infractions
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {/* Quick counters — 2-col grid */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg">
+                      <CounterInput
+                        label="STT 50€"
+                        sublabel="Tarif contrôle"
+                        value={stt50Count}
+                        onChange={setStt50Count}
+                        showTotal={{ unitPrice: 50, label: 'Total' }}
+                      />
+                    </div>
+                    <div className="p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
+                      <CounterInput
+                        label="PV 100€"
+                        sublabel="Procès-verbal"
+                        value={stt100Count}
+                        onChange={setStt100Count}
+                        showTotal={{ unitPrice: 100, label: 'Total' }}
+                        variant="danger"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Subsection: Détail tarifs contrôle */}
+                  <div className="border rounded-lg overflow-hidden">
+                    <button
+                      type="button"
+                      className="w-full flex items-center justify-between px-4 py-2.5 bg-amber-50 dark:bg-amber-900/10 hover:bg-amber-100 dark:hover:bg-amber-900/20 transition-colors text-left"
+                      onClick={() => setTarifsOpen((v) => !v)}
+                    >
+                      <span className="flex items-center gap-2 text-sm font-medium text-amber-800 dark:text-amber-300">
+                        <FileText className="h-3.5 w-3.5" />
+                        Détail tarifs contrôle
+                        {tarifsControle.length > 0 && (
+                          <Badge variant="secondary" className="text-xs py-0 h-4">{tarifsControle.length}</Badge>
+                        )}
+                      </span>
+                      <ChevronDown className={cn('h-4 w-4 text-amber-600 transition-transform', tarifsOpen && 'rotate-180')} />
+                    </button>
+                    {tarifsOpen && (
+                      <div className="p-4 space-y-3 border-t">
                         <TarifTypeToggle types={TARIF_TYPES} value={controleTarifType} onChange={setControleTarifType} />
-                        {controleTarifType === 'autre' && <Input placeholder="Précisez l'infraction..." value={autreControleComment} onChange={(e) => setAutreControleComment(e.target.value)} />}
-                        <div className="flex gap-2">
-                          <Input type="number" min="0" step="0.01" placeholder="Montant (€)" value={controleTarifMontant} onChange={(e) => setControleTarifMontant(e.target.value)} className="flex-1" onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addTarifControle())} />
-                          <Button type="button" onClick={addTarifControle} disabled={!controleTarifMontant}><Plus className="h-4 w-4 mr-1" />Ajouter</Button>
-                        </div>
-                        {tarifsControle.length > 0 && <div className="space-y-2">{tarifsControle.map((t) => <TarifListItem key={t.id} item={t} onRemove={removeTarifControle} />)}</div>}
-                      </>
-                    )}
-                    {/* PV */}
-                    {activeSection === 'pv' && (
-                      <>
-                        <TarifTypeToggle types={PV_TYPES} value={pvTarifType} onChange={setPvTarifType} />
-                        {pvTarifType === 'pv_autre' && <Input placeholder="Précisez l'infraction..." value={autrePvComment} onChange={(e) => setAutrePvComment(e.target.value)} />}
-                        <div className="flex gap-2">
-                          <Input type="number" min="0" step="0.01" placeholder="Montant (€)" value={pvTarifMontant} onChange={(e) => setPvTarifMontant(e.target.value)} className="flex-1" onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addPv())} />
-                          <Button type="button" onClick={addPv} disabled={!pvTarifMontant} variant="destructive"><Plus className="h-4 w-4 mr-1" />Ajouter</Button>
-                        </div>
-                        {pvList.length > 0 && <div className="space-y-2">{pvList.map((t) => <TarifListItem key={t.id} item={t} onRemove={removePv} />)}</div>}
-                      </>
-                    )}
-                    {/* RI */}
-                    {activeSection === 'ri' && (
-                      <div className="grid grid-cols-2 gap-4">
-                        <CounterInput label="RI positive" sublabel="Identité vérifiée" value={riPositive} onChange={setRiPositive} variant="success" />
-                        <CounterInput label="RI négative" sublabel="Identité non vérifiable" value={riNegative} onChange={setRiNegative} variant="danger" />
-                      </div>
-                    )}
-                    {/* Notes */}
-                    {activeSection === 'notes' && (
-                      <Textarea placeholder="Remarques, observations..." value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} />
-                    )}
-                  </CardContent>
-                </Card>
-              ) : (
-                /* ===== EXTENDED MODE ===== */
-                <>
-                  {/* Station Info */}
-                  <Card className="border-0 shadow-sm overflow-hidden bg-card-cyan text-card-cyan-foreground border-card-cyan">
-                    <div className="h-1 bg-gradient-to-r from-cyan-400 to-teal-500" />
-                    <CardHeader className="pb-3">
-                      <CardTitle className="text-base flex items-center gap-2">
-                        <div className="p-1.5 rounded-lg bg-cyan-100 dark:bg-cyan-900/30">
-                          <Building2 className="h-3.5 w-3.5 text-cyan-600 dark:text-cyan-400" />
-                        </div>
-                        Informations gare & train
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="stationName">Gare *</Label>
-                          <Input id="stationName" list="gares" placeholder="Sélectionner ou saisir" value={stationName} onChange={(e) => setStationName(e.target.value)} required />
-                          <datalist id="gares">{GARES_PRINCIPALES.map((gare) => <option key={gare} value={gare} />)}</datalist>
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="trainNumber">N° Train</Label>
-                          <Input id="trainNumber" placeholder="Ex: 6231" value={trainNumber} onChange={(e) => setTrainNumber(e.target.value)} inputMode="numeric" />
-                          <TrainLookupButton
-                            trainNumber={trainNumber}
-                            date={controlDate}
-                            onResult={(info) => {
-                              setOrigin(info.origin || origin);
-                              setDestination(info.destination || destination);
-                              if (info.departureTime) setControlTime(info.departureTime);
-                              if (info.stops[0]?.platform) setPlatformNumber(info.stops[0].platform);
-                            }}
+                        {controleTarifType === 'autre' && (
+                          <Input
+                            placeholder="Précisez l'infraction..."
+                            value={autreControleComment}
+                            onChange={(e) => setAutreControleComment(e.target.value)}
                           />
+                        )}
+                        <div className="flex gap-2">
+                          <Input
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            placeholder="Montant (€)"
+                            value={controleTarifMontant}
+                            onChange={(e) => setControleTarifMontant(e.target.value)}
+                            className="flex-1"
+                            onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addTarifControle())}
+                          />
+                          <Button type="button" onClick={addTarifControle} disabled={!controleTarifMontant}>
+                            <Plus className="h-4 w-4 mr-1" />Ajouter
+                          </Button>
                         </div>
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="platformNumber">Numéro de quai</Label>
-                        <Input id="platformNumber" placeholder="1A" value={platformNumber} onChange={(e) => setPlatformNumber(e.target.value)} />
-                      </div>
-                      <div className="flex items-center gap-4 flex-wrap">
-                        <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
-                          <Checkbox checked={isCancelled} onCheckedChange={(v) => setIsCancelled(!!v)} />
-                          <span>Train supprimé</span>
-                        </label>
-                        <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
-                          <Checkbox checked={isOvercrowded} onCheckedChange={(v) => setIsOvercrowded(!!v)} />
-                          <span>Sur-occupation</span>
-                        </label>
-                      </div>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="controlDate" className="flex items-center gap-1"><Calendar className="h-3 w-3" />Date</Label>
-                          <Input id="controlDate" type="date" value={controlDate} onChange={(e) => setControlDate(e.target.value)} />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="controlTime" className="flex items-center gap-1"><Clock className="h-3 w-3" />Heure (Paris)</Label>
-                          <Input id="controlTime" type="time" value={controlTime} onChange={(e) => setControlTime(e.target.value)} />
-                        </div>
-                      </div>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="origin">Origine du flux</Label>
-                          <Input id="origin" placeholder="Paris" value={origin} onChange={(e) => setOrigin(e.target.value)} />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="destination">Destination</Label>
-                          <div className="flex items-center gap-2">
-                            <ArrowRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                            <Input id="destination" placeholder="Lyon" value={destination} onChange={(e) => setDestination(e.target.value)} />
+                        {tarifsControle.length > 0 && (
+                          <div className="space-y-2">
+                            {tarifsControle.map((t) => (
+                              <TarifListItem key={t.id} item={t} onRemove={removeTarifControle} />
+                            ))}
                           </div>
-                        </div>
+                        )}
                       </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="departureTime" className="flex items-center gap-1.5">
-                          <Clock className="h-3.5 w-3.5 text-muted-foreground" />
-                          Heure de départ (gare origine)
-                        </Label>
-                        <Input id="departureTime" type="time" value={departureTime} onChange={(e) => setDepartureTime(e.target.value)} className="w-36" />
+                    )}
+                  </div>
+
+                  {/* Subsection: Détail PV */}
+                  <div className="border rounded-lg overflow-hidden">
+                    <button
+                      type="button"
+                      className="w-full flex items-center justify-between px-4 py-2.5 bg-rose-50 dark:bg-rose-900/10 hover:bg-rose-100 dark:hover:bg-rose-900/20 transition-colors text-left"
+                      onClick={() => setPvOpen((v) => !v)}
+                    >
+                      <span className="flex items-center gap-2 text-sm font-medium text-rose-800 dark:text-rose-300">
+                        <AlertTriangle className="h-3.5 w-3.5" />
+                        Détail PV
+                        {pvList.length > 0 && (
+                          <Badge variant="secondary" className="text-xs py-0 h-4">{pvList.length}</Badge>
+                        )}
+                      </span>
+                      <ChevronDown className={cn('h-4 w-4 text-rose-600 transition-transform', pvOpen && 'rotate-180')} />
+                    </button>
+                    {pvOpen && (
+                      <div className="p-4 space-y-3 border-t">
+                        <TarifTypeToggle types={PV_TYPES} value={pvTarifType} onChange={setPvTarifType} />
+                        {pvTarifType === 'pv_autre' && (
+                          <Input
+                            placeholder="Précisez l'infraction..."
+                            value={autrePvComment}
+                            onChange={(e) => setAutrePvComment(e.target.value)}
+                          />
+                        )}
+                        <div className="flex gap-2">
+                          <Input
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            placeholder="Montant (€)"
+                            value={pvTarifMontant}
+                            onChange={(e) => setPvTarifMontant(e.target.value)}
+                            className="flex-1"
+                            onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addPv())}
+                          />
+                          <Button type="button" onClick={addPv} disabled={!pvTarifMontant} variant="destructive">
+                            <Plus className="h-4 w-4 mr-1" />Ajouter
+                          </Button>
+                        </div>
+                        {pvList.length > 0 && (
+                          <div className="space-y-2">
+                            {pvList.map((t) => (
+                              <TarifListItem key={t.id} item={t} onRemove={removePv} />
+                            ))}
+                          </div>
+                        )}
                       </div>
-                    </CardContent>
-                  </Card>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
 
-                  {/* Passengers */}
-                  <Card className="border-0 shadow-sm overflow-hidden bg-card-mint text-card-mint-foreground border-card-mint">
-                    <div className="h-1 bg-gradient-to-r from-teal-400 to-green-500" />
-                    <CardHeader className="pb-3">
-                      <CardTitle className="text-base flex items-center gap-2">
-                        <div className="p-1.5 rounded-lg bg-teal-100 dark:bg-teal-900/30">
-                          <Users className="h-3.5 w-3.5 text-teal-600 dark:text-teal-400" />
-                        </div>
-                        Voyageurs
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <CounterInput label="Nombre contrôlés" value={nbPassagers} onChange={setNbPassagers} min={0} max={9999} steps={[1, 10]} />
-                    </CardContent>
-                  </Card>
+              {/* ── RI card ──────────────────────────────────────────────────── */}
+              <Card className="border-0 shadow-sm overflow-hidden">
+                <div className="h-1 bg-gradient-to-r from-violet-400 to-purple-500" />
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <div className="p-1.5 rounded-lg bg-violet-100 dark:bg-violet-900/30">
+                      <UserCheck className="h-3.5 w-3.5 text-violet-600 dark:text-violet-400" />
+                    </div>
+                    Relevés d'identité (RI)
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 gap-4">
+                    <CounterInput label="RI positive" sublabel="Identité vérifiée" value={riPositive} onChange={setRiPositive} variant="success" />
+                    <CounterInput label="RI négative" sublabel="Identité non vérifiable" value={riNegative} onChange={setRiNegative} variant="danger" />
+                  </div>
+                </CardContent>
+              </Card>
 
-                  {/* STT rapides */}
-                  <Card className="border-0 shadow-sm overflow-hidden">
-                    <div className="h-1 bg-gradient-to-r from-amber-400 to-orange-500" />
-                    <CardHeader className="pb-3">
-                      <CardTitle className="text-base flex items-center gap-2">
-                        <div className="p-1.5 rounded-lg bg-amber-100 dark:bg-amber-900/30">
-                          <Ticket className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
-                        </div>
-                        STT rapides
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg">
-                          <CounterInput label="STT 50€" sublabel="Tarif contrôle" value={stt50Count} onChange={setStt50Count} showTotal={{ unitPrice: 50, label: 'Total' }} />
-                        </div>
-                        <div className="p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
-                          <CounterInput label="PV 100€" sublabel="Procès-verbal" value={stt100Count} onChange={setStt100Count} showTotal={{ unitPrice: 100, label: 'Total' }} variant="danger" />
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
+              {/* ── Notes card ───────────────────────────────────────────────── */}
+              <Card className="border-0 shadow-sm overflow-hidden">
+                <div className="h-1 bg-gradient-to-r from-slate-300 to-gray-400" />
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <div className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800/50">
+                      <MessageSquare className="h-3.5 w-3.5 text-slate-600 dark:text-slate-400" />
+                    </div>
+                    Commentaire
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <Textarea
+                    placeholder="Remarques, observations..."
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    rows={3}
+                  />
+                </CardContent>
+              </Card>
 
-                  {/* Tarifs contrôle */}
-                  <Card className="border-0 shadow-sm overflow-hidden bg-card-amber text-card-amber-foreground border-card-amber">
-                    <div className="h-1 bg-gradient-to-r from-amber-400 to-orange-500" />
-                    <CardHeader className="pb-3">
-                      <CardTitle className="text-base flex items-center gap-2">
-                        <div className="p-1.5 rounded-lg bg-amber-100 dark:bg-amber-900/30">
-                          <FileText className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
-                        </div>
-                        Tarif contrôle
-                      </CardTitle>
-                      <CardDescription className="text-xs pl-8">Infractions régularisées sur place</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <TarifTypeToggle types={TARIF_TYPES} value={controleTarifType} onChange={setControleTarifType} />
-                      {controleTarifType === 'autre' && <Input placeholder="Précisez l'infraction..." value={autreControleComment} onChange={(e) => setAutreControleComment(e.target.value)} />}
-                      <div className="flex gap-2">
-                        <Input type="number" min="0" step="0.01" placeholder="Montant (€)" value={controleTarifMontant} onChange={(e) => setControleTarifMontant(e.target.value)} className="flex-1" onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addTarifControle())} />
-                        <Button type="button" onClick={addTarifControle} disabled={!controleTarifMontant}><Plus className="h-4 w-4 mr-1" />Ajouter</Button>
-                      </div>
-                      {tarifsControle.length > 0 && <div className="space-y-2">{tarifsControle.map((t) => <TarifListItem key={t.id} item={t} onRemove={removeTarifControle} />)}</div>}
-                    </CardContent>
-                  </Card>
-
-                  {/* PV */}
-                  <Card className="border-0 shadow-sm overflow-hidden bg-card-rose text-card-rose-foreground border-card-rose">
-                    <div className="h-1 bg-gradient-to-r from-rose-400 to-red-500" />
-                    <CardHeader className="pb-3">
-                      <CardTitle className="text-base flex items-center gap-2">
-                        <div className="p-1.5 rounded-lg bg-rose-100 dark:bg-rose-900/30">
-                          <AlertTriangle className="h-3.5 w-3.5 text-rose-600 dark:text-rose-400" />
-                        </div>
-                        Procès-verbaux (PV)
-                      </CardTitle>
-                      <CardDescription className="text-xs pl-8">Infractions verbalisées</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <TarifTypeToggle types={PV_TYPES} value={pvTarifType} onChange={setPvTarifType} />
-                      {pvTarifType === 'pv_autre' && <Input placeholder="Précisez l'infraction..." value={autrePvComment} onChange={(e) => setAutrePvComment(e.target.value)} />}
-                      <div className="flex gap-2">
-                        <Input type="number" min="0" step="0.01" placeholder="Montant (€)" value={pvTarifMontant} onChange={(e) => setPvTarifMontant(e.target.value)} className="flex-1" onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addPv())} />
-                        <Button type="button" onClick={addPv} disabled={!pvTarifMontant} variant="destructive"><Plus className="h-4 w-4 mr-1" />Ajouter</Button>
-                      </div>
-                      {pvList.length > 0 && <div className="space-y-2">{pvList.map((t) => <TarifListItem key={t.id} item={t} onRemove={removePv} />)}</div>}
-                    </CardContent>
-                  </Card>
-
-                  {/* RI */}
-                  <Card className="border-0 shadow-sm overflow-hidden bg-card-violet text-card-violet-foreground border-card-violet">
-                    <div className="h-1 bg-gradient-to-r from-violet-400 to-purple-500" />
-                    <CardHeader className="pb-3">
-                      <CardTitle className="text-base flex items-center gap-2">
-                        <div className="p-1.5 rounded-lg bg-violet-100 dark:bg-violet-900/30">
-                          <UserCheck className="h-3.5 w-3.5 text-violet-600 dark:text-violet-400" />
-                        </div>
-                        Relevés d'identité (RI)
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="grid grid-cols-2 gap-4">
-                        <CounterInput label="RI positive" sublabel="Identité vérifiée" value={riPositive} onChange={setRiPositive} variant="success" />
-                        <CounterInput label="RI négative" sublabel="Identité non vérifiable" value={riNegative} onChange={setRiNegative} variant="danger" />
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  {/* Notes */}
-                  <Card className="border-0 shadow-sm overflow-hidden">
-                    <div className="h-1 bg-gradient-to-r from-slate-300 to-gray-400" />
-                    <CardHeader className="pb-3">
-                      <CardTitle className="text-base flex items-center gap-2">
-                        <div className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800/50">
-                          <MessageSquare className="h-3.5 w-3.5 text-slate-600 dark:text-slate-400" />
-                        </div>
-                        Commentaire
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <Textarea placeholder="Remarques, observations..." value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} />
-                    </CardContent>
-                  </Card>
-                </>
-              )}
-
-              {/* Submit */}
+              {/* ── Submit ───────────────────────────────────────────────────── */}
               <Button type="submit" className="w-full" size="lg" disabled={isCreating || isUpdating}>
                 {(isCreating || isUpdating) ? (
                   <>
@@ -1045,7 +1005,7 @@ export default function StationControl() {
                   </>
                 )}
               </Button>
-              
+
               {/* Progress overlay */}
               <SubmitProgress isSubmitting={isCreating || isUpdating} />
             </form>

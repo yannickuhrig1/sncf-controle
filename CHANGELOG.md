@@ -5,6 +5,13 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/),
 et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.10.63] - 2026-03-16
+
+### Modifié
+- Contrôle en gare : suppression du toggle compact/étendu au profit d'une page unifiée
+- Infractions regroupées en une seule carte avec sous-sections collapsibles (tarifs contrôle / PV)
+- Interface plus claire et plus directe
+
 ## [1.10.62] - 2026-03-16
 
 ### Ajouté
