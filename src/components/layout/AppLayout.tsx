@@ -364,7 +364,7 @@ export function AppLayout({ children }: AppLayoutProps) {
       <aside id="sncf-sidebar" className="hidden md:flex flex-col w-60 shrink-0 bg-primary text-primary-foreground sticky top-0 h-screen overflow-y-auto">
         {/* Brand */}
         <div className="flex items-center gap-2.5 px-4 py-4 border-b border-white/10">
-          <img src="/logo-controleur.svg" alt="Contrôleur" className="h-8 w-8 shrink-0" />
+          <img src="/icon-192.png" alt="Contrôleur" className="h-8 w-8 shrink-0" />
           <div>
             <div className="font-semibold text-base leading-tight">SNCF Contrôles</div>
             <div className="text-[10px] text-white/50 leading-tight">v{__APP_VERSION__} · {__BUILD_DATE__}</div>
@@ -403,7 +403,7 @@ export function AppLayout({ children }: AppLayoutProps) {
         >
           <div className="flex items-center justify-between px-4 py-3">
             <div className="flex items-center gap-2">
-              <img src="/logo-controleur.svg" alt="Contrôleur" className="h-8 w-8 shrink-0" />
+              <img src="/icon-192.png" alt="Contrôleur" className="h-8 w-8 shrink-0" />
               <div>
                 <div className="font-semibold leading-tight">SNCF Contrôles</div>
                 <div className="text-[10px] text-white/60 leading-tight">v{__APP_VERSION__} · {__BUILD_DATE__}</div>
@@ -455,7 +455,7 @@ export function AppLayout({ children }: AppLayoutProps) {
                 <SheetContent side="right" className="w-72 p-0">
                   <SheetHeader className="p-4 border-b">
                     <SheetTitle className="flex items-center gap-2">
-                      <img src="/logo-controleur.svg" alt="Contrôleur" className="h-6 w-6" />
+                      <img src="/icon-192.png" alt="Contrôleur" className="h-6 w-6" />
                       Navigation
                     </SheetTitle>
                   </SheetHeader>
