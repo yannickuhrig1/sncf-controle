@@ -166,6 +166,9 @@ export default function StationControl() {
   const [riPositive, setRiPositive] = useState(0);
   const [riNegative, setRiNegative] = useState(0);
 
+  // Heure de départ de la gare origine
+  const [departureTime, setDepartureTime] = useState('');
+
   // Notes
   const [notes, setNotes] = useState('');
 
@@ -307,6 +310,7 @@ export default function StationControl() {
     setSelectedTrainId(undefined);
     setOrigin('');
     setDestination('');
+    setDepartureTime('');
     setNbPassagers(0);
     setStt50Count(0);
     setStt100Count(0);
@@ -387,6 +391,7 @@ export default function StationControl() {
     const pvAutreEntries = pvList.filter(t => t.type === 'pv_autre');
 
     const notesParts: string[] = [];
+    if (departureTime.trim()) notesParts.push(`[Départ: ${departureTime.trim()}]`);
     if (autreControleComment.trim()) notesParts.push(`[Tarif Autre] ${autreControleComment.trim()}`);
     if (autrePvComment.trim()) notesParts.push(`[PV Autre] ${autrePvComment.trim()}`);
     if (notes.trim()) notesParts.push(notes.trim());
@@ -407,7 +412,7 @@ export default function StationControl() {
         stt_50: stt50Count + sttEntries.length,
         stt_50_amount: sttEntries.reduce((s, t) => s + t.montant, 0) || null,
         stt_100: stt100Count,
-        stt_100_amount: null,
+        stt_100_amount: pvSttEntries.reduce((s, t) => s + t.montant, 0) || null,
         rnv: rnvEntries.length,
         rnv_amount: rnvEntries.reduce((s, t) => s + t.montant, 0) || null,
         titre_tiers: ttEntries.length,
@@ -630,7 +635,7 @@ export default function StationControl() {
                   setTrainNumber(train.trainNumber || '');
                   setOrigin(train.origin || '');
                   setDestination(train.destination || (type === 'arrival' ? stationName : ''));
-                  if (train.time) setControlTime(train.time);
+                  if (train.time) { setControlTime(train.time); setDepartureTime(train.time); }
                 }}
               />
             )}
@@ -657,7 +662,7 @@ export default function StationControl() {
                       setTrainNumber(train.trainNumber || '');
                       setOrigin(train.origin || '');
                       setDestination(train.destination || (preparedActiveTab === 'arrivals' ? stationName : ''));
-                      if (train.time) setControlTime(train.time);
+                      if (train.time) { setControlTime(train.time); setDepartureTime(train.time); }
                     }}
                     onRemove={() => {}}
                   />
@@ -751,6 +756,10 @@ export default function StationControl() {
                           <div className="space-y-1 col-span-2">
                             <Label className="text-xs">Destination</Label>
                             <Input placeholder="Lyon" value={destination} onChange={(e) => setDestination(e.target.value)} />
+                          </div>
+                          <div className="space-y-1">
+                            <Label className="text-xs flex items-center gap-1"><Clock className="h-3 w-3" />Départ origine</Label>
+                            <Input type="time" value={departureTime} onChange={(e) => setDepartureTime(e.target.value)} />
                           </div>
                           <div className="col-span-2 flex items-center gap-4 flex-wrap pt-1">
                             <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
@@ -889,6 +898,13 @@ export default function StationControl() {
                             <Input id="destination" placeholder="Lyon" value={destination} onChange={(e) => setDestination(e.target.value)} />
                           </div>
                         </div>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="departureTime" className="flex items-center gap-1.5">
+                          <Clock className="h-3.5 w-3.5 text-muted-foreground" />
+                          Heure de départ (gare origine)
+                        </Label>
+                        <Input id="departureTime" type="time" value={departureTime} onChange={(e) => setDepartureTime(e.target.value)} className="w-36" />
                       </div>
                     </CardContent>
                   </Card>

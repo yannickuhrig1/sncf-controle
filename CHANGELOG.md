@@ -5,6 +5,14 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/),
 et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.10.62] - 2026-03-16
+
+### Ajouté
+- Contrôle en gare : champ "Heure de départ (gare origine)" — pré-rempli depuis la sélection du train, sauvegardé dans les notes
+
+### Corrigé
+- Contrôle en gare : `stt_100_amount` était toujours `null` au lieu d'agréger les montants PV STT
+
 ## [1.10.61] - 2026-03-16
 
 ### Corrigé
