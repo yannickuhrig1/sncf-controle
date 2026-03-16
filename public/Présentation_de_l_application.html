@@ -166,8 +166,30 @@ body{font-family:'Inter',system-ui,Arial,sans-serif;background:#e8e8e8;color:#22
 </style>
 </head>
 <body>
+<!-- BARRE DE NAVIGATION -->
+<div class="page-title">
+  <div style="display:flex;align-items:center;justify-content:center;gap:14px;margin-bottom:6px;">
+    <img src="icon-192.png" alt="Contrôleur SNCF" style="height:48px;width:48px;border-radius:10px;box-shadow:0 4px 12px rgba(0,0,0,0.4);">
+    <h1>SNCF Contrôles</h1>
+  </div>
+  <p>Présentation de l'application — v1.10.59 · Mars 2026</p>
+</div>
+<div class="nav-pills">
+  <a class="nav-pill" href="#slide1">1 · Couverture</a>
+  <a class="nav-pill" href="#slide2">2 · Sommaire</a>
+  <a class="nav-pill" href="#slide3">3 · Contexte</a>
+  <a class="nav-pill" href="#slide4">4 · Tableau de bord</a>
+  <a class="nav-pill" href="#slide5">5 · Compteur voyageurs</a>
+  <a class="nav-pill" href="#slide6">6 · Partage de mission</a>
+  <a class="nav-pill" href="#slide7">7 · Statistiques</a>
+  <a class="nav-pill" href="#slide8">8 · Manager</a>
+  <a class="nav-pill" href="#slide9">9 · Historique & export</a>
+  <a class="nav-pill" href="#slide10">10 · Personnes recherchées</a>
+  <a class="nav-pill" href="#slide11">11 · Conclusion</a>
+</div>
+
 <!-- SLIDE 1 – COUVERTURE -->
-<div class="slide s1">
+<div id="slide1" class="slide s1">
 <div style="position:absolute;width:500px;height:500px;border-radius:50%;background:rgba(255,255,255,0.04);top:-200px;right:-200px;"></div>
 <div style="position:absolute;width:300px;height:300px;border-radius:50%;background:rgba(255,255,255,0.04);bottom:-100px;left:-100px;"></div>
 <div style="position:absolute;width:200px;height:200px;border-radius:50%;background:rgba(255,255,255,0.06);top:200px;left:50px;"></div>
@@ -200,7 +222,7 @@ body{font-family:'Inter',system-ui,Arial,sans-serif;background:#e8e8e8;color:#22
 </div>
 
 <!-- SLIDE 2 – SOMMAIRE -->
-<div class="slide">
+<div id="slide2" class="slide">
 <div class="slide-header">
   <span class="header-icon">📋</span>
   <h2>Sommaire</h2>
@@ -264,7 +286,7 @@ body{font-family:'Inter',system-ui,Arial,sans-serif;background:#e8e8e8;color:#22
 </div>
 </div>
 <!-- SLIDE 3 – CONTEXTE -->
-<div class="slide">
+<div id="slide3" class="slide">
 <div class="slide-header">
   <span class="header-icon">🎯</span>
   <h2>Contexte & Problématique</h2>
@@ -326,7 +348,7 @@ body{font-family:'Inter',system-ui,Arial,sans-serif;background:#e8e8e8;color:#22
 </div>
 </div>
 <!-- SLIDE 4 – TABLEAU DE BORD -->
-<div class="slide">
+<div id="slide4" class="slide">
 <div class="slide-header">
   <span class="header-icon">📊</span>
   <h2>Tableau de Bord — Vue d'ensemble instantanée</h2>
@@ -403,7 +425,7 @@ body{font-family:'Inter',system-ui,Arial,sans-serif;background:#e8e8e8;color:#22
 </div>
 </div>
 <!-- SLIDE 5 – COMPTEUR VOYAGEURS -->
-<div class="slide">
+<div id="slide5" class="slide">
 <div class="slide-header">
   <span class="header-icon">🚂</span>
   <h2>Contrôle à Bord — Compteur de voyageurs agrandi</h2>
@@ -511,7 +533,7 @@ body{font-family:'Inter',system-ui,Arial,sans-serif;background:#e8e8e8;color:#22
 </div>
 </div>
 <!-- SLIDE 6 – PARTAGE DE MISSION -->
-<div class="slide">
+<div id="slide6" class="slide">
 <div class="slide-header">
   <span class="header-icon">🏢</span>
   <h2>Contrôle en Gare — Partage de mission multi-agents</h2>
@@ -632,7 +654,7 @@ body{font-family:'Inter',system-ui,Arial,sans-serif;background:#e8e8e8;color:#22
 </div>
 </div>
 <!-- SLIDE 7 – STATISTIQUES -->
-<div class="slide">
+<div id="slide7" class="slide">
 <div class="slide-header">
   <span class="header-icon">📈</span>
   <h2>Statistiques — Analyse de l'activité de contrôle</h2>
@@ -724,7 +746,7 @@ body{font-family:'Inter',system-ui,Arial,sans-serif;background:#e8e8e8;color:#22
 </div>
 </div>
 <!-- SLIDE 8 – MANAGER -->
-<div class="slide">
+<div id="slide8" class="slide">
 <div class="slide-header">
   <span class="header-icon">👔</span>
   <h2>Espace Manager — Pilotage d'équipe en temps réel</h2>
@@ -826,7 +848,7 @@ body{font-family:'Inter',system-ui,Arial,sans-serif;background:#e8e8e8;color:#22
 </div>
 </div>
 <!-- SLIDE 9 – HISTORIQUE & VIGNETTES & EXPORT -->
-<div class="slide">
+<div id="slide9" class="slide">
 <div class="slide-header">
   <span class="header-icon">🗂️</span>
   <h2>Historique — Vignettes & Export HTML mensuel</h2>
@@ -992,7 +1014,7 @@ body{font-family:'Inter',system-ui,Arial,sans-serif;background:#e8e8e8;color:#22
 </div>
 </div>
 <!-- SLIDE 10 – PERSONNES RECHERCHÉES -->
-<div class="slide">
+<div id="slide10" class="slide">
 <div class="slide-header">
   <span class="header-icon">🔍</span>
   <h2>Personnes Recherchées — Signalements d'équipe</h2>
@@ -1113,7 +1135,7 @@ body{font-family:'Inter',system-ui,Arial,sans-serif;background:#e8e8e8;color:#22
 </div>
 </div>
 <!-- SLIDE 11 – POINTS FORTS & CONCLUSION -->
-<div class="slide">
+<div id="slide11" class="slide">
 <div class="slide-header">
   <span class="header-icon">🚀</span>
   <h2>Points Forts, Bénéfices & Perspectives</h2>

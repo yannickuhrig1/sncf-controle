@@ -5,6 +5,11 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/),
 et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.10.60] - 2026-03-16
+
+### Ajouté
+- Présentation HTML : barre de navigation en haut avec logo contrôleur + liens rapides vers les 11 slides
+
 ## [1.10.59] - 2026-03-16
 
 ### Corrigé
