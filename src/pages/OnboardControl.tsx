@@ -115,6 +115,8 @@ interface FormState {
   autrePvComment: string;
   isCancelled: boolean;
   isOvercrowded: boolean;
+  isPoliceOnBoard: boolean;
+  isSugeOnBoard: boolean;
 }
 
 const INITIAL_FORM_STATE: FormState = {
@@ -137,6 +139,8 @@ const INITIAL_FORM_STATE: FormState = {
   autrePvComment: '',
   isCancelled: false,
   isOvercrowded: false,
+  isPoliceOnBoard: false,
+  isSugeOnBoard: false,
 };
 
 export default function OnboardControl() {
@@ -377,6 +381,8 @@ export default function OnboardControl() {
           autrePvComment: '',
           isCancelled: (data as any).is_cancelled ?? false,
           isOvercrowded: (data as any).is_overcrowded ?? false,
+          isPoliceOnBoard: (data as any).is_police_on_board ?? false,
+          isSugeOnBoard: (data as any).is_suge_on_board ?? false,
         });
       };
       
@@ -671,8 +677,10 @@ export default function OnboardControl() {
         ri_positive: formState.riPositif,
         ri_negative: formState.riNegatif,
         notes: finalNotes,
-        is_cancelled:   formState.isCancelled,
-        is_overcrowded: formState.isOvercrowded,
+        is_cancelled:       formState.isCancelled,
+        is_overcrowded:     formState.isOvercrowded,
+        is_police_on_board: formState.isPoliceOnBoard,
+        is_suge_on_board:   formState.isSugeOnBoard,
       };
 
       if (isEditMode && editId) {
@@ -730,8 +738,10 @@ export default function OnboardControl() {
           ri_positive: formState.riPositif,
           ri_negative: formState.riNegatif,
           notes: formState.commentaire.trim() || null,
-          is_cancelled:   formState.isCancelled,
-          is_overcrowded: formState.isOvercrowded,
+          is_cancelled:       formState.isCancelled,
+          is_overcrowded:     formState.isOvercrowded,
+          is_police_on_board: formState.isPoliceOnBoard,
+          is_suge_on_board:   formState.isSugeOnBoard,
         } as any);
         triggerHaptic('success');
         clearDraft();
@@ -1139,6 +1149,14 @@ export default function OnboardControl() {
                           <Checkbox checked={formState.isOvercrowded} onCheckedChange={(v) => setFormState(p => ({...p, isOvercrowded: !!v}))} />
                           <span>Sur-occupation</span>
                         </label>
+                        <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
+                          <Checkbox checked={formState.isPoliceOnBoard} onCheckedChange={(v) => setFormState(p => ({...p, isPoliceOnBoard: !!v}))} />
+                          <span>Police à bord</span>
+                        </label>
+                        <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
+                          <Checkbox checked={formState.isSugeOnBoard} onCheckedChange={(v) => setFormState(p => ({...p, isSugeOnBoard: !!v}))} />
+                          <span>SUGE à bord</span>
+                        </label>
                       </div>
                     </>
                   )}
@@ -1464,6 +1482,14 @@ export default function OnboardControl() {
                       <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
                         <Checkbox checked={formState.isOvercrowded} onCheckedChange={(v) => setFormState(p => ({...p, isOvercrowded: !!v}))} />
                         <span>Sur-occupation</span>
+                      </label>
+                      <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
+                        <Checkbox checked={formState.isPoliceOnBoard} onCheckedChange={(v) => setFormState(p => ({...p, isPoliceOnBoard: !!v}))} />
+                        <span>Police à bord</span>
+                      </label>
+                      <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
+                        <Checkbox checked={formState.isSugeOnBoard} onCheckedChange={(v) => setFormState(p => ({...p, isSugeOnBoard: !!v}))} />
+                        <span>SUGE à bord</span>
                       </label>
                     </div>
                   </CardContent>

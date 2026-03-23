@@ -88,6 +88,8 @@ export type Database = {
           id: string
           is_cancelled: boolean
           is_overcrowded: boolean
+          is_police_on_board: boolean
+          is_suge_on_board: boolean
           location: string
           location_type: Database["public"]["Enums"]["location_type"]
           nb_en_regle: number
@@ -146,6 +148,8 @@ export type Database = {
           id?: string
           is_cancelled?: boolean | null
           is_overcrowded?: boolean | null
+          is_police_on_board?: boolean | null
+          is_suge_on_board?: boolean | null
           location: string
           location_type?: Database["public"]["Enums"]["location_type"]
           nb_en_regle?: number
@@ -204,6 +208,8 @@ export type Database = {
           id?: string
           is_cancelled?: boolean | null
           is_overcrowded?: boolean | null
+          is_police_on_board?: boolean | null
+          is_suge_on_board?: boolean | null
           location?: string
           location_type?: Database["public"]["Enums"]["location_type"]
           nb_en_regle?: number

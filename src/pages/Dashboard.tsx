@@ -1145,6 +1145,41 @@ export default function Dashboard() {
                 </Card>
               </div>
 
+              {/* Conditions du contrôle */}
+              {(stats.cancelledCount > 0 || stats.overcrowdedCount > 0 || stats.policeOnBoardCount > 0 || stats.sugeOnBoardCount > 0) && (
+                <Card className="border-0 shadow-sm overflow-hidden md:col-span-2 lg:col-span-3">
+                  <div className="h-1 bg-gradient-to-r from-slate-400 to-slate-500" />
+                  <CardHeader className="py-3 px-4 pb-2">
+                    <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                      <div className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800">
+                        <Shield className="h-3.5 w-3.5 text-slate-600 dark:text-slate-400" />
+                      </div>
+                      Conditions du contrôle
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="px-3 pb-3">
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                      <div className="flex flex-col items-center justify-center rounded-lg bg-slate-50 dark:bg-slate-800/40 py-3 gap-0.5">
+                        <div className="text-2xl font-bold text-slate-700 dark:text-slate-300">{stats.cancelledCount}</div>
+                        <div className="text-xs text-slate-500 dark:text-slate-400 font-medium text-center">Train supprimé</div>
+                      </div>
+                      <div className="flex flex-col items-center justify-center rounded-lg bg-orange-50 dark:bg-orange-900/20 py-3 gap-0.5">
+                        <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">{stats.overcrowdedCount}</div>
+                        <div className="text-xs text-orange-600/70 dark:text-orange-400/70 font-medium text-center">Sur-occupation</div>
+                      </div>
+                      <div className="flex flex-col items-center justify-center rounded-lg bg-blue-50 dark:bg-blue-900/20 py-3 gap-0.5">
+                        <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">{stats.policeOnBoardCount}</div>
+                        <div className="text-xs text-blue-600/70 dark:text-blue-400/70 font-medium text-center">Police à bord</div>
+                      </div>
+                      <div className="flex flex-col items-center justify-center rounded-lg bg-indigo-50 dark:bg-indigo-900/20 py-3 gap-0.5">
+                        <div className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">{stats.sugeOnBoardCount}</div>
+                        <div className="text-xs text-indigo-600/70 dark:text-indigo-400/70 font-medium text-center">SUGE à bord</div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
             </div>
           </div>
         )}

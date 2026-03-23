@@ -109,8 +109,10 @@ export default function StationControl() {
   const [destination, setDestination] = useState('');
   const [trainNumber, setTrainNumber] = useState('');
   const [selectedTrainId, setSelectedTrainId] = useState<string | undefined>();
-  const [isCancelled, setIsCancelled]   = useState(false);
-  const [isOvercrowded, setIsOvercrowded] = useState(false);
+  const [isCancelled, setIsCancelled]         = useState(false);
+  const [isOvercrowded, setIsOvercrowded]     = useState(false);
+  const [isPoliceOnBoard, setIsPoliceOnBoard] = useState(false);
+  const [isSugeOnBoard, setIsSugeOnBoard]     = useState(false);
   
   // Control date/time - initialized with Paris time
   const [controlDate, setControlDate] = useState(parisDate);
@@ -259,6 +261,8 @@ export default function StationControl() {
     setNbPassagers(data.nb_passagers || 0);
     setIsCancelled(data.is_cancelled ?? false);
     setIsOvercrowded(data.is_overcrowded ?? false);
+    setIsPoliceOnBoard((data as any).is_police_on_board ?? false);
+    setIsSugeOnBoard((data as any).is_suge_on_board ?? false);
     setStt50Count(0); // quick counter always reset on load; stt_50 goes into list
     setStt100Count(data.stt_100 || 0);
 
@@ -450,8 +454,10 @@ export default function StationControl() {
         ri_positive: riPositive,
         ri_negative: riNegative,
         notes: finalNotes,
-        is_cancelled:   isCancelled,
-        is_overcrowded: isOvercrowded,
+        is_cancelled:       isCancelled,
+        is_overcrowded:     isOvercrowded,
+        is_police_on_board: isPoliceOnBoard,
+        is_suge_on_board:   isSugeOnBoard,
       };
 
     try {
@@ -789,6 +795,14 @@ export default function StationControl() {
                     <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
                       <Checkbox checked={isOvercrowded} onCheckedChange={(v) => setIsOvercrowded(!!v)} />
                       <span>Sur-occupation</span>
+                    </label>
+                    <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
+                      <Checkbox checked={isPoliceOnBoard} onCheckedChange={(v) => setIsPoliceOnBoard(!!v)} />
+                      <span>Police à bord</span>
+                    </label>
+                    <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
+                      <Checkbox checked={isSugeOnBoard} onCheckedChange={(v) => setIsSugeOnBoard(!!v)} />
+                      <span>SUGE à bord</span>
                     </label>
                   </div>
                 </CardContent>
