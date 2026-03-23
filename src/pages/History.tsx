@@ -194,8 +194,10 @@ function ControlRow({ control, onClick }: ControlRowProps) {
                 + (control.tarif_bord_doc_naissance || 0) + (control.tarif_bord_autre || 0);
               const riTotal = (control.ri_positive || 0) + (control.ri_negative || 0);
               const badges = [
-                (control as any).is_cancelled   && { label: 'Supprimé', cls: 'bg-slate-700 text-white border-0' },
-                (control as any).is_overcrowded && { label: 'Sur-occ.', cls: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400 border-0' },
+                (control as any).is_cancelled        && { label: 'Supprimé',   cls: 'bg-slate-700 text-white border-0' },
+                (control as any).is_overcrowded      && { label: 'Sur-occ.',   cls: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400 border-0' },
+                (control as any).is_police_on_board  && { label: 'Police',     cls: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 border-0' },
+                (control as any).is_suge_on_board    && { label: 'SUGE',       cls: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400 border-0' },
                 bordTotal > 0            && { label: `Bord: ${bordTotal}`,                cls: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 border-0' },
                 control.tarifs_controle > 0 && { label: `TC: ${control.tarifs_controle}`, cls: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 border-0' },
                 control.pv > 0           && { label: `PV: ${control.pv}`,                cls: 'bg-red-500 text-white border-0' },

@@ -5,6 +5,14 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/),
 et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.10.64] - 2026-03-23
+
+### Ajouté
+- Saisie : cases à cocher "Police à bord" et "SUGE à bord" ajoutées aux formulaires (à bord et en gare), aux côtés de "Train supprimé" et "Sur-occupation"
+- Stats : 4 compteurs dans le Dashboard (Train supprimé, Sur-occupation, Police à bord, SUGE à bord) via une nouvelle carte "Conditions du contrôle" (visible seulement si au moins un flag est coché)
+- Badges : "Police" et "SUGE" affichés dans l'historique, les cartes et le détail d'un contrôle
+- Migration BDD : colonnes `is_police_on_board` et `is_suge_on_board` ajoutées à la table `controls`
+
 ## [1.10.63] - 2026-03-16
 
 ### Modifié

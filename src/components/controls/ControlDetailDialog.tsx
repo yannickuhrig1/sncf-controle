@@ -172,6 +172,12 @@ export function ControlDetailDialog({
                     {(control as any).is_overcrowded && (
                       <Badge variant="outline" className="bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400 border-0">Sur-occupation</Badge>
                     )}
+                    {(control as any).is_police_on_board && (
+                      <Badge variant="outline" className="bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 border-0">Police à bord</Badge>
+                    )}
+                    {(control as any).is_suge_on_board && (
+                      <Badge variant="outline" className="bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400 border-0">SUGE à bord</Badge>
+                    )}
                   </div>
                 </div>
               </div>
