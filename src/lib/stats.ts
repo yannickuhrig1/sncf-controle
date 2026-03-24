@@ -73,12 +73,22 @@ export function calculateStats(controls: Control[]): ControlStats {
     }
   );
 
-  // Fraud calculation: fraudCount = tarifsControle + pv + riNegative
-  // Note: ri_positive is NOT counted as fraud (passenger was compliant)
-  const fraudCount = stats.tarifsControle + stats.pv + stats.riNegative;
-  // Fraud rate = (fraudCount / totalPassengers) * 100
-  const fraudRate = stats.totalPassengers > 0 
-    ? (fraudCount / stats.totalPassengers) * 100 
+  // Fraud calculation: only controls that are eligible
+  // Excluded: cancelled trains, overcrowded trains with 0 passengers
+  const fraudControls = controls.filter(c => {
+    if ((c as any).is_cancelled) return false;
+    if ((c as any).is_overcrowded && c.nb_passagers === 0) return false;
+    return true;
+  });
+  const fraudPassengers    = fraudControls.reduce((s, c) => s + c.nb_passagers,   0);
+  const fraudTarifsControle = fraudControls.reduce((s, c) => s + c.tarifs_controle, 0);
+  const fraudPv            = fraudControls.reduce((s, c) => s + c.pv,              0);
+  const fraudRiNegative    = fraudControls.reduce((s, c) => s + c.ri_negative,     0);
+
+  // Fraud rate = (tarifsControle + pv + riNegative) / eligible_passengers × 100
+  const fraudCount = fraudTarifsControle + fraudPv + fraudRiNegative;
+  const fraudRate = fraudPassengers > 0
+    ? (fraudCount / fraudPassengers) * 100
     : 0;
 
   return {
