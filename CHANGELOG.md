@@ -5,6 +5,18 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/),
 et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.10.71] - 2026-03-28
+
+### Amélioré — En gare (refonte UX)
+- **Navigation par sections** : barre de navigation sticky (Infos / Voyageurs / Infractions / RI / Notes) pour un accès rapide à chaque section, dans l'ADN de la page À bord
+- **Mode compact** : remplacement des 2 grandes tuiles Débarquement/Embarquement par un `ToggleGroup` compact sur une ligne
+- **Autocomplete gare** : champ de saisie gare remplacé par `StationAutocomplete` (liste complète Grand Est + grandes gares)
+- **Grand compteur voyageurs** : bouton pour ouvrir le compteur plein écran à côté du stepper voyageurs
+- **Auto-save brouillon** : le formulaire est auto-sauvegardé via `useFormPersistence` (restauré en cas de fermeture accidentelle)
+- **Info SNCF auto** : déclenché automatiquement lors de la sélection d'un train préparé (comme À bord)
+- **Infos train enrichies** : `selectedOrigin` passé au `TrainLookupButton` pour afficher l'heure de départ de la gare d'origine sélectionnée
+- **Refactoring état** : remplacement des ~20 `useState` individuels par un seul `formState` centralisé
+
 ## [1.10.70] - 2026-03-28
 
 ### Corrigé

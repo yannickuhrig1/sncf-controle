@@ -207,6 +207,7 @@ function ContentAbout() {
           <li>Trains du jour partagés par code privé ou QR code (équipe)</li>
           <li>Personnes recherchées (fiches photo, gérées par le manager)</li>
           <li>Compteur voyageurs grand écran (maintien appui)</li>
+          <li>En gare : navigation sections, autocomplete gare, brouillon auto-sauvegardé</li>
           <li>Compatible mobile, tablette et PC</li>
         </ul>
       </div>
