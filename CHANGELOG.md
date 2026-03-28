@@ -5,6 +5,14 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/),
 et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.10.79] - 2026-03-28
+
+### Ajouté
+- **Stats — En gare** : nouvelle section listant les gares avec taux de fraude, nombre de contrôles/voyageurs et indicateur Police présente
+- **Historique — Filtre Police présente** : bouton toggle pour filtrer les contrôles où la police était à bord
+- **Exports — Heure d'arrivée en gare** : le champ "Arrivée en gare" (extrait depuis les notes `[Arr. gare: HH:MM]`) apparaît dans les exports email des contrôles en gare
+- **Session multi-agents — Polling 30s** : rafraîchissement automatique du nombre de membres toutes les 30 secondes quand une session est active
+
 ## [1.10.78] - 2026-03-28
 
 ### Ajouté

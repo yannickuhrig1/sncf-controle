@@ -157,5 +157,12 @@ export function useTrainShareSession(date: string) {
     setSession(prev => prev ? { ...prev, memberCount: count || 0 } : null);
   }, [session?.code]);
 
+  // Polling every 30s when a session is active
+  useEffect(() => {
+    if (!session) return;
+    const id = setInterval(() => { refreshMemberCount(); }, 30_000);
+    return () => clearInterval(id);
+  }, [session?.code, refreshMemberCount]);
+
   return { session, isLoading, error, setError, createSession, joinSession, leaveSession, refreshMemberCount };
 }

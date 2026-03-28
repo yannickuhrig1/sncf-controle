@@ -90,7 +90,11 @@ function getControlDetails(control: Control) {
     riNegative: control.ri_negative,
     isPoliceOnBoard: !!(control as any).is_police_on_board,
     isSugeOnBoard: !!(control as any).is_suge_on_board,
-    notes: control.notes || '',
+    arrGare: (() => {
+      const m = control.notes?.match(/\[Arr\. gare: (\d{2}:\d{2})\]/);
+      return m ? m[1] : null;
+    })(),
+    notes: control.notes?.replace(/\[Arr\. gare: \d{2}:\d{2}\]\s*/g, '').trim() || '',
     fraudCount,
     fraudRate: control.nb_passagers > 0
       ? (fraudCount / control.nb_passagers) * 100
@@ -2200,6 +2204,7 @@ export function generateEmailContent({ controls, title, dateRange, includeStats 
     } else {
       body += `   Lieu : ${details.location}\n`;
       if (control.platform_number) body += `   Quai : ${details.platformNumber}\n`;
+      if (details.arrGare) body += `   Arrivée en gare : ${details.arrGare}\n`;
     }
 
     body += `\n   👥 Voyageurs : ${details.passengers}  |  En règle : ${details.inRule}\n`;

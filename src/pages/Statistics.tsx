@@ -30,11 +30,13 @@ import { toast } from 'sonner';
 import {
   AlertTriangle,
   BarChart3,
+  Building2,
   CheckCircle2,
   CreditCard,
   IdCard,
   Loader2,
   Share2,
+  Shield,
   UserCheck,
   Users,
 } from 'lucide-react';
@@ -203,6 +205,28 @@ export default function StatisticsPage() {
       }))
       .sort((a, b) => b.fraudRate - a.fraudRate)
       .slice(0, 15);
+  }, [controls]);
+
+  const gareStats = useMemo(() => {
+    const gareControls = controls.filter(c => c.location_type === 'gare');
+    if (gareControls.length === 0) return [];
+    const map = new Map<string, { name: string; count: number; passengers: number; fraud: number; police: number }>();
+    gareControls.forEach(c => {
+      const name = c.location || 'Inconnu';
+      const fraud = c.tarifs_controle + c.pv + c.ri_negative;
+      const ex = map.get(name);
+      if (ex) {
+        ex.count++;
+        ex.passengers += c.nb_passagers;
+        ex.fraud += fraud;
+        if ((c as any).is_police_on_board) ex.police++;
+      } else {
+        map.set(name, { name, count: 1, passengers: c.nb_passagers, fraud, police: (c as any).is_police_on_board ? 1 : 0 });
+      }
+    });
+    return Array.from(map.values())
+      .map(g => ({ ...g, fraudRate: g.passengers > 0 ? (g.fraud / g.passengers) * 100 : 0 }))
+      .sort((a, b) => b.fraudRate - a.fraudRate);
   }, [controls]);
 
   const shareData: StatsShareData = useMemo(() => ({
@@ -626,6 +650,40 @@ export default function StatisticsPage() {
                 </Card>
               );
             })()}
+
+            {/* Stats en gare */}
+            {gareStats.length > 0 && (
+              <div className="space-y-2">
+                <h2 className="text-base font-semibold flex items-center gap-2">
+                  <Building2 className="h-4 w-4 text-primary" />
+                  Contrôles en gare
+                </h2>
+                <Card className="border-0 shadow-sm overflow-hidden">
+                  <div className="h-1 bg-gradient-to-r from-sky-400 to-blue-500" />
+                  <CardContent className="px-0 pb-0">
+                    <div className="divide-y">
+                      {gareStats.map(g => (
+                        <div key={g.name} className="flex items-center gap-3 px-4 py-2.5 hover:bg-muted/40 transition-colors">
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium truncate">{g.name}</p>
+                            <p className="text-xs text-muted-foreground">{g.count} contrôle{g.count > 1 ? 's' : ''} · {g.passengers} voyageur{g.passengers > 1 ? 's' : ''}</p>
+                          </div>
+                          {g.police > 0 && (
+                            <span className="flex items-center gap-1 text-[10px] font-medium text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 px-1.5 py-0.5 rounded-full shrink-0">
+                              <Shield className="h-3 w-3" />
+                              ×{g.police}
+                            </span>
+                          )}
+                          <span className={`text-sm font-bold tabular-nums shrink-0 ${getFraudRateColor(g.fraudRate)}`}>
+                            {g.fraudRate.toFixed(1)}%
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
 
             {/* Aucune donnée */}
             {stats.controlCount === 0 && (

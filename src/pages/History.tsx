@@ -37,15 +37,15 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import type { ViewMode } from '@/hooks/useControlsWithFilter';
-import { 
-  Loader2, 
-  History, 
-  Train, 
-  Building2, 
-  TrainTrack, 
-  Calendar, 
-  Clock, 
-  Users, 
+import {
+  Loader2,
+  History,
+  Train,
+  Building2,
+  TrainTrack,
+  Calendar,
+  Clock,
+  Users,
   Download,
   Search,
   X,
@@ -59,6 +59,7 @@ import {
   ChevronDown,
   LayoutList,
   FileDown,
+  Shield,
 } from 'lucide-react';
 import { format, parseISO, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -271,6 +272,7 @@ export default function HistoryPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [locationFilter, setLocationFilter] = useState<LocationType | 'all'>('all');
   const [sortOption, setSortOption] = useState<SortOption>('date');
+  const [policeFilter, setPoliceFilter] = useState(false);
   const [historyPeriod, setHistoryPeriod] = useState<Period | 'all'>('all');
   const [customStart, setCustomStart] = useState('');
   const [customEnd, setCustomEnd] = useState('');
@@ -432,6 +434,11 @@ export default function HistoryPage() {
         }
       }
       
+      // Police filter
+      if (policeFilter && !(control as any).is_police_on_board) {
+        return false;
+      }
+
       // Search filter
       if (searchQuery.trim()) {
         const query = searchQuery.toLowerCase().trim();
@@ -469,7 +476,7 @@ export default function HistoryPage() {
     }
 
     return result;
-  }, [displayControls, searchQuery, locationFilter, sortOption, periodDateRange, getFraudRate]);
+  }, [displayControls, searchQuery, locationFilter, sortOption, periodDateRange, getFraudRate, policeFilter]);
 
   // Group filtered controls by date, then sub-group multi-agent trains/gares
   const groupedByDate = useMemo(() => {
@@ -513,7 +520,7 @@ export default function HistoryPage() {
       });
   }, [filteredControls]);
 
-  const hasActiveFilters = searchQuery.trim() !== '' || locationFilter !== 'all' || sortOption !== 'date' || historyPeriod !== 'all';
+  const hasActiveFilters = searchQuery.trim() !== '' || locationFilter !== 'all' || sortOption !== 'date' || historyPeriod !== 'all' || policeFilter;
 
   const clearFilters = () => {
     setSearchQuery('');
@@ -522,6 +529,7 @@ export default function HistoryPage() {
     setHistoryPeriod('all');
     setCustomStart('');
     setCustomEnd('');
+    setPoliceFilter(false);
   };
 
   const handleExportTableExtended = () => {
@@ -795,6 +803,22 @@ export default function HistoryPage() {
                       Gare
                     </ToggleGroupItem>
                   </ToggleGroup>
+                </div>
+
+                {/* Police présente toggle */}
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setPoliceFilter(v => !v)}
+                    className={`inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs font-medium transition-colors ${
+                      policeFilter
+                        ? 'bg-blue-600 text-white border-blue-600'
+                        : 'bg-background text-muted-foreground border-input hover:bg-muted'
+                    }`}
+                  >
+                    <Shield className="h-3.5 w-3.5" />
+                    Police présente
+                  </button>
                 </div>
 
                 {/* Period filter */}
