@@ -924,8 +924,8 @@ export default function Dashboard() {
                 })}
               </div>
               {showDepartures && (
-                <div className="border border-border rounded-xl overflow-hidden">
-                  <DeparturesWidget />
+                <div className="border border-border rounded-xl p-4">
+                  <DeparturesWidget showTrainSearch />
                 </div>
               )}
             </div>

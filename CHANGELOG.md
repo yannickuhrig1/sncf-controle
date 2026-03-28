@@ -5,6 +5,11 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/),
 et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.10.70] - 2026-03-28
+
+### Corrigé
+- Dashboard › widget Départs/Arrivées : toggle "Par gare / Par numéro" remis, padding ajouté, `overflow-hidden` supprimé (causait la bordure rouge coupée sur l'input)
+
 ## [1.10.69] - 2026-03-28
 
 ### Corrigé
