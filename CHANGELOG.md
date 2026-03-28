@@ -5,6 +5,27 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/),
 et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.10.76] - 2026-03-28
+
+### Modifié
+- **En gare** : "Départ origine" renommé en "Heure d'arrivée en gare" — auto-remplie via "Info SNCF" si le train passe par la gare saisie
+- **En gare** : suppression des cases "Sur-occupation" et "SUGE à bord" dans la section Infos
+- **En gare** : "Police à bord" renommé en "Police présente"
+
+## [1.10.75] - 2026-03-28
+
+### Modifié
+- **En gare** : suppression du bloc "Préparation de mission" pour simplifier l'interface
+- **En gare** : Gare et Date/Heure remontés avant "Trains du service" — ordre logique : où/quand → liste trains → détail train
+
+## [1.10.74] - 2026-03-28
+
+### Ajouté
+- **Historique** : nouvelle colonne P/S dans la vue tableau — badges **P** (Police) et **S** (SUGE) sur les lignes concernées, triable
+- **Export email** : section "Sécurité à bord" dans le résumé statistique (nombre de contrôles Police/SUGE) + indicateur par contrôle individuel
+- **Export HTML** : bloc "Sécurité à bord" dans la grille des opérations détaillées
+- **Dashboard → Partager** (texte et HTML) : section Police/SUGE à bord dans les exports
+
 ## [1.10.73] - 2026-03-28
 
 ### Ajouté

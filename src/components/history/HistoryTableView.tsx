@@ -219,6 +219,29 @@ const ALL_COLUMNS: ColumnDef[] = [
     sortFn: (a, b) => (a.pv_doc_naissance || 0) - (b.pv_doc_naissance || 0),
     renderCell: (c) => (c.pv_doc_naissance || 0) > 0 ? c.pv_doc_naissance : '-',
   },
+  // ── Police / SUGE ────────────────────────────────────────────────────────────
+  {
+    id: 'policesSuge',
+    label: 'P/S',
+    headerClass: 'w-[55px] text-center text-blue-600',
+    cellClass: 'text-center',
+    sortFn: (a, b) =>
+      ((a.is_police_on_board ? 1 : 0) + (a.is_suge_on_board ? 1 : 0)) -
+      ((b.is_police_on_board ? 1 : 0) + (b.is_suge_on_board ? 1 : 0)),
+    renderCell: (c) => {
+      if (!c.is_police_on_board && !c.is_suge_on_board) return <span className="text-muted-foreground">-</span>;
+      return (
+        <div className="flex gap-0.5 justify-center">
+          {c.is_police_on_board && (
+            <Badge className="text-[9px] px-1 py-0 bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 hover:bg-blue-100">P</Badge>
+          )}
+          {c.is_suge_on_board && (
+            <Badge className="text-[9px] px-1 py-0 bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400 hover:bg-indigo-100">S</Badge>
+          )}
+        </div>
+      );
+    },
+  },
   // ── RI + taux ────────────────────────────────────────────────────────────────
   {
     id: 'riPlus',

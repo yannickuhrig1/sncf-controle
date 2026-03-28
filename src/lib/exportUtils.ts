@@ -88,6 +88,8 @@ function getControlDetails(control: Control) {
     tarifBordAutre: control.tarif_bord_autre || 0,
     riPositive: control.ri_positive,
     riNegative: control.ri_negative,
+    isPoliceOnBoard: !!(control as any).is_police_on_board,
+    isSugeOnBoard: !!(control as any).is_suge_on_board,
     notes: control.notes || '',
     fraudCount,
     fraudRate: control.nb_passagers > 0
@@ -1876,6 +1878,16 @@ export function exportToHTML({ controls, title, dateRange, includeStats, exportM
           </table>
         </div>
         ` : ''}
+        ${(stats.policeOnBoardCount > 0 || stats.sugeOnBoardCount > 0) ? `
+        <div class="ops-block" style="border-left:4px solid #2563eb">
+          <h3 style="background:#2563eb;color:#fff">Sécurité à bord</h3>
+          <table class="detail-table">
+            <tr><th>Type</th><th>Nbre</th></tr>
+            ${detailRow('Police à bord', stats.policeOnBoardCount)}
+            ${detailRow('SUGE à bord', stats.sugeOnBoardCount)}
+          </table>
+        </div>
+        ` : ''}
       </div>
     </div>
   </div>
@@ -2161,6 +2173,13 @@ export function generateEmailContent({ controls, title, dateRange, includeStats 
     body += `   RI Négatif : ${stats.riNegative}\n`;
     body += `   ────────────────────────\n`;
     body += `   TOTAL : ${stats.riPositive + stats.riNegative}\n\n`;
+
+    if (stats.policeOnBoardCount > 0 || stats.sugeOnBoardCount > 0) {
+      body += `👮 SÉCURITÉ À BORD\n`;
+      if (stats.policeOnBoardCount > 0) body += `   Police à bord : ${stats.policeOnBoardCount}\n`;
+      if (stats.sugeOnBoardCount > 0)   body += `   SUGE à bord   : ${stats.sugeOnBoardCount}\n`;
+      body += `\n`;
+    }
   }
 
   body += `┌─────────────────────────────────────────┐\n`;
@@ -2207,6 +2226,13 @@ export function generateEmailContent({ controls, title, dateRange, includeStats 
       if (pvParts.length > 0) body += `      ${pvParts.join('  |  ')}\n`;
     }
     body += `\n   🔍 RI : +${details.riPositive} / −${details.riNegative}\n`;
+
+    if (details.isPoliceOnBoard || details.isSugeOnBoard) {
+      const secParts: string[] = [];
+      if (details.isPoliceOnBoard) secParts.push('Police à bord');
+      if (details.isSugeOnBoard)   secParts.push('SUGE à bord');
+      body += `   👮 ${secParts.join('  |  ')}\n`;
+    }
 
     if (details.notes) body += `\n   📝 Notes : ${details.notes}\n`;
     body += `\n`;
