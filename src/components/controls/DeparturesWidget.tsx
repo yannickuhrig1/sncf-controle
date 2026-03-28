@@ -242,7 +242,7 @@ function TrainNumberSearch() {
 
 // ── DeparturesWidget ───────────────────────────────────────────────────────────
 
-export function DeparturesWidget() {
+export function DeparturesWidget({ showTrainSearch = false }: { showTrainSearch?: boolean }) {
   const [searchMode,       setSearchMode]       = useState<'station' | 'train'>('station');
   const [station,          setStation]          = useState('');
   const [mode,             setMode]             = useState<'departures' | 'arrivals'>('departures');
@@ -397,23 +397,25 @@ export function DeparturesWidget() {
   /* ── Vue liste ──────────────────────────────────────────────────────────── */
   return (
     <div className="space-y-4">
-      {/* Toggle mode de recherche */}
-      <div className="flex gap-1 bg-muted/50 rounded-lg p-1">
-        {(['station', 'train'] as const).map(m => (
-          <button key={m} type="button" onClick={() => setSearchMode(m)}
-            className={`flex-1 text-sm py-1.5 rounded-md transition-colors font-medium flex items-center justify-center gap-1.5 ${
-              searchMode === m ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'
-            }`}>
-            {m === 'station' ? <><MapPin className="h-3.5 w-3.5" />Par gare</> : <><Train className="h-3.5 w-3.5" />Par numéro</>}
-          </button>
-        ))}
-      </div>
+      {/* Toggle mode de recherche (uniquement sur la page Infos) */}
+      {showTrainSearch && (
+        <div className="flex gap-1 bg-muted/50 rounded-lg p-1">
+          {(['station', 'train'] as const).map(m => (
+            <button key={m} type="button" onClick={() => setSearchMode(m)}
+              className={`flex-1 text-sm py-1.5 rounded-md transition-colors font-medium flex items-center justify-center gap-1.5 ${
+                searchMode === m ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'
+              }`}>
+              {m === 'station' ? <><MapPin className="h-3.5 w-3.5" />Par gare</> : <><Train className="h-3.5 w-3.5" />Par numéro</>}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Mode recherche par numéro de train */}
-      {searchMode === 'train' && <TrainNumberSearch />}
+      {showTrainSearch && searchMode === 'train' && <TrainNumberSearch />}
 
       {/* Mode recherche par gare */}
-      {searchMode === 'station' && <>
+      {(!showTrainSearch || searchMode === 'station') && <>
       {/* Recherche */}
       <div className="space-y-2">
         <div className="flex gap-2">

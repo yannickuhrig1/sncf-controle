@@ -892,7 +892,7 @@ const DIALOG_CONTENT: Record<string, { title: string; Content: () => JSX.Element
   contacts:  { title: 'Contacts utiles',             Content: ContentContacts },
   partager:      { title: "Partager l'application",     Content: ContentPartager },
   presentation:  { title: 'Présentation de l\'application', Content: ContentPresentation },
-  departures:    { title: 'Départs/Arrivées en gare',       Content: DeparturesWidget },
+  departures:    { title: 'Départs/Arrivées en gare',       Content: () => <DeparturesWidget showTrainSearch /> },
   about:         { title: "À propos de l'application",      Content: ContentAbout },
   assistance:    { title: 'Assistance',                      Content: ContentAssistance },
 };
