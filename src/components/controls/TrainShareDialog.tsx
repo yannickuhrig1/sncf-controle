@@ -68,6 +68,9 @@ export function TrainShareDialog({
         setScanError('Scanner non disponible sur ce navigateur. Saisir le code manuellement.');
         return;
       }
+      // Afficher la vidéo AVANT d'attacher le stream pour que videoRef.current soit dans le DOM
+      setScanning(true);
+      await new Promise(r => setTimeout(r, 50)); // laisser React re-rendre
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: 'environment', width: { ideal: 640 }, height: { ideal: 480 } },
       });
@@ -77,7 +80,6 @@ export function TrainShareDialog({
         await videoRef.current.play();
       }
       detectorRef.current = new (window as any).BarcodeDetector({ formats: ['qr_code'] });
-      setScanning(true);
       scanFrame();
     } catch {
       setScanError('Impossible d\'accéder à la caméra. Vérifiez les permissions.');
