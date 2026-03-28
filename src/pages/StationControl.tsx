@@ -6,6 +6,7 @@ import { useLastSync } from '@/hooks/useLastSync';
 import { useOfflineSync } from '@/hooks/useOfflineSync';
 import { useOfflineControls } from '@/hooks/useOfflineControls';
 import { useParisTime } from '@/hooks/useParisTime';
+import { useFormPersistence } from '@/hooks/useFormPersistence';
 import { supabase } from '@/integrations/supabase/client';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { TarifTypeToggle } from '@/components/controls/TarifTypeToggle';
@@ -17,25 +18,31 @@ import { EmbarkmentControl } from '@/components/controls/EmbarkmentControl';
 import { FraudSummary } from '@/components/controls/FraudSummary';
 import { SubmitProgress } from '@/components/controls/SubmitProgress';
 import { TrainLookupButton } from '@/components/controls/TrainLookupButton';
+import { StationAutocomplete } from '@/components/controls/StationAutocomplete';
+import { BigPassengerCounterDialog } from '@/components/controls/BigPassengerCounterDialog';
 import { LastSyncIndicator } from '@/components/controls/LastSyncIndicator';
 import { OfflineIndicator } from '@/components/controls/OfflineIndicator';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { toast } from 'sonner';
-import { Loader2, Building2, ArrowLeft, Save, ArrowRight, X, Clock, Calendar, ArrowDownToLine, ArrowUpFromLine, Users, UserCheck, MessageSquare, FileText, AlertTriangle, Plus, Ticket, Train, Share2, Copy, Mail, Link2, ChevronDown } from 'lucide-react';
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
 } from '@/components/ui/dialog';
+import {
+  Loader2, Building2, ArrowLeft, Save, ArrowRight, X, Clock, Calendar,
+  ArrowDownToLine, ArrowUpFromLine, Users, UserCheck, MessageSquare,
+  FileText, AlertTriangle, Plus, Ticket, Train, Share2, Copy, Mail,
+  Link2, ChevronDown, Layers, LayoutList,
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
+
+// ── Constants ─────────────────────────────────────────────────────────────────
 
 const TARIF_TYPES = [
   { value: 'stt',         label: 'STT' },
@@ -46,459 +53,413 @@ const TARIF_TYPES = [
 ];
 
 const PV_TYPES = [
-  { value: 'pv_stt100',       label: 'STT' },
-  { value: 'pv_rnv',          label: 'RNV' },
-  { value: 'pv_titre_tiers',  label: 'Titre tiers' },
-  { value: 'pv_doc_naissance',label: 'D. naissance' },
-  { value: 'pv_autre',        label: 'Autre' },
+  { value: 'pv_stt100',        label: 'STT' },
+  { value: 'pv_rnv',           label: 'RNV' },
+  { value: 'pv_titre_tiers',   label: 'Titre tiers' },
+  { value: 'pv_doc_naissance', label: 'D. naissance' },
+  { value: 'pv_autre',         label: 'Autre' },
 ];
 
-// Liste des gares principales
-const GARES_PRINCIPALES = [
-  'Paris Gare de Lyon',
-  'Paris Gare du Nord',
-  'Paris Montparnasse',
-  'Paris Saint-Lazare',
-  'Paris Est',
-  'Paris Austerlitz',
-  'Lyon Part-Dieu',
-  'Lyon Perrache',
-  'Marseille Saint-Charles',
-  'Lille Flandres',
-  'Lille Europe',
-  'Bordeaux Saint-Jean',
-  'Toulouse Matabiau',
-  'Nice Ville',
-  'Nantes',
-  'Strasbourg',
-  'Montpellier Saint-Roch',
-  'Rennes',
-  'Grenoble',
-  'Dijon Ville',
-];
+type ControlMode   = 'disembarkment' | 'embarkment';
+type ActiveSection = 'info' | 'voyageurs' | 'infractions' | 'ri' | 'notes';
 
-type ControlMode = 'disembarkment' | 'embarkment';
+// ── FormState ─────────────────────────────────────────────────────────────────
+
+interface FormState {
+  stationName: string;
+  platformNumber: string;
+  origin: string;
+  destination: string;
+  trainNumber: string;
+  controlDate: string;
+  controlTime: string;
+  departureTime: string;
+  nbPassagers: number;
+  stt50Count: number;
+  stt100Count: number;
+  tarifsControle: TarifEntry[];
+  pvList: TarifEntry[];
+  riPositive: number;
+  riNegative: number;
+  notes: string;
+  isCancelled: boolean;
+  isOvercrowded: boolean;
+  isPoliceOnBoard: boolean;
+  isSugeOnBoard: boolean;
+  autreControleComment: string;
+  autrePvComment: string;
+  quickTrains: string[];
+}
+
+function makeInitialFormState(): FormState {
+  const now  = new Date();
+  const pad  = (n: number) => String(n).padStart(2, '0');
+  return {
+    stationName: '', platformNumber: '', origin: '', destination: '', trainNumber: '',
+    controlDate:   now.toISOString().slice(0, 10),
+    controlTime:   `${pad(now.getHours())}:${pad(now.getMinutes())}`,
+    departureTime: '',
+    nbPassagers: 0, stt50Count: 0, stt100Count: 0,
+    tarifsControle: [], pvList: [],
+    riPositive: 0, riNegative: 0,
+    notes: '', isCancelled: false, isOvercrowded: false,
+    isPoliceOnBoard: false, isSugeOnBoard: false,
+    autreControleComment: '', autrePvComment: '',
+    quickTrains: [],
+  };
+}
+
+const INITIAL_FORM_STATE = makeInitialFormState();
+
+// ── SectionCard (extended mode wrapper) ───────────────────────────────────────
+
+function SectionCard({ title, icon: Icon, gradient, iconBg, iconColor, children }: {
+  title: string;
+  icon: React.ComponentType<{ className?: string }>;
+  gradient: string;
+  iconBg: string;
+  iconColor: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <Card className="border-0 shadow-sm overflow-hidden">
+      <div className={`h-1 bg-gradient-to-r ${gradient}`} />
+      <CardHeader className="pb-3">
+        <CardTitle className="text-base flex items-center gap-2">
+          <div className={`p-1.5 rounded-lg ${iconBg}`}>
+            <Icon className={`h-3.5 w-3.5 ${iconColor}`} />
+          </div>
+          {title}
+        </CardTitle>
+      </CardHeader>
+      <CardContent>{children}</CardContent>
+    </Card>
+  );
+}
+
+// ── SectionHeader (extended mode title) ───────────────────────────────────────
+
+function SectionHeader({ icon: Icon, title, iconBg, iconColor }: {
+  icon: React.ComponentType<{ className?: string }>;
+  title: string;
+  iconBg: string;
+  iconColor: string;
+}) {
+  return (
+    <div className="flex items-center gap-2 pb-2 border-b">
+      <div className={`p-1.5 rounded-lg ${iconBg}`}>
+        <Icon className={`h-3.5 w-3.5 ${iconColor}`} />
+      </div>
+      <span className="font-semibold text-sm">{title}</span>
+    </div>
+  );
+}
+
+// ── Component ─────────────────────────────────────────────────────────────────
 
 export default function StationControl() {
   const { user, loading: authLoading } = useAuth();
   const { controls, createControl, updateControl, isCreating, isUpdating, isFetching, refetch } = useControls();
-  const navigate = useNavigate();
+  const navigate      = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { formattedLastSync, updateLastSync } = useLastSync();
   const { isOnline, pendingCount, isSyncing } = useOfflineSync();
   const { offlineCount, addOfflineControl, syncOfflineControls, isSyncing: isOfflineSyncing } = useOfflineControls();
-  
-  // Paris timezone auto-refresh
   const { date: parisDate, time: parisTime } = useParisTime(60000);
 
-  // Control mode selection (supports ?mode=embarkment deep-link)
+  // ── Mode & edit state ──────────────────────────────────────────────────────
   const [controlMode, setControlMode] = useState<ControlMode>(
     searchParams.get('mode') === 'embarkment' ? 'embarkment' : 'disembarkment'
   );
-
-  // Edit/Duplicate mode
-  const editId = searchParams.get('edit');
+  const editId      = searchParams.get('edit');
   const duplicateId = searchParams.get('duplicate');
-  const [isEditMode, setIsEditMode] = useState(false);
+  const [isEditMode,      setIsEditMode]      = useState(false);
   const [isDuplicateMode, setIsDuplicateMode] = useState(false);
+  const [activeSection,   setActiveSection]   = useState<ActiveSection>('info');
+  const [compactMode,     setCompactMode]     = useState(true);
 
-  // Station info
-  const [stationName, setStationName] = useState('');
-  const [platformNumber, setPlatformNumber] = useState('');
-  const [origin, setOrigin] = useState('');
-  const [destination, setDestination] = useState('');
-  const [trainNumber, setTrainNumber] = useState('');
-  const [selectedTrainId, setSelectedTrainId] = useState<string | undefined>();
-  const [isCancelled, setIsCancelled]         = useState(false);
-  const [isOvercrowded, setIsOvercrowded]     = useState(false);
-  const [isPoliceOnBoard, setIsPoliceOnBoard] = useState(false);
-  const [isSugeOnBoard, setIsSugeOnBoard]     = useState(false);
-  
-  // Control date/time - initialized with Paris time
-  const [controlDate, setControlDate] = useState(parisDate);
-  const [controlTime, setControlTime] = useState(parisTime);
-  
-  // Auto-update date/time when not in edit mode and form is fresh
+  // ── Form state (persisted) ─────────────────────────────────────────────────
+  const [formState, setFormState] = useState<FormState>(INITIAL_FORM_STATE);
+  const { clearDraft } = useFormPersistence('station-control', formState, setFormState, INITIAL_FORM_STATE);
+
+  // ── UX states (not persisted) ──────────────────────────────────────────────
+  const [selectedTrainId,    setSelectedTrainId]    = useState<string | undefined>();
+  const [autoTriggerKey,     setAutoTriggerKey]     = useState(0);
+  const [bigCounterOpen,     setBigCounterOpen]     = useState(false);
+  const [tarifsOpen,         setTarifsOpen]         = useState(false);
+  const [pvOpen,             setPvOpen]             = useState(false);
+  const [controleTarifType,  setControleTarifType]  = useState('stt');
+  const [controleTarifMontant, setControleTarifMontant] = useState('');
+  const [pvTarifType,        setPvTarifType]        = useState('pv_stt100');
+  const [pvTarifMontant,     setPvTarifMontant]     = useState('');
+  const [preparedArrivals,   setPreparedArrivals]   = useState<PreparedTrain[]>([]);
+  const [preparedDepartures, setPreparedDepartures] = useState<PreparedTrain[]>([]);
+  const [preparedActiveTab,  setPreparedActiveTab]  = useState<'arrivals' | 'departures'>('arrivals');
+  const [quickTrainInput,    setQuickTrainInput]    = useState('');
+  const [shareGroupOpen,     setShareGroupOpen]     = useState(false);
+  const [joinGroupOpen,      setJoinGroupOpen]      = useState(false);
+  const [joinInput,          setJoinInput]          = useState('');
+  const [copySuccess,        setCopySuccess]        = useState(false);
+
+  // ── Fraud stats ────────────────────────────────────────────────────────────
+  const fraudStats = useMemo(() => {
+    const tarifsControleCount = formState.stt50Count + formState.tarifsControle.length;
+    const pvCount             = formState.stt100Count + formState.pvList.length;
+    const fraudCount          = tarifsControleCount + pvCount + formState.riNegative;
+    const fraudRate           = formState.nbPassagers > 0 ? (fraudCount / formState.nbPassagers) * 100 : 0;
+    return { fraudCount, fraudRate, tarifsControleCount, pvCount };
+  }, [formState.nbPassagers, formState.stt50Count, formState.tarifsControle, formState.stt100Count, formState.pvList, formState.riNegative]);
+
+  // ── Auto-update date/time when form is fresh ───────────────────────────────
   useEffect(() => {
-    if (!isEditMode && stationName === '' && nbPassagers === 0) {
-      setControlDate(parisDate);
-      setControlTime(parisTime);
+    if (!isEditMode && !formState.stationName && formState.nbPassagers === 0) {
+      setFormState(p => ({ ...p, controlDate: parisDate, controlTime: parisTime }));
     }
-  }, [parisDate, parisTime, isEditMode, stationName]);
-  
-  // Pre-fill station from ?station= URL param (rejoindre un groupe)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [parisDate, parisTime, isEditMode]);
+
+  // ── Pre-fill station from URL param ───────────────────────────────────────
   useEffect(() => {
     const stationParam = searchParams.get('station');
     if (stationParam && !editId && !duplicateId) {
-      setStationName(decodeURIComponent(stationParam));
+      setFormState(p => ({ ...p, stationName: decodeURIComponent(stationParam) }));
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Collapsible infractions subsections
-  const [tarifsOpen, setTarifsOpen] = useState(false);
-  const [pvOpen, setPvOpen] = useState(false);
-
-  // Prepared trains (exposed from MissionPreparation for separate tile card)
-  const [preparedArrivals, setPreparedArrivals] = useState<PreparedTrain[]>([]);
-  const [preparedDepartures, setPreparedDepartures] = useState<PreparedTrain[]>([]);
-  const [preparedActiveTab, setPreparedActiveTab] = useState<'arrivals' | 'departures'>('arrivals');
-
-  // Passengers
-  const [nbPassagers, setNbPassagers] = useState(0);
-
-  // STT rapides (quick counters)
-  const [stt50Count, setStt50Count] = useState(0);
-  const [stt100Count, setStt100Count] = useState(0);
-
-  // Tarifs contrôle (list-based, same as À bord)
-  const [tarifsControle, setTarifsControle] = useState<TarifEntry[]>([]);
-  const [controleTarifType, setControleTarifType] = useState('stt');
-  const [controleTarifMontant, setControleTarifMontant] = useState('');
-  const [autreControleComment, setAutreControleComment] = useState('');
-
-  // PV (list-based, same as À bord)
-  const [pvList, setPvList] = useState<TarifEntry[]>([]);
-  const [pvTarifType, setPvTarifType] = useState('pv_stt100');
-  const [pvTarifMontant, setPvTarifMontant] = useState('');
-  const [autrePvComment, setAutrePvComment] = useState('');
-
-  // RI
-  const [riPositive, setRiPositive] = useState(0);
-  const [riNegative, setRiNegative] = useState(0);
-
-  // Heure de départ de la gare origine
-  const [departureTime, setDepartureTime] = useState('');
-
-  // Notes
-  const [notes, setNotes] = useState('');
-
-  // Groupe multi-agents
-  const [shareGroupOpen, setShareGroupOpen] = useState(false);
-  const [joinGroupOpen,  setJoinGroupOpen]  = useState(false);
-  const [joinInput,      setJoinInput]      = useState('');
-  const [copySuccess,    setCopySuccess]    = useState(false);
-
-  // Calculate fraud stats
-  const fraudStats = useMemo(() => {
-    const tarifsControleCount = stt50Count + tarifsControle.length;
-    const pvCount = stt100Count + pvList.length;
-    const fraudCount = tarifsControleCount + pvCount + riNegative;
-    const fraudRate = nbPassagers > 0 ? (fraudCount / nbPassagers) * 100 : 0;
-    return { fraudCount, fraudRate, tarifsControleCount, pvCount };
-  }, [nbPassagers, stt50Count, tarifsControle, stt100Count, pvList, riNegative]);
-
-  // Load control for editing or duplicating
+  // ── Load control for editing / duplicating ─────────────────────────────────
   useEffect(() => {
     const loadControl = async (controlId: string, forDuplicate: boolean) => {
-      // First check in already loaded controls
-      const controlToLoad = controls.find(c => c.id === controlId);
-      
-      if (controlToLoad) {
-        // Check if it's a train control - redirect to onboard
-        if (controlToLoad.location_type === 'train') {
-          const param = forDuplicate ? 'duplicate' : 'edit';
-          navigate(`/onboard?${param}=${controlId}`, { replace: true });
-          return;
-        }
-        
-        if (forDuplicate) {
-          setIsDuplicateMode(true);
-          // Clear the duplicate param from URL after loading
-          setSearchParams({});
-        } else {
-          setIsEditMode(true);
-        }
-        loadControlData(controlToLoad);
-      } else if (user) {
-        // Control not in local data - fetch directly from DB
-        const { data, error } = await supabase
-          .from('controls')
-          .select('*')
-          .eq('id', controlId)
-          .single();
-        
-        if (error || !data) {
-          toast.error('Erreur', { description: 'Contrôle non trouvé' });
-          setSearchParams({});
-          return;
-        }
-        
-        // If it's a train control, redirect to onboard
+      const found = controls.find(c => c.id === controlId);
+      const doLoad = (data: any) => {
         if (data.location_type === 'train') {
-          const param = forDuplicate ? 'duplicate' : 'edit';
-          navigate(`/onboard?${param}=${controlId}`, { replace: true });
+          navigate(`/onboard?${forDuplicate ? 'duplicate' : 'edit'}=${controlId}`, { replace: true });
           return;
         }
-        
-        if (forDuplicate) {
-          setIsDuplicateMode(true);
-          setSearchParams({});
-        } else {
-          setIsEditMode(true);
-        }
+        if (forDuplicate) { setIsDuplicateMode(true); setSearchParams({}); }
+        else              { setIsEditMode(true); }
         loadControlData(data);
+      };
+      if (found) {
+        doLoad(found);
+      } else if (user) {
+        const { data, error } = await supabase.from('controls').select('*').eq('id', controlId).single();
+        if (error || !data) { toast.error('Contrôle non trouvé'); setSearchParams({}); return; }
+        doLoad(data);
       }
     };
-    
-    if (editId) {
-      loadControl(editId, false);
-    } else if (duplicateId) {
-      loadControl(duplicateId, true);
-    }
-  }, [editId, duplicateId, controls, user, navigate, setSearchParams, toast]);
-  
-  // Helper to load control data into form
+    if (editId)      loadControl(editId, false);
+    else if (duplicateId) loadControl(duplicateId, true);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editId, duplicateId, controls, user]);
+
   const loadControlData = (data: any) => {
     const locationParts = data.location.split(' - Quai ');
-    setStationName(locationParts[0] || '');
-    setPlatformNumber(locationParts[1] || data.platform_number || '');
-    setOrigin(data.origin || '');
-    setDestination(data.destination || '');
-    setControlDate(data.control_date);
-    setControlTime(data.control_time);
-    setTrainNumber(data.train_number || '');
-    setNbPassagers(data.nb_passagers || 0);
-    setIsCancelled(data.is_cancelled ?? false);
-    setIsOvercrowded(data.is_overcrowded ?? false);
-    setIsPoliceOnBoard((data as any).is_police_on_board ?? false);
-    setIsSugeOnBoard((data as any).is_suge_on_board ?? false);
-    setStt50Count(0); // quick counter always reset on load; stt_50 goes into list
-    setStt100Count(data.stt_100 || 0);
+    const buildList = (entries: { count: number; type: string; label: string; amount: number; cat: 'controle' | 'pv' }[]): TarifEntry[] =>
+      entries.flatMap(({ count, type, label, amount, cat }) => {
+        if (count <= 0) return [];
+        const perEntry = amount > 0 ? amount / count : 0;
+        return Array.from({ length: count }, () => ({ id: crypto.randomUUID(), type, typeLabel: label, montant: perEntry, category: cat }));
+      });
 
-    // Reconstruct tarifs contrôle list
-    const newTarifsControle: TarifEntry[] = [];
-    const addTC = (count: number, type: string, typeLabel: string, totalAmount: number) => {
-      if (count <= 0) return;
-      const amountPerEntry = totalAmount > 0 ? totalAmount / count : 0;
-      for (let i = 0; i < count; i++) {
-        newTarifsControle.push({ id: crypto.randomUUID(), type, typeLabel, montant: amountPerEntry, category: 'controle' });
-      }
-    };
-    addTC(data.stt_50 || 0, 'stt', 'STT', Number(data.stt_50_amount) || 0);
-    addTC(data.rnv || 0, 'rnv', 'RNV', Number(data.rnv_amount) || 0);
-    addTC(data.titre_tiers || 0, 'titre_tiers', 'Titre tiers', Number(data.titre_tiers_amount) || 0);
-    addTC(data.doc_naissance || 0, 'd_naissance', 'D. naissance', Number(data.doc_naissance_amount) || 0);
-    addTC(data.autre_tarif || 0, 'autre', 'Autre', Number(data.autre_tarif_amount) || 0);
-    setTarifsControle(newTarifsControle);
-
-    // Reconstruct PV list
-    const newPvList: TarifEntry[] = [];
-    const addPV = (count: number, type: string, typeLabel: string, totalAmount: number) => {
-      if (count <= 0) return;
-      const amountPerEntry = totalAmount > 0 ? totalAmount / count : 0;
-      for (let i = 0; i < count; i++) {
-        newPvList.push({ id: crypto.randomUUID(), type, typeLabel, montant: amountPerEntry, category: 'pv' });
-      }
-    };
-    addPV(data.pv_stt100 || 0, 'pv_stt100', 'STT', Number(data.pv_stt100_amount) || 0);
-    addPV(data.pv_rnv || 0, 'pv_rnv', 'RNV', Number(data.pv_rnv_amount) || 0);
-    addPV(data.pv_titre_tiers || 0, 'pv_titre_tiers', 'Titre tiers', Number(data.pv_titre_tiers_amount) || 0);
-    addPV(data.pv_doc_naissance || 0, 'pv_doc_naissance', 'D. naissance', Number(data.pv_doc_naissance_amount) || 0);
-    addPV(data.pv_autre || 0, 'pv_autre', 'Autre', Number(data.pv_autre_amount) || 0);
-    setPvList(newPvList);
-
-    setRiPositive(data.ri_positive || 0);
-    setRiNegative(data.ri_negative || 0);
-    setNotes(data.notes || '');
+    setFormState({
+      stationName:    locationParts[0] || '',
+      platformNumber: locationParts[1] || data.platform_number || '',
+      origin:         data.origin || '',
+      destination:    data.destination || '',
+      trainNumber:    data.train_number || '',
+      controlDate:    data.control_date,
+      controlTime:    data.control_time,
+      departureTime:  '',
+      nbPassagers:    data.nb_passagers || 0,
+      stt50Count:     0,
+      stt100Count:    data.stt_100 || 0,
+      tarifsControle: buildList([
+        { count: data.stt_50 || 0,       type: 'stt',         label: 'STT',         amount: Number(data.stt_50_amount) || 0,       cat: 'controle' },
+        { count: data.rnv || 0,          type: 'rnv',         label: 'RNV',         amount: Number(data.rnv_amount) || 0,          cat: 'controle' },
+        { count: data.titre_tiers || 0,  type: 'titre_tiers', label: 'Titre tiers', amount: Number(data.titre_tiers_amount) || 0,  cat: 'controle' },
+        { count: data.doc_naissance || 0,type: 'd_naissance', label: 'D. naissance',amount: Number(data.doc_naissance_amount) || 0,cat: 'controle' },
+        { count: data.autre_tarif || 0,  type: 'autre',       label: 'Autre',       amount: Number(data.autre_tarif_amount) || 0,  cat: 'controle' },
+      ]),
+      pvList: buildList([
+        { count: data.pv_stt100 || 0,       type: 'pv_stt100',       label: 'STT',         amount: Number(data.pv_stt100_amount) || 0,       cat: 'pv' },
+        { count: data.pv_rnv || 0,          type: 'pv_rnv',          label: 'RNV',         amount: Number(data.pv_rnv_amount) || 0,          cat: 'pv' },
+        { count: data.pv_titre_tiers || 0,  type: 'pv_titre_tiers',  label: 'Titre tiers', amount: Number(data.pv_titre_tiers_amount) || 0,  cat: 'pv' },
+        { count: data.pv_doc_naissance || 0,type: 'pv_doc_naissance',label: 'D. naissance',amount: Number(data.pv_doc_naissance_amount) || 0,cat: 'pv' },
+        { count: data.pv_autre || 0,        type: 'pv_autre',        label: 'Autre',       amount: Number(data.pv_autre_amount) || 0,        cat: 'pv' },
+      ]),
+      riPositive:    data.ri_positive || 0,
+      riNegative:    data.ri_negative || 0,
+      notes:         data.notes || '',
+      isCancelled:     data.is_cancelled     ?? false,
+      isOvercrowded:   data.is_overcrowded   ?? false,
+      isPoliceOnBoard: (data as any).is_police_on_board ?? false,
+      isSugeOnBoard:   (data as any).is_suge_on_board   ?? false,
+      autreControleComment: '',
+      autrePvComment:       '',
+      quickTrains:          formState.quickTrains,
+    });
   };
 
-  // Cancel edit mode
   const handleCancelEdit = () => {
     setIsEditMode(false);
+    setIsDuplicateMode(false);
     setSearchParams({});
-    setStationName('');
-    setPlatformNumber('');
-    setTrainNumber('');
+    clearDraft();
     setSelectedTrainId(undefined);
-    setOrigin('');
-    setDestination('');
-    setDepartureTime('');
-    setNbPassagers(0);
-    setStt50Count(0);
-    setStt100Count(0);
-    setTarifsControle([]);
-    setControleTarifMontant('');
-    setPvList([]);
-    setPvTarifMontant('');
-    setRiPositive(0);
-    setRiNegative(0);
-    setNotes('');
-    setIsCancelled(false);
-    setIsOvercrowded(false);
   };
 
-  // Add/remove tarif handlers
+  // ── Tarif handlers ─────────────────────────────────────────────────────────
   const addTarifControle = useCallback(() => {
     const montant = parseFloat(controleTarifMontant);
     if (!montant || montant <= 0) return;
     const typeLabel = TARIF_TYPES.find(t => t.value === controleTarifType)?.label || controleTarifType;
-    setTarifsControle(prev => [...prev, { id: crypto.randomUUID(), type: controleTarifType, typeLabel, montant, category: 'controle' }]);
+    setFormState(p => ({ ...p, tarifsControle: [...p.tarifsControle, { id: crypto.randomUUID(), type: controleTarifType, typeLabel, montant, category: 'controle' }] }));
     setControleTarifMontant('');
   }, [controleTarifType, controleTarifMontant]);
 
-  const removeTarifControle = (id: string) => setTarifsControle(prev => prev.filter(t => t.id !== id));
+  const removeTarifControle = (id: string) =>
+    setFormState(p => ({ ...p, tarifsControle: p.tarifsControle.filter(t => t.id !== id) }));
 
   const addPv = useCallback(() => {
     const montant = parseFloat(pvTarifMontant);
     if (!montant || montant <= 0) return;
     const typeLabel = PV_TYPES.find(t => t.value === pvTarifType)?.label || pvTarifType;
-    setPvList(prev => [...prev, { id: crypto.randomUUID(), type: pvTarifType, typeLabel, montant, category: 'pv' }]);
+    setFormState(p => ({ ...p, pvList: [...p.pvList, { id: crypto.randomUUID(), type: pvTarifType, typeLabel, montant, category: 'pv' }] }));
     setPvTarifMontant('');
   }, [pvTarifType, pvTarifMontant]);
 
-  const removePv = (id: string) => setPvList(prev => prev.filter(t => t.id !== id));
+  const removePv = (id: string) =>
+    setFormState(p => ({ ...p, pvList: p.pvList.filter(t => t.id !== id) }));
 
-  // Handle sync - must be before early returns
   const handleSync = useCallback(async () => {
     await refetch();
     updateLastSync();
     toast.success('Données synchronisées');
   }, [refetch, updateLastSync]);
 
-  if (authLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
+  // ── Early returns ──────────────────────────────────────────────────────────
+  if (authLoading) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
+  if (!user)       return <Navigate to="/auth" replace />;
 
-  if (!user) {
-    return <Navigate to="/auth" replace />;
-  }
-
+  // ── Submit ─────────────────────────────────────────────────────────────────
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!formState.stationName.trim()) { toast.error('Veuillez sélectionner une gare'); return; }
 
-    if (!stationName.trim()) {
-      toast.error('Erreur', { description: 'Veuillez sélectionner une gare' });
-      return;
-    }
+    const locationName = formState.platformNumber
+      ? `${formState.stationName} - Quai ${formState.platformNumber}`
+      : formState.stationName;
 
-    const locationName = platformNumber
-      ? `${stationName} - Quai ${platformNumber}`
-      : stationName;
-
-    // Aggregate tarifs contrôle list entries by type
-    const sttEntries     = tarifsControle.filter(t => t.type === 'stt');
-    const rnvEntries     = tarifsControle.filter(t => t.type === 'rnv');
-    const ttEntries      = tarifsControle.filter(t => t.type === 'titre_tiers');
-    const dnEntries      = tarifsControle.filter(t => t.type === 'd_naissance');
-    const autreEntries   = tarifsControle.filter(t => t.type === 'autre');
-    // Aggregate PV list entries by type
-    const pvSttEntries   = pvList.filter(t => t.type === 'pv_stt100');
-    const pvRnvEntries   = pvList.filter(t => t.type === 'pv_rnv');
-    const pvTTEntries    = pvList.filter(t => t.type === 'pv_titre_tiers');
-    const pvDNEntries    = pvList.filter(t => t.type === 'pv_doc_naissance');
-    const pvAutreEntries = pvList.filter(t => t.type === 'pv_autre');
+    const tc  = formState.tarifsControle;
+    const pv  = formState.pvList;
+    const sum = (arr: TarifEntry[]) => arr.reduce((s, t) => s + t.montant, 0);
 
     const notesParts: string[] = [];
-    if (departureTime.trim()) notesParts.push(`[Départ: ${departureTime.trim()}]`);
-    if (autreControleComment.trim()) notesParts.push(`[Tarif Autre] ${autreControleComment.trim()}`);
-    if (autrePvComment.trim()) notesParts.push(`[PV Autre] ${autrePvComment.trim()}`);
-    if (notes.trim()) notesParts.push(notes.trim());
-    const finalNotes = notesParts.length > 0 ? notesParts.join(' | ') : null;
+    if (formState.departureTime.trim())        notesParts.push(`[Départ: ${formState.departureTime.trim()}]`);
+    if (formState.autreControleComment.trim()) notesParts.push(`[Tarif Autre] ${formState.autreControleComment.trim()}`);
+    if (formState.autrePvComment.trim())       notesParts.push(`[PV Autre] ${formState.autrePvComment.trim()}`);
+    if (formState.notes.trim())                notesParts.push(formState.notes.trim());
 
     const controlData = {
-        location_type: 'gare' as const,
-        location: locationName,
-        train_number: trainNumber.trim() || null,
-        origin: origin.trim() || null,
-        destination: destination.trim() || null,
-        platform_number: platformNumber.trim() || null,
-        control_date: controlDate,
-        control_time: controlTime,
-        nb_passagers: nbPassagers,
-        nb_en_regle: Math.max(0, nbPassagers - fraudStats.fraudCount),
-        // Tarifs contrôle (aggregated from list + quick counters)
-        stt_50: stt50Count + sttEntries.length,
-        stt_50_amount: sttEntries.reduce((s, t) => s + t.montant, 0) || null,
-        stt_100: stt100Count,
-        stt_100_amount: pvSttEntries.reduce((s, t) => s + t.montant, 0) || null,
-        rnv: rnvEntries.length,
-        rnv_amount: rnvEntries.reduce((s, t) => s + t.montant, 0) || null,
-        titre_tiers: ttEntries.length,
-        titre_tiers_amount: ttEntries.reduce((s, t) => s + t.montant, 0) || null,
-        doc_naissance: dnEntries.length,
-        doc_naissance_amount: dnEntries.reduce((s, t) => s + t.montant, 0) || null,
-        autre_tarif: autreEntries.length,
-        autre_tarif_amount: autreEntries.reduce((s, t) => s + t.montant, 0) || null,
-        tarifs_controle: fraudStats.tarifsControleCount,
-        // PV (aggregated from list)
-        pv: fraudStats.pvCount,
-        pv_stt100: pvSttEntries.length,
-        pv_stt100_amount: pvSttEntries.reduce((s, t) => s + t.montant, 0) || null,
-        pv_rnv: pvRnvEntries.length,
-        pv_rnv_amount: pvRnvEntries.reduce((s, t) => s + t.montant, 0) || null,
-        pv_titre_tiers: pvTTEntries.length,
-        pv_titre_tiers_amount: pvTTEntries.reduce((s, t) => s + t.montant, 0) || null,
-        pv_doc_naissance: pvDNEntries.length,
-        pv_doc_naissance_amount: pvDNEntries.reduce((s, t) => s + t.montant, 0) || null,
-        pv_autre: pvAutreEntries.length,
-        pv_autre_amount: pvAutreEntries.reduce((s, t) => s + t.montant, 0) || null,
-        // Tarifs bord (not used for En gare)
-        tarif_bord_stt_50: null,
-        tarif_bord_stt_50_amount: null,
-        tarif_bord_stt_100: null,
-        tarif_bord_stt_100_amount: null,
-        tarif_bord_rnv: null,
-        tarif_bord_rnv_amount: null,
-        tarif_bord_titre_tiers: null,
-        tarif_bord_titre_tiers_amount: null,
-        tarif_bord_doc_naissance: null,
-        tarif_bord_doc_naissance_amount: null,
-        tarif_bord_autre: null,
-        tarif_bord_autre_amount: null,
-        // RI
-        ri_positive: riPositive,
-        ri_negative: riNegative,
-        notes: finalNotes,
-        is_cancelled:       isCancelled,
-        is_overcrowded:     isOvercrowded,
-        is_police_on_board: isPoliceOnBoard,
-        is_suge_on_board:   isSugeOnBoard,
-      };
+      location_type:  'gare' as const,
+      location:        locationName,
+      train_number:    formState.trainNumber.trim()  || null,
+      origin:          formState.origin.trim()       || null,
+      destination:     formState.destination.trim()  || null,
+      platform_number: formState.platformNumber.trim() || null,
+      control_date:    formState.controlDate,
+      control_time:    formState.controlTime,
+      nb_passagers:    formState.nbPassagers,
+      nb_en_regle:     Math.max(0, formState.nbPassagers - fraudStats.fraudCount),
+      tarifs_controle: fraudStats.tarifsControleCount,
+      pv:              fraudStats.pvCount,
+      stt_50:          formState.stt50Count + tc.filter(t => t.type === 'stt').length,
+      stt_50_amount:   sum(tc.filter(t => t.type === 'stt'))             || null,
+      stt_100:         formState.stt100Count,
+      stt_100_amount:  sum(pv.filter(t => t.type === 'pv_stt100'))       || null,
+      rnv:             tc.filter(t => t.type === 'rnv').length,
+      rnv_amount:      sum(tc.filter(t => t.type === 'rnv'))             || null,
+      titre_tiers:     tc.filter(t => t.type === 'titre_tiers').length,
+      titre_tiers_amount: sum(tc.filter(t => t.type === 'titre_tiers')) || null,
+      doc_naissance:   tc.filter(t => t.type === 'd_naissance').length,
+      doc_naissance_amount: sum(tc.filter(t => t.type === 'd_naissance')) || null,
+      autre_tarif:     tc.filter(t => t.type === 'autre').length,
+      autre_tarif_amount: sum(tc.filter(t => t.type === 'autre'))       || null,
+      pv_stt100:       pv.filter(t => t.type === 'pv_stt100').length,
+      pv_stt100_amount: sum(pv.filter(t => t.type === 'pv_stt100'))      || null,
+      pv_rnv:          pv.filter(t => t.type === 'pv_rnv').length,
+      pv_rnv_amount:   sum(pv.filter(t => t.type === 'pv_rnv'))          || null,
+      pv_titre_tiers:  pv.filter(t => t.type === 'pv_titre_tiers').length,
+      pv_titre_tiers_amount: sum(pv.filter(t => t.type === 'pv_titre_tiers')) || null,
+      pv_doc_naissance: pv.filter(t => t.type === 'pv_doc_naissance').length,
+      pv_doc_naissance_amount: sum(pv.filter(t => t.type === 'pv_doc_naissance')) || null,
+      pv_autre:        pv.filter(t => t.type === 'pv_autre').length,
+      pv_autre_amount: sum(pv.filter(t => t.type === 'pv_autre'))        || null,
+      tarif_bord_stt_50: null, tarif_bord_stt_50_amount: null,
+      tarif_bord_stt_100: null, tarif_bord_stt_100_amount: null,
+      tarif_bord_rnv: null, tarif_bord_rnv_amount: null,
+      tarif_bord_titre_tiers: null, tarif_bord_titre_tiers_amount: null,
+      tarif_bord_doc_naissance: null, tarif_bord_doc_naissance_amount: null,
+      tarif_bord_autre: null, tarif_bord_autre_amount: null,
+      ri_positive:      formState.riPositive,
+      ri_negative:      formState.riNegative,
+      notes:            notesParts.join(' | ') || null,
+      is_cancelled:     formState.isCancelled,
+      is_overcrowded:   formState.isOvercrowded,
+      is_police_on_board: formState.isPoliceOnBoard,
+      is_suge_on_board:   formState.isSugeOnBoard,
+    };
 
     try {
       if (isEditMode && editId) {
         await updateControl({ id: editId, ...controlData } as any);
-        toast.success('Contrôle modifié', { description: 'Le contrôle en gare a été mis à jour avec succès' });
+        toast.success('Contrôle modifié');
         setIsEditMode(false);
         setSearchParams({});
       } else {
-        // Check if offline - save locally
-        if (!isOnline) {
-          addOfflineControl(controlData as any);
-          navigate('/');
-          return;
-        }
-
+        if (!isOnline) { addOfflineControl(controlData as any); clearDraft(); setFormState(INITIAL_FORM_STATE); navigate('/'); return; }
         await createControl(controlData as any);
-        toast.success('Contrôle enregistré', { description: 'Le contrôle en gare a été ajouté avec succès' });
+        toast.success('Contrôle enregistré');
       }
-
+      clearDraft();
+      setFormState(INITIAL_FORM_STATE);
       navigate('/');
     } catch (error: any) {
-      // If network error and offline, save locally
-      if (!isOnline) {
-        addOfflineControl(controlData as any);
-        navigate('/');
-        return;
-      }
-
+      if (!isOnline) { addOfflineControl(controlData as any); clearDraft(); setFormState(INITIAL_FORM_STATE); navigate('/'); return; }
       toast.error('Erreur', { description: error.message || "Impossible d'enregistrer le contrôle" });
     }
   };
 
+  // ── Section nav config ─────────────────────────────────────────────────────
+  const SECTIONS = [
+    { key: 'info'        as const, icon: Building2,    label: 'Infos',
+      inactive: 'border-cyan-200 bg-cyan-50 text-cyan-700 hover:bg-cyan-100 dark:bg-cyan-900/20 dark:border-cyan-800 dark:text-cyan-400',
+      active:   'bg-cyan-500 border-cyan-500 text-white hover:bg-cyan-600 hover:text-white' },
+    { key: 'voyageurs'   as const, icon: Users,         label: 'Voyageurs',
+      inactive: 'border-teal-200 bg-teal-50 text-teal-700 hover:bg-teal-100 dark:bg-teal-900/20 dark:border-teal-800 dark:text-teal-400',
+      active:   'bg-teal-500 border-teal-500 text-white hover:bg-teal-600 hover:text-white' },
+    { key: 'infractions' as const, icon: Ticket,        label: 'Infractions',
+      inactive: 'border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100 dark:bg-amber-900/20 dark:border-amber-800 dark:text-amber-400',
+      active:   'bg-amber-500 border-amber-500 text-white hover:bg-amber-600 hover:text-white' },
+    { key: 'ri'          as const, icon: UserCheck,     label: 'RI',
+      inactive: 'border-violet-200 bg-violet-50 text-violet-700 hover:bg-violet-100 dark:bg-violet-900/20 dark:border-violet-800 dark:text-violet-400',
+      active:   'bg-violet-500 border-violet-500 text-white hover:bg-violet-600 hover:text-white' },
+    { key: 'notes'       as const, icon: MessageSquare, label: 'Notes',
+      inactive: 'border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100 dark:bg-slate-800/40 dark:border-slate-700 dark:text-slate-400',
+      active:   'bg-slate-500 border-slate-500 text-white hover:bg-slate-600 hover:text-white' },
+  ];
 
+  // ── Render ─────────────────────────────────────────────────────────────────
   return (
     <AppLayout>
       <div className="space-y-5">
+
         {/* Header */}
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon" className="shrink-0" onClick={() => isEditMode ? handleCancelEdit() : navigate(-1)}>
+            <Button variant="ghost" size="icon" className="shrink-0"
+              onClick={() => isEditMode ? handleCancelEdit() : navigate(-1)}>
               {isEditMode ? <X className="h-5 w-5" /> : <ArrowLeft className="h-5 w-5" />}
             </Button>
             <div className="flex flex-col gap-0.5">
@@ -513,642 +474,645 @@ export default function StationControl() {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <OfflineIndicator
-              isOnline={isOnline}
-              pendingCount={pendingCount}
-              offlineControlsCount={offlineCount}
-              isSyncing={isSyncing || isOfflineSyncing}
-            />
-            <LastSyncIndicator
-              lastSync={formattedLastSync}
-              isFetching={isFetching}
-              onSync={async () => {
-                await handleSync();
-                await syncOfflineControls();
-              }}
-            />
+            <OfflineIndicator isOnline={isOnline} pendingCount={pendingCount}
+              offlineControlsCount={offlineCount} isSyncing={isSyncing || isOfflineSyncing} />
+            <LastSyncIndicator lastSync={formattedLastSync} isFetching={isFetching}
+              onSync={async () => { await handleSync(); await syncOfflineControls(); }} />
           </div>
         </div>
 
-        {/* Mode Selection - Only show when not in edit mode */}
-        {!isEditMode && (
-          <div className="grid grid-cols-2 gap-3 max-w-3xl mx-auto w-full">
-            <Button
-              variant={controlMode === 'disembarkment' ? 'default' : 'outline'}
-              onClick={() => setControlMode('disembarkment')}
-              className={cn(
-                "h-auto py-4 flex flex-col gap-2",
-                controlMode === 'disembarkment' && "ring-2 ring-primary ring-offset-2"
-              )}
+        {/* Toolbar : mode + vue */}
+        <div className="flex items-center justify-between gap-2 flex-wrap">
+          {/* Débarquement / Embarquement */}
+          {!isEditMode && (
+            <ToggleGroup
+              type="single"
+              value={controlMode}
+              onValueChange={(v) => v && setControlMode(v as ControlMode)}
+              className="border rounded-lg p-1 gap-1 bg-muted/30"
             >
-              <ArrowDownToLine className="h-6 w-6" />
-              <span className="font-semibold">Débarquement</span>
-              <span className="text-xs opacity-80">Contrôle complet</span>
-            </Button>
-            <Button
-              variant={controlMode === 'embarkment' ? 'default' : 'outline'}
-              onClick={() => setControlMode('embarkment')}
-              className={cn(
-                "h-auto py-4 flex flex-col gap-2",
-                controlMode === 'embarkment' && "ring-2 ring-primary ring-offset-2"
-              )}
-            >
-              <ArrowUpFromLine className="h-6 w-6" />
-              <span className="font-semibold">Embarquement</span>
-              <span className="text-xs opacity-80">Refoulement & stats</span>
-            </Button>
-          </div>
-        )}
+              <ToggleGroupItem value="disembarkment" size="sm"
+                className="gap-1.5 px-4 text-sm data-[state=on]:bg-primary data-[state=on]:text-primary-foreground data-[state=on]:shadow-sm">
+                <ArrowDownToLine className="h-4 w-4" />
+                Débarquement
+              </ToggleGroupItem>
+              <ToggleGroupItem value="embarkment" size="sm"
+                className="gap-1.5 px-4 text-sm data-[state=on]:bg-primary data-[state=on]:text-primary-foreground data-[state=on]:shadow-sm">
+                <ArrowUpFromLine className="h-4 w-4" />
+                Embarquement
+              </ToggleGroupItem>
+            </ToggleGroup>
+          )}
+          {/* Compact / Étendu */}
+          <ToggleGroup
+            type="single"
+            value={compactMode ? 'compact' : 'extended'}
+            onValueChange={(v) => v && setCompactMode(v === 'compact')}
+            className="border rounded-md ml-auto"
+          >
+            <ToggleGroupItem value="extended" size="sm" className="gap-1.5 px-3">
+              <LayoutList className="h-4 w-4" />
+              <span className="hidden sm:inline text-xs">Étendu</span>
+            </ToggleGroupItem>
+            <ToggleGroupItem value="compact" size="sm" className="gap-1.5 px-3">
+              <Layers className="h-4 w-4" />
+              <span className="hidden sm:inline text-xs">Compact</span>
+            </ToggleGroupItem>
+          </ToggleGroup>
+        </div>
 
-        {/* Content based on mode */}
+        {/* ── Embarquement mode ── */}
         {controlMode === 'embarkment' && !isEditMode ? (
           <div className="max-w-3xl mx-auto w-full">
             <EmbarkmentControl
-              stationName={stationName}
-              onStationChange={setStationName}
+              stationName={formState.stationName}
+              onStationChange={(v) => setFormState(p => ({ ...p, stationName: v }))}
             />
           </div>
         ) : (
-          <>
           <div className="max-w-3xl mx-auto w-full space-y-4">
+
             {/* Groupe multi-agents */}
             {!isEditMode && !isDuplicateMode && (
               <Card>
-                <CardContent className="p-3 flex items-center gap-2 flex-wrap">
+                <div className="p-3 flex items-center gap-2 flex-wrap">
                   <Users className="h-4 w-4 text-muted-foreground shrink-0" />
                   <span className="text-sm text-muted-foreground flex-1 min-w-0">Contrôle multi-agents</span>
                   <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setJoinGroupOpen(true)}>
-                    <Link2 className="h-3.5 w-3.5" />
-                    Rejoindre
+                    <Link2 className="h-3.5 w-3.5" />Rejoindre
                   </Button>
-                  <Button
-                    size="sm"
-                    variant={stationName.trim() ? 'default' : 'outline'}
+                  <Button size="sm"
+                    variant={formState.stationName.trim() ? 'default' : 'outline'}
                     className="gap-1.5"
-                    disabled={!stationName.trim()}
-                    onClick={() => setShareGroupOpen(true)}
-                  >
-                    <Share2 className="h-3.5 w-3.5" />
-                    Partager
+                    disabled={!formState.stationName.trim()}
+                    onClick={() => setShareGroupOpen(true)}>
+                    <Share2 className="h-3.5 w-3.5" />Partager
                   </Button>
-                </CardContent>
+                </div>
               </Card>
             )}
 
-            {/* Fraud Summary - Sticky */}
+            {/* Fraud Summary sticky */}
             <div className="sticky top-16 z-30">
               <FraudSummary
-                passengers={nbPassagers}
+                passengers={formState.nbPassagers}
                 fraudCount={fraudStats.fraudCount}
                 fraudRate={fraudStats.fraudRate}
               />
             </div>
 
-            {/* Mission Preparation - collapsible form only (tiles rendered separately) */}
-            {!isEditMode && (
-              <MissionPreparation
-                stationName={stationName}
-                selectedTrainId={selectedTrainId}
-                showTiles={false}
-                showTilesInCard={false}
-                onTrainsChange={(arrivals, departures, tab) => {
-                  setPreparedArrivals(arrivals);
-                  setPreparedDepartures(departures);
-                  setPreparedActiveTab(tab);
-                }}
-                onSelectTrain={(train: PreparedTrain, type: 'arrival' | 'departure') => {
-                  setSelectedTrainId(train.id);
-                  setTrainNumber(train.trainNumber || '');
-                  setOrigin(train.origin || '');
-                  setDestination(train.destination || (type === 'arrival' ? stationName : ''));
-                  if (train.time) { setControlTime(train.time); setDepartureTime(train.time); }
-                }}
-              />
-            )}
-
-            {/* Trains préparés - separate tile card */}
-            {!isEditMode && (preparedArrivals.length > 0 || preparedDepartures.length > 0) && (
-              <Card className="border-0 shadow-sm overflow-hidden">
-                <div className="h-1 bg-gradient-to-r from-blue-400 to-indigo-500" />
+            {/* ── Card sections ── */}
+            <Card className="border-0 shadow-sm overflow-hidden">
+              <div className="h-1 bg-gradient-to-r from-cyan-400 via-teal-400 to-violet-500" />
+              {compactMode && (
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-base flex items-center gap-2">
-                    <div className="p-1.5 rounded-lg bg-blue-100 dark:bg-blue-900/30">
-                      <Train className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
-                    </div>
-                    Trains préparés
-                    <span className="text-xs text-muted-foreground font-normal">— cliquer pour sélectionner</span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <TrainTileSelector
-                    trains={preparedActiveTab === 'arrivals' ? preparedArrivals : preparedDepartures}
-                    selectedId={selectedTrainId}
-                    onSelect={(train) => {
-                      setSelectedTrainId(train.id);
-                      setTrainNumber(train.trainNumber || '');
-                      setOrigin(train.origin || '');
-                      setDestination(train.destination || (preparedActiveTab === 'arrivals' ? stationName : ''));
-                      if (train.time) { setControlTime(train.time); setDepartureTime(train.time); }
-                    }}
-                    onRemove={() => {}}
-                  />
-                </CardContent>
-              </Card>
-            )}
-
-            <form onSubmit={handleSubmit} className="space-y-4">
-
-              {/* ── Info train card ─────────────────────────────────────────── */}
-              <Card className="border-0 shadow-sm overflow-hidden">
-                <div className="h-1 bg-gradient-to-r from-cyan-400 to-teal-500" />
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base flex items-center gap-2">
-                    <div className="p-1.5 rounded-lg bg-cyan-100 dark:bg-cyan-900/30">
-                      <Building2 className="h-3.5 w-3.5 text-cyan-600 dark:text-cyan-400" />
-                    </div>
-                    Info train
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  {/* Row 1: Gare full width */}
-                  <div className="space-y-1.5">
-                    <Label htmlFor="stationName">Gare *</Label>
-                    <Input
-                      id="stationName"
-                      list="gares"
-                      placeholder="Sélectionner ou saisir une gare"
-                      value={stationName}
-                      onChange={(e) => setStationName(e.target.value)}
-                      required
-                    />
-                    <datalist id="gares">
-                      {GARES_PRINCIPALES.map((gare) => <option key={gare} value={gare} />)}
-                    </datalist>
+                  {/* Section nav */}
+                  <div className="flex flex-wrap gap-1.5">
+                    {SECTIONS.map(({ key, icon: Icon, label, inactive, active }) => (
+                      <Button key={key} type="button" variant="outline" size="sm"
+                        className={cn('gap-1 text-xs border transition-colors', activeSection === key ? active : inactive)}
+                        onClick={() => setActiveSection(key)}>
+                        <Icon className="h-3.5 w-3.5" />
+                        {label}
+                        {/* Badges sur les sections ayant des données */}
+                        {key === 'infractions' && (fraudStats.tarifsControleCount + fraudStats.pvCount) > 0 && (
+                          <span className="ml-0.5 bg-white/30 text-inherit rounded-full px-1 text-[10px] font-bold">
+                            {fraudStats.tarifsControleCount + fraudStats.pvCount}
+                          </span>
+                        )}
+                        {key === 'voyageurs' && formState.nbPassagers > 0 && (
+                          <span className="ml-0.5 bg-white/30 text-inherit rounded-full px-1 text-[10px] font-bold">
+                            {formState.nbPassagers}
+                          </span>
+                        )}
+                      </Button>
+                    ))}
                   </div>
+                </CardHeader>
+              )}
 
-                  {/* Row 2: N° Train + Quai */}
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-1.5">
-                      <Label htmlFor="trainNumber">N° Train</Label>
-                      <div className="flex flex-col gap-1">
-                        <Input
-                          id="trainNumber"
-                          placeholder="Ex: 6231"
-                          value={trainNumber}
-                          onChange={(e) => setTrainNumber(e.target.value)}
-                          inputMode="numeric"
-                        />
-                        <TrainLookupButton
-                          trainNumber={trainNumber}
-                          date={controlDate}
-                          onResult={(info) => {
-                            setOrigin(info.origin || origin);
-                            setDestination(info.destination || destination);
-                            if (info.departureTime) setControlTime(info.departureTime);
-                            if (info.stops[0]?.platform) setPlatformNumber(info.stops[0].platform);
+              <CardContent>
+                <form onSubmit={handleSubmit} className="space-y-4">
+
+                  {/* ══ SECTION INFOS ══════════════════════════════════════════ */}
+                  {(!compactMode || activeSection === 'info') && (
+                    <>
+                    {!compactMode && (
+                      <SectionHeader icon={Building2} title="Infos du contrôle"
+                        iconBg="bg-cyan-100 dark:bg-cyan-900/30"
+                        iconColor="text-cyan-700 dark:text-cyan-400" />
+                    )}
+                    <div className="space-y-4">
+
+                      {/* Mission preparation */}
+                      {!isEditMode && (
+                        <MissionPreparation
+                          stationName={formState.stationName}
+                          selectedTrainId={selectedTrainId}
+                          showTiles={false}
+                          showTilesInCard={false}
+                          onTrainsChange={(arrivals, departures, tab) => {
+                            setPreparedArrivals(arrivals);
+                            setPreparedDepartures(departures);
+                            setPreparedActiveTab(tab);
+                          }}
+                          onSelectTrain={(train: PreparedTrain, type: 'arrival' | 'departure') => {
+                            setSelectedTrainId(train.id);
+                            setFormState(p => ({
+                              ...p,
+                              trainNumber:  train.trainNumber || '',
+                              origin:       train.origin || '',
+                              destination:  train.destination || (type === 'arrival' ? p.stationName : ''),
+                              ...(train.time ? { controlTime: train.time, departureTime: train.time } : {}),
+                            }));
+                            setAutoTriggerKey(k => k + 1);
                           }}
                         />
-                      </div>
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label htmlFor="platformNumber">Quai</Label>
-                      <Input
-                        id="platformNumber"
-                        placeholder="1A"
-                        value={platformNumber}
-                        onChange={(e) => setPlatformNumber(e.target.value)}
-                      />
-                    </div>
-                  </div>
+                      )}
 
-                  {/* Row 3: Origine → Destination */}
-                  <div className="grid grid-cols-[1fr_auto_1fr] items-end gap-2">
-                    <div className="space-y-1.5">
-                      <Label htmlFor="origin">Origine</Label>
-                      <Input
-                        id="origin"
-                        placeholder="Paris"
-                        value={origin}
-                        onChange={(e) => setOrigin(e.target.value)}
-                      />
-                    </div>
-                    <div className="pb-2">
-                      <ArrowRight className="h-4 w-4 text-muted-foreground" />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label htmlFor="destination">Destination</Label>
-                      <Input
-                        id="destination"
-                        placeholder="Lyon"
-                        value={destination}
-                        onChange={(e) => setDestination(e.target.value)}
-                      />
-                    </div>
-                  </div>
+                      {/* Trains préparés */}
+                      {!isEditMode && (preparedArrivals.length > 0 || preparedDepartures.length > 0) && (
+                        <div className="rounded-lg border overflow-hidden">
+                          <div className="h-0.5 bg-gradient-to-r from-blue-400 to-indigo-500" />
+                          <div className="p-3">
+                            <p className="text-xs text-muted-foreground mb-2 flex items-center gap-1.5">
+                              <Train className="h-3.5 w-3.5" />
+                              Trains préparés — cliquer pour sélectionner
+                            </p>
+                            <TrainTileSelector
+                              trains={preparedActiveTab === 'arrivals' ? preparedArrivals : preparedDepartures}
+                              selectedId={selectedTrainId}
+                              onSelect={(train) => {
+                                setSelectedTrainId(train.id);
+                                setFormState(p => ({
+                                  ...p,
+                                  trainNumber:  train.trainNumber || '',
+                                  origin:       train.origin || '',
+                                  destination:  train.destination || (preparedActiveTab === 'arrivals' ? p.stationName : ''),
+                                  ...(train.time ? { controlTime: train.time, departureTime: train.time } : {}),
+                                }));
+                                setAutoTriggerKey(k => k + 1);
+                              }}
+                              onRemove={() => {}}
+                            />
+                          </div>
+                        </div>
+                      )}
 
-                  {/* Row 4: Départ origine + Date + Heure contrôle */}
-                  <div className="grid grid-cols-3 gap-3">
-                    <div className="space-y-1.5">
-                      <Label htmlFor="departureTime" className="flex items-center gap-1">
-                        <Clock className="h-3 w-3" />
-                        Départ origine
-                      </Label>
-                      <Input
-                        id="departureTime"
-                        type="time"
-                        value={departureTime}
-                        onChange={(e) => setDepartureTime(e.target.value)}
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label htmlFor="controlDate" className="flex items-center gap-1">
-                        <Calendar className="h-3 w-3" />
-                        Date
-                      </Label>
-                      <Input
-                        id="controlDate"
-                        type="date"
-                        value={controlDate}
-                        onChange={(e) => setControlDate(e.target.value)}
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label htmlFor="controlTime" className="flex items-center gap-1">
-                        <Clock className="h-3 w-3" />
-                        Heure
-                      </Label>
-                      <Input
-                        id="controlTime"
-                        type="time"
-                        value={controlTime}
-                        onChange={(e) => setControlTime(e.target.value)}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Row 5: Checkboxes */}
-                  <div className="flex items-center gap-4 flex-wrap pt-1">
-                    <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
-                      <Checkbox checked={isCancelled} onCheckedChange={(v) => setIsCancelled(!!v)} />
-                      <span>Train supprimé</span>
-                    </label>
-                    <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
-                      <Checkbox checked={isOvercrowded} onCheckedChange={(v) => setIsOvercrowded(!!v)} />
-                      <span>Sur-occupation</span>
-                    </label>
-                    <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
-                      <Checkbox checked={isPoliceOnBoard} onCheckedChange={(v) => setIsPoliceOnBoard(!!v)} />
-                      <span>Police à bord</span>
-                    </label>
-                    <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
-                      <Checkbox checked={isSugeOnBoard} onCheckedChange={(v) => setIsSugeOnBoard(!!v)} />
-                      <span>SUGE à bord</span>
-                    </label>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* ── Voyageurs card ───────────────────────────────────────────── */}
-              <Card className="border-0 shadow-sm overflow-hidden">
-                <div className="h-1 bg-gradient-to-r from-teal-400 to-green-500" />
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base flex items-center gap-2">
-                    <div className="p-1.5 rounded-lg bg-teal-100 dark:bg-teal-900/30">
-                      <Users className="h-3.5 w-3.5 text-teal-600 dark:text-teal-400" />
-                    </div>
-                    Voyageurs
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="flex justify-center py-2">
-                  <CounterInput label="Nombre contrôlés" value={nbPassagers} onChange={setNbPassagers} min={0} max={9999} steps={[1, 10]} />
-                </CardContent>
-              </Card>
-
-              {/* ── Infractions card (unified) ───────────────────────────────── */}
-              <Card className="border-0 shadow-sm overflow-hidden">
-                <div className="h-1 bg-gradient-to-r from-amber-400 to-rose-500" />
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base flex items-center gap-2">
-                    <div className="p-1.5 rounded-lg bg-amber-100 dark:bg-amber-900/30">
-                      <Ticket className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
-                    </div>
-                    Infractions
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {/* Quick counters — 2-col grid */}
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg">
-                      <CounterInput
-                        label="STT 50€"
-                        sublabel="Tarif contrôle"
-                        value={stt50Count}
-                        onChange={setStt50Count}
-                        showTotal={{ unitPrice: 50, label: 'Total' }}
-                      />
-                    </div>
-                    <div className="p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
-                      <CounterInput
-                        label="PV 100€"
-                        sublabel="Procès-verbal"
-                        value={stt100Count}
-                        onChange={setStt100Count}
-                        showTotal={{ unitPrice: 100, label: 'Total' }}
-                        variant="danger"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Subsection: Détail tarifs contrôle */}
-                  <div className="border rounded-lg overflow-hidden">
-                    <button
-                      type="button"
-                      className="w-full flex items-center justify-between px-4 py-2.5 bg-amber-50 dark:bg-amber-900/10 hover:bg-amber-100 dark:hover:bg-amber-900/20 transition-colors text-left"
-                      onClick={() => setTarifsOpen((v) => !v)}
-                    >
-                      <span className="flex items-center gap-2 text-sm font-medium text-amber-800 dark:text-amber-300">
-                        <FileText className="h-3.5 w-3.5" />
-                        Détail tarifs contrôle
-                        {tarifsControle.length > 0 && (
-                          <Badge variant="secondary" className="text-xs py-0 h-4">{tarifsControle.length}</Badge>
-                        )}
-                      </span>
-                      <ChevronDown className={cn('h-4 w-4 text-amber-600 transition-transform', tarifsOpen && 'rotate-180')} />
-                    </button>
-                    {tarifsOpen && (
-                      <div className="p-4 space-y-3 border-t">
-                        <TarifTypeToggle types={TARIF_TYPES} value={controleTarifType} onChange={setControleTarifType} />
-                        {controleTarifType === 'autre' && (
-                          <Input
-                            placeholder="Précisez l'infraction..."
-                            value={autreControleComment}
-                            onChange={(e) => setAutreControleComment(e.target.value)}
-                          />
-                        )}
+                      {/* Trains rapides du service */}
+                      <div className="space-y-2">
+                        <Label className="flex items-center gap-1.5">
+                          <Train className="h-3.5 w-3.5 text-muted-foreground" />
+                          Trains du service
+                          <span className="text-xs text-muted-foreground font-normal">(cliquer pour sélectionner)</span>
+                        </Label>
                         <div className="flex gap-2">
                           <Input
-                            type="number"
-                            min="0"
-                            step="0.01"
-                            placeholder="Montant (€)"
-                            value={controleTarifMontant}
-                            onChange={(e) => setControleTarifMontant(e.target.value)}
-                            className="flex-1"
-                            onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addTarifControle())}
+                            placeholder="Ex: 88521, 88524, 837311"
+                            value={quickTrainInput}
+                            onChange={(e) => setQuickTrainInput(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                e.preventDefault();
+                                const nums = quickTrainInput.split(/[\s,;]+/).map(s => s.replace(/\D/g, '')).filter(Boolean);
+                                if (nums.length === 0) return;
+                                setFormState(p => ({
+                                  ...p,
+                                  quickTrains: [...p.quickTrains, ...nums.filter(n => !p.quickTrains.includes(n))],
+                                }));
+                                setQuickTrainInput('');
+                              }
+                            }}
+                            className="flex-1 h-8 text-sm"
                           />
-                          <Button type="button" onClick={addTarifControle} disabled={!controleTarifMontant}>
-                            <Plus className="h-4 w-4 mr-1" />Ajouter
+                          <Button
+                            type="button"
+                            size="sm"
+                            className="h-8 shrink-0"
+                            disabled={!quickTrainInput.trim()}
+                            onClick={() => {
+                              const nums = quickTrainInput.split(/[\s,;]+/).map(s => s.replace(/\D/g, '')).filter(Boolean);
+                              if (nums.length === 0) return;
+                              setFormState(p => ({
+                                ...p,
+                                quickTrains: [...p.quickTrains, ...nums.filter(n => !p.quickTrains.includes(n))],
+                              }));
+                              setQuickTrainInput('');
+                            }}
+                          >
+                            <Plus className="h-3.5 w-3.5" />
                           </Button>
                         </div>
-                        {tarifsControle.length > 0 && (
-                          <div className="space-y-2">
-                            {tarifsControle.map((t) => (
-                              <TarifListItem key={t.id} item={t} onRemove={removeTarifControle} />
+                        {formState.quickTrains.length > 0 && (
+                          <div className="flex flex-wrap gap-1.5">
+                            {formState.quickTrains.map((num) => (
+                              <div
+                                key={num}
+                                className={cn(
+                                  'inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-medium transition-colors cursor-pointer select-none',
+                                  formState.trainNumber === num
+                                    ? 'bg-primary text-primary-foreground border-primary'
+                                    : 'bg-muted text-muted-foreground border-border hover:bg-accent hover:text-accent-foreground'
+                                )}
+                                onClick={() => {
+                                  setFormState(p => ({ ...p, trainNumber: num }));
+                                  setAutoTriggerKey(k => k + 1);
+                                }}
+                              >
+                                <Train className="h-3 w-3 shrink-0" />
+                                {num}
+                                <button
+                                  type="button"
+                                  className="ml-0.5 rounded-full hover:bg-destructive/20 hover:text-destructive p-0.5 transition-colors"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setFormState(p => ({ ...p, quickTrains: p.quickTrains.filter(t => t !== num) }));
+                                  }}
+                                  aria-label={`Retirer ${num}`}
+                                >
+                                  <X className="h-2.5 w-2.5" />
+                                </button>
+                              </div>
                             ))}
                           </div>
                         )}
                       </div>
-                    )}
-                  </div>
 
-                  {/* Subsection: Détail PV */}
-                  <div className="border rounded-lg overflow-hidden">
-                    <button
-                      type="button"
-                      className="w-full flex items-center justify-between px-4 py-2.5 bg-rose-50 dark:bg-rose-900/10 hover:bg-rose-100 dark:hover:bg-rose-900/20 transition-colors text-left"
-                      onClick={() => setPvOpen((v) => !v)}
-                    >
-                      <span className="flex items-center gap-2 text-sm font-medium text-rose-800 dark:text-rose-300">
-                        <AlertTriangle className="h-3.5 w-3.5" />
-                        Détail PV
-                        {pvList.length > 0 && (
-                          <Badge variant="secondary" className="text-xs py-0 h-4">{pvList.length}</Badge>
-                        )}
-                      </span>
-                      <ChevronDown className={cn('h-4 w-4 text-rose-600 transition-transform', pvOpen && 'rotate-180')} />
-                    </button>
-                    {pvOpen && (
-                      <div className="p-4 space-y-3 border-t">
-                        <TarifTypeToggle types={PV_TYPES} value={pvTarifType} onChange={setPvTarifType} />
-                        {pvTarifType === 'pv_autre' && (
-                          <Input
-                            placeholder="Précisez l'infraction..."
-                            value={autrePvComment}
-                            onChange={(e) => setAutrePvComment(e.target.value)}
-                          />
-                        )}
-                        <div className="flex gap-2">
-                          <Input
-                            type="number"
-                            min="0"
-                            step="0.01"
-                            placeholder="Montant (€)"
-                            value={pvTarifMontant}
-                            onChange={(e) => setPvTarifMontant(e.target.value)}
-                            className="flex-1"
-                            onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addPv())}
-                          />
-                          <Button type="button" onClick={addPv} disabled={!pvTarifMontant} variant="destructive">
-                            <Plus className="h-4 w-4 mr-1" />Ajouter
-                          </Button>
+                      {/* Gare */}
+                      <div className="space-y-1.5">
+                        <Label>Gare *</Label>
+                        <StationAutocomplete
+                          value={formState.stationName}
+                          onChange={(v) => setFormState(p => ({ ...p, stationName: v }))}
+                          placeholder="Rechercher une gare..."
+                        />
+                      </div>
+
+                      {/* N° Train + Quai */}
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1.5">
+                          <Label>N° Train</Label>
+                          <div className="flex flex-col gap-1">
+                            <Input
+                              placeholder="Ex: 6231"
+                              value={formState.trainNumber}
+                              onChange={(e) => setFormState(p => ({ ...p, trainNumber: e.target.value }))}
+                              inputMode="numeric"
+                            />
+                            <TrainLookupButton
+                              trainNumber={formState.trainNumber}
+                              date={formState.controlDate}
+                              autoTriggerKey={autoTriggerKey}
+                              selectedOrigin={formState.origin}
+                              onResult={(info) => {
+                                setFormState(p => ({
+                                  ...p,
+                                  origin:      info.origin      || p.origin,
+                                  destination: info.destination || p.destination,
+                                  ...(info.departureTime          ? { controlTime:     info.departureTime }         : {}),
+                                  ...(info.stops[0]?.platform     ? { platformNumber:  info.stops[0].platform }     : {}),
+                                }));
+                              }}
+                            />
+                          </div>
                         </div>
-                        {pvList.length > 0 && (
-                          <div className="space-y-2">
-                            {pvList.map((t) => (
-                              <TarifListItem key={t.id} item={t} onRemove={removePv} />
-                            ))}
+                        <div className="space-y-1.5">
+                          <Label>Quai</Label>
+                          <Input
+                            placeholder="1A"
+                            value={formState.platformNumber}
+                            onChange={(e) => setFormState(p => ({ ...p, platformNumber: e.target.value }))}
+                          />
+                        </div>
+                      </div>
+
+                      {/* Origine → Destination */}
+                      <div className="grid grid-cols-[1fr_auto_1fr] items-end gap-2">
+                        <div className="space-y-1.5">
+                          <Label>Origine</Label>
+                          <Input placeholder="Paris" value={formState.origin}
+                            onChange={(e) => setFormState(p => ({ ...p, origin: e.target.value }))} />
+                        </div>
+                        <div className="pb-2"><ArrowRight className="h-4 w-4 text-muted-foreground" /></div>
+                        <div className="space-y-1.5">
+                          <Label>Destination</Label>
+                          <Input placeholder="Lyon" value={formState.destination}
+                            onChange={(e) => setFormState(p => ({ ...p, destination: e.target.value }))} />
+                        </div>
+                      </div>
+
+                      {/* Départ origine + Date + Heure */}
+                      <div className="grid grid-cols-3 gap-3">
+                        <div className="space-y-1.5">
+                          <Label className="flex items-center gap-1"><Clock className="h-3 w-3" />Départ origine</Label>
+                          <Input type="time" value={formState.departureTime}
+                            onChange={(e) => setFormState(p => ({ ...p, departureTime: e.target.value }))} />
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label className="flex items-center gap-1"><Calendar className="h-3 w-3" />Date</Label>
+                          <Input type="date" value={formState.controlDate}
+                            onChange={(e) => setFormState(p => ({ ...p, controlDate: e.target.value }))} />
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label className="flex items-center gap-1"><Clock className="h-3 w-3" />Heure</Label>
+                          <Input type="time" value={formState.controlTime}
+                            onChange={(e) => setFormState(p => ({ ...p, controlTime: e.target.value }))} />
+                        </div>
+                      </div>
+
+                      {/* Checkboxes */}
+                      <div className="flex items-center gap-4 flex-wrap pt-1">
+                        {[
+                          { key: 'isCancelled',     label: 'Train supprimé' },
+                          { key: 'isOvercrowded',   label: 'Sur-occupation' },
+                          { key: 'isPoliceOnBoard', label: 'Police à bord' },
+                          { key: 'isSugeOnBoard',   label: 'SUGE à bord' },
+                        ].map(({ key, label }) => (
+                          <label key={key} className="flex items-center gap-2 text-sm cursor-pointer select-none">
+                            <Checkbox
+                              checked={formState[key as keyof FormState] as boolean}
+                              onCheckedChange={(v) => setFormState(p => ({ ...p, [key]: !!v }))}
+                            />
+                            <span>{label}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                    </>
+                  )}
+
+                  {!compactMode && <div className="border-t my-1" />}
+
+                  {/* ══ SECTION VOYAGEURS ══════════════════════════════════════ */}
+                  {(!compactMode || activeSection === 'voyageurs') && (
+                    <>
+                    {!compactMode && (
+                      <SectionHeader icon={Users} title="Voyageurs"
+                        iconBg="bg-teal-100 dark:bg-teal-900/30"
+                        iconColor="text-teal-700 dark:text-teal-400" />
+                    )}
+                    <div className="flex justify-center py-4">
+                      <div className="relative">
+                        <CounterInput
+                          label="Nombre contrôlés"
+                          value={formState.nbPassagers}
+                          onChange={(v) => setFormState(p => ({ ...p, nbPassagers: v }))}
+                          min={0} max={9999} steps={[1, 10]}
+                        />
+                        <button
+                          type="button"
+                          title="Grand compteur"
+                          className="absolute -top-1 -right-10 p-2 rounded-full bg-teal-100 text-teal-700 hover:bg-teal-200 dark:bg-teal-900/30 dark:text-teal-400 transition-colors"
+                          onClick={() => setBigCounterOpen(true)}
+                        >
+                          <Users className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </div>
+                    </>
+                  )}
+
+                  {!compactMode && <div className="border-t my-1" />}
+
+                  {/* ══ SECTION INFRACTIONS ════════════════════════════════════ */}
+                  {(!compactMode || activeSection === 'infractions') && (
+                    <>
+                    {!compactMode && (
+                      <SectionHeader icon={Ticket} title="Infractions"
+                        iconBg="bg-amber-100 dark:bg-amber-900/30"
+                        iconColor="text-amber-700 dark:text-amber-400" />
+                    )}
+                    <div className="space-y-4">
+                      {/* Quick counters */}
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg">
+                          <CounterInput label="STT 50€" sublabel="Tarif contrôle"
+                            value={formState.stt50Count}
+                            onChange={(v) => setFormState(p => ({ ...p, stt50Count: v }))}
+                            showTotal={{ unitPrice: 50, label: 'Total' }} />
+                        </div>
+                        <div className="p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
+                          <CounterInput label="PV 100€" sublabel="Procès-verbal"
+                            value={formState.stt100Count}
+                            onChange={(v) => setFormState(p => ({ ...p, stt100Count: v }))}
+                            showTotal={{ unitPrice: 100, label: 'Total' }} variant="danger" />
+                        </div>
+                      </div>
+
+                      {/* Détail tarifs contrôle */}
+                      <div className="border rounded-lg overflow-hidden">
+                        <button type="button"
+                          className="w-full flex items-center justify-between px-4 py-2.5 bg-amber-50 dark:bg-amber-900/10 hover:bg-amber-100 dark:hover:bg-amber-900/20 transition-colors text-left"
+                          onClick={() => setTarifsOpen(v => !v)}>
+                          <span className="flex items-center gap-2 text-sm font-medium text-amber-800 dark:text-amber-300">
+                            <FileText className="h-3.5 w-3.5" />
+                            Détail tarifs contrôle
+                            {formState.tarifsControle.length > 0 && (
+                              <Badge variant="secondary" className="text-xs py-0 h-4">{formState.tarifsControle.length}</Badge>
+                            )}
+                          </span>
+                          <ChevronDown className={cn('h-4 w-4 text-amber-600 transition-transform', tarifsOpen && 'rotate-180')} />
+                        </button>
+                        {tarifsOpen && (
+                          <div className="p-4 space-y-3 border-t">
+                            <TarifTypeToggle types={TARIF_TYPES} value={controleTarifType} onChange={setControleTarifType} />
+                            {controleTarifType === 'autre' && (
+                              <Input placeholder="Précisez l'infraction..."
+                                value={formState.autreControleComment}
+                                onChange={(e) => setFormState(p => ({ ...p, autreControleComment: e.target.value }))} />
+                            )}
+                            <div className="flex gap-2">
+                              <Input type="number" min="0" step="0.01" placeholder="Montant (€)"
+                                value={controleTarifMontant} onChange={(e) => setControleTarifMontant(e.target.value)}
+                                className="flex-1"
+                                onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addTarifControle())} />
+                              <Button type="button" onClick={addTarifControle} disabled={!controleTarifMontant}>
+                                <Plus className="h-4 w-4 mr-1" />Ajouter
+                              </Button>
+                            </div>
+                            {formState.tarifsControle.length > 0 && (
+                              <div className="space-y-2">
+                                {formState.tarifsControle.map(t => <TarifListItem key={t.id} item={t} onRemove={removeTarifControle} />)}
+                              </div>
+                            )}
                           </div>
                         )}
                       </div>
+
+                      {/* Détail PV */}
+                      <div className="border rounded-lg overflow-hidden">
+                        <button type="button"
+                          className="w-full flex items-center justify-between px-4 py-2.5 bg-rose-50 dark:bg-rose-900/10 hover:bg-rose-100 dark:hover:bg-rose-900/20 transition-colors text-left"
+                          onClick={() => setPvOpen(v => !v)}>
+                          <span className="flex items-center gap-2 text-sm font-medium text-rose-800 dark:text-rose-300">
+                            <AlertTriangle className="h-3.5 w-3.5" />
+                            Détail PV
+                            {formState.pvList.length > 0 && (
+                              <Badge variant="secondary" className="text-xs py-0 h-4">{formState.pvList.length}</Badge>
+                            )}
+                          </span>
+                          <ChevronDown className={cn('h-4 w-4 text-rose-600 transition-transform', pvOpen && 'rotate-180')} />
+                        </button>
+                        {pvOpen && (
+                          <div className="p-4 space-y-3 border-t">
+                            <TarifTypeToggle types={PV_TYPES} value={pvTarifType} onChange={setPvTarifType} />
+                            {pvTarifType === 'pv_autre' && (
+                              <Input placeholder="Précisez l'infraction..."
+                                value={formState.autrePvComment}
+                                onChange={(e) => setFormState(p => ({ ...p, autrePvComment: e.target.value }))} />
+                            )}
+                            <div className="flex gap-2">
+                              <Input type="number" min="0" step="0.01" placeholder="Montant (€)"
+                                value={pvTarifMontant} onChange={(e) => setPvTarifMontant(e.target.value)}
+                                className="flex-1"
+                                onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addPv())} />
+                              <Button type="button" onClick={addPv} disabled={!pvTarifMontant} variant="destructive">
+                                <Plus className="h-4 w-4 mr-1" />Ajouter
+                              </Button>
+                            </div>
+                            {formState.pvList.length > 0 && (
+                              <div className="space-y-2">
+                                {formState.pvList.map(t => <TarifListItem key={t.id} item={t} onRemove={removePv} />)}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    </>
+                  )}
+
+                  {!compactMode && <div className="border-t my-1" />}
+
+                  {/* ══ SECTION RI ═════════════════════════════════════════════ */}
+                  {(!compactMode || activeSection === 'ri') && (
+                    <>
+                    {!compactMode && (
+                      <SectionHeader icon={UserCheck} title="Relevé d'Identité"
+                        iconBg="bg-violet-100 dark:bg-violet-900/30"
+                        iconColor="text-violet-700 dark:text-violet-400" />
                     )}
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* ── RI card ──────────────────────────────────────────────────── */}
-              <Card className="border-0 shadow-sm overflow-hidden">
-                <div className="h-1 bg-gradient-to-r from-violet-400 to-purple-500" />
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base flex items-center gap-2">
-                    <div className="p-1.5 rounded-lg bg-violet-100 dark:bg-violet-900/30">
-                      <UserCheck className="h-3.5 w-3.5 text-violet-600 dark:text-violet-400" />
+                    <div className="grid grid-cols-2 gap-4 py-2">
+                      <CounterInput label="RI positive" sublabel="Identité vérifiée"
+                        value={formState.riPositive}
+                        onChange={(v) => setFormState(p => ({ ...p, riPositive: v }))}
+                        variant="success" />
+                      <CounterInput label="RI négative" sublabel="Identité non vérifiable"
+                        value={formState.riNegative}
+                        onChange={(v) => setFormState(p => ({ ...p, riNegative: v }))}
+                        variant="danger" />
                     </div>
-                    Relevés d'identité (RI)
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-2 gap-4">
-                    <CounterInput label="RI positive" sublabel="Identité vérifiée" value={riPositive} onChange={setRiPositive} variant="success" />
-                    <CounterInput label="RI négative" sublabel="Identité non vérifiable" value={riNegative} onChange={setRiNegative} variant="danger" />
+                    </>
+                  )}
+
+                  {!compactMode && <div className="border-t my-1" />}
+
+                  {/* ══ SECTION NOTES ══════════════════════════════════════════ */}
+                  {(!compactMode || activeSection === 'notes') && (
+                    <>
+                    {!compactMode && (
+                      <SectionHeader icon={MessageSquare} title="Notes"
+                        iconBg="bg-slate-100 dark:bg-slate-900/30"
+                        iconColor="text-slate-600 dark:text-slate-400" />
+                    )}
+                    <Textarea
+                      placeholder="Remarques, observations..."
+                      value={formState.notes}
+                      onChange={(e) => setFormState(p => ({ ...p, notes: e.target.value }))}
+                      rows={5}
+                    />
+                    </>
+                  )}
+
+                  {/* Save — toujours visible */}
+                  <div className="pt-4 border-t">
+                    <Button type="submit" className="w-full" size="lg" disabled={isCreating || isUpdating}>
+                      {(isCreating || isUpdating) ? (
+                        <><Loader2 className="mr-2 h-4 w-4 animate-spin" />{isEditMode ? 'Mise à jour...' : 'Enregistrement...'}</>
+                      ) : (
+                        <><Save className="mr-2 h-4 w-4" />{isEditMode ? 'Mettre à jour' : 'Enregistrer le contrôle'}</>
+                      )}
+                    </Button>
                   </div>
-                </CardContent>
-              </Card>
-
-              {/* ── Notes card ───────────────────────────────────────────────── */}
-              <Card className="border-0 shadow-sm overflow-hidden">
-                <div className="h-1 bg-gradient-to-r from-slate-300 to-gray-400" />
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base flex items-center gap-2">
-                    <div className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800/50">
-                      <MessageSquare className="h-3.5 w-3.5 text-slate-600 dark:text-slate-400" />
-                    </div>
-                    Commentaire
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <Textarea
-                    placeholder="Remarques, observations..."
-                    value={notes}
-                    onChange={(e) => setNotes(e.target.value)}
-                    rows={3}
-                  />
-                </CardContent>
-              </Card>
-
-              {/* ── Submit ───────────────────────────────────────────────────── */}
-              <Button type="submit" className="w-full" size="lg" disabled={isCreating || isUpdating}>
-                {(isCreating || isUpdating) ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    {isEditMode ? 'Mise à jour...' : 'Enregistrement...'}
-                  </>
-                ) : (
-                  <>
-                    <Save className="mr-2 h-4 w-4" />
-                    {isEditMode ? 'Mettre à jour' : 'Enregistrer le contrôle'}
-                  </>
-                )}
-              </Button>
-
-              {/* Progress overlay */}
-              <SubmitProgress isSubmitting={isCreating || isUpdating} />
-            </form>
+                  <SubmitProgress isSubmitting={isCreating || isUpdating} />
+                </form>
+              </CardContent>
+            </Card>
           </div>
-          </>
         )}
       </div>
 
-      {/* ── Dialog : Rejoindre un groupe ───────────────────────────────── */}
+      {/* ── BigPassengerCounterDialog ───────────────────────────────────────── */}
+      <BigPassengerCounterDialog
+        open={bigCounterOpen}
+        onOpenChange={setBigCounterOpen}
+        value={formState.nbPassagers}
+        onChange={(v) => setFormState(p => ({ ...p, nbPassagers: v }))}
+      />
+
+      {/* ── Dialog : Rejoindre un groupe ───────────────────────────────────── */}
       <Dialog open={joinGroupOpen} onOpenChange={setJoinGroupOpen}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Link2 className="h-4 w-4" />
-              Rejoindre un groupe
-            </DialogTitle>
-            <DialogDescription>
-              Entrez le nom de la gare partagée pour rejoindre le groupe de contrôle.
-            </DialogDescription>
+            <DialogTitle className="flex items-center gap-2"><Link2 className="h-4 w-4" />Rejoindre un groupe</DialogTitle>
+            <DialogDescription>Entrez le nom de la gare partagée pour rejoindre le groupe de contrôle.</DialogDescription>
           </DialogHeader>
           <div className="space-y-3 pt-1">
             <input
-              className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
               placeholder="Ex: Metz, Luxembourg…"
               value={joinInput}
               onChange={(e) => setJoinInput(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && joinInput.trim()) {
-                  setStationName(joinInput.trim());
-                  setJoinGroupOpen(false);
-                  setJoinInput('');
+                  setFormState(p => ({ ...p, stationName: joinInput.trim() }));
+                  setJoinGroupOpen(false); setJoinInput('');
                 }
               }}
             />
-            <Button
-              className="w-full"
-              disabled={!joinInput.trim()}
-              onClick={() => {
-                setStationName(joinInput.trim());
-                setJoinGroupOpen(false);
-                setJoinInput('');
-              }}
-            >
+            <Button className="w-full" disabled={!joinInput.trim()}
+              onClick={() => { setFormState(p => ({ ...p, stationName: joinInput.trim() })); setJoinGroupOpen(false); setJoinInput(''); }}>
               Rejoindre
             </Button>
           </div>
         </DialogContent>
       </Dialog>
 
-      {/* ── Dialog : Partager la session ───────────────────────────────── */}
+      {/* ── Dialog : Partager la session ───────────────────────────────────── */}
       <Dialog open={shareGroupOpen} onOpenChange={setShareGroupOpen}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Share2 className="h-4 w-4" />
-              Partager la session — {stationName}
-            </DialogTitle>
-            <DialogDescription>
-              Partagez ce QR code ou ce lien pour que d'autres agents rejoignent le contrôle en gare de {stationName}.
-            </DialogDescription>
+            <DialogTitle className="flex items-center gap-2"><Share2 className="h-4 w-4" />Partager — {formState.stationName}</DialogTitle>
+            <DialogDescription>Partagez ce lien pour que d'autres agents rejoignent le contrôle en gare de {formState.stationName}.</DialogDescription>
           </DialogHeader>
           {(() => {
-            const shareUrl = `${window.location.origin}/station?station=${encodeURIComponent(stationName)}`;
-            const smsBody  = encodeURIComponent(`Rejoins le contrôle en gare de ${stationName} : ${shareUrl}`);
-            const mailSub  = encodeURIComponent(`Contrôle gare ${stationName}`);
-            const mailBody = encodeURIComponent(`Rejoins le contrôle en gare de ${stationName} :\n${shareUrl}`);
+            const shareUrl = `${window.location.origin}/station?station=${encodeURIComponent(formState.stationName)}`;
             const qrSrc    = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(shareUrl)}`;
-
             return (
               <div className="space-y-4 pt-1">
-                {/* QR Code */}
                 <div className="flex justify-center">
-                  <img
-                    src={qrSrc}
-                    alt="QR Code"
-                    width={180}
-                    height={180}
-                    className="rounded-lg border"
-                  />
+                  <img src={qrSrc} alt="QR Code" width={180} height={180} className="rounded-lg border" />
                 </div>
-
-                {/* URL */}
                 <div className="flex items-center gap-2 bg-muted rounded-md px-3 py-2">
                   <span className="text-xs text-muted-foreground truncate flex-1">{shareUrl}</span>
                 </div>
-
-                {/* Actions */}
                 <div className="grid grid-cols-2 gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="gap-1.5"
-                    onClick={() => {
-                      navigator.clipboard.writeText(shareUrl).then(() => {
-                        setCopySuccess(true);
-                        setTimeout(() => setCopySuccess(false), 2000);
-                      });
-                    }}
-                  >
-                    <Copy className="h-3.5 w-3.5" />
-                    {copySuccess ? 'Copié !' : 'Copier'}
+                  <Button variant="outline" size="sm" className="gap-1.5"
+                    onClick={() => navigator.clipboard.writeText(shareUrl).then(() => { setCopySuccess(true); setTimeout(() => setCopySuccess(false), 2000); })}>
+                    <Copy className="h-3.5 w-3.5" />{copySuccess ? 'Copié !' : 'Copier'}
                   </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="gap-1.5"
-                    onClick={() => window.open(`sms:?body=${smsBody}`)}
-                  >
-                    <MessageSquare className="h-3.5 w-3.5" />
-                    SMS
+                  <Button variant="outline" size="sm" className="gap-1.5"
+                    onClick={() => window.open(`sms:?body=${encodeURIComponent(`Rejoins le contrôle en gare de ${formState.stationName} : ${shareUrl}`)}`)}>
+                    <MessageSquare className="h-3.5 w-3.5" />SMS
                   </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="gap-1.5"
-                    onClick={() => window.open(`mailto:?subject=${mailSub}&body=${mailBody}`)}
-                  >
-                    <Mail className="h-3.5 w-3.5" />
-                    Email
+                  <Button variant="outline" size="sm" className="gap-1.5"
+                    onClick={() => window.open(`mailto:?subject=${encodeURIComponent(`Contrôle gare ${formState.stationName}`)}&body=${encodeURIComponent(`Rejoins le contrôle en gare de ${formState.stationName} :\n${shareUrl}`)}`)}>
+                    <Mail className="h-3.5 w-3.5" />Email
                   </Button>
                   {typeof navigator !== 'undefined' && navigator.share && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="gap-1.5"
-                      onClick={() => navigator.share({ title: `Contrôle gare ${stationName}`, url: shareUrl })}
-                    >
-                      <Share2 className="h-3.5 w-3.5" />
-                      Partager
+                    <Button variant="outline" size="sm" className="gap-1.5"
+                      onClick={() => navigator.share({ title: `Contrôle gare ${formState.stationName}`, url: shareUrl })}>
+                      <Share2 className="h-3.5 w-3.5" />Partager
                     </Button>
                   )}
                 </div>
@@ -1157,7 +1121,6 @@ export default function StationControl() {
           })()}
         </DialogContent>
       </Dialog>
-
     </AppLayout>
   );
 }
