@@ -5,6 +5,13 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/),
 et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.10.76] - 2026-03-28
+
+### Modifié
+- **En gare** : "Départ origine" renommé en "Heure d'arrivée en gare" — auto-remplie via "Info SNCF" si le train passe par la gare saisie
+- **En gare** : suppression des cases "Sur-occupation" et "SUGE à bord" dans la section Infos
+- **En gare** : "Police à bord" renommé en "Police présente"
+
 ## [1.10.75] - 2026-03-28
 
 ### Modifié

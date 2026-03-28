@@ -350,7 +350,7 @@ export default function StationControl() {
     const sum = (arr: TarifEntry[]) => arr.reduce((s, t) => s + t.montant, 0);
 
     const notesParts: string[] = [];
-    if (formState.departureTime.trim())        notesParts.push(`[Départ: ${formState.departureTime.trim()}]`);
+    if (formState.departureTime.trim())        notesParts.push(`[Arr. gare: ${formState.departureTime.trim()}]`);
     if (formState.autreControleComment.trim()) notesParts.push(`[Tarif Autre] ${formState.autreControleComment.trim()}`);
     if (formState.autrePvComment.trim())       notesParts.push(`[PV Autre] ${formState.autrePvComment.trim()}`);
     if (formState.notes.trim())                notesParts.push(formState.notes.trim());
@@ -718,13 +718,23 @@ export default function StationControl() {
                               autoTriggerKey={autoTriggerKey}
                               selectedOrigin={formState.origin}
                               onResult={(info) => {
-                                setFormState(p => ({
-                                  ...p,
-                                  origin:      info.origin      || p.origin,
-                                  destination: info.destination || p.destination,
-                                  ...(info.departureTime          ? { controlTime:     info.departureTime }         : {}),
-                                  ...(info.stops[0]?.platform     ? { platformNumber:  info.stops[0].platform }     : {}),
-                                }));
+                                setFormState(p => {
+                                  // Chercher l'arrêt correspondant à la gare contrôlée
+                                  const stationLower = p.stationName.toLowerCase();
+                                  const matchingStop = info.stops.find(s =>
+                                    s.name.toLowerCase().includes(stationLower) ||
+                                    stationLower.includes(s.name.toLowerCase())
+                                  );
+                                  const arrivalAtStation = matchingStop?.arrivalTime || matchingStop?.departureTime;
+                                  return {
+                                    ...p,
+                                    origin:      info.origin      || p.origin,
+                                    destination: info.destination || p.destination,
+                                    ...(info.departureTime  ? { controlTime:     info.departureTime }  : {}),
+                                    ...(arrivalAtStation    ? { departureTime:   arrivalAtStation }     : {}),
+                                    ...(info.stops[0]?.platform ? { platformNumber: info.stops[0].platform } : {}),
+                                  };
+                                });
                               }}
                             />
                           </div>
@@ -754,9 +764,9 @@ export default function StationControl() {
                         </div>
                       </div>
 
-                      {/* Départ origine */}
+                      {/* Heure d'arrivée en gare */}
                       <div className="space-y-1.5">
-                        <Label className="flex items-center gap-1"><Clock className="h-3 w-3" />Départ origine</Label>
+                        <Label className="flex items-center gap-1"><Clock className="h-3 w-3" />Heure d'arrivée en gare</Label>
                         <Input type="time" value={formState.departureTime}
                           onChange={(e) => setFormState(p => ({ ...p, departureTime: e.target.value }))} />
                       </div>
@@ -765,9 +775,7 @@ export default function StationControl() {
                       <div className="flex items-center gap-4 flex-wrap pt-1">
                         {[
                           { key: 'isCancelled',     label: 'Train supprimé' },
-                          { key: 'isOvercrowded',   label: 'Sur-occupation' },
-                          { key: 'isPoliceOnBoard', label: 'Police à bord' },
-                          { key: 'isSugeOnBoard',   label: 'SUGE à bord' },
+                          { key: 'isPoliceOnBoard', label: 'Police présente' },
                         ].map(({ key, label }) => (
                           <label key={key} className="flex items-center gap-2 text-sm cursor-pointer select-none">
                             <Checkbox
