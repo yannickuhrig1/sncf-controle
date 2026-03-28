@@ -5,6 +5,11 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/),
 et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.10.67] - 2026-03-28
+
+### Ajouté
+- Infos › Départs/Arrivées : toggle "Par gare / Par numéro de train" — recherche un train par numéro + date, affiche l'itinéraire complet (arrêts, horaires, statut, occupation)
+
 ## [1.10.66] - 2026-03-28
 
 ### Ajouté

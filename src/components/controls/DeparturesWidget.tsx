@@ -10,11 +10,16 @@ import {
   RefreshCw,
   Search,
   XCircle,
+  Train,
+  Clock,
+  Users,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { useStationDepartures, DepartureEntry } from '@/hooks/useStationDepartures';
+import { useTrainLookup, formatDuration } from '@/hooks/useTrainLookup';
+import { format } from 'date-fns';
 import { toast } from 'sonner';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
@@ -102,9 +107,143 @@ function TrainHeader({ dep, mode }: { dep: DepartureEntry; mode: 'departures' | 
   );
 }
 
+// ── TrainNumberSearch ──────────────────────────────────────────────────────────
+
+function TrainNumberSearch() {
+  const today = format(new Date(), 'yyyy-MM-dd');
+  const [trainNumber, setTrainNumber] = useState('');
+  const [date,        setDate]        = useState(today);
+  const { lookup, isLoading, trainInfo, error } = useTrainLookup();
+
+  const handleSearch = () => {
+    if (!trainNumber.trim()) { toast.error('Saisissez un numéro de train'); return; }
+    lookup(trainNumber.trim(), date);
+  };
+
+  const OCCUPANCY_LABELS: Record<string, { label: string; cls: string }> = {
+    empty:                      { label: 'Vide',            cls: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300' },
+    many_seats_available:       { label: 'Peu chargé',      cls: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300' },
+    few_seats_available:        { label: 'Chargé',          cls: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300' },
+    standing_room_only:         { label: 'Très chargé',     cls: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300' },
+    crushed_standing_room_only: { label: 'Bondé',           cls: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300' },
+    not_accepting_passengers:   { label: 'Accès refusé',    cls: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300' },
+  };
+
+  return (
+    <div className="space-y-4">
+      {/* Inputs */}
+      <div className="flex gap-2">
+        <Input
+          placeholder="N° train (ex : 88524)"
+          value={trainNumber}
+          inputMode="numeric"
+          onChange={e => setTrainNumber(e.target.value)}
+          onKeyDown={e => e.key === 'Enter' && handleSearch()}
+          className="flex-1"
+        />
+        <Input
+          type="date"
+          value={date}
+          onChange={e => setDate(e.target.value)}
+          className="w-36 shrink-0"
+        />
+        <Button type="button" size="icon" onClick={handleSearch} disabled={isLoading || !trainNumber.trim()}>
+          {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
+        </Button>
+      </div>
+
+      {error && !isLoading && (
+        <p className="text-sm text-destructive text-center py-4">{error}</p>
+      )}
+
+      {trainInfo && (
+        <div className="space-y-3">
+          {/* En-tête train */}
+          <div className="flex items-center gap-2 flex-wrap p-3 bg-muted/40 rounded-xl border">
+            <Train className="h-4 w-4 text-muted-foreground shrink-0" />
+            {trainInfo.trainType && (
+              <Badge variant="outline" className="text-xs h-5 px-1.5 font-medium border-muted-foreground/30">
+                {trainInfo.trainType}
+              </Badge>
+            )}
+            <span className="font-semibold text-sm">{trainNumber.trim()}</span>
+            <span className="text-sm text-muted-foreground">{trainInfo.origin} → {trainInfo.destination}</span>
+            {/* Statut */}
+            {trainInfo.status === 'on_time'   && <Badge className="bg-green-100 text-green-700 border-0 text-xs"><CheckCircle2 className="h-3 w-3 mr-1" />À l'heure</Badge>}
+            {trainInfo.status === 'delayed'   && <Badge className="bg-amber-100 text-amber-700 border-0 text-xs"><AlertTriangle className="h-3 w-3 mr-1" />Retard {trainInfo.delayMinutes ? `+${trainInfo.delayMinutes} min` : ''}</Badge>}
+            {trainInfo.status === 'cancelled' && <Badge className="bg-red-500 text-white border-0 text-xs"><XCircle className="h-3 w-3 mr-1" />Supprimé</Badge>}
+          </div>
+
+          {/* Méta : durée, occupation */}
+          <div className="flex items-center gap-3 flex-wrap text-xs text-muted-foreground px-1">
+            {trainInfo.journeyDuration && (
+              <span className="flex items-center gap-1">
+                <Clock className="h-3 w-3" />
+                Durée : {formatDuration(trainInfo.journeyDuration)}
+              </span>
+            )}
+            {trainInfo.occupancy && (() => {
+              const occ = OCCUPANCY_LABELS[trainInfo.occupancy!];
+              return occ ? (
+                <span className={`flex items-center gap-1 px-1.5 py-0.5 rounded-md font-medium ${occ.cls}`}>
+                  <Users className="h-3 w-3" />{occ.label}
+                </span>
+              ) : (
+                <span className="flex items-center gap-1"><Users className="h-3 w-3" />{trainInfo.occupancy}</span>
+              );
+            })()}
+            {trainInfo.disruptionReason && (
+              <span className="text-amber-600 dark:text-amber-400 italic">{trainInfo.disruptionReason}</span>
+            )}
+          </div>
+
+          {/* Liste des arrêts */}
+          <div>
+            {trainInfo.stops.map((stop, i) => (
+              <div key={i} className="flex items-stretch gap-3">
+                <div className="flex flex-col items-center w-5 shrink-0">
+                  <div className={`w-3 h-3 rounded-full border-2 mt-[14px] shrink-0 ${
+                    i === 0 || i === trainInfo.stops.length - 1
+                      ? 'border-primary bg-primary'
+                      : 'border-muted-foreground/50 bg-background'
+                  }`} />
+                  {i < trainInfo.stops.length - 1 && <div className="flex-1 w-0.5 bg-border" />}
+                </div>
+                <div className="flex-1 pb-3 pt-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className={`text-sm leading-tight ${
+                      i === 0 || i === trainInfo.stops.length - 1 ? 'font-semibold' : 'text-muted-foreground'
+                    }`}>
+                      {stop.name}
+                    </span>
+                    <div className="flex items-center gap-2 shrink-0">
+                      {stop.platform && (
+                        <span className="text-xs text-muted-foreground flex items-center gap-0.5">
+                          <MapPin className="h-3 w-3" />V{stop.platform}
+                        </span>
+                      )}
+                      <span className="text-sm font-mono tabular-nums text-muted-foreground">
+                        {stop.departureTime || stop.arrivalTime}
+                      </span>
+                      {stop.isDelayed && stop.delayMinutes && (
+                        <span className="text-xs font-bold text-amber-600">+{stop.delayMinutes} min</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── DeparturesWidget ───────────────────────────────────────────────────────────
 
 export function DeparturesWidget() {
+  const [searchMode,       setSearchMode]       = useState<'station' | 'train'>('station');
   const [station,          setStation]          = useState('');
   const [mode,             setMode]             = useState<'departures' | 'arrivals'>('departures');
   const [selected,         setSelected]         = useState<DepartureEntry | null>(null);
@@ -258,6 +397,23 @@ export function DeparturesWidget() {
   /* ── Vue liste ──────────────────────────────────────────────────────────── */
   return (
     <div className="space-y-4">
+      {/* Toggle mode de recherche */}
+      <div className="flex gap-1 bg-muted/50 rounded-lg p-1">
+        {(['station', 'train'] as const).map(m => (
+          <button key={m} type="button" onClick={() => setSearchMode(m)}
+            className={`flex-1 text-sm py-1.5 rounded-md transition-colors font-medium flex items-center justify-center gap-1.5 ${
+              searchMode === m ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'
+            }`}>
+            {m === 'station' ? <><MapPin className="h-3.5 w-3.5" />Par gare</> : <><Train className="h-3.5 w-3.5" />Par numéro</>}
+          </button>
+        ))}
+      </div>
+
+      {/* Mode recherche par numéro de train */}
+      {searchMode === 'train' && <TrainNumberSearch />}
+
+      {/* Mode recherche par gare */}
+      {searchMode === 'station' && <>
       {/* Recherche */}
       <div className="space-y-2">
         <div className="flex gap-2">
@@ -384,6 +540,7 @@ export function DeparturesWidget() {
           );
         })}
       </div>
+      </>}
     </div>
   );
 }
