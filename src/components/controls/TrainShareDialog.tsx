@@ -103,6 +103,7 @@ export function TrainShareDialog({
           if (ok) {
             setJoinCode('');
             toast.success('Session rejointe !');
+            setTimeout(() => window.location.reload(), 500);
           }
           return;
         }
@@ -125,6 +126,7 @@ export function TrainShareDialog({
     if (ok) {
       setJoinCode('');
       toast.success('Session rejointe !');
+      setTimeout(() => window.location.reload(), 500);
     }
   };
 
