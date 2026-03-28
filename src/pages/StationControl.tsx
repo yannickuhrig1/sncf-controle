@@ -88,6 +88,7 @@ interface FormState {
   isSugeOnBoard: boolean;
   autreControleComment: string;
   autrePvComment: string;
+  quickTrains: string[];
 }
 
 function makeInitialFormState(): FormState {
@@ -104,6 +105,7 @@ function makeInitialFormState(): FormState {
     notes: '', isCancelled: false, isOvercrowded: false,
     isPoliceOnBoard: false, isSugeOnBoard: false,
     autreControleComment: '', autrePvComment: '',
+    quickTrains: [],
   };
 }
 
@@ -148,6 +150,7 @@ export default function StationControl() {
   const [preparedArrivals,   setPreparedArrivals]   = useState<PreparedTrain[]>([]);
   const [preparedDepartures, setPreparedDepartures] = useState<PreparedTrain[]>([]);
   const [preparedActiveTab,  setPreparedActiveTab]  = useState<'arrivals' | 'departures'>('arrivals');
+  const [quickTrainInput,    setQuickTrainInput]    = useState('');
   const [shareGroupOpen,     setShareGroupOpen]     = useState(false);
   const [joinGroupOpen,      setJoinGroupOpen]      = useState(false);
   const [joinInput,          setJoinInput]          = useState('');
@@ -584,6 +587,85 @@ export default function StationControl() {
                           </div>
                         </div>
                       )}
+
+                      {/* Trains rapides du service */}
+                      <div className="space-y-2">
+                        <Label className="flex items-center gap-1.5">
+                          <Train className="h-3.5 w-3.5 text-muted-foreground" />
+                          Trains du service
+                          <span className="text-xs text-muted-foreground font-normal">(cliquer pour sélectionner)</span>
+                        </Label>
+                        <div className="flex gap-2">
+                          <Input
+                            placeholder="Ex: 88521, 88524, 837311"
+                            value={quickTrainInput}
+                            onChange={(e) => setQuickTrainInput(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                e.preventDefault();
+                                const nums = quickTrainInput.split(/[\s,;]+/).map(s => s.replace(/\D/g, '')).filter(Boolean);
+                                if (nums.length === 0) return;
+                                setFormState(p => ({
+                                  ...p,
+                                  quickTrains: [...p.quickTrains, ...nums.filter(n => !p.quickTrains.includes(n))],
+                                }));
+                                setQuickTrainInput('');
+                              }
+                            }}
+                            className="flex-1 h-8 text-sm"
+                          />
+                          <Button
+                            type="button"
+                            size="sm"
+                            className="h-8 shrink-0"
+                            disabled={!quickTrainInput.trim()}
+                            onClick={() => {
+                              const nums = quickTrainInput.split(/[\s,;]+/).map(s => s.replace(/\D/g, '')).filter(Boolean);
+                              if (nums.length === 0) return;
+                              setFormState(p => ({
+                                ...p,
+                                quickTrains: [...p.quickTrains, ...nums.filter(n => !p.quickTrains.includes(n))],
+                              }));
+                              setQuickTrainInput('');
+                            }}
+                          >
+                            <Plus className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
+                        {formState.quickTrains.length > 0 && (
+                          <div className="flex flex-wrap gap-1.5">
+                            {formState.quickTrains.map((num) => (
+                              <div
+                                key={num}
+                                className={cn(
+                                  'inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-medium transition-colors cursor-pointer select-none',
+                                  formState.trainNumber === num
+                                    ? 'bg-primary text-primary-foreground border-primary'
+                                    : 'bg-muted text-muted-foreground border-border hover:bg-accent hover:text-accent-foreground'
+                                )}
+                                onClick={() => {
+                                  setFormState(p => ({ ...p, trainNumber: num }));
+                                  setAutoTriggerKey(k => k + 1);
+                                }}
+                              >
+                                <Train className="h-3 w-3 shrink-0" />
+                                {num}
+                                <button
+                                  type="button"
+                                  className="ml-0.5 rounded-full hover:bg-destructive/20 hover:text-destructive p-0.5 transition-colors"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setFormState(p => ({ ...p, quickTrains: p.quickTrains.filter(t => t !== num) }));
+                                  }}
+                                  aria-label={`Retirer ${num}`}
+                                >
+                                  <X className="h-2.5 w-2.5" />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
 
                       {/* Gare */}
                       <div className="space-y-1.5">

@@ -5,6 +5,11 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/),
 et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.10.72] - 2026-03-28
+
+### Ajouté
+- En gare › section Infos : **trains du service** — saisie rapide de numéros de trains (séparés par virgule ou espace), chips cliquables pour charger un train dans le formulaire, suppression individuelle, sélection active mise en évidence, persistés dans le brouillon
+
 ## [1.10.71] - 2026-03-28
 
 ### Amélioré — En gare (refonte UX)
