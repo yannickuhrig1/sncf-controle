@@ -5,6 +5,14 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/),
 et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.10.73] - 2026-03-28
+
+### Ajouté
+- En gare › **toggle vue compacte / étendue** : icône Layers (compact) et LayoutList (étendu) dans la barre d'outils
+  - **Vue compacte** (défaut) : navigation par sections avec pills colorées, une seule section visible à la fois
+  - **Vue étendue** : toutes les sections affichées simultanément avec des en-têtes colorés (Infos, Voyageurs, Infractions, RI, Notes)
+- Correction : `loadControlData` préserve désormais `quickTrains` lors du chargement d'un contrôle en édition
+
 ## [1.10.72] - 2026-03-28
 
 ### Ajouté

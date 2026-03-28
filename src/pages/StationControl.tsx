@@ -24,7 +24,7 @@ import { LastSyncIndicator } from '@/components/controls/LastSyncIndicator';
 import { OfflineIndicator } from '@/components/controls/OfflineIndicator';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
@@ -38,7 +38,7 @@ import {
   Loader2, Building2, ArrowLeft, Save, ArrowRight, X, Clock, Calendar,
   ArrowDownToLine, ArrowUpFromLine, Users, UserCheck, MessageSquare,
   FileText, AlertTriangle, Plus, Ticket, Train, Share2, Copy, Mail,
-  Link2, ChevronDown,
+  Link2, ChevronDown, Layers, LayoutList,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -111,6 +111,50 @@ function makeInitialFormState(): FormState {
 
 const INITIAL_FORM_STATE = makeInitialFormState();
 
+// ── SectionCard (extended mode wrapper) ───────────────────────────────────────
+
+function SectionCard({ title, icon: Icon, gradient, iconBg, iconColor, children }: {
+  title: string;
+  icon: React.ComponentType<{ className?: string }>;
+  gradient: string;
+  iconBg: string;
+  iconColor: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <Card className="border-0 shadow-sm overflow-hidden">
+      <div className={`h-1 bg-gradient-to-r ${gradient}`} />
+      <CardHeader className="pb-3">
+        <CardTitle className="text-base flex items-center gap-2">
+          <div className={`p-1.5 rounded-lg ${iconBg}`}>
+            <Icon className={`h-3.5 w-3.5 ${iconColor}`} />
+          </div>
+          {title}
+        </CardTitle>
+      </CardHeader>
+      <CardContent>{children}</CardContent>
+    </Card>
+  );
+}
+
+// ── SectionHeader (extended mode title) ───────────────────────────────────────
+
+function SectionHeader({ icon: Icon, title, iconBg, iconColor }: {
+  icon: React.ComponentType<{ className?: string }>;
+  title: string;
+  iconBg: string;
+  iconColor: string;
+}) {
+  return (
+    <div className="flex items-center gap-2 pb-2 border-b">
+      <div className={`p-1.5 rounded-lg ${iconBg}`}>
+        <Icon className={`h-3.5 w-3.5 ${iconColor}`} />
+      </div>
+      <span className="font-semibold text-sm">{title}</span>
+    </div>
+  );
+}
+
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export default function StationControl() {
@@ -132,6 +176,7 @@ export default function StationControl() {
   const [isEditMode,      setIsEditMode]      = useState(false);
   const [isDuplicateMode, setIsDuplicateMode] = useState(false);
   const [activeSection,   setActiveSection]   = useState<ActiveSection>('info');
+  const [compactMode,     setCompactMode]     = useState(true);
 
   // ── Form state (persisted) ─────────────────────────────────────────────────
   const [formState, setFormState] = useState<FormState>(INITIAL_FORM_STATE);
@@ -252,6 +297,7 @@ export default function StationControl() {
       isSugeOnBoard:   (data as any).is_suge_on_board   ?? false,
       autreControleComment: '',
       autrePvComment:       '',
+      quickTrains:          formState.quickTrains,
     });
   };
 
@@ -435,9 +481,10 @@ export default function StationControl() {
           </div>
         </div>
 
-        {/* Mode toggle — compact ToggleGroup */}
-        {!isEditMode && (
-          <div className="flex justify-center">
+        {/* Toolbar : mode + vue */}
+        <div className="flex items-center justify-between gap-2 flex-wrap">
+          {/* Débarquement / Embarquement */}
+          {!isEditMode && (
             <ToggleGroup
               type="single"
               value={controlMode}
@@ -455,8 +502,24 @@ export default function StationControl() {
                 Embarquement
               </ToggleGroupItem>
             </ToggleGroup>
-          </div>
-        )}
+          )}
+          {/* Compact / Étendu */}
+          <ToggleGroup
+            type="single"
+            value={compactMode ? 'compact' : 'extended'}
+            onValueChange={(v) => v && setCompactMode(v === 'compact')}
+            className="border rounded-md ml-auto"
+          >
+            <ToggleGroupItem value="extended" size="sm" className="gap-1.5 px-3">
+              <LayoutList className="h-4 w-4" />
+              <span className="hidden sm:inline text-xs">Étendu</span>
+            </ToggleGroupItem>
+            <ToggleGroupItem value="compact" size="sm" className="gap-1.5 px-3">
+              <Layers className="h-4 w-4" />
+              <span className="hidden sm:inline text-xs">Compact</span>
+            </ToggleGroupItem>
+          </ToggleGroup>
+        </div>
 
         {/* ── Embarquement mode ── */}
         {controlMode === 'embarkment' && !isEditMode ? (
@@ -501,36 +564,44 @@ export default function StationControl() {
             {/* ── Card sections ── */}
             <Card className="border-0 shadow-sm overflow-hidden">
               <div className="h-1 bg-gradient-to-r from-cyan-400 via-teal-400 to-violet-500" />
-              <CardHeader className="pb-3">
-                {/* Section nav */}
-                <div className="flex flex-wrap gap-1.5">
-                  {SECTIONS.map(({ key, icon: Icon, label, inactive, active }) => (
-                    <Button key={key} type="button" variant="outline" size="sm"
-                      className={cn('gap-1 text-xs border transition-colors', activeSection === key ? active : inactive)}
-                      onClick={() => setActiveSection(key)}>
-                      <Icon className="h-3.5 w-3.5" />
-                      {label}
-                      {/* Badges sur les sections ayant des données */}
-                      {key === 'infractions' && (fraudStats.tarifsControleCount + fraudStats.pvCount) > 0 && (
-                        <span className="ml-0.5 bg-white/30 text-inherit rounded-full px-1 text-[10px] font-bold">
-                          {fraudStats.tarifsControleCount + fraudStats.pvCount}
-                        </span>
-                      )}
-                      {key === 'voyageurs' && formState.nbPassagers > 0 && (
-                        <span className="ml-0.5 bg-white/30 text-inherit rounded-full px-1 text-[10px] font-bold">
-                          {formState.nbPassagers}
-                        </span>
-                      )}
-                    </Button>
-                  ))}
-                </div>
-              </CardHeader>
+              {compactMode && (
+                <CardHeader className="pb-3">
+                  {/* Section nav */}
+                  <div className="flex flex-wrap gap-1.5">
+                    {SECTIONS.map(({ key, icon: Icon, label, inactive, active }) => (
+                      <Button key={key} type="button" variant="outline" size="sm"
+                        className={cn('gap-1 text-xs border transition-colors', activeSection === key ? active : inactive)}
+                        onClick={() => setActiveSection(key)}>
+                        <Icon className="h-3.5 w-3.5" />
+                        {label}
+                        {/* Badges sur les sections ayant des données */}
+                        {key === 'infractions' && (fraudStats.tarifsControleCount + fraudStats.pvCount) > 0 && (
+                          <span className="ml-0.5 bg-white/30 text-inherit rounded-full px-1 text-[10px] font-bold">
+                            {fraudStats.tarifsControleCount + fraudStats.pvCount}
+                          </span>
+                        )}
+                        {key === 'voyageurs' && formState.nbPassagers > 0 && (
+                          <span className="ml-0.5 bg-white/30 text-inherit rounded-full px-1 text-[10px] font-bold">
+                            {formState.nbPassagers}
+                          </span>
+                        )}
+                      </Button>
+                    ))}
+                  </div>
+                </CardHeader>
+              )}
 
               <CardContent>
                 <form onSubmit={handleSubmit} className="space-y-4">
 
                   {/* ══ SECTION INFOS ══════════════════════════════════════════ */}
-                  {activeSection === 'info' && (
+                  {(!compactMode || activeSection === 'info') && (
+                    <>
+                    {!compactMode && (
+                      <SectionHeader icon={Building2} title="Infos du contrôle"
+                        iconBg="bg-cyan-100 dark:bg-cyan-900/30"
+                        iconColor="text-cyan-700 dark:text-cyan-400" />
+                    )}
                     <div className="space-y-4">
 
                       {/* Mission preparation */}
@@ -767,10 +838,19 @@ export default function StationControl() {
                         ))}
                       </div>
                     </div>
+                    </>
                   )}
 
+                  {!compactMode && <div className="border-t my-1" />}
+
                   {/* ══ SECTION VOYAGEURS ══════════════════════════════════════ */}
-                  {activeSection === 'voyageurs' && (
+                  {(!compactMode || activeSection === 'voyageurs') && (
+                    <>
+                    {!compactMode && (
+                      <SectionHeader icon={Users} title="Voyageurs"
+                        iconBg="bg-teal-100 dark:bg-teal-900/30"
+                        iconColor="text-teal-700 dark:text-teal-400" />
+                    )}
                     <div className="flex justify-center py-4">
                       <div className="relative">
                         <CounterInput
@@ -789,10 +869,19 @@ export default function StationControl() {
                         </button>
                       </div>
                     </div>
+                    </>
                   )}
 
+                  {!compactMode && <div className="border-t my-1" />}
+
                   {/* ══ SECTION INFRACTIONS ════════════════════════════════════ */}
-                  {activeSection === 'infractions' && (
+                  {(!compactMode || activeSection === 'infractions') && (
+                    <>
+                    {!compactMode && (
+                      <SectionHeader icon={Ticket} title="Infractions"
+                        iconBg="bg-amber-100 dark:bg-amber-900/30"
+                        iconColor="text-amber-700 dark:text-amber-400" />
+                    )}
                     <div className="space-y-4">
                       {/* Quick counters */}
                       <div className="grid grid-cols-2 gap-4">
@@ -890,10 +979,19 @@ export default function StationControl() {
                         )}
                       </div>
                     </div>
+                    </>
                   )}
 
+                  {!compactMode && <div className="border-t my-1" />}
+
                   {/* ══ SECTION RI ═════════════════════════════════════════════ */}
-                  {activeSection === 'ri' && (
+                  {(!compactMode || activeSection === 'ri') && (
+                    <>
+                    {!compactMode && (
+                      <SectionHeader icon={UserCheck} title="Relevé d'Identité"
+                        iconBg="bg-violet-100 dark:bg-violet-900/30"
+                        iconColor="text-violet-700 dark:text-violet-400" />
+                    )}
                     <div className="grid grid-cols-2 gap-4 py-2">
                       <CounterInput label="RI positive" sublabel="Identité vérifiée"
                         value={formState.riPositive}
@@ -904,16 +1002,26 @@ export default function StationControl() {
                         onChange={(v) => setFormState(p => ({ ...p, riNegative: v }))}
                         variant="danger" />
                     </div>
+                    </>
                   )}
 
+                  {!compactMode && <div className="border-t my-1" />}
+
                   {/* ══ SECTION NOTES ══════════════════════════════════════════ */}
-                  {activeSection === 'notes' && (
+                  {(!compactMode || activeSection === 'notes') && (
+                    <>
+                    {!compactMode && (
+                      <SectionHeader icon={MessageSquare} title="Notes"
+                        iconBg="bg-slate-100 dark:bg-slate-900/30"
+                        iconColor="text-slate-600 dark:text-slate-400" />
+                    )}
                     <Textarea
                       placeholder="Remarques, observations..."
                       value={formState.notes}
                       onChange={(e) => setFormState(p => ({ ...p, notes: e.target.value }))}
                       rows={5}
                     />
+                    </>
                   )}
 
                   {/* Save — toujours visible */}
