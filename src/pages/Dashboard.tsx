@@ -153,6 +153,15 @@ function buildDashboardText({ stats, detailedStats, periodLabel, dateRangeLabel,
     t += `\n`;
   }
 
+  if (stats.policeOnBoardCount > 0 || stats.sugeOnBoardCount > 0) {
+    t += `${sep}\n`;
+    t += `  SÉCURITÉ À BORD\n`;
+    t += `${thin}\n`;
+    if (stats.policeOnBoardCount > 0) t += `   ▸  Police à bord           ${stats.policeOnBoardCount}\n`;
+    if (stats.sugeOnBoardCount > 0)   t += `   ▸  SUGE à bord             ${stats.sugeOnBoardCount}\n`;
+    t += `\n`;
+  }
+
   t += `${sep}\n`;
   t += `  Généré le ${generatedAt}  ·  SNCF Contrôles\n`;
   t += `${sep}\n`;
@@ -336,6 +345,14 @@ footer{text-align:center;color:#9ca3af;font-size:.68rem;padding:1.5rem;border-to
           <div class="ri-neg"><div class="ri-n">${stats.riNegative}</div><div class="ri-l">RI Négatif</div></div>
         </div>
       </div>
+      ${(stats.policeOnBoardCount > 0 || stats.sugeOnBoardCount > 0) ? `
+      <div class="card">
+        <div class="accent" style="background:linear-gradient(90deg,#60a5fa,#2563eb)"></div>
+        <div class="ch"><span class="ct">Sécurité à bord</span><span class="badge bb">${stats.policeOnBoardCount + stats.sugeOnBoardCount}</span></div>
+        ${stats.policeOnBoardCount > 0 ? `<div class="sr"><span class="sl">Police à bord</span><span class="sv">${stats.policeOnBoardCount}</span></div>` : ''}
+        ${stats.sugeOnBoardCount > 0 ? `<div class="sr"><span class="sl">SUGE à bord</span><span class="sv">${stats.sugeOnBoardCount}</span></div>` : ''}
+        <div class="pb"></div>
+      </div>` : ''}
     </div>
   </div>
   ` : ''}
