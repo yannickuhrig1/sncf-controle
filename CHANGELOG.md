@@ -5,6 +5,11 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/),
 et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.10.68] - 2026-03-28
+
+### Corrigé
+- Bouton Schéma (À bord) : si pas de composition dispo (TER, etc.), affiche l'itinéraire complet en fallback (arrêts + horaires) via l'API SNCF lookup
+
 ## [1.10.67] - 2026-03-28
 
 ### Ajouté

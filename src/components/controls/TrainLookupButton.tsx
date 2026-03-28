@@ -233,6 +233,7 @@ export function TrainLookupButton({ trainNumber, date, onResult, onAdd, autoTrig
         onOpenChange={setSchemaOpen}
         trainNumber={trainNumber}
         date={date}
+        trainInfo={trainInfo}
       />
     </div>
   );
