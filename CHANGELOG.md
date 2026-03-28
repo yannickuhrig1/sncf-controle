@@ -5,6 +5,12 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/),
 et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.10.75] - 2026-03-28
+
+### Modifié
+- **En gare** : suppression du bloc "Préparation de mission" pour simplifier l'interface
+- **En gare** : Gare et Date/Heure remontés avant "Trains du service" — ordre logique : où/quand → liste trains → détail train
+
 ## [1.10.74] - 2026-03-28
 
 ### Ajouté

@@ -12,8 +12,6 @@ import { AppLayout } from '@/components/layout/AppLayout';
 import { TarifTypeToggle } from '@/components/controls/TarifTypeToggle';
 import { TarifListItem, TarifEntry } from '@/components/controls/TarifListItem';
 import { CounterInput } from '@/components/controls/CounterInput';
-import { MissionPreparation, PreparedTrain } from '@/components/controls/MissionPreparation';
-import { TrainTileSelector } from '@/components/controls/TrainTileSelector';
 import { EmbarkmentControl } from '@/components/controls/EmbarkmentControl';
 import { FraudSummary } from '@/components/controls/FraudSummary';
 import { SubmitProgress } from '@/components/controls/SubmitProgress';
@@ -183,7 +181,6 @@ export default function StationControl() {
   const { clearDraft } = useFormPersistence('station-control', formState, setFormState, INITIAL_FORM_STATE);
 
   // ── UX states (not persisted) ──────────────────────────────────────────────
-  const [selectedTrainId,    setSelectedTrainId]    = useState<string | undefined>();
   const [autoTriggerKey,     setAutoTriggerKey]     = useState(0);
   const [bigCounterOpen,     setBigCounterOpen]     = useState(false);
   const [tarifsOpen,         setTarifsOpen]         = useState(false);
@@ -192,9 +189,6 @@ export default function StationControl() {
   const [controleTarifMontant, setControleTarifMontant] = useState('');
   const [pvTarifType,        setPvTarifType]        = useState('pv_stt100');
   const [pvTarifMontant,     setPvTarifMontant]     = useState('');
-  const [preparedArrivals,   setPreparedArrivals]   = useState<PreparedTrain[]>([]);
-  const [preparedDepartures, setPreparedDepartures] = useState<PreparedTrain[]>([]);
-  const [preparedActiveTab,  setPreparedActiveTab]  = useState<'arrivals' | 'departures'>('arrivals');
   const [quickTrainInput,    setQuickTrainInput]    = useState('');
   const [shareGroupOpen,     setShareGroupOpen]     = useState(false);
   const [joinGroupOpen,      setJoinGroupOpen]      = useState(false);
@@ -604,60 +598,29 @@ export default function StationControl() {
                     )}
                     <div className="space-y-4">
 
-                      {/* Mission preparation */}
-                      {!isEditMode && (
-                        <MissionPreparation
-                          stationName={formState.stationName}
-                          selectedTrainId={selectedTrainId}
-                          showTiles={false}
-                          showTilesInCard={false}
-                          onTrainsChange={(arrivals, departures, tab) => {
-                            setPreparedArrivals(arrivals);
-                            setPreparedDepartures(departures);
-                            setPreparedActiveTab(tab);
-                          }}
-                          onSelectTrain={(train: PreparedTrain, type: 'arrival' | 'departure') => {
-                            setSelectedTrainId(train.id);
-                            setFormState(p => ({
-                              ...p,
-                              trainNumber:  train.trainNumber || '',
-                              origin:       train.origin || '',
-                              destination:  train.destination || (type === 'arrival' ? p.stationName : ''),
-                              ...(train.time ? { controlTime: train.time, departureTime: train.time } : {}),
-                            }));
-                            setAutoTriggerKey(k => k + 1);
-                          }}
+                      {/* Gare */}
+                      <div className="space-y-1.5">
+                        <Label>Gare *</Label>
+                        <StationAutocomplete
+                          value={formState.stationName}
+                          onChange={(v) => setFormState(p => ({ ...p, stationName: v }))}
+                          placeholder="Rechercher une gare..."
                         />
-                      )}
+                      </div>
 
-                      {/* Trains préparés */}
-                      {!isEditMode && (preparedArrivals.length > 0 || preparedDepartures.length > 0) && (
-                        <div className="rounded-lg border overflow-hidden">
-                          <div className="h-0.5 bg-gradient-to-r from-blue-400 to-indigo-500" />
-                          <div className="p-3">
-                            <p className="text-xs text-muted-foreground mb-2 flex items-center gap-1.5">
-                              <Train className="h-3.5 w-3.5" />
-                              Trains préparés — cliquer pour sélectionner
-                            </p>
-                            <TrainTileSelector
-                              trains={preparedActiveTab === 'arrivals' ? preparedArrivals : preparedDepartures}
-                              selectedId={selectedTrainId}
-                              onSelect={(train) => {
-                                setSelectedTrainId(train.id);
-                                setFormState(p => ({
-                                  ...p,
-                                  trainNumber:  train.trainNumber || '',
-                                  origin:       train.origin || '',
-                                  destination:  train.destination || (preparedActiveTab === 'arrivals' ? p.stationName : ''),
-                                  ...(train.time ? { controlTime: train.time, departureTime: train.time } : {}),
-                                }));
-                                setAutoTriggerKey(k => k + 1);
-                              }}
-                              onRemove={() => {}}
-                            />
-                          </div>
+                      {/* Date + Heure */}
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1.5">
+                          <Label className="flex items-center gap-1"><Calendar className="h-3 w-3" />Date</Label>
+                          <Input type="date" value={formState.controlDate}
+                            onChange={(e) => setFormState(p => ({ ...p, controlDate: e.target.value }))} />
                         </div>
-                      )}
+                        <div className="space-y-1.5">
+                          <Label className="flex items-center gap-1"><Clock className="h-3 w-3" />Heure</Label>
+                          <Input type="time" value={formState.controlTime}
+                            onChange={(e) => setFormState(p => ({ ...p, controlTime: e.target.value }))} />
+                        </div>
+                      </div>
 
                       {/* Trains rapides du service */}
                       <div className="space-y-2">
@@ -738,16 +701,6 @@ export default function StationControl() {
                         )}
                       </div>
 
-                      {/* Gare */}
-                      <div className="space-y-1.5">
-                        <Label>Gare *</Label>
-                        <StationAutocomplete
-                          value={formState.stationName}
-                          onChange={(v) => setFormState(p => ({ ...p, stationName: v }))}
-                          placeholder="Rechercher une gare..."
-                        />
-                      </div>
-
                       {/* N° Train + Quai */}
                       <div className="grid grid-cols-2 gap-3">
                         <div className="space-y-1.5">
@@ -801,23 +754,11 @@ export default function StationControl() {
                         </div>
                       </div>
 
-                      {/* Départ origine + Date + Heure */}
-                      <div className="grid grid-cols-3 gap-3">
-                        <div className="space-y-1.5">
-                          <Label className="flex items-center gap-1"><Clock className="h-3 w-3" />Départ origine</Label>
-                          <Input type="time" value={formState.departureTime}
-                            onChange={(e) => setFormState(p => ({ ...p, departureTime: e.target.value }))} />
-                        </div>
-                        <div className="space-y-1.5">
-                          <Label className="flex items-center gap-1"><Calendar className="h-3 w-3" />Date</Label>
-                          <Input type="date" value={formState.controlDate}
-                            onChange={(e) => setFormState(p => ({ ...p, controlDate: e.target.value }))} />
-                        </div>
-                        <div className="space-y-1.5">
-                          <Label className="flex items-center gap-1"><Clock className="h-3 w-3" />Heure</Label>
-                          <Input type="time" value={formState.controlTime}
-                            onChange={(e) => setFormState(p => ({ ...p, controlTime: e.target.value }))} />
-                        </div>
+                      {/* Départ origine */}
+                      <div className="space-y-1.5">
+                        <Label className="flex items-center gap-1"><Clock className="h-3 w-3" />Départ origine</Label>
+                        <Input type="time" value={formState.departureTime}
+                          onChange={(e) => setFormState(p => ({ ...p, departureTime: e.target.value }))} />
                       </div>
 
                       {/* Checkboxes */}
