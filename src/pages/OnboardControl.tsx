@@ -192,6 +192,9 @@ export default function OnboardControl() {
   // Train stops from SNCF API lookup
   const [trainStops, setTrainStops] = useState<import('@/hooks/useTrainLookup').TrainStop[]>([]);
 
+  // Clé pour déclencher automatiquement Info SNCF lors du chargement d'un train sauvegardé
+  const [autoTriggerKey, setAutoTriggerKey] = useState(0);
+
   // Grand compteur voyageurs
   const [bigCounterOpen, setBigCounterOpen] = useState(false);
 
@@ -247,20 +250,27 @@ export default function OnboardControl() {
   };
 
   const handleLoadDailyTrain = (t: DailyTrain) => {
-    const override = getTrainOverrides(formState.controlDate)[t.trainNumber];
+    const override   = getTrainOverrides(formState.controlDate)[t.trainNumber];
+    const originName = override?.origin ?? t.trainInfo?.origin;
+    // Trouver l'heure de départ depuis la gare d'origine sélectionnée (pas forcément le 1er arrêt)
+    const originStop  = t.trainInfo?.stops?.find(s => s.name === originName);
+    const controlTime = originStop?.departureTime ?? t.trainInfo?.departureTime;
+
     setFormState(p => ({
       ...p,
       trainNumber: t.trainNumber,
       ...(t.trainInfo ? {
-        origin:      override?.origin      ?? t.trainInfo.origin,
+        origin:      originName ?? t.trainInfo.origin,
         destination: override?.destination ?? t.trainInfo.destination,
-        controlTime: t.trainInfo.departureTime,
+        ...(controlTime ? { controlTime } : {}),
       } : override ? {
         origin:      override.origin,
         destination: override.destination,
       } : {}),
     }));
     if (t.trainInfo?.stops?.length) setTrainStops(t.trainInfo.stops);
+    // Déclencher Info SNCF automatiquement pour avoir les mises à jour temps réel
+    setAutoTriggerKey(k => k + 1);
   };
 
   // Persist origin/destination changes per train (works for own trains AND team trains)
@@ -1049,12 +1059,17 @@ export default function OnboardControl() {
                         <TrainLookupButton
                           trainNumber={formState.trainNumber}
                           date={formState.controlDate}
+                          autoTriggerKey={autoTriggerKey}
+                          selectedOrigin={formState.origin}
                           onResult={(info) => {
+                            const originStop = formState.origin
+                              ? info.stops?.find(s => s.name === formState.origin)
+                              : null;
                             setFormState((p) => ({
                               ...p,
                               origin: info.origin || p.origin,
                               destination: info.destination || p.destination,
-                              controlTime: info.departureTime || p.controlTime,
+                              controlTime: originStop?.departureTime || info.departureTime || p.controlTime,
                             }));
                             setTrainStops(info.stops || []);
                           }}
@@ -1108,9 +1123,9 @@ export default function OnboardControl() {
                                 {trainStops.map((stop) => (
                                   <SelectItem key={stop.name} value={stop.name}>
                                     {stop.name}
-                                    {stop.departureTime && (
+                                    {(stop.arrivalTime || stop.departureTime) && (
                                       <span className="ml-2 text-muted-foreground text-xs">
-                                        {stop.departureTime}
+                                        {stop.arrivalTime || stop.departureTime}
                                         {stop.isDelayed && stop.delayMinutes ? ` (+${stop.delayMinutes} min)` : ''}
                                       </span>
                                     )}

@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -18,8 +19,10 @@ import {
   MessageSquare,
   Plus,
   Users,
+  LayoutList,
 } from 'lucide-react';
 import { useTrainLookup, TrainInfo, TrainStatus, formatDuration } from '@/hooks/useTrainLookup';
+import { TrainSchemaDialog } from './TrainSchemaDialog';
 import { toast } from 'sonner';
 
 interface TrainLookupButtonProps {
@@ -27,6 +30,10 @@ interface TrainLookupButtonProps {
   date: string;
   onResult: (info: TrainInfo) => void;
   onAdd?: (trainNumber: string, info?: TrainInfo) => void;
+  /** Incrémenter pour déclencher automatiquement la recherche */
+  autoTriggerKey?: number;
+  /** Gare d'origine sélectionnée par l'utilisateur (pour afficher son heure de départ) */
+  selectedOrigin?: string;
 }
 
 const STATUS_CONFIG: Record<TrainStatus, {
@@ -40,8 +47,9 @@ const STATUS_CONFIG: Record<TrainStatus, {
   unknown:   { label: 'Inconnu',    className: '',                                                                               icon: <HelpCircle className="h-3 w-3" /> },
 };
 
-export function TrainLookupButton({ trainNumber, date, onResult, onAdd }: TrainLookupButtonProps) {
+export function TrainLookupButton({ trainNumber, date, onResult, onAdd, autoTriggerKey, selectedOrigin }: TrainLookupButtonProps) {
   const { lookup, isLoading, error, trainInfo, reset } = useTrainLookup();
+  const [schemaOpen, setSchemaOpen] = useState(false);
 
   const handleLookup = async () => {
     if (!trainNumber.trim()) { toast.error('Saisissez un numéro de train'); return; }
@@ -60,6 +68,14 @@ export function TrainLookupButton({ trainNumber, date, onResult, onAdd }: TrainL
       toast.error(error);
     }
   };
+
+  // Auto-déclencher la recherche quand un train sauvegardé est chargé
+  useEffect(() => {
+    if (autoTriggerKey && autoTriggerKey > 0 && trainNumber.trim()) {
+      handleLookup();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoTriggerKey]);
 
   const handleAdd = () => {
     if (!trainNumber.trim()) return;
@@ -83,6 +99,18 @@ export function TrainLookupButton({ trainNumber, date, onResult, onAdd }: TrainL
         >
           {isLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Search className="h-3.5 w-3.5" />}
           {isLoading ? 'Recherche…' : 'Info SNCF'}
+        </Button>
+
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="h-8 gap-1.5 text-xs"
+          onClick={() => setSchemaOpen(true)}
+          disabled={!trainNumber.trim()}
+        >
+          <LayoutList className="h-3.5 w-3.5" />
+          Schéma
         </Button>
 
         {onAdd && (
@@ -156,7 +184,7 @@ export function TrainLookupButton({ trainNumber, date, onResult, onAdd }: TrainL
         {error && !isLoading && <span className="text-xs text-destructive">{error}</span>}
       </div>
 
-      {/* Durée + voie 1ère gare + occupation */}
+      {/* Durée + origine + arrivée + occupation */}
       {trainInfo && (
         <div className="flex items-center gap-3 flex-wrap text-xs text-muted-foreground">
           {trainInfo.journeyDuration && (
@@ -165,6 +193,20 @@ export function TrainLookupButton({ trainNumber, date, onResult, onAdd }: TrainL
               Durée : {formatDuration(trainInfo.journeyDuration)}
             </span>
           )}
+          {/* Heure départ gare d'origine sélectionnée */}
+          {(() => {
+            const origin = selectedOrigin || trainInfo.origin;
+            const stop = trainInfo.stops.find(s => s.name === origin);
+            const depTime = stop?.departureTime ?? trainInfo.departureTime;
+            if (!depTime) return null;
+            return (
+              <span className="flex items-center gap-1">
+                <Train className="h-3 w-3" />
+                {origin} : {depTime}
+                {stop?.isDelayed && stop.delayMinutes ? ` (+${stop.delayMinutes} min)` : ''}
+              </span>
+            );
+          })()}
           {trainInfo.stops[0]?.platform && (
             <span className="flex items-center gap-1">
               <MapPin className="h-3 w-3" />
@@ -185,6 +227,13 @@ export function TrainLookupButton({ trainNumber, date, onResult, onAdd }: TrainL
           )}
         </div>
       )}
+
+      <TrainSchemaDialog
+        open={schemaOpen}
+        onOpenChange={setSchemaOpen}
+        trainNumber={trainNumber}
+        date={date}
+      />
     </div>
   );
 }

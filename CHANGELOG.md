@@ -5,6 +5,17 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/),
 et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.10.66] - 2026-03-28
+
+### Ajouté
+- Bouton "Schéma" (entre "Info SNCF" et "Ajouter") : overlay affichant la composition du train (wagons, classes) via SNCF Open Data
+- Barre info train : affichage de l'heure de départ depuis la gare d'origine sélectionnée
+- Chargement d'un train sauvegardé → Info SNCF se déclenche automatiquement (mises à jour temps réel)
+
+### Corrigé
+- Heure à côté de la date : utilise désormais l'heure de départ de la **gare d'origine sélectionnée** (et non le 1er arrêt du train)
+- Dropdown Destination : affiche les heures d'arrivée (`arrivalTime`) et non les heures de départ
+
 ## [1.10.65] - 2026-03-24
 
 ### Modifié
