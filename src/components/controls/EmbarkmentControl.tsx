@@ -41,6 +41,7 @@ import {
   Archive
 } from 'lucide-react';
 import { StationAutocomplete } from './StationAutocomplete';
+import { TrainLookupButton } from './TrainLookupButton';
 import { useFraudThresholds } from '@/hooks/useFraudThresholds';
 import { getFraudThresholds } from '@/lib/stats';
 import { useEmbarkmentMissions } from '@/hooks/useEmbarkmentMissions';
@@ -159,13 +160,18 @@ export function EmbarkmentControl({ stationName, onStationChange }: EmbarkmentCo
   const [historyTab, setHistoryTab] = useState<'active' | 'completed'>('completed');
 
   const isReadOnly = !!currentMission?.is_completed;
-  
+
   // Form for adding new train
   const [newTrainNumber, setNewTrainNumber] = useState('');
   const [newOrigin, setNewOrigin] = useState('');
   const [newDestination, setNewDestination] = useState('');
   const [newDepartureTime, setNewDepartureTime] = useState('');
   const [newPlatform, setNewPlatform] = useState('');
+
+  // TrainLookup state per train id (for expanded cards)
+  const [trainLookupOpen, setTrainLookupOpen] = useState<Record<string, boolean>>({});
+
+  const missionDateStr = format(missionDate, 'yyyyMMdd');
 
   // Load saved data on mount
   useEffect(() => {
@@ -615,10 +621,28 @@ export function EmbarkmentControl({ stationName, onStationChange }: EmbarkmentCo
               />
             </div>
           </div>
-          <Button 
+          {newTrainNumber.trim() && !isReadOnly && (
+            <TrainLookupButton
+              trainNumber={newTrainNumber}
+              date={missionDateStr}
+              selectedOrigin={stationName}
+              onResult={(info) => {
+                if (info.origin) setNewOrigin(info.origin);
+                if (info.destination) setNewDestination(info.destination);
+                const stLower = stationName.toLowerCase();
+                const stop = info.stops.find(s =>
+                  s.name.toLowerCase().includes(stLower) ||
+                  stLower.includes(s.name.toLowerCase())
+                );
+                const dep = stop?.departureTime || stop?.arrivalTime;
+                if (dep) setNewDepartureTime(dep);
+              }}
+            />
+          )}
+          <Button
             type="button"
-            onClick={handleAddTrain} 
-            size="sm" 
+            onClick={handleAddTrain}
+            size="sm"
             className="w-full"
             disabled={isReadOnly || !newTrainNumber.trim()}
           >
@@ -690,6 +714,30 @@ export function EmbarkmentControl({ stationName, onStationChange }: EmbarkmentCo
                       transition={{ duration: 0.2 }}
                     >
                       <CardContent className="pt-0 pb-4 space-y-4 border-t">
+                        {/* Info SNCF + Schéma */}
+                        {!isReadOnly && (
+                          <div className="pt-3">
+                            <TrainLookupButton
+                              trainNumber={train.trainNumber}
+                              date={missionDateStr}
+                              selectedOrigin={stationName}
+                              onResult={(info) => {
+                                const stLower = stationName.toLowerCase();
+                                const stop = info.stops.find(s =>
+                                  s.name.toLowerCase().includes(stLower) ||
+                                  stLower.includes(s.name.toLowerCase())
+                                );
+                                const dep = stop?.departureTime || stop?.arrivalTime;
+                                handleUpdateTrain(train.id, {
+                                  origin:        info.origin      || train.origin,
+                                  destination:   info.destination || train.destination,
+                                  ...(dep ? { departureTime: dep } : {}),
+                                  ...(stop?.platform ? { platform: stop.platform } : {}),
+                                });
+                              }}
+                            />
+                          </div>
+                        )}
                         {/* Control counts */}
                         <div className="grid grid-cols-2 gap-4 pt-3">
                           <div className="space-y-1">

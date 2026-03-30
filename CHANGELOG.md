@@ -5,6 +5,12 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/),
 et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.10.81] - 2026-03-30
+
+### Amélioré
+- **Embarquement** : Info SNCF + Schéma + autocomplete (origine, destination, heure départ) ajoutés dans le formulaire d'ajout de train et dans chaque train étendu
+- **Schéma** : affichage séparé heure d'arrivée (arr.) et heure de départ (dep.) pour chaque gare dans l'itinéraire
+
 ## [1.10.80] - 2026-03-30
 
 ### Amélioré

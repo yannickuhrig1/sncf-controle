@@ -1,7 +1,7 @@
 # CLAUDE.md — SNCF Contrôles
 
 ## Version actuelle
-**1.10.80** (synchronisé dans `package.json` et `CHANGELOG.md`)
+**1.10.81** (synchronisé dans `package.json` et `CHANGELOG.md`)
 
 ## Stack
 - React 18 + TypeScript + Vite

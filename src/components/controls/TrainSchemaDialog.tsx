@@ -73,9 +73,16 @@ function StopsFallback({ stops, origin, destination }: { stops: TrainInfo['stops
                       <MapPin className="h-3 w-3" />V{stop.platform}
                     </span>
                   )}
-                  <span className="text-sm font-mono tabular-nums text-muted-foreground">
-                    {stop.departureTime || stop.arrivalTime}
-                  </span>
+                  {stop.arrivalTime && stop.departureTime && stop.arrivalTime !== stop.departureTime ? (
+                    <div className="text-right">
+                      <div className="text-xs font-mono tabular-nums text-muted-foreground/70">arr. {stop.arrivalTime}</div>
+                      <div className="text-xs font-mono tabular-nums text-muted-foreground">dep. {stop.departureTime}</div>
+                    </div>
+                  ) : (
+                    <span className="text-sm font-mono tabular-nums text-muted-foreground">
+                      {stop.departureTime || stop.arrivalTime}
+                    </span>
+                  )}
                   {stop.isDelayed && stop.delayMinutes && (
                     <span className="text-xs font-bold text-amber-600">+{stop.delayMinutes} min</span>
                   )}
