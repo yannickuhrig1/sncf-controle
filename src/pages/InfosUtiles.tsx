@@ -208,6 +208,8 @@ function ContentAbout() {
           <li>Personnes recherchées (fiches photo, gérées par le manager)</li>
           <li>Compteur voyageurs grand écran (maintien appui)</li>
           <li>En gare : navigation sections, autocomplete gare, brouillon auto-sauvegardé</li>
+          <li>Embarquement : Info SNCF + schéma + autocomplete par train (heure, origine, destination)</li>
+          <li>Schéma train : heure d'arrivée et de départ par gare dans l'itinéraire</li>
           <li>Compatible mobile, tablette et PC</li>
         </ul>
       </div>
