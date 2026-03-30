@@ -19,12 +19,12 @@ import { cn } from '@/lib/utils';
 import { format, parseISO, isValid } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { 
-  CalendarIcon, 
-  Plus, 
-  Trash2, 
-  Train, 
-  ChevronDown, 
-  ChevronUp, 
+  CalendarIcon,
+  Plus,
+  Trash2,
+  Train,
+  ChevronDown,
+  ChevronUp,
   Save,
   Shield,
   AlertTriangle,
@@ -38,8 +38,10 @@ import {
   Download,
   FileText,
   CheckCircle2,
-  Archive
+  Archive,
+  Search,
 } from 'lucide-react';
+import type { TrainInfo } from '@/hooks/useTrainLookup';
 import { StationAutocomplete } from './StationAutocomplete';
 import { TrainLookupButton } from './TrainLookupButton';
 import { useFraudThresholds } from '@/hooks/useFraudThresholds';
@@ -168,8 +170,10 @@ export function EmbarkmentControl({ stationName, onStationChange }: EmbarkmentCo
   const [newDepartureTime, setNewDepartureTime] = useState('');
   const [newPlatform, setNewPlatform] = useState('');
 
-  // TrainLookup state per train id (for expanded cards)
-  const [trainLookupOpen, setTrainLookupOpen] = useState<Record<string, boolean>>({});
+  // Info SNCF panel par train
+  const [trainLookupOpen,        setTrainLookupOpen]        = useState<Record<string, boolean>>({});
+  const [trainLookupAutoTrigger, setTrainLookupAutoTrigger] = useState<Record<string, number>>({});
+  const [trainInfoCache,         setTrainInfoCache]         = useState<Record<string, TrainInfo>>({});
 
   const missionDateStr = format(missionDate, 'yyyy-MM-dd');
 
@@ -662,9 +666,12 @@ export function EmbarkmentControl({ stationName, onStationChange }: EmbarkmentCo
             const isExpanded = expandedTrainId === train.id;
             const trainColor = getThresholdColor(trainFraudRate);
             
+            const isLookupOpen = !!trainLookupOpen[train.id];
+
             return (
               <Card key={train.id} className="overflow-hidden">
-                <div 
+                {/* En-tête */}
+                <div
                   className="flex items-center justify-between p-3 cursor-pointer hover:bg-muted/50"
                   onClick={() => setExpandedTrainId(isExpanded ? null : train.id)}
                 >
@@ -685,7 +692,7 @@ export function EmbarkmentControl({ stationName, onStationChange }: EmbarkmentCo
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2">
                     {train.controlled > 0 && (
                       <Badge className={cn(
                         "text-xs",
@@ -701,9 +708,60 @@ export function EmbarkmentControl({ stationName, onStationChange }: EmbarkmentCo
                       {train.trackCrossing && <Footprints className="h-3 w-3 text-warning" />}
                       {train.controlLineCrossing && <AlertTriangle className="h-3 w-3 text-destructive" />}
                     </div>
+                    {/* Bouton Info SNCF + Schéma */}
+                    {!isReadOnly && (
+                      <button
+                        type="button"
+                        title="Info SNCF + Schéma"
+                        className={cn(
+                          'p-1.5 rounded transition-colors',
+                          isLookupOpen
+                            ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
+                            : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                        )}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const next = !isLookupOpen;
+                          setTrainLookupOpen(prev => ({ ...prev, [train.id]: next }));
+                          // Auto-trigger au premier clic si pas encore en cache
+                          if (next && !trainInfoCache[train.id]) {
+                            setTrainLookupAutoTrigger(prev => ({ ...prev, [train.id]: (prev[train.id] || 0) + 1 }));
+                          }
+                        }}
+                      >
+                        <Search className="h-3.5 w-3.5" />
+                      </button>
+                    )}
                     {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                   </div>
                 </div>
+
+                {/* Panel Info SNCF inline — indépendant de l'expansion */}
+                {isLookupOpen && (
+                  <div className="px-3 pb-3 pt-2 border-t bg-background/60">
+                    <TrainLookupButton
+                      trainNumber={train.trainNumber}
+                      date={missionDateStr}
+                      selectedOrigin={stationName}
+                      autoTriggerKey={trainLookupAutoTrigger[train.id] || 0}
+                      onResult={(info) => {
+                        setTrainInfoCache(prev => ({ ...prev, [train.id]: info }));
+                        const stLower = stationName.toLowerCase();
+                        const stop = info.stops.find(s =>
+                          s.name.toLowerCase().includes(stLower) ||
+                          stLower.includes(s.name.toLowerCase())
+                        );
+                        const dep = stop?.departureTime || stop?.arrivalTime;
+                        handleUpdateTrain(train.id, {
+                          origin:        info.origin      || train.origin,
+                          destination:   info.destination || train.destination,
+                          ...(dep ? { departureTime: dep } : {}),
+                          ...(stop?.platform ? { platform: stop.platform } : {}),
+                        });
+                      }}
+                    />
+                  </div>
+                )}
 
                 <AnimatePresence>
                   {isExpanded && (
@@ -714,30 +772,6 @@ export function EmbarkmentControl({ stationName, onStationChange }: EmbarkmentCo
                       transition={{ duration: 0.2 }}
                     >
                       <CardContent className="pt-0 pb-4 space-y-4 border-t">
-                        {/* Info SNCF + Schéma */}
-                        {!isReadOnly && (
-                          <div className="pt-3">
-                            <TrainLookupButton
-                              trainNumber={train.trainNumber}
-                              date={missionDateStr}
-                              selectedOrigin={stationName}
-                              onResult={(info) => {
-                                const stLower = stationName.toLowerCase();
-                                const stop = info.stops.find(s =>
-                                  s.name.toLowerCase().includes(stLower) ||
-                                  stLower.includes(s.name.toLowerCase())
-                                );
-                                const dep = stop?.departureTime || stop?.arrivalTime;
-                                handleUpdateTrain(train.id, {
-                                  origin:        info.origin      || train.origin,
-                                  destination:   info.destination || train.destination,
-                                  ...(dep ? { departureTime: dep } : {}),
-                                  ...(stop?.platform ? { platform: stop.platform } : {}),
-                                });
-                              }}
-                            />
-                          </div>
-                        )}
                         {/* Control counts */}
                         <div className="grid grid-cols-2 gap-4 pt-3">
                           <div className="space-y-1">
