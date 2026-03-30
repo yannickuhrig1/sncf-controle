@@ -5,6 +5,11 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/),
 et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.10.84] - 2026-03-30
+
+### Corrigé
+- **Embarquement** : "Ajouter train" réinitialisait tout — `onStationChange` recréé à chaque render déclenchait le useEffect de chargement localStorage en boucle. Fix : mémoïsation via `useCallback` dans StationControl.
+
 ## [1.10.83] - 2026-03-30
 
 ### Corrigé

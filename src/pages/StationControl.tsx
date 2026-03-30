@@ -335,6 +335,12 @@ export default function StationControl() {
     toast.success('Données synchronisées');
   }, [refetch, updateLastSync]);
 
+  // Mémoïsé pour éviter de re-déclencher le useEffect de chargement dans EmbarkmentControl
+  const handleEmbarkmentStationChange = useCallback(
+    (v: string) => setFormState(p => ({ ...p, stationName: v })),
+    []
+  );
+
   // ── Early returns ──────────────────────────────────────────────────────────
   if (authLoading) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
   if (!user)       return <Navigate to="/auth" replace />;
@@ -523,7 +529,7 @@ export default function StationControl() {
           <div className="max-w-3xl mx-auto w-full">
             <EmbarkmentControl
               stationName={formState.stationName}
-              onStationChange={(v) => setFormState(p => ({ ...p, stationName: v }))}
+              onStationChange={handleEmbarkmentStationChange}
             />
           </div>
         ) : (
