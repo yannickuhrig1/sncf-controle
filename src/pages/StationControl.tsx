@@ -36,8 +36,9 @@ import {
   Loader2, Building2, ArrowLeft, Save, ArrowRight, X, Clock, Calendar,
   ArrowDownToLine, ArrowUpFromLine, Users, UserCheck, MessageSquare,
   FileText, AlertTriangle, Plus, Ticket, Train, Share2, Copy, Mail,
-  Link2, ChevronDown, Layers, LayoutList,
+  Link2, ChevronDown, Layers, LayoutList, Search,
 } from 'lucide-react';
+import type { TrainInfo } from '@/hooks/useTrainLookup';
 import { cn } from '@/lib/utils';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -190,6 +191,9 @@ export default function StationControl() {
   const [pvTarifType,        setPvTarifType]        = useState('pv_stt100');
   const [pvTarifMontant,     setPvTarifMontant]     = useState('');
   const [quickTrainInput,    setQuickTrainInput]    = useState('');
+  const [trainInfoCache,     setTrainInfoCache]     = useState<Record<string, TrainInfo>>({});
+  const [expandedQuickTrain, setExpandedQuickTrain] = useState<string | null>(null);
+  const [chipAutoTriggerKeys, setChipAutoTriggerKeys] = useState<Record<string, number>>({});
   const [shareGroupOpen,     setShareGroupOpen]     = useState(false);
   const [joinGroupOpen,      setJoinGroupOpen]      = useState(false);
   const [joinInput,          setJoinInput]          = useState('');
@@ -300,7 +304,6 @@ export default function StationControl() {
     setIsDuplicateMode(false);
     setSearchParams({});
     clearDraft();
-    setSelectedTrainId(undefined);
   };
 
   // ── Tarif handlers ─────────────────────────────────────────────────────────
@@ -667,36 +670,121 @@ export default function StationControl() {
                           </Button>
                         </div>
                         {formState.quickTrains.length > 0 && (
-                          <div className="flex flex-wrap gap-1.5">
-                            {formState.quickTrains.map((num) => (
-                              <div
-                                key={num}
-                                className={cn(
-                                  'inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-medium transition-colors cursor-pointer select-none',
-                                  formState.trainNumber === num
-                                    ? 'bg-primary text-primary-foreground border-primary'
-                                    : 'bg-muted text-muted-foreground border-border hover:bg-accent hover:text-accent-foreground'
-                                )}
-                                onClick={() => {
-                                  setFormState(p => ({ ...p, trainNumber: num }));
-                                  setAutoTriggerKey(k => k + 1);
-                                }}
-                              >
-                                <Train className="h-3 w-3 shrink-0" />
-                                {num}
-                                <button
-                                  type="button"
-                                  className="ml-0.5 rounded-full hover:bg-destructive/20 hover:text-destructive p-0.5 transition-colors"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setFormState(p => ({ ...p, quickTrains: p.quickTrains.filter(t => t !== num) }));
-                                  }}
-                                  aria-label={`Retirer ${num}`}
-                                >
-                                  <X className="h-2.5 w-2.5" />
-                                </button>
-                              </div>
-                            ))}
+                          <div className="space-y-1.5">
+                            {formState.quickTrains.map((num) => {
+                              const cached = trainInfoCache[num];
+                              const isSelected = formState.trainNumber === num;
+                              const isExpanded = expandedQuickTrain === num;
+                              const depAtStation = cached ? (() => {
+                                const stLower = formState.stationName.toLowerCase();
+                                const stop = cached.stops.find(s =>
+                                  s.name.toLowerCase().includes(stLower) ||
+                                  stLower.includes(s.name.toLowerCase())
+                                );
+                                return stop?.arrivalTime || stop?.departureTime || null;
+                              })() : null;
+                              return (
+                                <div key={num} className={cn('rounded-lg border overflow-hidden transition-colors', isSelected ? 'border-primary/50 bg-primary/5' : 'border-border bg-muted/20')}>
+                                  <div className="flex items-center gap-2 px-3 py-2">
+                                    {/* Chip sélection */}
+                                    <button
+                                      type="button"
+                                      className="flex items-center gap-1.5 flex-1 min-w-0 text-left"
+                                      onClick={() => {
+                                        setFormState(p => {
+                                          const c = trainInfoCache[num];
+                                          const stLower = p.stationName.toLowerCase();
+                                          const stop = c?.stops.find(s =>
+                                            s.name.toLowerCase().includes(stLower) ||
+                                            stLower.includes(s.name.toLowerCase())
+                                          );
+                                          const dep = stop?.arrivalTime || stop?.departureTime;
+                                          return {
+                                            ...p,
+                                            trainNumber: num,
+                                            ...(c ? { origin: c.origin || p.origin, destination: c.destination || p.destination } : {}),
+                                            ...(dep ? { departureTime: dep } : {}),
+                                          };
+                                        });
+                                      }}
+                                    >
+                                      <Train className={cn('h-3.5 w-3.5 shrink-0', isSelected ? 'text-primary' : 'text-muted-foreground')} />
+                                      <span className={cn('text-sm font-semibold tabular-nums', isSelected ? 'text-primary' : '')}>{num}</span>
+                                      {depAtStation && (
+                                        <span className="text-xs text-muted-foreground ml-1">· {depAtStation}</span>
+                                      )}
+                                      {cached?.trainType && (
+                                        <span className="text-[10px] text-muted-foreground ml-0.5">({cached.trainType})</span>
+                                      )}
+                                    </button>
+                                    {/* Info / Schéma */}
+                                    <button
+                                      type="button"
+                                      title="Info SNCF + Schéma"
+                                      className={cn('p-1.5 rounded transition-colors', isExpanded ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' : 'text-muted-foreground hover:text-foreground hover:bg-muted')}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        if (expandedQuickTrain === num) {
+                                          setExpandedQuickTrain(null);
+                                        } else {
+                                          setExpandedQuickTrain(num);
+                                          if (!trainInfoCache[num]) {
+                                            setChipAutoTriggerKeys(k => ({ ...k, [num]: (k[num] || 0) + 1 }));
+                                          }
+                                        }
+                                      }}
+                                    >
+                                      <Search className="h-3.5 w-3.5" />
+                                    </button>
+                                    {/* Retirer */}
+                                    <button
+                                      type="button"
+                                      className="p-1.5 rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setFormState(p => ({ ...p, quickTrains: p.quickTrains.filter(t => t !== num) }));
+                                        if (expandedQuickTrain === num) setExpandedQuickTrain(null);
+                                      }}
+                                      aria-label={`Retirer ${num}`}
+                                    >
+                                      <X className="h-3.5 w-3.5" />
+                                    </button>
+                                  </div>
+                                  {/* Panel Info SNCF + Schéma inline */}
+                                  {isExpanded && (
+                                    <div className="px-3 pb-3 pt-2 border-t bg-background/60">
+                                      <TrainLookupButton
+                                        trainNumber={num}
+                                        date={formState.controlDate}
+                                        autoTriggerKey={chipAutoTriggerKeys[num] || 0}
+                                        selectedOrigin={formState.stationName}
+                                        onResult={(info) => {
+                                          setTrainInfoCache(prev => ({ ...prev, [num]: info }));
+                                          if (formState.trainNumber === num || !formState.trainNumber) {
+                                            setFormState(p => {
+                                              const stLower = p.stationName.toLowerCase();
+                                              const stop = info.stops.find(s =>
+                                                s.name.toLowerCase().includes(stLower) ||
+                                                stLower.includes(s.name.toLowerCase())
+                                              );
+                                              const dep = stop?.arrivalTime || stop?.departureTime;
+                                              return {
+                                                ...p,
+                                                trainNumber: num,
+                                                origin:      info.origin      || p.origin,
+                                                destination: info.destination || p.destination,
+                                                ...(dep ? { departureTime: dep } : {}),
+                                                ...(info.stops[0]?.platform ? { platformNumber: info.stops[0].platform } : {}),
+                                              };
+                                            });
+                                          }
+                                        }}
+                                      />
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })}
                           </div>
                         )}
                       </div>

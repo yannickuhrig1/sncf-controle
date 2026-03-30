@@ -5,6 +5,14 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/),
 et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.10.80] - 2026-03-30
+
+### Amélioré
+- **En gare — Trains du service** : chaque train est maintenant une tile cliquable avec bouton Info SNCF + Schéma intégré ; l'heure de passage en gare est automatiquement remplie depuis les données SNCF ; les résultats sont mis en cache par train ; sélectionner une tile remplit aussi l'origine, la destination et l'heure d'arrivée en gare
+
+### Corrigé
+- `setSelectedTrainId` résidu supprimé de `handleCancelEdit`
+
 ## [1.10.79] - 2026-03-28
 
 ### Ajouté
