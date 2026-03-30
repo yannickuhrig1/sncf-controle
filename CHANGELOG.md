@@ -5,6 +5,11 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/),
 et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.10.82] - 2026-03-30
+
+### Corrigé
+- **En gare / débarquement** : cliquer sur un chip "Trains du service" sans cache déclenche maintenant automatiquement Info SNCF pour remplir l'heure d'arrivée en gare
+
 ## [1.10.81] - 2026-03-30
 
 ### Amélioré

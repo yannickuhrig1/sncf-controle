@@ -706,6 +706,11 @@ export default function StationControl() {
                                             ...(dep ? { departureTime: dep } : {}),
                                           };
                                         });
+                                        // Si pas encore en cache → expand + auto-lookup pour remplir l'heure d'arrivée
+                                        if (!trainInfoCache[num]) {
+                                          setExpandedQuickTrain(num);
+                                          setChipAutoTriggerKeys(k => ({ ...k, [num]: (k[num] || 0) + 1 }));
+                                        }
                                       }}
                                     >
                                       <Train className={cn('h-3.5 w-3.5 shrink-0', isSelected ? 'text-primary' : 'text-muted-foreground')} />
