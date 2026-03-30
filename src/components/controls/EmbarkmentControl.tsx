@@ -171,7 +171,7 @@ export function EmbarkmentControl({ stationName, onStationChange }: EmbarkmentCo
   // TrainLookup state per train id (for expanded cards)
   const [trainLookupOpen, setTrainLookupOpen] = useState<Record<string, boolean>>({});
 
-  const missionDateStr = format(missionDate, 'yyyyMMdd');
+  const missionDateStr = format(missionDate, 'yyyy-MM-dd');
 
   // Load saved data on mount
   useEffect(() => {

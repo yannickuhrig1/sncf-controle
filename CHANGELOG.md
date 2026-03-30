@@ -5,6 +5,13 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/),
 et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.10.83] - 2026-03-30
+
+### Corrigé
+- **API sncf-lookup** : `RangeError: Invalid time value` — normalisation du format date `yyyyMMdd` / `yyyy-MM-dd` + try/catch + gestion réponse non-JSON
+- **API sncf-composition** : 403 (API open data SNCF requiert maintenant une clé) — renvoie `{ results: [] }` pour activer automatiquement le fallback itinéraire dans le schéma
+- **Embarquement** : date passée en format `yyyy-MM-dd` (était `yyyyMMdd`) vers TrainLookupButton
+
 ## [1.10.82] - 2026-03-30
 
 ### Corrigé
