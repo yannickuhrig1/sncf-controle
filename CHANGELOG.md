@@ -5,6 +5,12 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/),
 et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.10.85] - 2026-03-31
+
+### Modifié
+- Badges "Police à bord" et "SUGE à bord" déplacés dans la ligne PV/RI du détail contrôle
+- Présentations HTML : suppression logo/titre redondant slide couverture, logo corrigé, version mise à jour v1.10.85
+
 ## [1.10.84] - 2026-03-30
 
 ### Corrigé
