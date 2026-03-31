@@ -5,6 +5,11 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/),
 et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.10.86] - 2026-03-31
+
+### Modifié
+- Présentation : sommaire redesigné en grille 3+2, cartes cliquables avec animation hover/clic
+
 ## [1.10.85] - 2026-03-31
 
 ### Modifié
