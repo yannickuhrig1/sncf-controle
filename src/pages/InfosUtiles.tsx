@@ -18,6 +18,7 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -489,11 +490,30 @@ function ContentPartager() {
 }
 
 function ContentPresentation() {
-  const presentationUrl = `${window.location.origin}/presentation_sncf_controles.html`;
-  const mailSub  = encodeURIComponent('SNCF Contrôles — Présentation de l\'application');
-  const mailBody = encodeURIComponent(
-    `Bonjour,\n\nVeuillez trouver ci-dessous le lien vers la présentation de l'application SNCF Contrôles :\n\n${presentationUrl}\n\nCette présentation détaille les fonctionnalités de l'outil de gestion des contrôles voyageurs.`
-  );
+  const origin = window.location.origin;
+  const [emailInteractive, setEmailInteractive] = useState(true);
+  const [emailApplication, setEmailApplication] = useState(false);
+  const [emailFormat, setEmailFormat] = useState<'pdf' | 'html'>('pdf');
+
+  const handleSendEmail = () => {
+    const subject = encodeURIComponent('SNCF Contrôles — Présentation');
+    const lines: string[] = ['Bonjour,\n'];
+
+    if (emailInteractive) {
+      const url = emailFormat === 'pdf'
+        ? `${origin}/presentation_sncf_controles.pdf`
+        : `${origin}/presentation_sncf_controles.html`;
+      lines.push(`Présentation interactive (${emailFormat.toUpperCase()}) :\n${url}`);
+    }
+    if (emailApplication) {
+      const url = emailFormat === 'pdf'
+        ? `${origin}/Présentation_de_l_application.pdf`
+        : `${origin}/Présentation_de_l_application.html`;
+      lines.push(`Présentation de l'application (${emailFormat.toUpperCase()}) :\n${url}`);
+    }
+    lines.push('\nCordialement');
+    window.open(`mailto:?subject=${subject}&body=${encodeURIComponent(lines.join('\n\n'))}`);
+  };
 
   return (
     <div className="space-y-4">
@@ -502,7 +522,7 @@ function ContentPresentation() {
         guide d'utilisation. À partager avec votre équipe ou votre hiérarchie.
       </p>
 
-      {/* Aperçu */}
+      {/* Présentation interactive */}
       <div className="flex items-center gap-3 p-4 bg-rose-50 dark:bg-rose-950/20 rounded-xl border border-rose-200 dark:border-rose-800">
         <div className="p-2.5 bg-rose-100 dark:bg-rose-900/40 rounded-lg shrink-0">
           <Monitor className="h-6 w-6 text-rose-600 dark:text-rose-400" />
@@ -512,44 +532,25 @@ function ContentPresentation() {
           <p className="text-xs text-muted-foreground">Document HTML — slides animées</p>
         </div>
       </div>
-
-      {/* Actions — présentation générale */}
       <div className="grid grid-cols-1 gap-2">
-        <Button
-          className="w-full gap-2"
-          onClick={() => window.open(presentationUrl, '_blank')}
-        >
+        <Button className="w-full gap-2" onClick={() => window.open(`${origin}/presentation_sncf_controles.html`, '_blank')}>
           <ExternalLink className="h-4 w-4" />
           Ouvrir la présentation
         </Button>
-        <Button
-          variant="outline"
-          className="w-full gap-2"
-          asChild
-        >
-          <a href="/presentation_sncf_controles.pdf" download="presentation_sncf_controles.pdf">
-            <FileText className="h-4 w-4" />
-            Télécharger (PDF)
-          </a>
-        </Button>
-        <Button
-          variant="outline"
-          className="w-full gap-2"
-          asChild
-        >
-          <a href="/presentation_sncf_controles.html" download="presentation_sncf_controles.html">
-            <Download className="h-4 w-4" />
-            Télécharger (HTML)
-          </a>
-        </Button>
-        <Button
-          variant="outline"
-          className="w-full gap-2"
-          onClick={() => window.open(`mailto:?subject=${mailSub}&body=${mailBody}`)}
-        >
-          <Mail className="h-4 w-4" />
-          Envoyer par email
-        </Button>
+        <div className="grid grid-cols-2 gap-2">
+          <Button variant="outline" className="w-full gap-2" asChild>
+            <a href="/presentation_sncf_controles.pdf" download="presentation_sncf_controles.pdf">
+              <FileText className="h-4 w-4" />
+              PDF
+            </a>
+          </Button>
+          <Button variant="outline" className="w-full gap-2" asChild>
+            <a href="/presentation_sncf_controles.html" download="presentation_sncf_controles.html">
+              <Download className="h-4 w-4" />
+              HTML
+            </a>
+          </Button>
+        </div>
       </div>
 
       {/* Présentation de l'application */}
@@ -563,33 +564,80 @@ function ContentPresentation() {
         </div>
       </div>
       <div className="grid grid-cols-1 gap-2">
-        <Button
-          variant="outline"
-          className="w-full gap-2"
-          onClick={() => window.open('/Présentation_de_l_application.html', '_blank')}
-        >
+        <Button variant="outline" className="w-full gap-2" onClick={() => window.open('/Présentation_de_l_application.html', '_blank')}>
           <ExternalLink className="h-4 w-4" />
           Ouvrir
         </Button>
+        <div className="grid grid-cols-2 gap-2">
+          <Button variant="outline" className="w-full gap-2" asChild>
+            <a href="/Présentation_de_l_application.pdf" download="Présentation_de_l_application.pdf">
+              <FileText className="h-4 w-4" />
+              PDF
+            </a>
+          </Button>
+          <Button variant="outline" className="w-full gap-2" asChild>
+            <a href="/Présentation_de_l_application.html" download="Présentation_de_l_application.html">
+              <Download className="h-4 w-4" />
+              HTML
+            </a>
+          </Button>
+        </div>
+      </div>
+
+      {/* Section email */}
+      <div className="rounded-xl border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/20 p-4 space-y-3">
+        <div className="flex items-center gap-2">
+          <Mail className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+          <p className="text-sm font-semibold text-blue-800 dark:text-blue-300">Envoyer par email</p>
+        </div>
+
+        {/* Sélection des fichiers */}
+        <div className="space-y-2">
+          <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Fichiers</p>
+          <label className="flex items-center gap-2 cursor-pointer">
+            <Checkbox checked={emailInteractive} onCheckedChange={v => setEmailInteractive(!!v)} />
+            <span className="text-sm">Présentation interactive</span>
+          </label>
+          <label className="flex items-center gap-2 cursor-pointer">
+            <Checkbox checked={emailApplication} onCheckedChange={v => setEmailApplication(!!v)} />
+            <span className="text-sm">Présentation de l'application</span>
+          </label>
+        </div>
+
+        {/* Sélection du format */}
+        <div className="space-y-2">
+          <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Format</p>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setEmailFormat('pdf')}
+              className={`flex-1 py-1.5 text-sm rounded-lg border font-medium transition-colors ${
+                emailFormat === 'pdf'
+                  ? 'bg-blue-600 text-white border-blue-600'
+                  : 'bg-white dark:bg-transparent text-muted-foreground border-border hover:border-blue-400'
+              }`}
+            >
+              PDF
+            </button>
+            <button
+              onClick={() => setEmailFormat('html')}
+              className={`flex-1 py-1.5 text-sm rounded-lg border font-medium transition-colors ${
+                emailFormat === 'html'
+                  ? 'bg-blue-600 text-white border-blue-600'
+                  : 'bg-white dark:bg-transparent text-muted-foreground border-border hover:border-blue-400'
+              }`}
+            >
+              HTML
+            </button>
+          </div>
+        </div>
+
         <Button
-          variant="outline"
           className="w-full gap-2"
-          asChild
+          disabled={!emailInteractive && !emailApplication}
+          onClick={handleSendEmail}
         >
-          <a href="/Présentation_de_l_application.pdf" download="Présentation_de_l_application.pdf">
-            <FileText className="h-4 w-4" />
-            Télécharger (PDF)
-          </a>
-        </Button>
-        <Button
-          variant="outline"
-          className="w-full gap-2"
-          asChild
-        >
-          <a href="/Présentation_de_l_application.html" download="Présentation_de_l_application.html">
-            <Download className="h-4 w-4" />
-            Télécharger (HTML)
-          </a>
+          <Mail className="h-4 w-4" />
+          Envoyer par email
         </Button>
       </div>
     </div>

@@ -5,6 +5,12 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/),
 et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.10.89] - 2026-04-01
+
+### Modifié
+- Infos > Présentation : section email séparée avec sélection des fichiers (interactive / application) et choix du format (PDF ou HTML)
+- Boutons de téléchargement PDF/HTML regroupés en grille 2 colonnes
+
 ## [1.10.88] - 2026-04-01
 
 ### Corrigé
