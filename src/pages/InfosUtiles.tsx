@@ -527,6 +527,16 @@ function ContentPresentation() {
           className="w-full gap-2"
           asChild
         >
+          <a href="/presentation_sncf_controles.pdf" download="presentation_sncf_controles.pdf">
+            <FileText className="h-4 w-4" />
+            Télécharger (PDF)
+          </a>
+        </Button>
+        <Button
+          variant="outline"
+          className="w-full gap-2"
+          asChild
+        >
           <a href="/presentation_sncf_controles.html" download="presentation_sncf_controles.html">
             <Download className="h-4 w-4" />
             Télécharger (HTML)
@@ -552,7 +562,7 @@ function ContentPresentation() {
           <p className="text-xs text-muted-foreground">Présentation en images de l'application</p>
         </div>
       </div>
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-1 gap-2">
         <Button
           variant="outline"
           className="w-full gap-2"
@@ -566,9 +576,19 @@ function ContentPresentation() {
           className="w-full gap-2"
           asChild
         >
+          <a href="/Présentation_de_l_application.pdf" download="Présentation_de_l_application.pdf">
+            <FileText className="h-4 w-4" />
+            Télécharger (PDF)
+          </a>
+        </Button>
+        <Button
+          variant="outline"
+          className="w-full gap-2"
+          asChild
+        >
           <a href="/Présentation_de_l_application.html" download="Présentation_de_l_application.html">
             <Download className="h-4 w-4" />
-            Télécharger
+            Télécharger (HTML)
           </a>
         </Button>
       </div>
