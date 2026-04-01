@@ -5,6 +5,12 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/),
 et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.10.90] - 2026-04-01
+
+### Corrigé
+- Admin : correction erreur 401 lors de la modification du rôle/profil (token auth passé explicitement à la Edge Function)
+- Paramètres : "Paramètres" peut maintenant être retiré de la barre du bas (mais reste toujours dans le menu burger)
+
 ## [1.10.89] - 2026-04-01
 
 ### Modifié

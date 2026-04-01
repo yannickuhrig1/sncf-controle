@@ -517,7 +517,9 @@ export default function AdminPage() {
     if (!editingUser) return;
     setIsSavingUser(true);
     try {
+      const { data: { session } } = await supabase.auth.getSession();
       const response = await supabase.functions.invoke('update-user', {
+        headers: session ? { Authorization: `Bearer ${session.access_token}` } : undefined,
         body: {
           userId: editingUser.user_id,
           firstName: editFirstName,

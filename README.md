@@ -1,4 +1,4 @@
-# SNCF Contrôles — v1.10.47
+# SNCF Contrôles — v1.10.89
 
 Application de gestion et suivi des contrôles ferroviaires pour les agents SNCF.
 
@@ -11,46 +11,49 @@ Application de gestion et suivi des contrôles ferroviaires pour les agents SNCF
 - **Session multi-agents en gare** : créer / rejoindre un groupe via QR code, lien, SMS ou email
 - **Trains du jour** : synchronisés entre appareils, partage privé par code 6 caractères + QR code
 - **Compteur voyageurs grand écran** : maintien appui sur le compteur pour afficher un grand écran dédié
-- **API SNCF** : auto-remplissage Origine / Destination / Heure / Retard depuis l'API SNCF
+- **API SNCF** : auto-remplissage Origine / Destination / Heure / Retard + schéma de composition du train
 - **Mode hors-ligne** : synchronisation automatique à la reconnexion
-- Flags "Train supprimé" et "Sur-occupation" par contrôle
+- **Police à bord / SUGE à bord** : indicateurs par contrôle, visibles dans l'historique et les exports
 
 ### Statistiques & Tableau de bord
 - Indicateurs clés du jour : taux de fraude, voyageurs, PV, recettes
 - Calcul du taux de fraude : `(tarifsControle + PV + RI négatifs) / passagers × 100`
 - Filtrage par période : Aujourd'hui / Semaine / Mois / Année / Personnalisée
 - Graphiques Recharts : répartition fraude, taux par train, tendances
-- **Sélecteur de plage sur les graphiques de tendance** : boutons 7j/30j/90j (jour), 4-12-26 sem (semaine), 3-6-12 mois, 2-5 ans — indépendants des KPI
+- **Sélecteur de plage sur les graphiques de tendance** : boutons 7j/30j/90j, semaines, mois, années
+- **Statistiques en gare** : taux de fraude, voyageurs et indicateur Police par gare
 - Seuils de couleur configurables (vert / jaune / rouge)
 
 ### Historique
-- Vue Liste (mobile + desktop) : cartes groupées par date, badges Bord · TC · PV · RI
+- Vue Liste (mobile + desktop) : cartes groupées par date, badges Bord · TC · PV · RI · Police · SUGE
 - **Vignette multi-agents** : agrégation automatique quand ≥ 2 agents ont contrôlé le même train/jour
-- Vue Tableau (desktop) : colonnes réorganisables/masquables, tri multi-colonnes
+- Vue Tableau (desktop) : colonnes réorganisables/masquables, tri multi-colonnes, colonne Police/SUGE
 - Exports : HTML, PDF (portrait/paysage/auto), aperçu avant téléchargement, export groupé embarquement
+- Filtre "Police présente" dans l'historique
 
 ### Gestion d'équipe (Manager)
 - Créer et gérer plusieurs équipes, ajouter/retirer des agents
-- Tableau de bord équipe avec KPIs, heatmap horaire, audit trail
+- Tableau de bord équipe avec KPIs, heatmap horaire, audit trail, classement agents
 - **Personnes recherchées** : fiches (nom, prénom, date de naissance, photo, notes), visibles par tous les agents dans Infos utiles
 - **Présence en ligne** temps réel (point vert ●) + colonne "Dernière connexion"
 
 ### Administration (Admin)
-- Gestion complète des utilisateurs : édition profil, suppression
+- Gestion complète des utilisateurs : édition profil, rôle, approbation, suppression
 - Seuils de fraude configurables, durée de rétention, visibilité pages
 - Token API SNCF (proxy sécurisé)
 - Présence en ligne temps réel + dernière connexion
 
 ### Infos utiles
-- Tuiles : À propos · Taux de fraude · **Personnes recherchées** · Contacts · Partager l'app · Présentation · Départs/Arrivées · Assistance
+- Tuiles : À propos · Taux de fraude · **Personnes recherchées** · Contacts · Partager l'app · Présentation · Départs/Arrivées en gare · Assistance
 - **Personnes recherchées** : fiches alimentées par le manager, visibles uniquement par les agents authentifiés
 - **Partager l'app** : QR code + copie lien + SMS + email + Web Share API
-- **Présentation** : ouvrir ou télécharger la présentation de l'application (données anonymisées)
+- **Présentation** : deux présentations téléchargeables en PDF ou HTML, envoi par email avec sélection des fichiers et du format
 
 ### Personnalisation
 - Thèmes : Clair, Sombre, Classique, Pro, Moderne, Coloré
 - Luminosité et contraste réglables par élément (Arrière-plan, Cartes, Navigation)
 - Navigation personnalisable (sidebar + barre du bas)
+- Pages Manager/Paramètres/Profil toujours visibles pour les managers, indépendamment des préférences
 
 ## Technologies
 
@@ -85,7 +88,7 @@ VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
 | Rôle | Permissions |
 |------|-------------|
 | Agent | Créer/voir/exporter ses propres contrôles, consulter personnes recherchées |
-| Manager | + Voir équipe · Gérer membres · Gérer personnes recherchées |
+| Manager | + Voir équipe · Gérer membres · Gérer personnes recherchées · Accès section Manager |
 | Admin | Accès complet · Gestion utilisateurs · Configuration seuils |
 
 ## Calcul de la fraude
