@@ -74,7 +74,7 @@ import {
   type DashboardShortcut,
 } from '@/lib/dashboardShortcuts';
 
-const PAGE_OPTIONS: { id: PageId; label: string; canDisable: boolean; roleRequired?: 'manager' | 'admin' }[] = [
+const PAGE_OPTIONS: { id: PageId; label: string; canDisable: boolean; canDisableBottomBar?: boolean; roleRequired?: 'manager' | 'admin' }[] = [
   { id: 'dashboard', label: 'Accueil', canDisable: false },
   { id: 'onboard', label: 'Contrôle à bord', canDisable: true },
   { id: 'station', label: 'Contrôle en gare', canDisable: true },
@@ -83,7 +83,7 @@ const PAGE_OPTIONS: { id: PageId; label: string; canDisable: boolean; roleRequir
   { id: 'infos', label: 'Infos', canDisable: true },
   { id: 'manager', label: 'Manager', canDisable: false, roleRequired: 'manager' },
   { id: 'profile', label: 'Profil', canDisable: false },
-  { id: 'settings', label: 'Paramètres', canDisable: false },
+  { id: 'settings', label: 'Paramètres', canDisable: false, canDisableBottomBar: true },
   { id: 'admin', label: 'Administration', canDisable: false, roleRequired: 'admin' },
 ];
 
@@ -667,7 +667,7 @@ export default function Settings() {
                               id={page.id}
                               label={page.label}
                               isVisible={bottomBarPages.includes(page.id)}
-                              canDisable={page.canDisable}
+                              canDisable={page.canDisableBottomBar ?? page.canDisable}
                               isUpdating={isUpdating}
                               onToggle={() => toggleBottomBarPage(page.id)}
                             />
