@@ -153,7 +153,14 @@ export function AppLayout({ children }: AppLayoutProps) {
   const isUserManager = isManager();
   const showBottomBar = preferences?.show_bottom_bar ?? true;
   const showBurgerMenu = preferences?.show_burger_menu ?? false;
-  const visiblePages = preferences?.visible_pages || DEFAULT_VISIBLE_PAGES;
+  const visiblePages = useMemo(() => {
+    const base: PageId[] = preferences?.visible_pages || DEFAULT_VISIBLE_PAGES;
+    const forced: PageId[] = ['settings', 'profile'];
+    if (isUserManager || isAdmin()) forced.push('manager');
+    const merged = [...base];
+    for (const p of forced) { if (!merged.includes(p)) merged.push(p); }
+    return merged;
+  }, [preferences?.visible_pages, isUserManager]);
   const bottomBarPages = preferences?.bottom_bar_pages || DEFAULT_BOTTOM_BAR_PAGES;
 
   // Filter and order nav items for burger menu / sidebar (memoïsé — recalcul seulement si rôle/pages changent)
