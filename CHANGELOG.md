@@ -5,6 +5,11 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/),
 et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.10.87] - 2026-04-01
+
+### Ajouté
+- Infos > Présentation : téléchargement PDF direct pour les deux présentations (fichiers PDF générés et hébergés)
+
 ## [1.10.86] - 2026-03-31
 
 ### Modifié
