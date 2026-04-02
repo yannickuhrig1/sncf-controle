@@ -14,7 +14,7 @@ interface TrainFraudCompactProps {
   trainNumber: string;
 }
 
-type Period = '7d' | '30d';
+type Period = '7d' | '30d' | '6m' | '1y';
 
 interface PeriodStats {
   totalPassengers: number;
@@ -43,8 +43,16 @@ export function TrainFraudCompact({ controls, trainNumber }: TrainFraudCompactPr
     if (trainControls.length === 0) return null;
 
     // Calculate stats for current period
-    const periodStart = period === '7d' ? subDays(now, 7) : subMonths(now, 1);
-    const previousPeriodStart = period === '7d' ? subDays(now, 14) : subMonths(now, 2);
+    const periodStart =
+      period === '7d' ? subDays(now, 7) :
+      period === '30d' ? subMonths(now, 1) :
+      period === '6m' ? subMonths(now, 6) :
+      subMonths(now, 12);
+    const previousPeriodStart =
+      period === '7d' ? subDays(now, 14) :
+      period === '30d' ? subMonths(now, 2) :
+      period === '6m' ? subMonths(now, 12) :
+      subMonths(now, 24);
     
     const currentPeriodControls = trainControls.filter(c => 
       isAfter(parseISO(c.control_date), periodStart)
@@ -124,22 +132,17 @@ export function TrainFraudCompact({ controls, trainNumber }: TrainFraudCompactPr
 
           {/* Period toggle */}
           <div className="flex items-center gap-1 shrink-0">
-            <Button
-              variant={period === '7d' ? 'default' : 'ghost'}
-              size="sm"
-              className="h-7 px-2 text-xs"
-              onClick={() => setPeriod('7d')}
-            >
-              7j
-            </Button>
-            <Button
-              variant={period === '30d' ? 'default' : 'ghost'}
-              size="sm"
-              className="h-7 px-2 text-xs"
-              onClick={() => setPeriod('30d')}
-            >
-              30j
-            </Button>
+            {(['7d', '30d', '6m', '1y'] as Period[]).map((p) => (
+              <Button
+                key={p}
+                variant={period === p ? 'default' : 'ghost'}
+                size="sm"
+                className="h-7 px-2 text-xs"
+                onClick={() => setPeriod(p)}
+              >
+                {p === '7d' ? '7j' : p === '30d' ? '30j' : p === '6m' ? '6m' : '1a'}
+              </Button>
+            ))}
           </div>
         </div>
 

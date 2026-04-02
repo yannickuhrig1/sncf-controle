@@ -406,7 +406,7 @@ export function exportToPDF({ controls, title, dateRange, includeStats, orientat
     }
 
     // ── 3. TRAINS LES PLUS SENSIBLES (même que HTML) ──────────────────────
-    const maxSensitive = Math.min(trainFraudStats.length, 10);
+    const maxSensitive = Math.min(trainFraudStats.length, 12);
     if (maxSensitive > 0) {
       const rowH    = 10;
       const numRows = Math.ceil(maxSensitive / 2);
@@ -595,6 +595,28 @@ export function exportToPDF({ controls, title, dateRange, includeStats, orientat
       tableWidth: thirdW,
     });
     y = lastTableY() + 10;
+
+    // Sécurité à bord (Police / SUGE) — même condition que HTML
+    if (stats.policeOnBoardCount > 0 || stats.sugeOnBoardCount > 0) {
+      if (y + 40 > safeH) newPage();
+      const secW = (pageW - 28) / 3;
+      y = sectionBar(doc, 'Sécurité à bord', 14, y, secW, C.blue);
+      autoTable(doc, {
+        startY: y,
+        head: [['Type', 'Nbre']],
+        body: [
+          ...(stats.policeOnBoardCount > 0 ? [['Police à bord', stats.policeOnBoardCount.toString()]] : []),
+          ...(stats.sugeOnBoardCount   > 0 ? [['SUGE à bord',   stats.sugeOnBoardCount.toString()]]   : []),
+        ],
+        theme: 'plain',
+        headStyles: { fillColor: C.blueLight, textColor: C.blue, fontSize: 7.5, fontStyle: 'bold', cellPadding: 2.5 },
+        bodyStyles:  { fontSize: 7.5, cellPadding: 2.5, textColor: C.gray800 },
+        alternateRowStyles: { fillColor: C.gray50 },
+        margin: { left: 14, right: pageW - 14 - secW },
+        tableWidth: secW,
+      });
+      y = lastTableY() + 10;
+    }
   }
 
   // ── 5. DÉTAIL DES CONTRÔLES — 16 colonnes (même que HTML) ────────────────
@@ -1468,9 +1490,9 @@ export function exportToHTML({ controls, title, dateRange, includeStats, exportM
     td.num { text-align: center; }
 
     /* ── Chart ────────────────────────────────────────────────────── */
-    .chart-wrap { overflow-x: auto; padding: 8px 0 4px; }
-    .chart-bars { display: flex; align-items: flex-end; gap: 6px; height: 140px; min-width: max-content; padding: 0 8px; }
-    .bar-col { display: flex; flex-direction: column; align-items: center; min-width: 36px; }
+    .chart-wrap { width: 100%; padding: 8px 0 4px; }
+    .chart-bars { display: flex; align-items: flex-end; gap: 4px; height: 140px; width: 100%; padding: 0 8px; justify-content: space-between; }
+    .bar-col { display: flex; flex-direction: column; align-items: center; flex: 1; min-width: 0; }
     .bar-val { font-size: 9px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
     .bar { width: 100%; border-radius: 6px 6px 0 0; min-height: 6px; transition: opacity 0.2s; cursor: default; }
     .bar:hover { opacity: 0.78; }

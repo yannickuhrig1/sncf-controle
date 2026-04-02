@@ -415,9 +415,14 @@ export default function ManagerPage() {
             <TabsTrigger value="heatmap">Heatmap</TabsTrigger>
             <TabsTrigger value="audit">Audit Trail</TabsTrigger>
             <TabsTrigger value="teams">Équipes</TabsTrigger>
-            <TabsTrigger value="wanted" className="gap-1">
+            <TabsTrigger value="wanted" className="gap-1.5 data-[state=active]:bg-red-600 data-[state=active]:text-white text-red-600 dark:text-red-400 font-semibold">
               <AlertTriangle className="h-3.5 w-3.5" />
               Recherchées
+              {wantedPersons.length > 0 && (
+                <span className="inline-flex items-center justify-center h-4 min-w-4 px-1 rounded-full bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300 text-[10px] font-bold">
+                  {wantedPersons.length}
+                </span>
+              )}
             </TabsTrigger>
           </TabsList>
 
