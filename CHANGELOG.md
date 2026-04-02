@@ -5,6 +5,11 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/),
 et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.10.94] - 2026-04-02
+
+### Modifié
+- Manager : onglet "Recherchées" mis en évidence en rouge avec badge compteur
+
 ## [1.10.93] - 2026-04-02
 
 ### Corrigé
