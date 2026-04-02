@@ -406,7 +406,7 @@ export function exportToPDF({ controls, title, dateRange, includeStats, orientat
     }
 
     // ── 3. TRAINS LES PLUS SENSIBLES (même que HTML) ──────────────────────
-    const maxSensitive = Math.min(trainFraudStats.length, 10);
+    const maxSensitive = Math.min(trainFraudStats.length, 12);
     if (maxSensitive > 0) {
       const rowH    = 10;
       const numRows = Math.ceil(maxSensitive / 2);
@@ -595,6 +595,28 @@ export function exportToPDF({ controls, title, dateRange, includeStats, orientat
       tableWidth: thirdW,
     });
     y = lastTableY() + 10;
+
+    // Sécurité à bord (Police / SUGE) — même condition que HTML
+    if (stats.policeOnBoardCount > 0 || stats.sugeOnBoardCount > 0) {
+      if (y + 40 > safeH) newPage();
+      const secW = (pageW - 28) / 3;
+      y = sectionBar(doc, 'Sécurité à bord', 14, y, secW, C.blue);
+      autoTable(doc, {
+        startY: y,
+        head: [['Type', 'Nbre']],
+        body: [
+          ...(stats.policeOnBoardCount > 0 ? [['Police à bord', stats.policeOnBoardCount.toString()]] : []),
+          ...(stats.sugeOnBoardCount   > 0 ? [['SUGE à bord',   stats.sugeOnBoardCount.toString()]]   : []),
+        ],
+        theme: 'plain',
+        headStyles: { fillColor: C.blueLight, textColor: C.blue, fontSize: 7.5, fontStyle: 'bold', cellPadding: 2.5 },
+        bodyStyles:  { fontSize: 7.5, cellPadding: 2.5, textColor: C.gray800 },
+        alternateRowStyles: { fillColor: C.gray50 },
+        margin: { left: 14, right: pageW - 14 - secW },
+        tableWidth: secW,
+      });
+      y = lastTableY() + 10;
+    }
   }
 
   // ── 5. DÉTAIL DES CONTRÔLES — 16 colonnes (même que HTML) ────────────────
