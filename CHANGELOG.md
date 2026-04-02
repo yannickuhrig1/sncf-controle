@@ -5,6 +5,11 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/),
 et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.10.91] - 2026-04-02
+
+### Ajouté
+- À bord : boutons 6m et 1a dans le sélecteur de période du composant TrainFraudCompact (en plus de 7j et 30j)
+
 ## [1.10.90] - 2026-04-01
 
 ### Corrigé
