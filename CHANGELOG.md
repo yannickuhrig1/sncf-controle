@@ -5,6 +5,11 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/),
 et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.10.92] - 2026-04-02
+
+### Corrigé
+- Export HTML : graphique "Évolution du taux de fraude" ajusté à la largeur complète de la page
+
 ## [1.10.91] - 2026-04-02
 
 ### Ajouté

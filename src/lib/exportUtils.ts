@@ -1468,9 +1468,9 @@ export function exportToHTML({ controls, title, dateRange, includeStats, exportM
     td.num { text-align: center; }
 
     /* ── Chart ────────────────────────────────────────────────────── */
-    .chart-wrap { overflow-x: auto; padding: 8px 0 4px; }
-    .chart-bars { display: flex; align-items: flex-end; gap: 6px; height: 140px; min-width: max-content; padding: 0 8px; }
-    .bar-col { display: flex; flex-direction: column; align-items: center; min-width: 36px; }
+    .chart-wrap { width: 100%; padding: 8px 0 4px; }
+    .chart-bars { display: flex; align-items: flex-end; gap: 4px; height: 140px; width: 100%; padding: 0 8px; justify-content: space-between; }
+    .bar-col { display: flex; flex-direction: column; align-items: center; flex: 1; min-width: 0; }
     .bar-val { font-size: 9px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
     .bar { width: 100%; border-radius: 6px 6px 0 0; min-height: 6px; transition: opacity 0.2s; cursor: default; }
     .bar:hover { opacity: 0.78; }
