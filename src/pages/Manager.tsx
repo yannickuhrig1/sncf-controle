@@ -43,6 +43,8 @@ import {
   Eye,
   EyeOff,
   Upload,
+  LogIn,
+  Check,
 } from 'lucide-react';
 import { useWantedPersons, type WantedPerson } from '@/hooks/useWantedPersons';
 import { HourlyHeatmap } from '@/components/manager/HourlyHeatmap';
@@ -52,6 +54,7 @@ import type { Database } from '@/integrations/supabase/types';
 type Profile = Database['public']['Tables']['profiles']['Row'];
 type Control = Database['public']['Tables']['controls']['Row'];
 type Team   = Database['public']['Tables']['teams']['Row'];
+type JoinRequest = Database['public']['Tables']['team_join_requests']['Row'];
 
 export default function ManagerPage() {
   const { user, profile, loading: authLoading, isManager, isAdmin } = useAuth();
@@ -145,21 +148,69 @@ export default function ManagerPage() {
   const [addAgentTeamId, setAddAgentTeamId] = useState<string | null>(null);
   const [agentSearch, setAgentSearch]       = useState('');
 
-  // ── Fetch manager's teams ──────────────────────────────────────────────────
-  const { data: managerTeams = [], isLoading: teamsLoading } = useQuery({
-    queryKey: ['manager-teams', profile?.id],
+  // ── Fetch all teams (managers see all, to allow join requests) ────────────
+  const { data: allTeams = [], isLoading: teamsLoading } = useQuery({
+    queryKey: ['all-teams', profile?.id],
     queryFn: async () => {
-      const q = isAdmin()
-        ? supabase.from('teams').select('*').order('name')
-        : supabase.from('teams').select('*').eq('manager_id', profile!.id).order('name');
-      const { data, error } = await q;
+      const { data, error } = await supabase.from('teams').select('*').order('name');
       if (error) throw error;
       return data as Team[];
     },
     enabled: !!profile && canAccess,
   });
 
+  // Teams the current user manages (as primary or co-manager)
+  const managerTeams = useMemo(() =>
+    isAdmin()
+      ? allTeams
+      : allTeams.filter(t =>
+          t.manager_id === profile?.id ||
+          (t.co_manager_ids ?? []).includes(profile?.id ?? '')
+        ),
+    [allTeams, profile?.id]
+  );
+
+  // Teams the current user can request to join
+  const joinableTeams = useMemo(() =>
+    isAdmin()
+      ? []
+      : allTeams.filter(t =>
+          t.manager_id !== profile?.id &&
+          !(t.co_manager_ids ?? []).includes(profile?.id ?? '')
+        ),
+    [allTeams, profile?.id]
+  );
+
   const managerTeamIds = useMemo(() => managerTeams.map(t => t.id), [managerTeams]);
+
+  // ── Fetch my outgoing join requests ───────────────────────────────────────
+  const { data: myJoinRequests = [] } = useQuery({
+    queryKey: ['my-join-requests', profile?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('team_join_requests')
+        .select('*')
+        .eq('requester_id', profile!.id);
+      if (error) throw error;
+      return data as JoinRequest[];
+    },
+    enabled: !!profile && canAccess,
+  });
+
+  // ── Fetch incoming pending join requests for my teams ─────────────────────
+  const { data: incomingRequests = [] } = useQuery({
+    queryKey: ['incoming-join-requests', managerTeamIds],
+    queryFn: async () => {
+      if (!isAdmin() && managerTeamIds.length === 0) return [];
+      const q = isAdmin()
+        ? supabase.from('team_join_requests').select('*, requester:requester_id(id,first_name,last_name,matricule), team:team_id(id,name)').eq('status', 'pending')
+        : supabase.from('team_join_requests').select('*, requester:requester_id(id,first_name,last_name,matricule), team:team_id(id,name)').eq('status', 'pending').in('team_id', managerTeamIds);
+      const { data, error } = await q;
+      if (error) throw error;
+      return data as (JoinRequest & { requester: Pick<Profile, 'id'|'first_name'|'last_name'|'matricule'>; team: Pick<Team, 'id'|'name'> })[];
+    },
+    enabled: !!profile && canAccess,
+  });
 
   // ── Fetch team members ─────────────────────────────────────────────────────
   const { data: teamMembers = [], isLoading: membersLoading } = useQuery({
@@ -300,6 +351,62 @@ export default function ManagerPage() {
     onError: (e: Error) => toast.error(`Erreur : ${e.message}`),
   });
 
+  const requestJoinMutation = useMutation({
+    mutationFn: async ({ teamId, teamName }: { teamId: string; teamName: string }) => {
+      const { data, error } = await supabase
+        .from('team_join_requests')
+        .insert({ team_id: teamId, requester_id: profile!.id })
+        .select()
+        .single();
+      if (error) throw error;
+      // Notify team manager + admins
+      const requesterName = `${profile!.first_name} ${profile!.last_name}`;
+      await supabase.functions.invoke('notify-team-join-request', {
+        body: {
+          request_id: data.id,
+          team_id: teamId,
+          requester_id: profile!.id,
+          requester_name: requesterName,
+          team_name: teamName,
+        },
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['my-join-requests'] });
+      toast.success('Demande envoyée — en attente de validation');
+    },
+    onError: (e: Error) => toast.error(`Erreur : ${e.message}`),
+  });
+
+  const reviewJoinMutation = useMutation({
+    mutationFn: async ({ requestId, status, requesterId, teamId }: { requestId: string; status: 'approved' | 'rejected'; requesterId: string; teamId: string }) => {
+      const { error } = await supabase
+        .from('team_join_requests')
+        .update({ status, reviewed_by: profile!.id, reviewed_at: new Date().toISOString() })
+        .eq('id', requestId);
+      if (error) throw error;
+      // If approved, add requester as co-manager
+      if (status === 'approved') {
+        const team = allTeams.find(t => t.id === teamId);
+        const current = team?.co_manager_ids ?? [];
+        if (!current.includes(requesterId)) {
+          const { error: e2 } = await supabase
+            .from('teams')
+            .update({ co_manager_ids: [...current, requesterId] })
+            .eq('id', teamId);
+          if (e2) throw e2;
+        }
+      }
+    },
+    onSuccess: (_data, vars) => {
+      queryClient.invalidateQueries({ queryKey: ['incoming-join-requests'] });
+      queryClient.invalidateQueries({ queryKey: ['all-teams'] });
+      queryClient.invalidateQueries({ queryKey: ['manager-teams'] });
+      toast.success(vars.status === 'approved' ? 'Demande approuvée' : 'Demande refusée');
+    },
+    onError: (e: Error) => toast.error(`Erreur : ${e.message}`),
+  });
+
   // ── Guards ─────────────────────────────────────────────────────────────────
   if (authLoading) {
     return (
@@ -414,7 +521,14 @@ export default function ManagerPage() {
             <TabsTrigger value="overview">Vue d'ensemble</TabsTrigger>
             <TabsTrigger value="heatmap">Heatmap</TabsTrigger>
             <TabsTrigger value="audit">Audit Trail</TabsTrigger>
-            <TabsTrigger value="teams">Équipes</TabsTrigger>
+            <TabsTrigger value="teams" className="gap-1.5">
+              Équipes
+              {incomingRequests.length > 0 && (
+                <span className="inline-flex items-center justify-center h-4 min-w-4 px-1 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300 text-[10px] font-bold">
+                  {incomingRequests.length}
+                </span>
+              )}
+            </TabsTrigger>
             <TabsTrigger value="wanted" className="gap-1.5 data-[state=active]:bg-red-600 data-[state=active]:text-white text-red-600 dark:text-red-400 font-semibold">
               <AlertTriangle className="h-3.5 w-3.5" />
               Recherchées
@@ -595,9 +709,65 @@ export default function ManagerPage() {
 
           {/* ── Équipes ── */}
           <TabsContent value="teams" className="space-y-4">
+
+            {/* ── Demandes en attente (incoming) ── */}
+            {incomingRequests.length > 0 && (
+              <Card className="border-0 shadow-sm overflow-hidden border-amber-200 dark:border-amber-800">
+                <div className="h-1 bg-gradient-to-r from-amber-400 to-orange-500" />
+                <CardHeader className="py-3 px-4 pb-2">
+                  <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                    <div className="p-1.5 rounded-lg bg-amber-100 dark:bg-amber-900/30">
+                      <UserPlus className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
+                    </div>
+                    Demandes à valider
+                    <Badge className="ml-1 bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 hover:bg-amber-100 text-xs">
+                      {incomingRequests.length}
+                    </Badge>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="px-4 pb-3 space-y-2">
+                  {incomingRequests.map(req => (
+                    <div key={req.id} className="flex items-center justify-between py-2 px-3 rounded-md bg-amber-50 dark:bg-amber-900/10">
+                      <div className="min-w-0">
+                        <div className="text-sm font-medium">
+                          {req.requester.first_name} {req.requester.last_name}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {req.requester.matricule || 'Sans matricule'} · souhaite rejoindre <span className="font-medium">{req.team.name}</span>
+                        </div>
+                      </div>
+                      <div className="flex gap-1.5 shrink-0 ml-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-7 text-xs gap-1 border-green-300 text-green-700 hover:bg-green-50 dark:text-green-400"
+                          onClick={() => reviewJoinMutation.mutate({ requestId: req.id, status: 'approved', requesterId: req.requester_id, teamId: req.team_id })}
+                          disabled={reviewJoinMutation.isPending}
+                        >
+                          <Check className="h-3 w-3" />
+                          Approuver
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-7 text-xs gap-1 border-red-300 text-red-700 hover:bg-red-50 dark:text-red-400"
+                          onClick={() => reviewJoinMutation.mutate({ requestId: req.id, status: 'rejected', requesterId: req.requester_id, teamId: req.team_id })}
+                          disabled={reviewJoinMutation.isPending}
+                        >
+                          <X className="h-3 w-3" />
+                          Refuser
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* ── Mes équipes ── */}
             <div className="flex items-center justify-between">
               <p className="text-sm text-muted-foreground">
-                {managerTeams.length} équipe{managerTeams.length !== 1 ? 's' : ''}
+                {managerTeams.length} équipe{managerTeams.length !== 1 ? 's' : ''} gérée{managerTeams.length !== 1 ? 's' : ''}
               </p>
               <Button size="sm" onClick={() => setCreateTeamOpen(true)}>
                 <Plus className="h-4 w-4 mr-1.5" />
@@ -610,10 +780,10 @@ export default function ManagerPage() {
                 <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
               </div>
             ) : managerTeams.length === 0 ? (
-              <div className="text-center py-16 text-muted-foreground space-y-2">
+              <div className="text-center py-8 text-muted-foreground space-y-2">
                 <Users className="h-10 w-10 opacity-30 mx-auto" />
-                <p className="text-sm">Aucune équipe</p>
-                <p className="text-xs opacity-60">Créez votre première équipe pour commencer</p>
+                <p className="text-sm">Aucune équipe gérée</p>
+                <p className="text-xs opacity-60">Créez votre première équipe ou rejoignez-en une</p>
               </div>
             ) : (
               <div className="space-y-4">
@@ -676,6 +846,54 @@ export default function ManagerPage() {
                               </div>
                             ))}
                           </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* ── Autres équipes (rejoindre) ── */}
+            {!isAdmin() && joinableTeams.length > 0 && (
+              <div className="space-y-3">
+                <p className="text-sm font-medium text-muted-foreground pt-2 border-t">Autres équipes</p>
+                {joinableTeams.map(team => {
+                  const myReq = myJoinRequests.find(r => r.team_id === team.id);
+                  return (
+                    <Card key={team.id} className="border-0 shadow-sm overflow-hidden opacity-80">
+                      <CardContent className="py-3 px-4 flex items-center gap-3">
+                        <div className="p-1.5 rounded-lg bg-muted">
+                          <Users className="h-3.5 w-3.5 text-muted-foreground" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm font-medium">{team.name}</div>
+                          {team.description && (
+                            <div className="text-xs text-muted-foreground truncate">{team.description}</div>
+                          )}
+                        </div>
+                        {myReq ? (
+                          <Badge
+                            className={cn(
+                              'text-xs shrink-0',
+                              myReq.status === 'pending' && 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
+                              myReq.status === 'approved' && 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
+                              myReq.status === 'rejected' && 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
+                            )}
+                          >
+                            {myReq.status === 'pending' ? 'En attente' : myReq.status === 'approved' ? 'Approuvé' : 'Refusé'}
+                          </Badge>
+                        ) : (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-7 text-xs gap-1 shrink-0"
+                            onClick={() => requestJoinMutation.mutate({ teamId: team.id, teamName: team.name })}
+                            disabled={requestJoinMutation.isPending}
+                          >
+                            <LogIn className="h-3.5 w-3.5" />
+                            Rejoindre
+                          </Button>
                         )}
                       </CardContent>
                     </Card>

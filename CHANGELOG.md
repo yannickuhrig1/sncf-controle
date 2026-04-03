@@ -5,6 +5,19 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/),
 et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.10.95] - 2026-04-03
+
+### Ajouté
+- Manager : système de demandes pour rejoindre une équipe
+  - Un manager peut voir toutes les équipes et envoyer une demande pour en rejoindre une
+  - Le manager de l'équipe (et les co-managers/admins) reçoit une notification push
+  - Approbation ou refus de la demande depuis l'onglet "Équipes"
+  - Badge amber sur l'onglet "Équipes" et l'icône Manager en nav en cas de demandes en attente
+  - Si approuvé, le demandeur devient co-manager de l'équipe
+- Nouveau champ `co_manager_ids UUID[]` sur la table `teams`
+- Nouvelle table `team_join_requests` avec RLS
+- Nouvelle Edge Function `notify-team-join-request`
+
 ## [1.10.94] - 2026-04-02
 
 ### Modifié

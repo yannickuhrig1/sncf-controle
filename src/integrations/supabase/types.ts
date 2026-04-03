@@ -406,8 +406,54 @@ export type Database = {
         }
         Relationships: []
       }
+      team_join_requests: {
+        Row: {
+          id: string
+          team_id: string
+          requester_id: string
+          status: 'pending' | 'approved' | 'rejected'
+          reviewed_by: string | null
+          reviewed_at: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          team_id: string
+          requester_id: string
+          status?: 'pending' | 'approved' | 'rejected'
+          reviewed_by?: string | null
+          reviewed_at?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          team_id?: string
+          requester_id?: string
+          status?: 'pending' | 'approved' | 'rejected'
+          reviewed_by?: string | null
+          reviewed_at?: string | null
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_join_requests_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "team_join_requests_requester_id_fkey"
+            columns: ["requester_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       teams: {
         Row: {
+          co_manager_ids: string[]
           created_at: string
           description: string | null
           id: string
@@ -416,6 +462,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          co_manager_ids?: string[]
           created_at?: string
           description?: string | null
           id?: string
@@ -424,6 +471,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          co_manager_ids?: string[]
           created_at?: string
           description?: string | null
           id?: string
