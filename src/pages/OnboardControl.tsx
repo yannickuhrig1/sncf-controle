@@ -205,27 +205,26 @@ export default function OnboardControl() {
 
   const handleCreateSession = async () => {
     const code = await createSession();
-    if (code) applyShareCode(code);
+    if (code) await applyShareCode(code);
     return code;
   };
 
   const handleJoinSession = async (code: string) => {
     const sessionDate = await joinSession(code);
     if (sessionDate) {
-      // Sync form date to session date so we query the right trains
+      // Apply share code for the session date (avoids race condition if dates differ)
+      await applyShareCode(code, sessionDate);
+      // Sync form date to session date AFTER applyShareCode so we query the right trains
       if (sessionDate !== formState.controlDate) {
         setFormState(p => ({ ...p, controlDate: sessionDate }));
       }
-      applyShareCode(code);
-      // Explicit refresh after a short delay to let DB settle
-      setTimeout(() => refreshDailyTrains(), 800);
       return true;
     }
     return false;
   };
 
   const handleLeaveSession = async () => {
-    applyShareCode(null);
+    await applyShareCode(null);
     await leaveSession();
   };
 

@@ -130,6 +130,30 @@ export function AppLayout({ children }: AppLayoutProps) {
 
   const adminBadgeCount = pendingApprovalCount + openTicketsCount;
 
+  // Fetch pending join requests count for manager badge
+  const { data: pendingJoinRequestsCount = 0 } = useQuery({
+    queryKey: ['pending-join-requests-count', profile?.id],
+    queryFn: async () => {
+      if (!profile?.id) return 0;
+      // Get teams I manage (primary or co-manager)
+      const { data: myTeams } = await supabase
+        .from('teams')
+        .select('id, manager_id, co_manager_ids');
+      if (!myTeams) return 0;
+      const myTeamIds = myTeams
+        .filter(t => t.manager_id === profile.id || (t.co_manager_ids ?? []).includes(profile.id))
+        .map(t => t.id);
+      if (!isAdmin() && myTeamIds.length === 0) return 0;
+      const q = isAdmin()
+        ? supabase.from('team_join_requests').select('*', { count: 'exact', head: true }).eq('status', 'pending')
+        : supabase.from('team_join_requests').select('*', { count: 'exact', head: true }).eq('status', 'pending').in('team_id', myTeamIds);
+      const { count } = await q;
+      return count || 0;
+    },
+    enabled: !!profile && (isManager() || isAdmin()),
+    refetchInterval: 30000,
+  });
+
   // Realtime : notifier l'admin dès qu'un nouveau ticket arrive
   useEffect(() => {
     if (!user || !isAdmin()) return;
@@ -217,6 +241,11 @@ export function AppLayout({ children }: AppLayoutProps) {
                     {adminBadgeCount > 9 ? '9+' : adminBadgeCount}
                   </span>
                 )}
+                {item.pageId === 'manager' && pendingJoinRequestsCount > 0 && (
+                  <span className="absolute -top-1.5 -right-1.5 flex items-center justify-center h-4 min-w-4 px-0.5 rounded-full bg-amber-500 text-white text-[10px] font-bold">
+                    {pendingJoinRequestsCount > 9 ? '9+' : pendingJoinRequestsCount}
+                  </span>
+                )}
               </div>
               <span className="font-medium">{item.label}</span>
             </Link>
@@ -251,6 +280,11 @@ export function AppLayout({ children }: AppLayoutProps) {
                 {item.pageId === 'admin' && adminBadgeCount > 0 && (
                   <span className="absolute -top-1.5 -right-1.5 flex items-center justify-center h-4 min-w-4 px-0.5 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold">
                     {adminBadgeCount > 9 ? '9+' : adminBadgeCount}
+                  </span>
+                )}
+                {item.pageId === 'manager' && pendingJoinRequestsCount > 0 && (
+                  <span className="absolute -top-1.5 -right-1.5 flex items-center justify-center h-4 min-w-4 px-0.5 rounded-full bg-amber-500 text-white text-[10px] font-bold">
+                    {pendingJoinRequestsCount > 9 ? '9+' : pendingJoinRequestsCount}
                   </span>
                 )}
               </div>
@@ -294,6 +328,11 @@ export function AppLayout({ children }: AppLayoutProps) {
                 {item.pageId === 'admin' && adminBadgeCount > 0 && (
                   <span className="absolute -top-1 -right-1 flex items-center justify-center h-4 min-w-4 px-0.5 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold">
                     {adminBadgeCount > 9 ? '9+' : adminBadgeCount}
+                  </span>
+                )}
+                {item.pageId === 'manager' && pendingJoinRequestsCount > 0 && (
+                  <span className="absolute -top-1 -right-1 flex items-center justify-center h-4 min-w-4 px-0.5 rounded-full bg-amber-500 text-white text-[10px] font-bold">
+                    {pendingJoinRequestsCount > 9 ? '9+' : pendingJoinRequestsCount}
                   </span>
                 )}
               </div>

@@ -5,6 +5,39 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/),
 et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.10.97] - 2026-04-03
+
+### Modifié
+- Partage mission en gare : refonte de la boîte de dialogue avec deux onglets distincts
+  - Onglet "Rejoindre" affiché par défaut (code à 6 caractères + scanner QR)
+  - Onglet "Créer" pour les propriétaires de session
+  - Suppression du séparateur "ou" confus — chaque action a son propre onglet
+  - Input de code centré et plus lisible (font-mono, text-lg)
+
+## [1.10.96] - 2026-04-03
+
+### Corrigé — Partage de mission en gare
+- Suppression du `window.location.reload()` après avoir rejoint une session (causait des pertes de contexte)
+- Correction de la race condition dans `handleJoinSession` : `applyShareCode` est maintenant appelé avec la bonne date de session (évite de mettre à jour les trains du mauvais jour)
+- `applyShareCode` est maintenant asynchrone et rafraîchit les trains après la mise à jour DB
+- Remplacement du polling 30s du compteur de membres par une souscription Realtime Supabase
+- Ajout des types TypeScript pour `daily_trains`, `train_share_sessions`, `train_share_members` (suppression des `as any` et des erreurs silencieuses)
+- Correction du regex de validation de code (exclu I, L, O cohérent avec le générateur)
+- Logs d'erreurs console pour faciliter le diagnostic
+
+## [1.10.95] - 2026-04-03
+
+### Ajouté
+- Manager : système de demandes pour rejoindre une équipe
+  - Un manager peut voir toutes les équipes et envoyer une demande pour en rejoindre une
+  - Le manager de l'équipe (et les co-managers/admins) reçoit une notification push
+  - Approbation ou refus de la demande depuis l'onglet "Équipes"
+  - Badge amber sur l'onglet "Équipes" et l'icône Manager en nav en cas de demandes en attente
+  - Si approuvé, le demandeur devient co-manager de l'équipe
+- Nouveau champ `co_manager_ids UUID[]` sur la table `teams`
+- Nouvelle table `team_join_requests` avec RLS
+- Nouvelle Edge Function `notify-team-join-request`
+
 ## [1.10.94] - 2026-04-02
 
 ### Modifié

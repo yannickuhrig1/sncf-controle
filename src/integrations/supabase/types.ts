@@ -14,6 +14,78 @@ export type Database = {
   }
   public: {
     Tables: {
+      daily_trains: {
+        Row: {
+          id: string
+          user_id: string
+          date: string
+          train_number: string
+          train_info: Json | null
+          shared: boolean
+          share_code: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          date: string
+          train_number: string
+          train_info?: Json | null
+          shared?: boolean
+          share_code?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          date?: string
+          train_number?: string
+          train_info?: Json | null
+          shared?: boolean
+          share_code?: string | null
+          created_at?: string
+        }
+        Relationships: []
+      }
+      train_share_sessions: {
+        Row: {
+          code: string
+          owner_id: string
+          date: string
+          created_at: string
+        }
+        Insert: {
+          code: string
+          owner_id: string
+          date: string
+          created_at?: string
+        }
+        Update: {
+          code?: string
+          owner_id?: string
+          date?: string
+          created_at?: string
+        }
+        Relationships: []
+      }
+      train_share_members: {
+        Row: {
+          code: string
+          user_id: string
+          joined_at: string
+        }
+        Insert: {
+          code: string
+          user_id: string
+          joined_at?: string
+        }
+        Update: {
+          code?: string
+          user_id?: string
+          joined_at?: string
+        }
+        Relationships: []
+      }
       admin_settings: {
         Row: {
           created_at: string
@@ -406,8 +478,54 @@ export type Database = {
         }
         Relationships: []
       }
+      team_join_requests: {
+        Row: {
+          id: string
+          team_id: string
+          requester_id: string
+          status: 'pending' | 'approved' | 'rejected'
+          reviewed_by: string | null
+          reviewed_at: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          team_id: string
+          requester_id: string
+          status?: 'pending' | 'approved' | 'rejected'
+          reviewed_by?: string | null
+          reviewed_at?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          team_id?: string
+          requester_id?: string
+          status?: 'pending' | 'approved' | 'rejected'
+          reviewed_by?: string | null
+          reviewed_at?: string | null
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_join_requests_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "team_join_requests_requester_id_fkey"
+            columns: ["requester_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       teams: {
         Row: {
+          co_manager_ids: string[]
           created_at: string
           description: string | null
           id: string
@@ -416,6 +534,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          co_manager_ids?: string[]
           created_at?: string
           description?: string | null
           id?: string
@@ -424,6 +543,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          co_manager_ids?: string[]
           created_at?: string
           description?: string | null
           id?: string

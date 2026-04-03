@@ -23,21 +23,23 @@ export function useDailyTrains(date: string, shareCode?: string | null) {
     if (!user) return;
 
     // Own trains
-    const { data: own } = await supabase
-      .from('daily_trains' as any)
+    const { data: own, error: ownErr } = await supabase
+      .from('daily_trains')
       .select('train_number, train_info, shared')
       .eq('user_id', user.id)
       .eq('date', date)
       .order('created_at');
 
-    if (own) {
-      const fetched: DailyTrain[] = (own as any[]).map(r => ({
+    if (ownErr) {
+      console.error('useDailyTrains fetchFromDb own:', ownErr.message);
+    } else if (own) {
+      const fetched: DailyTrain[] = own.map(r => ({
         trainNumber: r.train_number,
-        trainInfo: r.train_info ?? undefined,
+        trainInfo: (r.train_info as TrainInfo) ?? undefined,
       }));
       setTrains(fetched);
       localStorage.setItem(key, JSON.stringify(fetched));
-      setIsSharing((own as any[]).some(r => r.shared));
+      setIsSharing(own.some(r => r.shared));
     }
 
     // Team trains (shared via same code session, deduplicated)
@@ -46,28 +48,30 @@ export function useDailyTrains(date: string, shareCode?: string | null) {
       return;
     }
 
-    const { data: team } = await supabase
-      .from('daily_trains' as any)
+    const { data: team, error: teamErr } = await supabase
+      .from('daily_trains')
       .select('train_number, train_info')
       .eq('date', date)
       .eq('shared', true)
       .eq('share_code', shareCode)
       .neq('user_id', user.id);
 
-    if (team) {
+    if (teamErr) {
+      console.error('useDailyTrains fetchFromDb team:', teamErr.message);
+    } else if (team) {
       const seen = new Set<string>();
       const deduped: DailyTrain[] = [];
-      for (const r of team as any[]) {
+      for (const r of team) {
         if (!seen.has(r.train_number)) {
           seen.add(r.train_number);
-          deduped.push({ trainNumber: r.train_number, trainInfo: r.train_info ?? undefined });
+          deduped.push({ trainNumber: r.train_number, trainInfo: (r.train_info as TrainInfo) ?? undefined });
         }
       }
       setTeamTrains(deduped);
     }
   }, [user, date, key, shareCode]);
 
-  // On date / user / shareCode change: show localStorage immediately, then sync
+  // On date / user / shareCode change: show localStorage immediately, then sync from DB
   useEffect(() => {
     try { setTrains(JSON.parse(localStorage.getItem(key) || '[]')); }
     catch { setTrains([]); }
@@ -76,7 +80,7 @@ export function useDailyTrains(date: string, shareCode?: string | null) {
     fetchFromDb();
   }, [date, user?.id, shareCode]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Realtime: refresh on any change
+  // Realtime: refresh on any change to daily_trains
   useEffect(() => {
     if (!user) return;
     const channel = supabase
@@ -101,14 +105,16 @@ export function useDailyTrains(date: string, shareCode?: string | null) {
       return updated;
     });
     if (user) {
-      supabase.from('daily_trains' as any).upsert({
+      supabase.from('daily_trains').upsert({
         user_id: user.id,
         date,
         train_number: trainNumber,
-        train_info: trainInfo ?? null,
+        train_info: (trainInfo ?? null) as never,
         shared: isSharing,
         share_code: shareCode ?? null,
-      }, { onConflict: 'user_id,date,train_number' }).then(() => {});
+      }, { onConflict: 'user_id,date,train_number' }).then(({ error }) => {
+        if (error) console.error('addTrain upsert:', error.message);
+      });
     }
   };
 
@@ -118,12 +124,14 @@ export function useDailyTrains(date: string, shareCode?: string | null) {
         if (t.trainNumber !== trainNumber) return t;
         const newInfo = { ...(t.trainInfo ?? {}), ...updates } as TrainInfo;
         if (user) {
-          supabase.from('daily_trains' as any)
-            .update({ train_info: newInfo })
+          supabase.from('daily_trains')
+            .update({ train_info: newInfo as never })
             .eq('user_id', user.id)
             .eq('date', date)
             .eq('train_number', trainNumber)
-            .then(() => {});
+            .then(({ error }) => {
+              if (error) console.error('updateTrain:', error.message);
+            });
         }
         return { ...t, trainInfo: newInfo };
       });
@@ -139,12 +147,14 @@ export function useDailyTrains(date: string, shareCode?: string | null) {
       return updated;
     });
     if (user) {
-      supabase.from('daily_trains' as any)
+      supabase.from('daily_trains')
         .delete()
         .eq('user_id', user.id)
         .eq('date', date)
         .eq('train_number', trainNumber)
-        .then(() => {});
+        .then(({ error }) => {
+          if (error) console.error('removeTrain:', error.message);
+        });
     }
   };
 
@@ -152,25 +162,31 @@ export function useDailyTrains(date: string, shareCode?: string | null) {
     if (!user) return;
     const next = !isSharing;
     setIsSharing(next);
-    // Update all trains for this day
-    supabase.from('daily_trains' as any)
+    supabase.from('daily_trains')
       .update({ shared: next, share_code: next ? (shareCode ?? null) : null })
       .eq('user_id', user.id)
       .eq('date', date)
-      .then(() => {});
+      .then(({ error }) => {
+        if (error) console.error('toggleSharing:', error.message);
+      });
   };
 
-  // Apply shareCode to existing trains when joining/creating a session
-  // Always enable sharing when a code is provided
-  const applyShareCode = (code: string | null) => {
+  // Apply shareCode to existing trains for the given date (or this hook's date)
+  // Returns a promise that resolves after DB update, then refreshes
+  const applyShareCode = async (code: string | null, forDate?: string): Promise<void> => {
     if (!user) return;
+    const targetDate = forDate ?? date;
     const shouldShare = code !== null;
     if (shouldShare) setIsSharing(true);
-    supabase.from('daily_trains' as any)
+    const { error } = await supabase.from('daily_trains')
       .update({ share_code: code, shared: shouldShare })
       .eq('user_id', user.id)
-      .eq('date', date)
-      .then(() => {});
+      .eq('date', targetDate);
+    if (error) {
+      console.error('applyShareCode:', error.message);
+    }
+    // Refresh so UI reflects the updated share state
+    await fetchFromDb();
   };
 
   return { trains, addTrain, updateTrain, removeTrain, isSharing, toggleSharing, teamTrains, applyShareCode, refresh: fetchFromDb };
