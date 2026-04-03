@@ -93,9 +93,9 @@ export function TrainShareDialog({
       if (barcodes.length > 0) {
         const raw: string = barcodes[0].rawValue;
         // Extract 6-char code from URL or use raw value directly
-        const urlMatch = raw.match(/[?&]join=([A-Z2-9]{6})/i);
+        const urlMatch = raw.match(/[?&]join=([A-HJ-NP-Z2-9]{6})/i);
         const code = urlMatch ? urlMatch[1].toUpperCase() : raw.toUpperCase().trim();
-        if (/^[A-Z2-9]{6}$/.test(code)) {
+        if (/^[A-HJ-NP-Z2-9]{6}$/.test(code)) {
           stopScan();
           setJoinCode(code);
           // Auto-join
@@ -103,7 +103,7 @@ export function TrainShareDialog({
           if (ok) {
             setJoinCode('');
             toast.success('Session rejointe !');
-            setTimeout(() => window.location.reload(), 500);
+            onOpenChange(false);
           }
           return;
         }
@@ -126,7 +126,7 @@ export function TrainShareDialog({
     if (ok) {
       setJoinCode('');
       toast.success('Session rejointe !');
-      setTimeout(() => window.location.reload(), 500);
+      onOpenChange(false);
     }
   };
 

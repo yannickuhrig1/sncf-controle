@@ -14,6 +14,78 @@ export type Database = {
   }
   public: {
     Tables: {
+      daily_trains: {
+        Row: {
+          id: string
+          user_id: string
+          date: string
+          train_number: string
+          train_info: Json | null
+          shared: boolean
+          share_code: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          date: string
+          train_number: string
+          train_info?: Json | null
+          shared?: boolean
+          share_code?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          date?: string
+          train_number?: string
+          train_info?: Json | null
+          shared?: boolean
+          share_code?: string | null
+          created_at?: string
+        }
+        Relationships: []
+      }
+      train_share_sessions: {
+        Row: {
+          code: string
+          owner_id: string
+          date: string
+          created_at: string
+        }
+        Insert: {
+          code: string
+          owner_id: string
+          date: string
+          created_at?: string
+        }
+        Update: {
+          code?: string
+          owner_id?: string
+          date?: string
+          created_at?: string
+        }
+        Relationships: []
+      }
+      train_share_members: {
+        Row: {
+          code: string
+          user_id: string
+          joined_at: string
+        }
+        Insert: {
+          code: string
+          user_id: string
+          joined_at?: string
+        }
+        Update: {
+          code?: string
+          user_id?: string
+          joined_at?: string
+        }
+        Relationships: []
+      }
       admin_settings: {
         Row: {
           created_at: string

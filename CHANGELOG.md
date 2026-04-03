@@ -5,6 +5,17 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/),
 et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.10.96] - 2026-04-03
+
+### Corrigé — Partage de mission en gare
+- Suppression du `window.location.reload()` après avoir rejoint une session (causait des pertes de contexte)
+- Correction de la race condition dans `handleJoinSession` : `applyShareCode` est maintenant appelé avec la bonne date de session (évite de mettre à jour les trains du mauvais jour)
+- `applyShareCode` est maintenant asynchrone et rafraîchit les trains après la mise à jour DB
+- Remplacement du polling 30s du compteur de membres par une souscription Realtime Supabase
+- Ajout des types TypeScript pour `daily_trains`, `train_share_sessions`, `train_share_members` (suppression des `as any` et des erreurs silencieuses)
+- Correction du regex de validation de code (exclu I, L, O cohérent avec le générateur)
+- Logs d'erreurs console pour faciliter le diagnostic
+
 ## [1.10.95] - 2026-04-03
 
 ### Ajouté
