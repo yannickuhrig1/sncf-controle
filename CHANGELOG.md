@@ -5,6 +5,15 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/),
 et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.10.97] - 2026-04-03
+
+### Modifié
+- Partage mission en gare : refonte de la boîte de dialogue avec deux onglets distincts
+  - Onglet "Rejoindre" affiché par défaut (code à 6 caractères + scanner QR)
+  - Onglet "Créer" pour les propriétaires de session
+  - Suppression du séparateur "ou" confus — chaque action a son propre onglet
+  - Input de code centré et plus lisible (font-mono, text-lg)
+
 ## [1.10.96] - 2026-04-03
 
 ### Corrigé — Partage de mission en gare

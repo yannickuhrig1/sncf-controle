@@ -3,11 +3,11 @@ import QRCode from 'qrcode';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
 } from '@/components/ui/dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
-import { Copy, Users, LogOut, QrCode, Link2Off, Camera, X } from 'lucide-react';
+import { Copy, Users, LogOut, QrCode, Link2Off, Camera, X, Plus } from 'lucide-react';
 import { toast } from 'sonner';
 import type { TrainShareSession } from '@/hooks/useTrainShareSession';
 
@@ -46,12 +46,12 @@ export function TrainShareDialog({
 
   useEffect(() => {
     if (open && session) onRefreshCount();
-  }, [open]);
+  }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Stop camera when dialog closes or session is joined
   useEffect(() => {
     if (!open || session) stopScan();
-  }, [open, session]);
+  }, [open, session]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const stopScan = useCallback(() => {
     if (scanLoopRef.current) { cancelAnimationFrame(scanLoopRef.current); scanLoopRef.current = null; }
@@ -63,14 +63,12 @@ export function TrainShareDialog({
   const startScan = async () => {
     setScanError(null);
     try {
-      // Check BarcodeDetector support
       if (!('BarcodeDetector' in window)) {
         setScanError('Scanner non disponible sur ce navigateur. Saisir le code manuellement.');
         return;
       }
-      // Afficher la vidéo AVANT d'attacher le stream pour que videoRef.current soit dans le DOM
       setScanning(true);
-      await new Promise(r => setTimeout(r, 50)); // laisser React re-rendre
+      await new Promise(r => setTimeout(r, 50));
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: 'environment', width: { ideal: 640 }, height: { ideal: 480 } },
       });
@@ -82,7 +80,8 @@ export function TrainShareDialog({
       detectorRef.current = new (window as any).BarcodeDetector({ formats: ['qr_code'] });
       scanFrame();
     } catch {
-      setScanError('Impossible d\'accéder à la caméra. Vérifiez les permissions.');
+      setScanError("Impossible d'accéder à la caméra. Vérifiez les permissions.");
+      setScanning(false);
     }
   };
 
@@ -92,13 +91,11 @@ export function TrainShareDialog({
       const barcodes = await detectorRef.current.detect(videoRef.current);
       if (barcodes.length > 0) {
         const raw: string = barcodes[0].rawValue;
-        // Extract 6-char code from URL or use raw value directly
         const urlMatch = raw.match(/[?&]join=([A-HJ-NP-Z2-9]{6})/i);
         const code = urlMatch ? urlMatch[1].toUpperCase() : raw.toUpperCase().trim();
         if (/^[A-HJ-NP-Z2-9]{6}$/.test(code)) {
           stopScan();
           setJoinCode(code);
-          // Auto-join
           const ok = await onJoinSession(code);
           if (ok) {
             setJoinCode('');
@@ -153,35 +150,32 @@ export function TrainShareDialog({
         )}
 
         {!session ? (
-          <div className="space-y-4">
-            {/* Créer une session */}
-            <div className="space-y-2">
-              <p className="text-sm font-medium">Créer une session</p>
+          <Tabs defaultValue="join" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="join" className="gap-1.5">
+                <Users className="h-3.5 w-3.5" />
+                Rejoindre
+              </TabsTrigger>
+              <TabsTrigger value="create" className="gap-1.5">
+                <Plus className="h-3.5 w-3.5" />
+                Créer
+              </TabsTrigger>
+            </TabsList>
+
+            {/* ── Rejoindre ── */}
+            <TabsContent value="join" className="space-y-3 pt-2">
               <p className="text-xs text-muted-foreground">
-                Générez un code que vos collègues pourront utiliser pour rejoindre.
+                Entrez le code partagé par votre collègue, ou scannez son QR code.
               </p>
-              <Button className="w-full" onClick={handleCreate} disabled={isLoading}>
-                {isLoading ? 'Création…' : 'Créer une session de partage'}
-              </Button>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <Separator className="flex-1" />
-              <span className="text-xs text-muted-foreground">ou</span>
-              <Separator className="flex-1" />
-            </div>
-
-            {/* Rejoindre une session */}
-            <div className="space-y-2">
-              <p className="text-sm font-medium">Rejoindre une session</p>
               <div className="flex gap-2">
                 <Input
                   value={joinCode}
                   onChange={e => setJoinCode(e.target.value.toUpperCase().slice(0, 6))}
                   placeholder="Code à 6 caractères"
-                  className="font-mono tracking-widest uppercase"
+                  className="font-mono tracking-widest uppercase text-lg text-center"
                   maxLength={6}
                   onKeyDown={e => e.key === 'Enter' && handleJoin()}
+                  autoFocus
                 />
                 <Button
                   size="icon"
@@ -192,17 +186,14 @@ export function TrainShareDialog({
                 >
                   {scanning ? <X className="h-4 w-4" /> : <Camera className="h-4 w-4" />}
                 </Button>
-                <Button onClick={handleJoin} disabled={isLoading || joinCode.length < 6}>
-                  {isLoading ? '…' : 'Rejoindre'}
-                </Button>
               </div>
 
               {/* Viewfinder */}
               {scanning && (
                 <div className="relative rounded-lg overflow-hidden border bg-black">
-                  <video ref={videoRef} className="w-full h-40 object-cover" muted playsInline />
+                  <video ref={videoRef} className="w-full h-48 object-cover" muted playsInline />
                   <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                    <div className="w-28 h-28 border-2 border-white/70 rounded-lg" />
+                    <div className="w-32 h-32 border-2 border-white/70 rounded-lg" />
                   </div>
                   <p className="absolute bottom-1 w-full text-center text-[10px] text-white/80">
                     Pointez le QR code vers la caméra
@@ -212,47 +203,63 @@ export function TrainShareDialog({
               {scanError && (
                 <p className="text-xs text-destructive">{scanError}</p>
               )}
-            </div>
-          </div>
+
+              <Button
+                className="w-full"
+                onClick={handleJoin}
+                disabled={isLoading || joinCode.length < 6}
+              >
+                {isLoading ? 'Connexion…' : 'Rejoindre la session'}
+              </Button>
+            </TabsContent>
+
+            {/* ── Créer ── */}
+            <TabsContent value="create" className="space-y-3 pt-2">
+              <p className="text-xs text-muted-foreground">
+                Générez un code que vos collègues pourront utiliser pour rejoindre et voir vos trains.
+              </p>
+              <Button className="w-full" onClick={handleCreate} disabled={isLoading}>
+                {isLoading ? 'Création…' : 'Créer une session de partage'}
+              </Button>
+            </TabsContent>
+          </Tabs>
         ) : (
+          /* ── Session active ── */
           <div className="space-y-4">
-            {/* Code actif */}
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <p className="text-sm font-medium">
-                  {session.isOwner ? 'Votre session' : 'Session rejointe'}
-                </p>
-                <Badge variant="secondary" className="gap-1">
-                  <Users className="h-3 w-3" />
-                  {session.memberCount} membre{session.memberCount !== 1 ? 's' : ''}
-                </Badge>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <div className="flex-1 bg-muted rounded-md px-4 py-2 text-center font-mono text-2xl font-bold tracking-[0.3em] text-primary">
-                  {session.code}
-                </div>
-                <Button size="icon" variant="outline" onClick={handleCopy} title="Copier le code">
-                  <Copy className="h-4 w-4" />
-                </Button>
-              </div>
-
-              {qrDataUrl && (
-                <div className="flex flex-col items-center gap-1">
-                  <div className="flex items-center gap-1 text-xs text-muted-foreground mb-1">
-                    <QrCode className="h-3 w-3" />
-                    Scanner pour rejoindre
-                  </div>
-                  <img src={qrDataUrl} alt="QR code" className="rounded-lg border w-[180px] h-[180px]" />
-                </div>
-              )}
-
-              {!session.isOwner && (
-                <p className="text-xs text-muted-foreground text-center">
-                  Vous voyez les trains partagés par le créateur de la session.
-                </p>
-              )}
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-medium">
+                {session.isOwner ? 'Votre session' : 'Session rejointe'}
+              </p>
+              <Badge variant="secondary" className="gap-1">
+                <Users className="h-3 w-3" />
+                {session.memberCount} membre{session.memberCount !== 1 ? 's' : ''}
+              </Badge>
             </div>
+
+            <div className="flex items-center gap-2">
+              <div className="flex-1 bg-muted rounded-md px-4 py-2 text-center font-mono text-2xl font-bold tracking-[0.3em] text-primary">
+                {session.code}
+              </div>
+              <Button size="icon" variant="outline" onClick={handleCopy} title="Copier le code">
+                <Copy className="h-4 w-4" />
+              </Button>
+            </div>
+
+            {qrDataUrl && (
+              <div className="flex flex-col items-center gap-1">
+                <div className="flex items-center gap-1 text-xs text-muted-foreground mb-1">
+                  <QrCode className="h-3 w-3" />
+                  Scanner pour rejoindre
+                </div>
+                <img src={qrDataUrl} alt="QR code" className="rounded-lg border w-[180px] h-[180px]" />
+              </div>
+            )}
+
+            {!session.isOwner && (
+              <p className="text-xs text-muted-foreground text-center">
+                Vous voyez les trains partagés par le créateur de la session.
+              </p>
+            )}
           </div>
         )}
 
