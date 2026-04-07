@@ -254,14 +254,15 @@ export default function ControlDetailPage() {
             {(control.stt_50 ?? 0) > 0 && (
               <Badge variant="outline">STT 50€: {control.stt_50}</Badge>
             )}
-            {(control.rnv ?? 0) > 0 && <Badge variant="outline">RNV: {control.rnv}</Badge>}
+            {(control.rnv ?? 0) > 0 && (
+              <Badge className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 border-0 hover:bg-green-100">RNV: {control.rnv}</Badge>
+            )}
             {(control.titre_tiers ?? 0) > 0 && <Badge variant="outline">Titre tiers: {control.titre_tiers}</Badge>}
             {(control.doc_naissance ?? 0) > 0 && <Badge variant="outline">D. naiss.: {control.doc_naissance}</Badge>}
             {(control.autre_tarif ?? 0) > 0 && <Badge variant="outline">Autre TC: {control.autre_tarif}</Badge>}
             {(control.stt_100 ?? 0) > 0 && (
               <Badge variant="destructive">STT 100€: {control.stt_100}</Badge>
             )}
-            {(control.pv ?? 0) > 0 && <Badge variant="destructive">PV: {control.pv}</Badge>}
           </div>
         )}
 
@@ -293,7 +294,7 @@ export default function ControlDetailPage() {
             <CardContent className="pt-4 space-y-2">
               <h4 className="font-medium text-sm flex items-center gap-2">
                 <UserCheck className="h-4 w-4 text-green-500" />
-                Tarifs contrôle (régularisations)
+                Tarifs contrôle ({control.tarifs_controle})
               </h4>
               <div className="space-y-1">
                 <DetailRow label="STT 50€" value={control.stt_50} amount={control.stt_50_amount} />
