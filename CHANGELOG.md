@@ -2,6 +2,13 @@
 
 Toutes les modifications notables de ce projet sont documentées dans ce fichier.
 
+## [1.10.99] - 2026-04-07
+
+### Amélioré
+- Départs/arrivées en gare : affichage dès 1h avant l'heure actuelle au lieu de maintenant
+- Ajout d'un bouton "Charger plus" pour voir les trains suivants (DeparturesWidget + DeparturesBoard)
+- Déduplication des résultats lors du chargement supplémentaire
+
 ## [1.10.98] - 2026-04-04
 
 ### Corrigé

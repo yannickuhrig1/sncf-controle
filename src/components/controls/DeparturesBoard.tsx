@@ -15,25 +15,39 @@ import {
   AlertTriangle,
   XCircle,
   MapPin,
+  ChevronDown,
 } from 'lucide-react';
-import { useStationDepartures, DepartureEntry, toNavitiaDatetime } from '@/hooks/useStationDepartures';
+import {
+  useStationDepartures,
+  DepartureEntry,
+  nowMinus1hDatetime,
+  nextDatetimeAfterLast,
+} from '@/hooks/useStationDepartures';
 import { useState } from 'react';
 
 interface DeparturesBoardProps {
-  station:    string;
-  date:       string;
-  time:       string;
-  onSelect:   (entry: DepartureEntry) => void;
+  station:  string;
+  onSelect: (entry: DepartureEntry) => void;
 }
 
-export function DeparturesBoard({ station, date, time, onSelect }: DeparturesBoardProps) {
-  const [open, setOpen] = useState(false);
+export function DeparturesBoard({ station, onSelect }: DeparturesBoardProps) {
+  const [open,         setOpen]         = useState(false);
+  const [fromDatetime, setFromDatetime] = useState('');
   const { fetchDepartures, isLoading, error, departures, stationName } = useStationDepartures();
 
   const load = () => {
     if (station.trim()) {
-      fetchDepartures(station, toNavitiaDatetime(date, time));
+      const dt = nowMinus1hDatetime();
+      setFromDatetime(dt);
+      fetchDepartures(station, dt);
     }
+  };
+
+  const loadMore = () => {
+    if (!station.trim() || departures.length === 0) return;
+    const lastDep = departures[departures.length - 1];
+    const nextDt = nextDatetimeAfterLast(fromDatetime, lastDep.scheduledTime);
+    fetchDepartures(station, nextDt, 'departures', true);
   };
 
   const handleOpenChange = (isOpen: boolean) => {
@@ -81,8 +95,8 @@ export function DeparturesBoard({ station, date, time, onSelect }: DeparturesBoa
         </SheetHeader>
 
         {/* Body */}
-        <div className="flex-1 overflow-y-auto -mx-6 px-3">
-          {isLoading && (
+        <div className="flex-1 overflow-y-auto -mx-6 px-3 space-y-1">
+          {isLoading && departures.length === 0 && (
             <div className="flex items-center justify-center py-16">
               <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
             </div>
@@ -140,6 +154,22 @@ export function DeparturesBoard({ station, date, time, onSelect }: DeparturesBoa
               </div>
             </button>
           ))}
+
+          {departures.length > 0 && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="w-full gap-2 text-muted-foreground mt-2"
+              onClick={loadMore}
+              disabled={isLoading}
+            >
+              {isLoading
+                ? <Loader2 className="h-4 w-4 animate-spin" />
+                : <ChevronDown className="h-4 w-4" />}
+              Charger plus
+            </Button>
+          )}
         </div>
       </SheetContent>
     </Sheet>

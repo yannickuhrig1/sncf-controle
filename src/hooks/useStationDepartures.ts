@@ -32,6 +32,29 @@ export function toNavitiaDatetime(date: string, time: string): string {
   return date.replace(/-/g, '') + 'T' + time.replace(':', '') + '00';
 }
 
+/** Retourne le datetime Navitia (heure locale) correspondant à maintenant - 1h */
+export function nowMinus1hDatetime(): string {
+  const d = new Date(Date.now() - 60 * 60 * 1000);
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}T${pad(d.getHours())}${pad(d.getMinutes())}00`;
+}
+
+/**
+ * Calcule le datetime Navitia suivant la dernière heure affichée (scheduledTime HH:MM),
+ * sur la même journée extraite de `baseDatetime` (YYYYMMDDTHHMMSS).
+ * Avance d'une minute pour éviter les doublons.
+ */
+export function nextDatetimeAfterLast(baseDatetime: string, scheduledTime: string): string {
+  const dateStr = baseDatetime.slice(0, 8); // YYYYMMDD
+  const [h, mRaw] = scheduledTime.split(':').map(Number);
+  const year  = parseInt(dateStr.slice(0, 4));
+  const month = parseInt(dateStr.slice(4, 6)) - 1;
+  const day   = parseInt(dateStr.slice(6, 8));
+  const d = new Date(year, month, day, h, mRaw + 1, 0);
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}T${pad(d.getHours())}${pad(d.getMinutes())}00`;
+}
+
 export function useStationDepartures() {
   const [isLoading,   setIsLoading]   = useState(false);
   const [error,       setError]       = useState<string | null>(null);
@@ -45,17 +68,20 @@ export function useStationDepartures() {
     station:  string,
     datetime?: string,
     mode: 'departures' | 'arrivals' = 'departures',
+    append = false,
   ) => {
     if (!station.trim()) return;
 
-    // Annuler le fetch précédent
-    abortRef.current?.abort();
+    // Annuler le fetch précédent (sauf si on appende)
+    if (!append) {
+      abortRef.current?.abort();
+    }
     const controller = new AbortController();
     abortRef.current = controller;
 
     setIsLoading(true);
     setError(null);
-    setDepartures([]);
+    if (!append) setDepartures([]);
 
     try {
       const params = new URLSearchParams({ station: station.trim(), mode });
@@ -127,7 +153,16 @@ export function useStationDepartures() {
         } satisfies DepartureEntry;
       }).filter(d => d.trainNumber);
 
-      setDepartures(deps);
+      if (append) {
+        setDepartures(prev => {
+          // Dédupliquer par trainNumber+scheduledTime pour éviter les doublons
+          const existing = new Set(prev.map(d => `${d.trainNumber}-${d.scheduledTime}`));
+          const newDeps = deps.filter(d => !existing.has(`${d.trainNumber}-${d.scheduledTime}`));
+          return [...prev, ...newDeps];
+        });
+      } else {
+        setDepartures(deps);
+      }
     } catch (err) {
       if (err instanceof Error && err.name === 'AbortError') return; // fetch annulé, ne pas afficher d'erreur
       setError(err instanceof Error ? err.message : 'Erreur inconnue');
