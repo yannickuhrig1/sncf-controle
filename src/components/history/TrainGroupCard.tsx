@@ -62,6 +62,12 @@ export function TrainGroupCard({
     ? `${first.origin} → ${first.destination}`
     : null;
 
+  // Retard : max des retards enregistrés sur le groupe
+  const maxDelay = sorted.reduce((m, c) => {
+    const d = c.train_delay_minutes ?? 0;
+    return d > m ? d : m;
+  }, 0);
+
   const Icon = groupType === 'train' ? Train : Building2;
 
   return (
@@ -84,7 +90,7 @@ export function TrainGroupCard({
               {sorted.length} agent{sorted.length > 1 ? 's' : ''}
             </Badge>
           </div>
-          <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
+          <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground flex-wrap">
             <span className="flex items-center gap-1">
               <Users className="h-3 w-3" />
               {totalPax} voy.
@@ -95,6 +101,11 @@ export function TrainGroupCard({
             <span className={cn('font-semibold', getFraudRateColor(fraudRate))}>
               {fraudRate.toFixed(1)} %
             </span>
+            {maxDelay > 0 && (
+              <Badge variant="outline" className="text-[9px] px-1.5 py-0 bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 border-amber-300 h-4">
+                +{maxDelay} min
+              </Badge>
+            )}
           </div>
           {/* Badges agrégés de tous les contrôles */}
           {(() => {
@@ -226,6 +237,11 @@ export function TrainGroupCard({
                   {(control as any).is_suge_on_board && (
                     <Badge variant="outline" className="text-[9px] px-1 py-0 bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400 border-0 h-4">
                       SUGE
+                    </Badge>
+                  )}
+                  {(control.train_delay_minutes ?? 0) > 0 && (
+                    <Badge variant="outline" className="text-[9px] px-1 py-0 bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 border-amber-300 h-4">
+                      +{control.train_delay_minutes} min
                     </Badge>
                   )}
                 </div>

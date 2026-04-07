@@ -2,6 +2,13 @@
 
 Toutes les modifications notables de ce projet sont documentées dans ce fichier.
 
+## [1.10.99] - 2026-04-07
+
+### Ajouté
+- Retard SNCF en gare de destination : relevé automatique lors de l'enregistrement d'un contrôle à bord
+- Champ `train_delay_minutes` ajouté en base de données (migration SQL)
+- Vignette historique : badge orange "+X min" affiché si retard > 0 (sur la carte groupe et sur chaque ligne agent)
+
 ## [1.10.98] - 2026-04-04
 
 ### Corrigé

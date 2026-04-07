@@ -204,6 +204,7 @@ export type Database = {
           team_id: string | null
           titre_tiers: number | null
           titre_tiers_amount: number | null
+          train_delay_minutes: number | null
           train_number: string | null
           updated_at: string
         }
@@ -264,6 +265,7 @@ export type Database = {
           team_id?: string | null
           titre_tiers?: number | null
           titre_tiers_amount?: number | null
+          train_delay_minutes?: number | null
           train_number?: string | null
           updated_at?: string
         }
@@ -324,6 +326,7 @@ export type Database = {
           team_id?: string | null
           titre_tiers?: number | null
           titre_tiers_amount?: number | null
+          train_delay_minutes?: number | null
           train_number?: string | null
           updated_at?: string
         }

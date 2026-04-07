@@ -191,6 +191,7 @@ export default function OnboardControl() {
 
   // Train stops from SNCF API lookup
   const [trainStops, setTrainStops] = useState<import('@/hooks/useTrainLookup').TrainStop[]>([]);
+  const [currentTrainInfo, setCurrentTrainInfo] = useState<import('@/hooks/useTrainLookup').TrainInfo | null>(null);
 
   // Clé pour déclencher automatiquement Info SNCF lors du chargement d'un train sauvegardé
   const [autoTriggerKey, setAutoTriggerKey] = useState(0);
@@ -690,6 +691,14 @@ export default function OnboardControl() {
         is_overcrowded:     formState.isOvercrowded,
         is_police_on_board: formState.isPoliceOnBoard,
         is_suge_on_board:   formState.isSugeOnBoard,
+        // Retard à la gare de destination (depuis Info SNCF)
+        train_delay_minutes: (() => {
+          if (!currentTrainInfo) return null;
+          const destStop = formState.destination
+            ? currentTrainInfo.stops?.find(s => s.name === formState.destination)
+            : null;
+          return destStop?.delayMinutes ?? currentTrainInfo.delayMinutes ?? null;
+        })(),
       };
 
       if (isEditMode && editId) {
@@ -1071,6 +1080,7 @@ export default function OnboardControl() {
                               controlTime: originStop?.departureTime || info.departureTime || p.controlTime,
                             }));
                             setTrainStops(info.stops || []);
+                            setCurrentTrainInfo(info);
                           }}
                           onAdd={addDailyTrain}
                         />
@@ -1372,6 +1382,7 @@ export default function OnboardControl() {
                             controlTime: info.departureTime || p.controlTime,
                           }));
                           setTrainStops(info.stops || []);
+                          setCurrentTrainInfo(info);
                         }}
                         onAdd={addDailyTrain}
                       />
