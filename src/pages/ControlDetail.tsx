@@ -52,16 +52,25 @@ const locationLabels: Record<LocationType, string> = {
   quai: 'Quai',
 };
 
-function DetailRow({ label, value, amount, showAmount = true }: {
+function DetailRow({ label, value, amount, showAmount = true, variant = 'default' }: {
   label: string;
   value: number;
   amount?: number | null;
   showAmount?: boolean;
+  variant?: 'default' | 'green' | 'red';
 }) {
   if (value === 0 && (!amount || amount === 0)) return null;
+  const bg =
+    variant === 'green' ? 'bg-green-50/60 dark:bg-green-900/15' :
+    variant === 'red'   ? 'bg-red-50/60 dark:bg-red-900/15' :
+    'bg-muted/30';
+  const textColor =
+    variant === 'green' ? 'text-green-700 dark:text-green-400' :
+    variant === 'red'   ? 'text-red-600 dark:text-red-400' :
+    'text-muted-foreground';
   return (
-    <div className="flex justify-between items-center py-1.5 px-2 rounded bg-muted/30">
-      <span className="text-sm text-muted-foreground">{label}</span>
+    <div className={`flex justify-between items-center py-1.5 px-2 rounded ${bg}`}>
+      <span className={`text-sm ${textColor}`}>{label}</span>
       <div className="flex items-center gap-2">
         <span className="font-semibold">{value}</span>
         {showAmount && amount != null && amount > 0 && (
@@ -303,11 +312,11 @@ export default function ControlDetailPage() {
                 Tarifs contrôle ({control.tarifs_controle})
               </h4>
               <div className="space-y-1">
-                <DetailRow label="STT 50€" value={control.stt_50} amount={control.stt_50_amount} />
-                <DetailRow label="RNV" value={control.rnv} amount={control.rnv_amount} />
-                <DetailRow label="Titre tiers" value={control.titre_tiers || 0} amount={control.titre_tiers_amount} />
-                <DetailRow label="Doc. naissance" value={control.doc_naissance || 0} amount={control.doc_naissance_amount} />
-                <DetailRow label="Autre tarif" value={control.autre_tarif || 0} amount={control.autre_tarif_amount} />
+                <DetailRow label="STT 50€" value={control.stt_50} amount={control.stt_50_amount} variant="green" />
+                <DetailRow label="RNV" value={control.rnv} amount={control.rnv_amount} variant="green" />
+                <DetailRow label="Titre tiers" value={control.titre_tiers || 0} amount={control.titre_tiers_amount} variant="green" />
+                <DetailRow label="Doc. naissance" value={control.doc_naissance || 0} amount={control.doc_naissance_amount} variant="green" />
+                <DetailRow label="Autre tarif" value={control.autre_tarif || 0} amount={control.autre_tarif_amount} variant="green" />
               </div>
             </CardContent>
           </Card>
@@ -322,12 +331,12 @@ export default function ControlDetailPage() {
                 Procès-verbaux ({control.pv})
               </h4>
               <div className="space-y-1">
-                <DetailRow label="STT 100€" value={control.stt_100} amount={control.stt_100_amount} />
-                <DetailRow label="STT autre montant" value={control.pv_stt100 || 0} amount={control.pv_stt100_amount} />
-                <DetailRow label="RNV" value={control.pv_rnv || 0} amount={control.pv_rnv_amount} />
-                <DetailRow label="Titre tiers" value={control.pv_titre_tiers || 0} amount={control.pv_titre_tiers_amount} />
-                <DetailRow label="D. naissance" value={control.pv_doc_naissance || 0} amount={control.pv_doc_naissance_amount} />
-                <DetailRow label="Autre" value={control.pv_autre || 0} amount={control.pv_autre_amount} />
+                <DetailRow label="STT 100€" value={control.stt_100} amount={control.stt_100_amount} variant="red" />
+                <DetailRow label="STT autre montant" value={control.pv_stt100 || 0} amount={control.pv_stt100_amount} variant="red" />
+                <DetailRow label="RNV" value={control.pv_rnv || 0} amount={control.pv_rnv_amount} variant="red" />
+                <DetailRow label="Titre tiers" value={control.pv_titre_tiers || 0} amount={control.pv_titre_tiers_amount} variant="red" />
+                <DetailRow label="D. naissance" value={control.pv_doc_naissance || 0} amount={control.pv_doc_naissance_amount} variant="red" />
+                <DetailRow label="Autre" value={control.pv_autre || 0} amount={control.pv_autre_amount} variant="red" />
               </div>
             </CardContent>
           </Card>
