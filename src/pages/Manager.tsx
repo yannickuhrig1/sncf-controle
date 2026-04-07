@@ -517,11 +517,11 @@ export default function ManagerPage() {
 
         {/* Tabs */}
         <Tabs defaultValue="overview" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-5">
-            <TabsTrigger value="overview">Vue d'ensemble</TabsTrigger>
-            <TabsTrigger value="heatmap">Heatmap</TabsTrigger>
-            <TabsTrigger value="audit">Audit Trail</TabsTrigger>
-            <TabsTrigger value="teams" className="gap-1.5">
+          <TabsList className="flex w-full overflow-x-auto gap-1 h-auto p-1 justify-start">
+            <TabsTrigger value="overview" className="shrink-0 text-xs px-2.5 py-1.5">Aperçu</TabsTrigger>
+            <TabsTrigger value="heatmap" className="shrink-0 text-xs px-2.5 py-1.5">Heatmap</TabsTrigger>
+            <TabsTrigger value="audit" className="shrink-0 text-xs px-2.5 py-1.5">Audit</TabsTrigger>
+            <TabsTrigger value="teams" className="shrink-0 text-xs px-2.5 py-1.5 gap-1">
               Équipes
               {incomingRequests.length > 0 && (
                 <span className="inline-flex items-center justify-center h-4 min-w-4 px-1 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300 text-[10px] font-bold">
@@ -529,8 +529,8 @@ export default function ManagerPage() {
                 </span>
               )}
             </TabsTrigger>
-            <TabsTrigger value="wanted" className="gap-1.5 data-[state=active]:bg-red-600 data-[state=active]:text-white text-red-600 dark:text-red-400 font-semibold">
-              <AlertTriangle className="h-3.5 w-3.5" />
+            <TabsTrigger value="wanted" className="shrink-0 text-xs px-2.5 py-1.5 gap-1 data-[state=active]:bg-red-600 data-[state=active]:text-white text-red-600 dark:text-red-400 font-semibold">
+              <AlertTriangle className="h-3 w-3" />
               Recherchées
               {wantedPersons.length > 0 && (
                 <span className="inline-flex items-center justify-center h-4 min-w-4 px-1 rounded-full bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300 text-[10px] font-bold">

@@ -2,6 +2,12 @@
 
 Toutes les modifications notables de ce projet sont documentées dans ce fichier.
 
+## [1.10.98] - 2026-04-04
+
+### Corrigé
+- Manager : onglets scrollables sur mobile (plus de débordement/fusion des labels)
+- Labels raccourcis : "Vue d'ensemble" → "Aperçu", "Audit Trail" → "Audit"
+
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/),
 et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
