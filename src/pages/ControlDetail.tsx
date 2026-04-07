@@ -252,14 +252,20 @@ export default function ControlDetailPage() {
         {fraudCount > 0 && (
           <div className="flex flex-wrap gap-2">
             {(control.stt_50 ?? 0) > 0 && (
-              <Badge variant="outline">STT 50€: {control.stt_50}</Badge>
+              <Badge className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 border-0 hover:bg-green-100">STT 50€: {control.stt_50}</Badge>
             )}
             {(control.rnv ?? 0) > 0 && (
               <Badge className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 border-0 hover:bg-green-100">RNV: {control.rnv}</Badge>
             )}
-            {(control.titre_tiers ?? 0) > 0 && <Badge variant="outline">Titre tiers: {control.titre_tiers}</Badge>}
-            {(control.doc_naissance ?? 0) > 0 && <Badge variant="outline">D. naiss.: {control.doc_naissance}</Badge>}
-            {(control.autre_tarif ?? 0) > 0 && <Badge variant="outline">Autre TC: {control.autre_tarif}</Badge>}
+            {(control.titre_tiers ?? 0) > 0 && (
+              <Badge className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 border-0 hover:bg-green-100">Titre tiers: {control.titre_tiers}</Badge>
+            )}
+            {(control.doc_naissance ?? 0) > 0 && (
+              <Badge className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 border-0 hover:bg-green-100">D. naiss.: {control.doc_naissance}</Badge>
+            )}
+            {(control.autre_tarif ?? 0) > 0 && (
+              <Badge className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 border-0 hover:bg-green-100">Autre TC: {control.autre_tarif}</Badge>
+            )}
             {(control.stt_100 ?? 0) > 0 && (
               <Badge variant="destructive">STT 100€: {control.stt_100}</Badge>
             )}
