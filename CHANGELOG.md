@@ -16,10 +16,18 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 
 ## [1.11.0] - 2026-04-07
 
+### Ajouté
+- Connexion : lien "Mot de passe oublié ?" → envoi d'un email de réinitialisation via Supabase
+- Page `/reset-password` pour saisir le nouveau mot de passe depuis le lien email
+
 ### Corrigé
 - Détail contrôle : STT 100€ déplacé dans "Procès-verbaux" (section correcte) et retiré de "Tarifs contrôle"
 - Affichage du nombre et du montant total des STT 100€ dans la section PV
 - Badge résumé : STT 50€ et STT 100€ séparés, STT 100€ affiché en rouge (destructive)
+
+### Modifié
+- Inscription : numéro de téléphone désormais facultatif (label "(facultatif)", validation assouplie)
+
 
 ## [1.10.99] - 2026-04-07
 
