@@ -292,8 +292,8 @@ export default function ControlDetailPage() {
                 Tarifs à bord (ventes)
               </h4>
               <div className="space-y-1">
-                <DetailRow label="STT 50€" value={control.tarif_bord_stt_50 || 0} amount={control.tarif_bord_stt_50_amount} />
-                <DetailRow label="STT 100€" value={control.tarif_bord_stt_100 || 0} amount={control.tarif_bord_stt_100_amount} />
+                <DetailRow label="Tarif bord" value={control.tarif_bord_stt_50 || 0} amount={control.tarif_bord_stt_50_amount} />
+                <DetailRow label="Tarif exceptionnel" value={control.tarif_bord_stt_100 || 0} amount={control.tarif_bord_stt_100_amount} />
                 <DetailRow label="RNV" value={control.tarif_bord_rnv || 0} amount={control.tarif_bord_rnv_amount} />
                 <DetailRow label="Titre tiers" value={control.tarif_bord_titre_tiers || 0} amount={control.tarif_bord_titre_tiers_amount} />
                 <DetailRow label="Doc. naissance" value={control.tarif_bord_doc_naissance || 0} amount={control.tarif_bord_doc_naissance_amount} />

@@ -2,6 +2,13 @@
 
 Toutes les modifications notables de ce projet sont documentées dans ce fichier.
 
+## [1.11.2] - 2026-04-07
+
+### Corrigé
+- Détail contrôle : labels "Tarifs à bord" renommés conformément aux conventions
+  - `tarif_bord_stt_50` → "Tarif bord" (au lieu de "STT 50€")
+  - `tarif_bord_stt_100` → "Tarif exceptionnel" (au lieu de "STT 100€")
+
 ## [1.11.1] - 2026-04-07
 
 ### Amélioré
