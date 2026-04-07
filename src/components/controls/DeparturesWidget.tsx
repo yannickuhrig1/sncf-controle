@@ -4,6 +4,7 @@ import {
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
   Loader2,
   LocateFixed,
   MapPin,
@@ -17,7 +18,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { useStationDepartures, DepartureEntry } from '@/hooks/useStationDepartures';
+import { useStationDepartures, DepartureEntry, nowMinus1hDatetime, nextDatetimeAfterLast } from '@/hooks/useStationDepartures';
 import { useTrainLookup, formatDuration } from '@/hooks/useTrainLookup';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
@@ -243,21 +244,32 @@ function TrainNumberSearch() {
 // ── DeparturesWidget ───────────────────────────────────────────────────────────
 
 export function DeparturesWidget({ showTrainSearch = false }: { showTrainSearch?: boolean }) {
-  const [searchMode,       setSearchMode]       = useState<'station' | 'train'>('station');
-  const [station,          setStation]          = useState('');
-  const [mode,             setMode]             = useState<'departures' | 'arrivals'>('departures');
-  const [selected,         setSelected]         = useState<DepartureEntry | null>(null);
-  const [stops,            setStops]            = useState<StopTime[]>([]);
-  const [stopsLoading,     setStopsLoading]     = useState(false);
-  const [stopsError,       setStopsError]       = useState<string | null>(null);
-  const [isLocating,       setIsLocating]       = useState(false);
+  const [searchMode,        setSearchMode]        = useState<'station' | 'train'>('station');
+  const [station,           setStation]           = useState('');
+  const [mode,              setMode]              = useState<'departures' | 'arrivals'>('departures');
+  const [selected,          setSelected]          = useState<DepartureEntry | null>(null);
+  const [stops,             setStops]             = useState<StopTime[]>([]);
+  const [stopsLoading,      setStopsLoading]      = useState(false);
+  const [stopsError,        setStopsError]        = useState<string | null>(null);
+  const [isLocating,        setIsLocating]        = useState(false);
   const [nearbySuggestions, setNearbySuggestions] = useState<NearbyStation[]>([]);
+  const [fromDatetime,      setFromDatetime]      = useState('');
 
   const { fetchDepartures, isLoading, error, departures, stationName } = useStationDepartures();
 
   const load = () => {
     setNearbySuggestions([]);
-    if (station.trim()) fetchDepartures(station, undefined, mode);
+    if (!station.trim()) return;
+    const dt = nowMinus1hDatetime();
+    setFromDatetime(dt);
+    fetchDepartures(station, dt, mode);
+  };
+
+  const loadMore = () => {
+    if (!station.trim() || departures.length === 0) return;
+    const lastDep = departures[departures.length - 1];
+    const nextDt = nextDatetimeAfterLast(fromDatetime, lastDep.scheduledTime);
+    fetchDepartures(station, nextDt, mode, true);
   };
 
   const handleLocate = () => {
@@ -301,11 +313,17 @@ export function DeparturesWidget({ showTrainSearch = false }: { showTrainSearch?
   const selectNearbySuggestion = (s: NearbyStation) => {
     setStation(s.name);
     setNearbySuggestions([]);
-    fetchDepartures(s.name, undefined, mode);
+    const dt = nowMinus1hDatetime();
+    setFromDatetime(dt);
+    fetchDepartures(s.name, dt, mode);
   };
 
   useEffect(() => {
-    if (stationName) fetchDepartures(station, undefined, mode);
+    if (stationName) {
+      const dt = nowMinus1hDatetime();
+      setFromDatetime(dt);
+      fetchDepartures(station, dt, mode);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mode]);
 
@@ -542,6 +560,22 @@ export function DeparturesWidget({ showTrainSearch = false }: { showTrainSearch?
           );
         })}
       </div>
+
+      {departures.length > 0 && (
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="w-full gap-2 text-muted-foreground"
+          onClick={loadMore}
+          disabled={isLoading}
+        >
+          {isLoading
+            ? <Loader2 className="h-4 w-4 animate-spin" />
+            : <ChevronDown className="h-4 w-4" />}
+          Charger plus
+        </Button>
+      )}
       </>}
     </div>
   );
