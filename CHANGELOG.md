@@ -2,6 +2,11 @@
 
 Toutes les modifications notables de ce projet sont documentées dans ce fichier.
 
+## [1.11.1] - 2026-04-07
+
+### Amélioré
+- Détail contrôle : lignes tarifs contrôle sur fond vert, lignes PV sur fond rouge
+
 ## [1.11.0] - 2026-04-07
 
 ### Corrigé
