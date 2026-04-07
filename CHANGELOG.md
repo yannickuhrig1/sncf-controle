@@ -2,6 +2,13 @@
 
 Toutes les modifications notables de ce projet sont documentées dans ce fichier.
 
+## [1.11.0] - 2026-04-07
+
+### Corrigé
+- Détail contrôle : STT 100€ déplacé dans "Procès-verbaux" (section correcte) et retiré de "Tarifs contrôle"
+- Affichage du nombre et du montant total des STT 100€ dans la section PV
+- Badge résumé : STT 50€ et STT 100€ séparés, STT 100€ affiché en rouge (destructive)
+
 ## [1.10.99] - 2026-04-07
 
 ### Amélioré
