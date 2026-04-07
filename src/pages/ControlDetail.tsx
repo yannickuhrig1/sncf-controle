@@ -129,12 +129,14 @@ export default function ControlDetailPage() {
     (control.tarif_bord_autre || 0) > 0;
 
   const hasTarifControle =
-    control.stt_50 > 0 || control.stt_100 > 0 || control.rnv > 0 ||
+    control.stt_50 > 0 ||
     (control.titre_tiers || 0) > 0 ||
     (control.doc_naissance || 0) > 0 ||
-    (control.autre_tarif || 0) > 0;
+    (control.autre_tarif || 0) > 0 ||
+    control.rnv > 0;
 
   const hasPV =
+    control.stt_100 > 0 ||
     (control.pv_stt100 || 0) > 0 || (control.pv_rnv || 0) > 0 ||
     (control.pv_titre_tiers || 0) > 0 || (control.pv_doc_naissance || 0) > 0 ||
     (control.pv_autre || 0) > 0 || control.pv > 0;
@@ -249,14 +251,24 @@ export default function ControlDetailPage() {
         {/* Fraud badges summary */}
         {fraudCount > 0 && (
           <div className="flex flex-wrap gap-2">
-            {((control.stt_50 ?? 0) + (control.stt_100 ?? 0)) > 0 && (
-              <Badge variant="outline">STT: {(control.stt_50 ?? 0) + (control.stt_100 ?? 0)}</Badge>
+            {(control.stt_50 ?? 0) > 0 && (
+              <Badge className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 border-0 hover:bg-green-100">STT 50€: {control.stt_50}</Badge>
             )}
-            {(control.rnv ?? 0) > 0 && <Badge variant="outline">RNV: {control.rnv}</Badge>}
-            {(control.titre_tiers ?? 0) > 0 && <Badge variant="outline">Titre tiers: {control.titre_tiers}</Badge>}
-            {(control.doc_naissance ?? 0) > 0 && <Badge variant="outline">D. naiss.: {control.doc_naissance}</Badge>}
-            {(control.autre_tarif ?? 0) > 0 && <Badge variant="outline">Autre TC: {control.autre_tarif}</Badge>}
-            {(control.pv ?? 0) > 0 && <Badge variant="destructive">PV: {control.pv}</Badge>}
+            {(control.rnv ?? 0) > 0 && (
+              <Badge className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 border-0 hover:bg-green-100">RNV: {control.rnv}</Badge>
+            )}
+            {(control.titre_tiers ?? 0) > 0 && (
+              <Badge className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 border-0 hover:bg-green-100">Titre tiers: {control.titre_tiers}</Badge>
+            )}
+            {(control.doc_naissance ?? 0) > 0 && (
+              <Badge className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 border-0 hover:bg-green-100">D. naiss.: {control.doc_naissance}</Badge>
+            )}
+            {(control.autre_tarif ?? 0) > 0 && (
+              <Badge className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 border-0 hover:bg-green-100">Autre TC: {control.autre_tarif}</Badge>
+            )}
+            {(control.stt_100 ?? 0) > 0 && (
+              <Badge variant="destructive">STT 100€: {control.stt_100}</Badge>
+            )}
           </div>
         )}
 
@@ -288,11 +300,10 @@ export default function ControlDetailPage() {
             <CardContent className="pt-4 space-y-2">
               <h4 className="font-medium text-sm flex items-center gap-2">
                 <UserCheck className="h-4 w-4 text-green-500" />
-                Tarifs contrôle (régularisations)
+                Tarifs contrôle ({control.tarifs_controle})
               </h4>
               <div className="space-y-1">
                 <DetailRow label="STT 50€" value={control.stt_50} amount={control.stt_50_amount} />
-                <DetailRow label="STT 100€" value={control.stt_100} amount={control.stt_100_amount} />
                 <DetailRow label="RNV" value={control.rnv} amount={control.rnv_amount} />
                 <DetailRow label="Titre tiers" value={control.titre_tiers || 0} amount={control.titre_tiers_amount} />
                 <DetailRow label="Doc. naissance" value={control.doc_naissance || 0} amount={control.doc_naissance_amount} />
@@ -311,7 +322,8 @@ export default function ControlDetailPage() {
                 Procès-verbaux ({control.pv})
               </h4>
               <div className="space-y-1">
-                <DetailRow label="STT100" value={control.pv_stt100 || 0} amount={control.pv_stt100_amount} />
+                <DetailRow label="STT 100€" value={control.stt_100} amount={control.stt_100_amount} />
+                <DetailRow label="STT autre montant" value={control.pv_stt100 || 0} amount={control.pv_stt100_amount} />
                 <DetailRow label="RNV" value={control.pv_rnv || 0} amount={control.pv_rnv_amount} />
                 <DetailRow label="Titre tiers" value={control.pv_titre_tiers || 0} amount={control.pv_titre_tiers_amount} />
                 <DetailRow label="D. naissance" value={control.pv_doc_naissance || 0} amount={control.pv_doc_naissance_amount} />
