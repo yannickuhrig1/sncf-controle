@@ -2,6 +2,11 @@
 
 Toutes les modifications notables de ce projet sont documentées dans ce fichier.
 
+## [1.11.3] - 2026-04-08
+
+### Modifié
+- Pages de connexion et de réinitialisation de mot de passe : remplacement de l'icône par le vrai logo de l'application (`/icon-192.png`)
+
 ## [1.11.2] - 2026-04-07
 
 ### Corrigé
