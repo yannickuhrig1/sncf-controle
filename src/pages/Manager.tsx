@@ -12,10 +12,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
 import {
   Table,
   TableBody,
@@ -45,6 +47,7 @@ import {
   Upload,
   LogIn,
   Check,
+  KeyRound,
 } from 'lucide-react';
 import { useWantedPersons, type WantedPerson } from '@/hooks/useWantedPersons';
 import { HourlyHeatmap } from '@/components/manager/HourlyHeatmap';
@@ -147,6 +150,60 @@ export default function ManagerPage() {
   const [newTeamDesc, setNewTeamDesc]       = useState('');
   const [addAgentTeamId, setAddAgentTeamId] = useState<string | null>(null);
   const [agentSearch, setAgentSearch]       = useState('');
+
+  // ── Edit member account dialog ─────────────────────────────────────────────
+  const [editMemberOpen,     setEditMemberOpen]     = useState(false);
+  const [editingMember,      setEditingMember]      = useState<Profile | null>(null);
+  const [editMemberEmail,    setEditMemberEmail]    = useState('');
+  const [editMemberPassword, setEditMemberPassword] = useState('');
+  const [isSavingMember,     setIsSavingMember]     = useState(false);
+
+  const openEditMember = (member: Profile) => {
+    setEditingMember(member);
+    setEditMemberEmail('');
+    setEditMemberPassword('');
+    setEditMemberOpen(true);
+  };
+
+  const resetEditMember = () => {
+    setEditMemberOpen(false);
+    setEditingMember(null);
+    setEditMemberEmail('');
+    setEditMemberPassword('');
+  };
+
+  const handleSaveMember = async () => {
+    if (!editingMember) return;
+    if (!editMemberEmail && !editMemberPassword) {
+      toast.error('Remplissez au moins un champ à modifier');
+      return;
+    }
+    if (editMemberPassword && editMemberPassword.length < 6) {
+      toast.error('Le mot de passe doit contenir au moins 6 caractères');
+      return;
+    }
+    setIsSavingMember(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const response = await supabase.functions.invoke('update-user', {
+        headers: session ? { Authorization: `Bearer ${session.access_token}` } : undefined,
+        body: {
+          userId: editingMember.user_id,
+          email: editMemberEmail || undefined,
+          password: editMemberPassword || undefined,
+        },
+      });
+      if (response.error || response.data?.error) {
+        throw new Error(response.data?.error || response.error?.message || 'Erreur');
+      }
+      toast.success('Compte mis à jour');
+      resetEditMember();
+    } catch (error: any) {
+      toast.error('Erreur: ' + (error.message || 'Impossible de mettre à jour'));
+    } finally {
+      setIsSavingMember(false);
+    }
+  };
 
   // ── Fetch all teams (managers see all, to allow join requests) ────────────
   const { data: allTeams = [], isLoading: teamsLoading } = useQuery({
@@ -627,6 +684,19 @@ export default function ManagerPage() {
                                 {managerTeams.find(t => t.id === member.team_id)?.name || '-'}
                               </TableCell>
                             )}
+                            <TableCell>
+                              {member.role === 'agent' && (
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  className="h-7 w-7"
+                                  title="Modifier email / mot de passe"
+                                  onClick={() => openEditMember(member)}
+                                >
+                                  <KeyRound className="h-3.5 w-3.5" />
+                                </Button>
+                              )}
+                            </TableCell>
                           </TableRow>
                           );
                         })}
@@ -1122,6 +1192,55 @@ export default function ManagerPage() {
               <Button onClick={handleWantedSave} disabled={wantedSaving || !wantedForm.nom.trim() || !wantedForm.prenom.trim()}>
                 {wantedSaving && <Loader2 className="h-4 w-4 animate-spin mr-1.5" />}
                 {editingPerson ? 'Enregistrer' : 'Ajouter'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* ── Dialog : Modifier email / mot de passe d'un agent ── */}
+        <Dialog open={editMemberOpen} onOpenChange={(open) => { if (!open) resetEditMember(); }}>
+          <DialogContent className="sm:max-w-sm">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <KeyRound className="h-4 w-4" />
+                Modifier le compte
+              </DialogTitle>
+              {editingMember && (
+                <DialogDescription>
+                  {editingMember.first_name} {editingMember.last_name}
+                </DialogDescription>
+              )}
+            </DialogHeader>
+            <div className="space-y-4 py-2">
+              <div className="space-y-1.5">
+                <Label>Nouvel email</Label>
+                <Input
+                  type="email"
+                  value={editMemberEmail}
+                  onChange={(e) => setEditMemberEmail(e.target.value)}
+                  placeholder="Laisser vide pour ne pas modifier"
+                  autoComplete="off"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Nouveau mot de passe</Label>
+                <Input
+                  type="password"
+                  value={editMemberPassword}
+                  onChange={(e) => setEditMemberPassword(e.target.value)}
+                  placeholder="Laisser vide pour ne pas modifier"
+                  autoComplete="new-password"
+                />
+                {editMemberPassword && editMemberPassword.length < 6 && (
+                  <p className="text-xs text-destructive">6 caractères minimum</p>
+                )}
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={resetEditMember}>Annuler</Button>
+              <Button onClick={handleSaveMember} disabled={isSavingMember}>
+                {isSavingMember && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                Enregistrer
               </Button>
             </DialogFooter>
           </DialogContent>

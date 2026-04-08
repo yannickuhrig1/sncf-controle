@@ -156,6 +156,7 @@ export default function AdminPage() {
   const [editPhone,      setEditPhone]      = useState('');
   const [editMatricule,  setEditMatricule]  = useState('');
   const [editEmail,      setEditEmail]      = useState('');
+  const [editPassword,   setEditPassword]   = useState('');
   const [editApproved,   setEditApproved]   = useState(false);
   const [isEmailLoading, setIsEmailLoading] = useState(false);
   const [isSavingUser,   setIsSavingUser]   = useState(false);
@@ -462,6 +463,7 @@ export default function AdminPage() {
     setEditPhone('');
     setEditMatricule('');
     setEditEmail('');
+    setEditPassword('');
     setEditApproved(false);
   };
 
@@ -515,6 +517,10 @@ export default function AdminPage() {
 
   const handleSaveUser = async () => {
     if (!editingUser) return;
+    if (editPassword && editPassword.length < 6) {
+      toast.error('Le mot de passe doit contenir au moins 6 caractères');
+      return;
+    }
     setIsSavingUser(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -527,6 +533,7 @@ export default function AdminPage() {
           phone: editPhone,
           matricule: editMatricule,
           email: editEmail || undefined,
+          password: editPassword || undefined,
           ...(isAdmin() && {
             role: selectedRole,
             teamId: selectedTeamId || null,
@@ -1481,6 +1488,20 @@ export default function AdminPage() {
                   placeholder={isEmailLoading ? 'Chargement…' : 'email@exemple.com'}
                   disabled={isEmailLoading}
                 />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label>Nouveau mot de passe</Label>
+                <Input
+                  type="password"
+                  value={editPassword}
+                  onChange={(e) => setEditPassword(e.target.value)}
+                  placeholder="Laisser vide pour ne pas modifier"
+                  autoComplete="new-password"
+                />
+                {editPassword && editPassword.length < 6 && (
+                  <p className="text-xs text-destructive">6 caractères minimum</p>
+                )}
               </div>
 
               {/* Séparateur — champs admin uniquement */}

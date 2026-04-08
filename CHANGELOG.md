@@ -2,6 +2,13 @@
 
 Toutes les modifications notables de ce projet sont documentées dans ce fichier.
 
+## [1.11.4] - 2026-04-08
+
+### Ajouté
+- Admin : champ "Nouveau mot de passe" dans le dialog de modification d'un utilisateur
+- Manager : bouton (clé) par agent dans la liste équipe pour modifier son email et/ou son mot de passe
+- Edge Function `update-user` : support du champ `password` — admin peut modifier tout le monde, manager peut modifier email/mdp des agents de son équipe uniquement
+
 ## [1.11.3] - 2026-04-08
 
 ### Modifié

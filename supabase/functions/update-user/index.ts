@@ -46,7 +46,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { userId, firstName, lastName, phone, matricule, email, role, teamId, isApproved } = await req.json();
+    const { userId, firstName, lastName, phone, matricule, email, role, teamId, isApproved, password } = await req.json();
 
     if (!userId) {
       return new Response(JSON.stringify({ error: "userId manquant" }), {
@@ -69,10 +69,17 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Manager: can only update users in their own team
+    // Manager: can only update agents in their own team
     if (callerProfile.role === "manager") {
       if (targetProfile.team_id !== callerProfile.team_id) {
         return new Response(JSON.stringify({ error: "Accès refusé — hors équipe" }), {
+          status: 403,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      // Manager cannot change email/password for other managers or admins
+      if (targetProfile.role !== "agent" && (email || password)) {
+        return new Response(JSON.stringify({ error: "Accès refusé — email/mot de passe réservé aux agents" }), {
           status: 403,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
@@ -107,11 +114,15 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Update email in auth.users if provided
-    if (email && email.trim()) {
-      const { error: emailError } = await adminClient.auth.admin.updateUserById(userId, { email: email.trim() });
-      if (emailError) {
-        return new Response(JSON.stringify({ error: `Email: ${emailError.message}` }), {
+    // Update email and/or password in auth.users if provided
+    const authUpdate: Record<string, string> = {};
+    if (email && email.trim()) authUpdate.email = email.trim();
+    if (password && password.length >= 6) authUpdate.password = password;
+
+    if (Object.keys(authUpdate).length > 0) {
+      const { error: authError } = await adminClient.auth.admin.updateUserById(userId, authUpdate);
+      if (authError) {
+        return new Response(JSON.stringify({ error: authError.message }), {
           status: 400,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
