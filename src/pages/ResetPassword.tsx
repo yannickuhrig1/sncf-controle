@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { toast } from 'sonner';
-import { ClipboardCheck, Loader2, KeyRound, CheckCircle2 } from 'lucide-react';
+import { Loader2, KeyRound, CheckCircle2 } from 'lucide-react';
 
 export default function ResetPassword() {
   const navigate = useNavigate();
@@ -54,9 +54,7 @@ export default function ResetPassword() {
       <div className="auth-card-glow absolute inset-0 pointer-events-none" aria-hidden="true" />
       <div className="w-full max-w-md relative z-10">
         <div className="flex items-center justify-center gap-3 mb-8">
-          <div className="p-3 bg-primary rounded-xl">
-            <ClipboardCheck className="h-8 w-8 text-primary-foreground" />
-          </div>
+          <img src="/icon-192.png" alt="SNCF Contrôles" className="h-14 w-14 rounded-2xl shadow-md" />
           <div>
             <h1 className="text-2xl font-bold">SNCF Contrôles</h1>
             <p className="text-sm text-muted-foreground">Gestion des contrôles voyageurs</p>
