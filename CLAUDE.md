@@ -1,7 +1,11 @@
 # CLAUDE.md — SNCF Contrôles
 
 ## Version actuelle
+<<<<<<< HEAD
 **1.11.2** (synchronisé dans `package.json` et `CHANGELOG.md`)
+=======
+**1.11.0** (synchronisé dans `package.json` et `CHANGELOG.md`)
+>>>>>>> 0ddbfae (feat(auth): mot de passe oublié + téléphone facultatif (v1.11.0))
 
 ## Stack
 - React 18 + TypeScript + Vite
