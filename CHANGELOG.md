@@ -2,6 +2,14 @@
 
 Toutes les modifications notables de ce projet sont documentées dans ce fichier.
 
+## [1.11.7] - 2026-04-08
+
+### Ajouté
+- Tuiles custom : génération automatique de l'ID depuis le nom (slugify) au lieu d'un timestamp
+- Tuiles custom : champ "Contenu texte" (optionnel) dans les dialogs création et édition
+- Tuiles custom : si la tuile a un contenu texte et pas d'URL, le clic ouvre un dialog affichant ce contenu
+- Résolution de conflit d'ID automatique si deux tuiles ont le même slug
+
 ## [1.11.6] - 2026-04-09
 
 ### Ajouté

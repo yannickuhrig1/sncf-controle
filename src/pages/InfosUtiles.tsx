@@ -121,7 +121,8 @@ interface CustomTileConfig {
   label: string;
   icon: string;
   gradient: string;
-  url: string;
+  url?: string;
+  content?: string;
 }
 
 interface RenderedTile {
@@ -131,6 +132,7 @@ interface RenderedTile {
   gradient: string;
   isCustom: boolean;
   url?: string;
+  content?: string;
 }
 
 const ICON_MAP: Record<string, React.ElementType> = {
@@ -160,6 +162,13 @@ const GRADIENT_PRESETS = [
 ];
 
 const DEFAULT_TILES_ORDER = ['fraude', 'wanted', 'contacts', 'partager', 'presentation', 'departures', 'about', 'assistance'];
+
+const slugify = (str: string) =>
+  str.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase().trim()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 40);
 
 /* ─── Tuiles ─────────────────────────────────────────────────────────────── */
 const TILES: Tile[] = [
@@ -1313,6 +1322,7 @@ export default function InfosUtilesPage() {
   const [editTileIcon,     setEditTileIcon]     = useState('ExternalLink');
   const [editTileGradient, setEditTileGradient] = useState(GRADIENT_PRESETS[0].value);
   const [editTileUrl,      setEditTileUrl]      = useState('');
+  const [editTileContent,  setEditTileContent]  = useState('');
 
   // Dialog ajout tuile custom
   const [addTileOpen,    setAddTileOpen]    = useState(false);
@@ -1320,6 +1330,10 @@ export default function InfosUtilesPage() {
   const [newTileIcon,    setNewTileIcon]    = useState('ExternalLink');
   const [newTileGradient,setNewTileGradient]= useState(GRADIENT_PRESETS[0].value);
   const [newTileUrl,     setNewTileUrl]     = useState('');
+  const [newTileContent, setNewTileContent] = useState('');
+
+  // Dialog affichage contenu tuile custom
+  const [customContentTile, setCustomContentTile] = useState<CustomTileConfig | null>(null);
 
   // ── Config tuiles ──────────────────────────────────────────────────────
   const tilesConfigRaw = settings?.find(s => s.key === 'infos_tiles_config')?.value as TilesConfig | undefined;
@@ -1346,6 +1360,7 @@ export default function InfosUtilesPage() {
       gradient: ct.gradient,
       isCustom: true,
       url: ct.url,
+      content: ct.content,
     })),
   ];
 
@@ -1425,6 +1440,7 @@ export default function InfosUtilesPage() {
       setEditTileIcon(ct?.icon ?? 'ExternalLink');
       setEditTileGradient(ct?.gradient ?? GRADIENT_PRESETS[0].value);
       setEditTileUrl(ct?.url ?? '');
+      setEditTileContent(ct?.content ?? '');
     }
   };
 
@@ -1433,7 +1449,7 @@ export default function InfosUtilesPage() {
     const isCustom = localCustom.some(c => c.id === editTileId);
     if (isCustom) {
       setLocalCustom(prev => prev.map(c => c.id === editTileId
-        ? { ...c, label: editTileLabel, icon: editTileIcon, gradient: editTileGradient, url: editTileUrl }
+        ? { ...c, label: editTileLabel, icon: editTileIcon, gradient: editTileGradient, url: editTileUrl || undefined, content: editTileContent || undefined }
         : c
       ));
     } else {
@@ -1460,14 +1476,24 @@ export default function InfosUtilesPage() {
 
   const addCustomTile = () => {
     if (!newTileLabel.trim()) return;
-    const newId = `custom_${Date.now()}`;
+    const slug = slugify(newTileLabel.trim());
+    const base = `custom_${slug || Date.now()}`;
+    // Avoid ID collision by appending a suffix if needed
+    const existingIds = localCustom.map(c => c.id);
+    let newId = base;
+    let suffix = 2;
+    while (existingIds.includes(newId)) { newId = `${base}_${suffix++}`; }
     const newTile: CustomTileConfig = {
-      id: newId, label: newTileLabel.trim(),
-      icon: newTileIcon, gradient: newTileGradient, url: newTileUrl.trim(),
+      id: newId,
+      label: newTileLabel.trim(),
+      icon: newTileIcon,
+      gradient: newTileGradient,
+      url: newTileUrl.trim() || undefined,
+      content: newTileContent.trim() || undefined,
     };
     setLocalCustom(prev => [...prev, newTile]);
     setLocalOrder(prev => [...prev, newId]);
-    setNewTileLabel(''); setNewTileUrl('');
+    setNewTileLabel(''); setNewTileUrl(''); setNewTileContent('');
     setNewTileIcon('ExternalLink'); setNewTileGradient(GRADIENT_PRESETS[0].value);
     setAddTileOpen(false);
     toast.success('Tuile ajoutée — pensez à sauvegarder');
@@ -1483,7 +1509,7 @@ export default function InfosUtilesPage() {
     ...localCustom.map(ct => ({
       id: ct.id, label: ct.label,
       Icon: ICON_MAP[ct.icon] ?? ExternalLink,
-      gradient: ct.gradient, isCustom: true, url: ct.url,
+      gradient: ct.gradient, isCustom: true, url: ct.url, content: ct.content,
     })),
   ].sort((a, b) => {
     const ai = localOrder.indexOf(a.id);
@@ -1612,6 +1638,10 @@ export default function InfosUtilesPage() {
                 onToggle={() => {}}
                 onClick={() => {
                   if (tile.url) { window.open(tile.url, '_blank', 'noopener'); return; }
+                  if (tile.isCustom && tile.content) {
+                    setCustomContentTile(tilesConfig.customTiles.find(c => c.id === tile.id) ?? null);
+                    return;
+                  }
                   setOpenTile(tile.id);
                 }}
                 badge={tile.id === 'assistance' ? unreadRepliesCount : undefined}
@@ -1637,6 +1667,10 @@ export default function InfosUtilesPage() {
                   <div className="space-y-1.5">
                     <Label>URL <span className="text-muted-foreground font-normal">(optionnel)</span></Label>
                     <Input value={editTileUrl} onChange={e => setEditTileUrl(e.target.value)} placeholder="https://... — laisser vide si non applicable" type="url" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>Contenu texte <span className="text-muted-foreground font-normal">(optionnel — affiché à l'ouverture si pas d'URL)</span></Label>
+                    <Textarea value={editTileContent} onChange={e => setEditTileContent(e.target.value)} placeholder="Texte ou instructions à afficher quand on clique sur la tuile…" rows={4} />
                   </div>
                   <div className="space-y-1.5">
                     <Label>Icône</Label>
@@ -1693,6 +1727,10 @@ export default function InfosUtilesPage() {
               <div className="space-y-1.5">
                 <Label>URL <span className="text-muted-foreground font-normal">(optionnel)</span></Label>
                 <Input value={newTileUrl} onChange={e => setNewTileUrl(e.target.value)} placeholder="https://... — laisser vide si non applicable" type="url" />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Contenu texte <span className="text-muted-foreground font-normal">(optionnel — affiché si pas d'URL)</span></Label>
+                <Textarea value={newTileContent} onChange={e => setNewTileContent(e.target.value)} placeholder="Texte ou instructions à afficher quand on clique sur la tuile…" rows={3} />
               </div>
               <div className="space-y-1.5">
                 <Label>Icône</Label>
@@ -1755,6 +1793,24 @@ export default function InfosUtilesPage() {
               <DialogTitle>{dialogDef?.title}</DialogTitle>
             </DialogHeader>
             {dialogDef && <dialogDef.Content />}
+          </DialogContent>
+        </Dialog>
+
+        {/* Dialog — contenu texte d'une tuile custom */}
+        <Dialog open={!!customContentTile} onOpenChange={(open) => !open && setCustomContentTile(null)}>
+          <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                {customContentTile && (() => {
+                  const Ic = ICON_MAP[customContentTile.icon] ?? ExternalLink;
+                  return <Ic className="h-4 w-4 shrink-0" />;
+                })()}
+                {customContentTile?.label}
+              </DialogTitle>
+            </DialogHeader>
+            <div className="py-2 text-sm text-muted-foreground whitespace-pre-wrap leading-relaxed">
+              {customContentTile?.content}
+            </div>
           </DialogContent>
         </Dialog>
       </div>
