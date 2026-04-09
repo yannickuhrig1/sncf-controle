@@ -12,6 +12,12 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet';
+import {
   Accordion,
   AccordionContent,
   AccordionItem,
@@ -52,9 +58,16 @@ import {
   Paperclip,
   Send,
   Loader2,
+  Plus,
+  Pencil,
+  Trash2,
+  Eye,
+  EyeOff,
+  Upload,
+  X,
 } from 'lucide-react';
 import { DeparturesWidget } from '@/components/controls/DeparturesWidget';
-import { useWantedPersons } from '@/hooks/useWantedPersons';
+import { useWantedPersons, type WantedPerson } from '@/hooks/useWantedPersons';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -286,58 +299,203 @@ function ContentTarifs() {
   );
 }
 
-function ContentWantedPersons() {
-  const { persons, isLoading } = useWantedPersons(true);
+function WantedPersonsPanel({ canEdit }: { canEdit: boolean }) {
+  const { persons, isLoading, addPerson, updatePerson, deletePerson, toggleActive } = useWantedPersons(!canEdit);
 
-  if (isLoading) {
-    return (
-      <div className="flex justify-center py-8">
-        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-      </div>
-    );
-  }
+  const [formOpen, setFormOpen]             = useState(false);
+  const [editingPerson, setEditingPerson]   = useState<WantedPerson | null>(null);
+  const [form, setForm]                     = useState({ nom: '', prenom: '', date_naissance: '', notes: '' });
+  const [photoFile, setPhotoFile]           = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview]     = useState<string | null>(null);
+  const [saving, setSaving]                 = useState(false);
+  const photoRef                            = useRef<HTMLInputElement>(null);
 
-  if (persons.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center py-10 text-center gap-3 text-muted-foreground">
-        <AlertTriangle className="h-10 w-10 opacity-30" />
-        <p className="text-sm">Aucune personne recherchée en ce moment.</p>
-      </div>
-    );
-  }
+  const openAdd = () => {
+    setEditingPerson(null);
+    setForm({ nom: '', prenom: '', date_naissance: '', notes: '' });
+    setPhotoFile(null);
+    setPhotoPreview(null);
+    setFormOpen(true);
+  };
+
+  const openEdit = (p: WantedPerson) => {
+    setEditingPerson(p);
+    setForm({ nom: p.nom, prenom: p.prenom, date_naissance: p.date_naissance || '', notes: p.notes || '' });
+    setPhotoFile(null);
+    setPhotoPreview(p.photo_url);
+    setFormOpen(true);
+  };
+
+  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setPhotoFile(file);
+    const reader = new FileReader();
+    reader.onload = () => setPhotoPreview(reader.result as string);
+    reader.readAsDataURL(file);
+  };
+
+  const handleSave = async () => {
+    if (!form.nom.trim() || !form.prenom.trim()) return;
+    setSaving(true);
+    let ok: boolean;
+    if (editingPerson) {
+      ok = await updatePerson(editingPerson.id, {
+        nom: form.nom.trim(), prenom: form.prenom.trim(),
+        date_naissance: form.date_naissance || null,
+        notes: form.notes || null,
+        ...(photoFile ? { photoFile } : {}),
+      });
+    } else {
+      ok = await addPerson({
+        nom: form.nom.trim(), prenom: form.prenom.trim(),
+        date_naissance: form.date_naissance || null,
+        photo_url: null, notes: form.notes || null,
+        ...(photoFile ? { photoFile } : {}),
+      });
+    }
+    setSaving(false);
+    if (ok) {
+      setFormOpen(false);
+      toast.success(editingPerson ? 'Fiche mise à jour' : 'Personne ajoutée');
+    } else {
+      toast.error('Erreur lors de la sauvegarde');
+    }
+  };
+
+  const handleDelete = async (p: WantedPerson) => {
+    if (!confirm(`Supprimer la fiche de ${p.prenom} ${p.nom} ?`)) return;
+    const ok = await deletePerson(p.id);
+    if (ok) toast.success('Fiche supprimée');
+    else toast.error('Erreur lors de la suppression');
+  };
 
   return (
-    <div className="space-y-3">
+    <div className="flex flex-col gap-4 h-full">
+      {/* Avertissement */}
       <p className="text-xs text-muted-foreground bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900 rounded-lg px-3 py-2 flex items-center gap-2">
         <AlertTriangle className="h-3.5 w-3.5 text-red-500 shrink-0" />
         Informations confidentielles — Usage professionnel uniquement.
       </p>
-      {persons.map((p) => (
-        <div key={p.id} className="flex gap-3 p-3 bg-muted/30 border border-border rounded-lg">
-          {p.photo_url ? (
-            <img
-              src={p.photo_url}
-              alt={`${p.prenom} ${p.nom}`}
-              className="w-16 h-20 object-cover rounded-md border shrink-0"
-            />
-          ) : (
-            <div className="w-16 h-20 bg-muted rounded-md border flex items-center justify-center shrink-0">
-              <Users className="h-6 w-6 text-muted-foreground" />
-            </div>
-          )}
-          <div className="flex-1 min-w-0">
-            <p className="font-bold text-base text-foreground">{p.prenom} {p.nom}</p>
-            {p.date_naissance && (
-              <p className="text-sm text-muted-foreground mt-0.5">
-                Né(e) le {new Date(p.date_naissance).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })}
-              </p>
-            )}
-            {p.notes && (
-              <p className="text-xs text-muted-foreground mt-1.5 line-clamp-3 italic">{p.notes}</p>
-            )}
-          </div>
+
+      {/* Bouton ajout (managers/admins) */}
+      {canEdit && (
+        <Button size="sm" className="self-start" onClick={openAdd}>
+          <Plus className="h-4 w-4 mr-1.5" />
+          Ajouter une personne
+        </Button>
+      )}
+
+      {/* Liste */}
+      {isLoading ? (
+        <div className="flex justify-center py-10">
+          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
         </div>
-      ))}
+      ) : persons.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-10 text-center gap-3 text-muted-foreground">
+          <AlertTriangle className="h-10 w-10 opacity-30" />
+          <p className="text-sm">Aucune personne recherchée en ce moment.</p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {persons.map((p) => (
+            <div key={p.id} className={`flex gap-3 p-3 border rounded-lg ${p.active ? 'bg-muted/30 border-border' : 'bg-muted/10 border-border/40 opacity-60'}`}>
+              {p.photo_url ? (
+                <img src={p.photo_url} alt={`${p.prenom} ${p.nom}`} className="w-16 h-20 object-cover rounded-md border shrink-0" />
+              ) : (
+                <div className="w-16 h-20 bg-muted rounded-md border flex items-center justify-center shrink-0">
+                  <Users className="h-6 w-6 text-muted-foreground" />
+                </div>
+              )}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <p className="font-bold text-base text-foreground">{p.prenom} {p.nom}</p>
+                    {!p.active && <Badge variant="outline" className="text-[10px] mt-0.5">Inactif</Badge>}
+                  </div>
+                  {canEdit && (
+                    <div className="flex gap-1 shrink-0">
+                      <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => openEdit(p)} title="Modifier">
+                        <Pencil className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => toggleActive(p.id, !p.active)} title={p.active ? 'Désactiver' : 'Réactiver'}>
+                        {p.active ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                      </Button>
+                      <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => handleDelete(p)} title="Supprimer">
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  )}
+                </div>
+                {p.date_naissance && (
+                  <p className="text-sm text-muted-foreground mt-0.5">
+                    Né(e) le {new Date(p.date_naissance).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })}
+                  </p>
+                )}
+                {p.notes && <p className="text-xs text-muted-foreground mt-1.5 italic line-clamp-3">{p.notes}</p>}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Dialog ajout / édition */}
+      {canEdit && (
+        <Dialog open={formOpen} onOpenChange={(open) => { if (!open) setFormOpen(false); }}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>{editingPerson ? 'Modifier la fiche' : 'Nouvelle personne recherchée'}</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-2">
+              {/* Photo */}
+              <div className="flex items-center gap-4">
+                <div className="w-16 h-20 bg-muted rounded-md border overflow-hidden flex items-center justify-center shrink-0">
+                  {photoPreview
+                    ? <img src={photoPreview} className="w-full h-full object-cover" alt="" />
+                    : <Users className="h-6 w-6 text-muted-foreground" />}
+                </div>
+                <div>
+                  <input ref={photoRef} type="file" accept="image/*" className="hidden" onChange={handlePhotoChange} />
+                  <Button size="sm" variant="outline" onClick={() => photoRef.current?.click()}>
+                    <Upload className="h-3.5 w-3.5 mr-1.5" />
+                    {photoPreview ? 'Changer la photo' : 'Ajouter une photo'}
+                  </Button>
+                  {photoPreview && (
+                    <Button size="sm" variant="ghost" className="mt-1 text-destructive hover:text-destructive" onClick={() => { setPhotoFile(null); setPhotoPreview(null); }}>
+                      <X className="h-3.5 w-3.5 mr-1" />Retirer
+                    </Button>
+                  )}
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label>Prénom *</Label>
+                  <Input value={form.prenom} onChange={e => setForm(f => ({ ...f, prenom: e.target.value }))} placeholder="Prénom" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Nom *</Label>
+                  <Input value={form.nom} onChange={e => setForm(f => ({ ...f, nom: e.target.value }))} placeholder="Nom" />
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <Label>Date de naissance</Label>
+                <Input type="date" value={form.date_naissance} onChange={e => setForm(f => ({ ...f, date_naissance: e.target.value }))} />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Notes / Signalement</Label>
+                <Textarea rows={3} value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} placeholder="Ex : Fraude récurrente ligne Metz-Thionville…" />
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button variant="outline" onClick={() => setFormOpen(false)}>Annuler</Button>
+              <Button onClick={handleSave} disabled={saving || !form.nom.trim() || !form.prenom.trim()}>
+                {saving && <Loader2 className="h-4 w-4 animate-spin mr-1.5" />}
+                {editingPerson ? 'Enregistrer' : 'Ajouter'}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }
@@ -958,20 +1116,20 @@ function ContentAssistance() {
 }
 
 const DIALOG_CONTENT: Record<string, { title: string; Content: () => JSX.Element }> = {
-  fraude:    { title: 'Calcul du taux de fraude',   Content: ContentFraude },
-  wanted:    { title: 'Personnes recherchées',        Content: ContentWantedPersons },
-  contacts:  { title: 'Contacts utiles',             Content: ContentContacts },
-  partager:      { title: "Partager l'application",     Content: ContentPartager },
-  presentation:  { title: 'Présentation de l\'application', Content: ContentPresentation },
-  departures:    { title: 'Départs/Arrivées en gare',       Content: () => <DeparturesWidget showTrainSearch /> },
-  about:         { title: "À propos de l'application",      Content: ContentAbout },
-  assistance:    { title: 'Assistance',                      Content: ContentAssistance },
+  fraude:        { title: 'Calcul du taux de fraude',          Content: ContentFraude },
+  contacts:      { title: 'Contacts utiles',                   Content: ContentContacts },
+  partager:      { title: "Partager l'application",            Content: ContentPartager },
+  presentation:  { title: "Présentation de l'application",     Content: ContentPresentation },
+  departures:    { title: 'Départs/Arrivées en gare',          Content: () => <DeparturesWidget showTrainSearch /> },
+  about:         { title: "À propos de l'application",         Content: ContentAbout },
+  assistance:    { title: 'Assistance',                        Content: ContentAssistance },
 };
 
 /* ─── Page principale ────────────────────────────────────────────────────── */
 export default function InfosUtilesPage() {
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, isAdmin, isManager } = useAuth();
   const { settings, isLoading: settingsLoading } = useAdminSettings();
+  const canEditWanted = isAdmin() || isManager();
   const [searchParams] = useSearchParams();
   const [openTile, setOpenTile] = useState<string | null>(() => {
     const tile = searchParams.get('tile');
@@ -1023,7 +1181,7 @@ export default function InfosUtilesPage() {
   if (!user) return <Navigate to="/auth" replace />;
   if (hideInfosPage) return <Navigate to="/" replace />;
 
-  const dialogDef = openTile ? DIALOG_CONTENT[openTile] : null;
+  const dialogDef = openTile && openTile !== 'wanted' ? DIALOG_CONTENT[openTile] : null;
 
   return (
     <AppLayout>
@@ -1068,8 +1226,23 @@ export default function InfosUtilesPage() {
           })}
         </div>
 
-        {/* Dialog */}
-        <Dialog open={!!openTile} onOpenChange={(open) => !open && setOpenTile(null)}>
+        {/* Sheet — Personnes recherchées */}
+        <Sheet open={openTile === 'wanted'} onOpenChange={(open) => !open && setOpenTile(null)}>
+          <SheetContent side="right" className="w-full sm:max-w-lg flex flex-col overflow-y-auto">
+            <SheetHeader className="shrink-0">
+              <SheetTitle className="flex items-center gap-2">
+                <AlertTriangle className="h-4 w-4 text-red-500" />
+                Personnes recherchées
+              </SheetTitle>
+            </SheetHeader>
+            <div className="flex-1 overflow-y-auto mt-4">
+              <WantedPersonsPanel canEdit={canEditWanted} />
+            </div>
+          </SheetContent>
+        </Sheet>
+
+        {/* Dialog — autres tuiles */}
+        <Dialog open={!!dialogDef} onOpenChange={(open) => !open && setOpenTile(null)}>
           <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>{dialogDef?.title}</DialogTitle>

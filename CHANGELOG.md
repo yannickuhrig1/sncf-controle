@@ -2,6 +2,13 @@
 
 Toutes les modifications notables de ce projet sont documentées dans ce fichier.
 
+## [1.11.5] - 2026-04-09
+
+### Modifié
+- Infos utiles → Personnes recherchées : ouverture dans un Sheet pleine page au lieu d'un popup
+- Managers et admins : ajout, édition, désactivation et suppression directement dans le Sheet
+- Agents : vue lecture seule inchangée (personnes actives uniquement)
+
 ## [1.11.4] - 2026-04-08
 
 ### Ajouté
