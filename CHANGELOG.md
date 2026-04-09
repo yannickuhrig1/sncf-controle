@@ -2,6 +2,16 @@
 
 Toutes les modifications notables de ce projet sont documentées dans ce fichier.
 
+## [1.12.0] - 2026-04-09
+
+### Ajouté
+- Tuiles custom : sous-tuiles — chaque tuile peut contenir une grille de sous-tuiles
+  - Indicateur visuel (icône Layers) sur les tuiles qui ont des sous-tuiles
+  - Clic → Sheet latérale avec la grille de sous-tuiles (icône + label + gradient)
+  - Sous-tuile : URL (lien externe) ou texte affiché dans un dialog
+  - Édition : section "Sous-tuiles" dans le dialog d'édition avec ajout/suppression
+  - Formulaire d'ajout : nom, URL, texte, icône, couleur
+
 ## [1.11.9] - 2026-04-09
 
 ### Ajouté

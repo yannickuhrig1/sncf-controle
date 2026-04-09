@@ -90,6 +90,8 @@ import {
   Zap,
   PenLine,
   Check,
+  Layers,
+  ChevronLeft,
 } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { cn } from '@/lib/utils';
@@ -121,6 +123,15 @@ interface ContentBlock {
   value: string;
 }
 
+interface SubTileConfig {
+  id: string;
+  label: string;
+  icon: string;
+  gradient: string;
+  url?: string;
+  content?: string;
+}
+
 interface CustomTileConfig {
   id: string;
   label: string;
@@ -129,6 +140,7 @@ interface CustomTileConfig {
   url?: string;
   content?: string;    // legacy
   blocks?: ContentBlock[];
+  subTiles?: SubTileConfig[];
 }
 
 interface RenderedTile {
@@ -139,13 +151,14 @@ interface RenderedTile {
   isCustom: boolean;
   url?: string;
   content?: string;
+  hasSubTiles?: boolean;
 }
 
 const ICON_MAP: Record<string, React.ElementType> = {
   Calculator, AlertTriangle, Phone, Share2, Monitor, Train, Info, LifeBuoy,
   ExternalLink, BookOpen, HelpCircle, Building2, BarChart3, History, Settings,
   MessageSquare, FileText, Mail, Link, Star, Globe, Bell, Zap, Download, QrCode,
-  Shield, Users, Copy, Check,
+  Shield, Users, Copy, Check, Layers,
 };
 
 const ICON_OPTIONS = [
@@ -313,11 +326,16 @@ function SortableTileItem({
           isDisabled && editMode && 'opacity-50',
         )}
       >
-        <div className={`bg-gradient-to-br ${tile.gradient} p-5 flex flex-col items-center gap-3 text-white`}>
+        <div className={`bg-gradient-to-br ${tile.gradient} p-5 flex flex-col items-center gap-3 text-white relative`}>
           <div className="p-3 rounded-2xl bg-white/20">
             <tile.Icon className="h-6 w-6 text-white" />
           </div>
           <span className="text-sm font-semibold text-center leading-tight">{tile.label}</span>
+          {!editMode && tile.hasSubTiles && (
+            <span className="absolute bottom-1.5 right-2 flex items-center gap-0.5 text-white/70 text-[10px]">
+              <Layers className="h-2.5 w-2.5" />
+            </span>
+          )}
         </div>
       </Card>
     </div>
@@ -1347,6 +1365,19 @@ export default function InfosUtilesPage() {
   // Dialog affichage contenu tuile custom
   const [customContentTile, setCustomContentTile] = useState<CustomTileConfig | null>(null);
 
+  // Sheet sous-tuiles (affichage)
+  const [openSubTilesSheet, setOpenSubTilesSheet] = useState<CustomTileConfig | null>(null);
+  const [openSubTileContent, setOpenSubTileContent] = useState<SubTileConfig | null>(null);
+
+  // Édition sous-tuiles (dans le dialog d'édition de tuile)
+  const [editSubTiles,  setEditSubTiles]  = useState<SubTileConfig[]>([]);
+  const [addSubOpen,    setAddSubOpen]    = useState(false);
+  const [newSubLabel,   setNewSubLabel]   = useState('');
+  const [newSubIcon,    setNewSubIcon]    = useState('ExternalLink');
+  const [newSubGradient,setNewSubGradient]= useState(GRADIENT_PRESETS[0].value);
+  const [newSubUrl,     setNewSubUrl]     = useState('');
+  const [newSubContent, setNewSubContent] = useState('');
+
   // ── Config tuiles ──────────────────────────────────────────────────────
   const tilesConfigRaw = settings?.find(s => s.key === 'infos_tiles_config')?.value as TilesConfig | undefined;
   const tilesConfig: TilesConfig = {
@@ -1373,6 +1404,7 @@ export default function InfosUtilesPage() {
       isCustom: true,
       url: ct.url,
       content: ct.content,
+      hasSubTiles: (ct.subTiles?.length ?? 0) > 0,
     })),
   ];
 
@@ -1463,6 +1495,8 @@ export default function InfosUtilesPage() {
       if (ct?.blocks) setEditBlocks(ct.blocks);
       else if (ct?.content) setEditBlocks([{ type: 'text', value: ct.content }]);
       else setEditBlocks([]);
+      setEditSubTiles(ct?.subTiles ?? []);
+      setAddSubOpen(false);
     }
   };
 
@@ -1471,7 +1505,7 @@ export default function InfosUtilesPage() {
     const isCustom = localCustom.some(c => c.id === editTileId);
     if (isCustom) {
       setLocalCustom(prev => prev.map(c => c.id === editTileId
-        ? { ...c, label: editTileLabel, icon: editTileIcon, gradient: editTileGradient, url: editTileUrl || undefined, blocks: editBlocks.length > 0 ? editBlocks : undefined, content: undefined }
+        ? { ...c, label: editTileLabel, icon: editTileIcon, gradient: editTileGradient, url: editTileUrl || undefined, blocks: editBlocks.length > 0 ? editBlocks : undefined, content: undefined, subTiles: editSubTiles.length > 0 ? editSubTiles : undefined }
         : c
       ));
     } else {
@@ -1532,6 +1566,7 @@ export default function InfosUtilesPage() {
       id: ct.id, label: ct.label,
       Icon: ICON_MAP[ct.icon] ?? ExternalLink,
       gradient: ct.gradient, isCustom: true, url: ct.url, content: ct.content,
+      hasSubTiles: (ct.subTiles?.length ?? 0) > 0,
     })),
   ].sort((a, b) => {
     const ai = localOrder.indexOf(a.id);
@@ -1662,7 +1697,9 @@ export default function InfosUtilesPage() {
                   if (tile.url) { window.open(tile.url, '_blank', 'noopener'); return; }
                   if (tile.isCustom) {
                     const ct = tilesConfig.customTiles.find(c => c.id === tile.id);
-                    if (ct && (ct.blocks?.length || ct.content)) { setCustomContentTile(ct); return; }
+                    if (!ct) return;
+                    if (ct.subTiles?.length) { setOpenSubTilesSheet(ct); return; }
+                    if (ct.blocks?.length || ct.content) { setCustomContentTile(ct); return; }
                     return;
                   }
                   setOpenTile(tile.id);
@@ -1775,6 +1812,62 @@ export default function InfosUtilesPage() {
                         />
                       ))}
                     </div>
+                  </div>
+
+                  {/* ── Sous-tuiles ── */}
+                  <div className="space-y-2 pt-1">
+                    <div className="flex items-center justify-between">
+                      <Label className="flex items-center gap-1.5"><Layers className="h-3.5 w-3.5" />Sous-tuiles</Label>
+                      <Button size="sm" variant="outline" type="button" className="h-7 text-xs"
+                        onClick={() => setAddSubOpen(v => !v)}>
+                        <Plus className="h-3 w-3 mr-1" />{addSubOpen ? 'Annuler' : 'Ajouter'}
+                      </Button>
+                    </div>
+                    {editSubTiles.map((st, i) => {
+                      const Ic = ICON_MAP[st.icon] ?? ExternalLink;
+                      return (
+                        <div key={st.id} className="flex items-center gap-2 p-2 bg-muted/20 rounded-lg">
+                          <div className={`p-1.5 rounded-lg bg-gradient-to-br ${st.gradient} shrink-0`}>
+                            <Ic className="h-3.5 w-3.5 text-white" />
+                          </div>
+                          <span className="text-sm flex-1 truncate">{st.label}</span>
+                          {st.url && <ExternalLink className="h-3 w-3 text-muted-foreground shrink-0" />}
+                          {st.content && <FileText className="h-3 w-3 text-muted-foreground shrink-0" />}
+                          <button type="button" onClick={() => setEditSubTiles(prev => prev.filter((_, j) => j !== i))}
+                            className="p-1 text-muted-foreground hover:text-destructive shrink-0">
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      );
+                    })}
+                    {addSubOpen && (
+                      <div className="space-y-2.5 p-3 border rounded-lg bg-muted/10">
+                        <Input value={newSubLabel} onChange={e => setNewSubLabel(e.target.value)} placeholder="Nom de la sous-tuile *" />
+                        <Input value={newSubUrl} onChange={e => setNewSubUrl(e.target.value)} placeholder="URL (optionnel)" type="url" />
+                        <Textarea value={newSubContent} onChange={e => setNewSubContent(e.target.value)} placeholder="Texte affiché si pas d'URL (optionnel)" rows={2} className="resize-none" />
+                        <div className="grid grid-cols-6 gap-1">
+                          {ICON_OPTIONS.map(k => { const Ic = ICON_MAP[k]; return (
+                            <button key={k} type="button" onClick={() => setNewSubIcon(k)}
+                              className={cn('p-1.5 rounded border flex items-center justify-center', newSubIcon === k ? 'bg-primary text-primary-foreground' : 'hover:bg-muted')}>
+                              {Ic && <Ic className="h-3 w-3" />}
+                            </button>
+                          ); })}
+                        </div>
+                        <div className="grid grid-cols-5 gap-1">
+                          {GRADIENT_PRESETS.map(g => (
+                            <button key={g.value} type="button" onClick={() => setNewSubGradient(g.value)}
+                              className={cn(`h-6 rounded bg-gradient-to-br ${g.value}`, newSubGradient === g.value ? 'ring-2 ring-offset-1 ring-foreground' : 'opacity-60 hover:opacity-100')} />
+                          ))}
+                        </div>
+                        <Button size="sm" type="button" className="w-full" disabled={!newSubLabel.trim()} onClick={() => {
+                          const subId = `sub_${slugify(newSubLabel) || Date.now()}`;
+                          setEditSubTiles(prev => [...prev, { id: subId, label: newSubLabel.trim(), icon: newSubIcon, gradient: newSubGradient, url: newSubUrl.trim() || undefined, content: newSubContent.trim() || undefined }]);
+                          setNewSubLabel(''); setNewSubUrl(''); setNewSubContent('');
+                          setNewSubIcon('ExternalLink'); setNewSubGradient(GRADIENT_PRESETS[0].value);
+                          setAddSubOpen(false);
+                        }}>Confirmer la sous-tuile</Button>
+                      </div>
+                    )}
                   </div>
                 </>
               )}
@@ -1891,6 +1984,56 @@ export default function InfosUtilesPage() {
               <Button variant="outline" onClick={() => setAddTileOpen(false)}>Annuler</Button>
               <Button onClick={addCustomTile} disabled={!newTileLabel.trim()}>Ajouter</Button>
             </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Sheet — Sous-tuiles */}
+        <Sheet open={!!openSubTilesSheet} onOpenChange={open => !open && setOpenSubTilesSheet(null)}>
+          <SheetContent side="right" className="w-full sm:max-w-lg flex flex-col overflow-y-auto">
+            <SheetHeader className="shrink-0">
+              <SheetTitle className="flex items-center gap-2">
+                <button type="button" onClick={() => setOpenSubTilesSheet(null)} className="p-1 -ml-1 text-muted-foreground hover:text-foreground">
+                  <ChevronLeft className="h-4 w-4" />
+                </button>
+                {openSubTilesSheet && (() => { const Ic = ICON_MAP[openSubTilesSheet.icon] ?? ExternalLink; return <Ic className="h-4 w-4 shrink-0" />; })()}
+                {openSubTilesSheet?.label}
+              </SheetTitle>
+            </SheetHeader>
+            <div className="grid grid-cols-2 gap-3 mt-4 overflow-y-auto pb-6">
+              {openSubTilesSheet?.subTiles?.map(st => {
+                const Ic = ICON_MAP[st.icon] ?? ExternalLink;
+                return (
+                  <Card
+                    key={st.id}
+                    onClick={() => {
+                      if (st.url) { window.open(st.url, '_blank', 'noopener'); return; }
+                      if (st.content) { setOpenSubTileContent(st); }
+                    }}
+                    className="border-0 shadow-sm overflow-hidden cursor-pointer hover:shadow-md active:scale-95 transition-all select-none"
+                  >
+                    <div className={`bg-gradient-to-br ${st.gradient} p-5 flex flex-col items-center gap-3 text-white`}>
+                      <div className="p-3 rounded-2xl bg-white/20"><Ic className="h-6 w-6" /></div>
+                      <span className="text-sm font-semibold text-center leading-tight">{st.label}</span>
+                    </div>
+                  </Card>
+                );
+              })}
+            </div>
+          </SheetContent>
+        </Sheet>
+
+        {/* Dialog — Contenu d'une sous-tuile */}
+        <Dialog open={!!openSubTileContent} onOpenChange={open => !open && setOpenSubTileContent(null)}>
+          <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                {openSubTileContent && (() => { const Ic = ICON_MAP[openSubTileContent.icon] ?? ExternalLink; return <Ic className="h-4 w-4 shrink-0" />; })()}
+                {openSubTileContent?.label}
+              </DialogTitle>
+            </DialogHeader>
+            <p className="text-sm text-muted-foreground whitespace-pre-wrap leading-relaxed py-2">
+              {openSubTileContent?.content}
+            </p>
           </DialogContent>
         </Dialog>
 
