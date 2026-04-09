@@ -2,6 +2,18 @@
 
 Toutes les modifications notables de ce projet sont documentées dans ce fichier.
 
+## [1.11.6] - 2026-04-09
+
+### Ajouté
+- Infos utiles : mode édition admin (bouton "Modifier" dans le header)
+  - Drag & drop pour réordonner les tuiles
+  - Bascule œil pour masquer/afficher une tuile aux agents
+  - Crayon pour renommer une tuile built-in
+  - Ajout de tuiles custom (label + URL + icône + couleur)
+  - Édition complète des tuiles custom (label, URL, icône, couleur)
+  - Suppression des tuiles custom
+  - Config persistée dans Supabase (admin_settings → infos_tiles_config)
+
 ## [1.11.5] - 2026-04-09
 
 ### Modifié
