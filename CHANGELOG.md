@@ -2,6 +2,17 @@
 
 Toutes les modifications notables de ce projet sont documentées dans ce fichier.
 
+## [1.12.1] - 2026-04-09
+
+### Ajouté — 7 nouvelles fonctions éditeur de tuiles
+- **Taille double** : tuile sur 2 colonnes (badge Columns2 visible en mode édition)
+- **Séparateur** : titre de section non-cliquable pleine largeur, masque icône/contenu/sous-tuiles
+- **Badge personnalisé** : libellé ambre affiché sur la tuile (ex : "Nouveau", "Urgent")
+- **Lien interne** : navigation vers une page de l'app (Accueil, Historique, Stats…)
+- **Dupliquer** : bouton copie bleue sur les tuiles custom en mode édition
+- **Épingler** : tuile toujours affichée en premier (indicateur Pin visible)
+- **Texte sombre** : switch texte blanc ↔ sombre pour les fonds clairs (badge SunDim)
+
 ## [1.12.0] - 2026-04-09
 
 ### Ajouté
