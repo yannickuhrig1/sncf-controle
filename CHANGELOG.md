@@ -2,6 +2,16 @@
 
 Toutes les modifications notables de ce projet sont documentées dans ce fichier.
 
+## [1.11.8] - 2026-04-09
+
+### Modifié
+- Tuiles custom : éditeur de contenu par blocs (texte + images uploadées) au lieu d'un simple textarea
+  - Bouton "Texte" pour ajouter un bloc texte libre
+  - Bouton "Image" pour uploader une photo depuis l'appareil (bucket Supabase tile-images)
+  - Chaque bloc peut être supprimé individuellement
+  - L'ouverture de la tuile affiche tous les blocs (textes et images) dans un dialog
+- Bucket Supabase `tile-images` créé avec RLS (upload managers/admins, lecture authentifiés)
+
 ## [1.11.7] - 2026-04-08
 
 ### Ajouté

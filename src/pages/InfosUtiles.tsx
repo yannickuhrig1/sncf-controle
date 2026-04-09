@@ -116,13 +116,19 @@ interface TilesConfig {
   customTiles: CustomTileConfig[];
 }
 
+interface ContentBlock {
+  type: 'text' | 'image';
+  value: string;
+}
+
 interface CustomTileConfig {
   id: string;
   label: string;
   icon: string;
   gradient: string;
   url?: string;
-  content?: string;
+  content?: string;    // legacy
+  blocks?: ContentBlock[];
 }
 
 interface RenderedTile {
@@ -1321,16 +1327,20 @@ export default function InfosUtilesPage() {
   // Pour les custom tiles
   const [editTileIcon,     setEditTileIcon]     = useState('ExternalLink');
   const [editTileGradient, setEditTileGradient] = useState(GRADIENT_PRESETS[0].value);
-  const [editTileUrl,      setEditTileUrl]      = useState('');
-  const [editTileContent,  setEditTileContent]  = useState('');
+  const [editTileUrl,          setEditTileUrl]          = useState('');
+  const [editBlocks,           setEditBlocks]           = useState<ContentBlock[]>([]);
+  const [isUploadingEditBlock, setIsUploadingEditBlock] = useState(false);
+  const editBlockImageRef = useRef<HTMLInputElement>(null);
 
   // Dialog ajout tuile custom
-  const [addTileOpen,    setAddTileOpen]    = useState(false);
-  const [newTileLabel,   setNewTileLabel]   = useState('');
-  const [newTileIcon,    setNewTileIcon]    = useState('ExternalLink');
-  const [newTileGradient,setNewTileGradient]= useState(GRADIENT_PRESETS[0].value);
-  const [newTileUrl,     setNewTileUrl]     = useState('');
-  const [newTileContent, setNewTileContent] = useState('');
+  const [addTileOpen,         setAddTileOpen]         = useState(false);
+  const [newTileLabel,        setNewTileLabel]        = useState('');
+  const [newTileIcon,         setNewTileIcon]         = useState('ExternalLink');
+  const [newTileGradient,     setNewTileGradient]     = useState(GRADIENT_PRESETS[0].value);
+  const [newTileUrl,          setNewTileUrl]          = useState('');
+  const [newBlocks,           setNewBlocks]           = useState<ContentBlock[]>([]);
+  const [isUploadingNewBlock, setIsUploadingNewBlock] = useState(false);
+  const newBlockImageRef = useRef<HTMLInputElement>(null);
 
   // Dialog affichage contenu tuile custom
   const [customContentTile, setCustomContentTile] = useState<CustomTileConfig | null>(null);
@@ -1432,6 +1442,14 @@ export default function InfosUtilesPage() {
     }
   };
 
+  const uploadTileImage = async (file: File): Promise<string | null> => {
+    const ext = file.name.split('.').pop() ?? 'jpg';
+    const path = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+    const { data, error } = await supabase.storage.from('tile-images').upload(path, file);
+    if (error) { toast.error('Erreur upload : ' + error.message); return null; }
+    return supabase.storage.from('tile-images').getPublicUrl(data.path).data.publicUrl;
+  };
+
   const openEditTile = (tile: RenderedTile) => {
     setEditTileId(tile.id);
     setEditTileLabel(localLabels[tile.id] ?? tile.label);
@@ -1440,7 +1458,9 @@ export default function InfosUtilesPage() {
       setEditTileIcon(ct?.icon ?? 'ExternalLink');
       setEditTileGradient(ct?.gradient ?? GRADIENT_PRESETS[0].value);
       setEditTileUrl(ct?.url ?? '');
-      setEditTileContent(ct?.content ?? '');
+      if (ct?.blocks) setEditBlocks(ct.blocks);
+      else if (ct?.content) setEditBlocks([{ type: 'text', value: ct.content }]);
+      else setEditBlocks([]);
     }
   };
 
@@ -1449,7 +1469,7 @@ export default function InfosUtilesPage() {
     const isCustom = localCustom.some(c => c.id === editTileId);
     if (isCustom) {
       setLocalCustom(prev => prev.map(c => c.id === editTileId
-        ? { ...c, label: editTileLabel, icon: editTileIcon, gradient: editTileGradient, url: editTileUrl || undefined, content: editTileContent || undefined }
+        ? { ...c, label: editTileLabel, icon: editTileIcon, gradient: editTileGradient, url: editTileUrl || undefined, blocks: editBlocks.length > 0 ? editBlocks : undefined, content: undefined }
         : c
       ));
     } else {
@@ -1489,11 +1509,11 @@ export default function InfosUtilesPage() {
       icon: newTileIcon,
       gradient: newTileGradient,
       url: newTileUrl.trim() || undefined,
-      content: newTileContent.trim() || undefined,
+      blocks: newBlocks.length > 0 ? newBlocks : undefined,
     };
     setLocalCustom(prev => [...prev, newTile]);
     setLocalOrder(prev => [...prev, newId]);
-    setNewTileLabel(''); setNewTileUrl(''); setNewTileContent('');
+    setNewTileLabel(''); setNewTileUrl(''); setNewBlocks([]);
     setNewTileIcon('ExternalLink'); setNewTileGradient(GRADIENT_PRESETS[0].value);
     setAddTileOpen(false);
     toast.success('Tuile ajoutée — pensez à sauvegarder');
@@ -1638,8 +1658,9 @@ export default function InfosUtilesPage() {
                 onToggle={() => {}}
                 onClick={() => {
                   if (tile.url) { window.open(tile.url, '_blank', 'noopener'); return; }
-                  if (tile.isCustom && tile.content) {
-                    setCustomContentTile(tilesConfig.customTiles.find(c => c.id === tile.id) ?? null);
+                  if (tile.isCustom) {
+                    const ct = tilesConfig.customTiles.find(c => c.id === tile.id);
+                    if (ct && (ct.blocks?.length || ct.content)) { setCustomContentTile(ct); return; }
                     return;
                   }
                   setOpenTile(tile.id);
@@ -1669,8 +1690,43 @@ export default function InfosUtilesPage() {
                     <Input value={editTileUrl} onChange={e => setEditTileUrl(e.target.value)} placeholder="https://... — laisser vide si non applicable" type="url" />
                   </div>
                   <div className="space-y-1.5">
-                    <Label>Contenu texte <span className="text-muted-foreground font-normal">(optionnel — affiché à l'ouverture si pas d'URL)</span></Label>
-                    <Textarea value={editTileContent} onChange={e => setEditTileContent(e.target.value)} placeholder="Texte ou instructions à afficher quand on clique sur la tuile…" rows={4} />
+                    <Label>Contenu <span className="text-muted-foreground font-normal">(optionnel — affiché si pas d'URL)</span></Label>
+                    <div className="space-y-2">
+                      {editBlocks.map((block, i) => (
+                        <div key={i} className="relative border rounded-lg p-2 pr-8 bg-muted/20">
+                          {block.type === 'text' ? (
+                            <Textarea
+                              value={block.value}
+                              onChange={e => setEditBlocks(prev => prev.map((b, j) => j === i ? { ...b, value: e.target.value } : b))}
+                              placeholder="Votre texte…"
+                              rows={3}
+                              className="resize-none border-0 p-0 shadow-none focus-visible:ring-0 bg-transparent"
+                            />
+                          ) : (
+                            <img src={block.value} alt="" className="max-h-40 rounded object-contain" />
+                          )}
+                          <button type="button" onClick={() => setEditBlocks(prev => prev.filter((_, j) => j !== i))} className="absolute top-1.5 right-1.5 p-1 text-muted-foreground hover:text-destructive">
+                            <X className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="flex gap-2 pt-1">
+                      <Button size="sm" variant="outline" type="button" onClick={() => setEditBlocks(prev => [...prev, { type: 'text', value: '' }])}>
+                        <FileText className="h-3.5 w-3.5 mr-1.5" />Texte
+                      </Button>
+                      <Button size="sm" variant="outline" type="button" disabled={isUploadingEditBlock} onClick={() => editBlockImageRef.current?.click()}>
+                        {isUploadingEditBlock ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" /> : <Upload className="h-3.5 w-3.5 mr-1.5" />}
+                        Image
+                      </Button>
+                      <input ref={editBlockImageRef} type="file" accept="image/*" className="hidden" onChange={async (e) => {
+                        const file = e.target.files?.[0]; if (!file) return;
+                        setIsUploadingEditBlock(true);
+                        const url = await uploadTileImage(file);
+                        if (url) setEditBlocks(prev => [...prev, { type: 'image', value: url }]);
+                        setIsUploadingEditBlock(false); e.target.value = '';
+                      }} />
+                    </div>
                   </div>
                   <div className="space-y-1.5">
                     <Label>Icône</Label>
@@ -1729,8 +1785,43 @@ export default function InfosUtilesPage() {
                 <Input value={newTileUrl} onChange={e => setNewTileUrl(e.target.value)} placeholder="https://... — laisser vide si non applicable" type="url" />
               </div>
               <div className="space-y-1.5">
-                <Label>Contenu texte <span className="text-muted-foreground font-normal">(optionnel — affiché si pas d'URL)</span></Label>
-                <Textarea value={newTileContent} onChange={e => setNewTileContent(e.target.value)} placeholder="Texte ou instructions à afficher quand on clique sur la tuile…" rows={3} />
+                <Label>Contenu <span className="text-muted-foreground font-normal">(optionnel — affiché si pas d'URL)</span></Label>
+                <div className="space-y-2">
+                  {newBlocks.map((block, i) => (
+                    <div key={i} className="relative border rounded-lg p-2 pr-8 bg-muted/20">
+                      {block.type === 'text' ? (
+                        <Textarea
+                          value={block.value}
+                          onChange={e => setNewBlocks(prev => prev.map((b, j) => j === i ? { ...b, value: e.target.value } : b))}
+                          placeholder="Votre texte…"
+                          rows={3}
+                          className="resize-none border-0 p-0 shadow-none focus-visible:ring-0 bg-transparent"
+                        />
+                      ) : (
+                        <img src={block.value} alt="" className="max-h-40 rounded object-contain" />
+                      )}
+                      <button type="button" onClick={() => setNewBlocks(prev => prev.filter((_, j) => j !== i))} className="absolute top-1.5 right-1.5 p-1 text-muted-foreground hover:text-destructive">
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+                <div className="flex gap-2 pt-1">
+                  <Button size="sm" variant="outline" type="button" onClick={() => setNewBlocks(prev => [...prev, { type: 'text', value: '' }])}>
+                    <FileText className="h-3.5 w-3.5 mr-1.5" />Texte
+                  </Button>
+                  <Button size="sm" variant="outline" type="button" disabled={isUploadingNewBlock} onClick={() => newBlockImageRef.current?.click()}>
+                    {isUploadingNewBlock ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" /> : <Upload className="h-3.5 w-3.5 mr-1.5" />}
+                    Image
+                  </Button>
+                  <input ref={newBlockImageRef} type="file" accept="image/*" className="hidden" onChange={async (e) => {
+                    const file = e.target.files?.[0]; if (!file) return;
+                    setIsUploadingNewBlock(true);
+                    const url = await uploadTileImage(file);
+                    if (url) setNewBlocks(prev => [...prev, { type: 'image', value: url }]);
+                    setIsUploadingNewBlock(false); e.target.value = '';
+                  }} />
+                </div>
               </div>
               <div className="space-y-1.5">
                 <Label>Icône</Label>
@@ -1808,8 +1899,17 @@ export default function InfosUtilesPage() {
                 {customContentTile?.label}
               </DialogTitle>
             </DialogHeader>
-            <div className="py-2 text-sm text-muted-foreground whitespace-pre-wrap leading-relaxed">
-              {customContentTile?.content}
+            <div className="py-2 space-y-3">
+              {(customContentTile?.blocks?.length
+                ? customContentTile.blocks
+                : customContentTile?.content
+                  ? [{ type: 'text' as const, value: customContentTile.content }]
+                  : []
+              ).map((block, i) =>
+                block.type === 'image'
+                  ? <img key={i} src={block.value} alt="" className="rounded-lg max-w-full" />
+                  : <p key={i} className="text-sm text-muted-foreground whitespace-pre-wrap leading-relaxed">{block.value}</p>
+              )}
             </div>
           </DialogContent>
         </Dialog>
