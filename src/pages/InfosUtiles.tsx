@@ -1339,7 +1339,9 @@ export default function InfosUtilesPage() {
   const [newTileGradient,     setNewTileGradient]     = useState(GRADIENT_PRESETS[0].value);
   const [newTileUrl,          setNewTileUrl]          = useState('');
   const [newBlocks,           setNewBlocks]           = useState<ContentBlock[]>([]);
-  const [isUploadingNewBlock, setIsUploadingNewBlock] = useState(false);
+  const [isUploadingNewBlock,  setIsUploadingNewBlock]  = useState(false);
+  const [isDraggingOverEdit,   setIsDraggingOverEdit]   = useState(false);
+  const [isDraggingOverNew,    setIsDraggingOverNew]    = useState(false);
   const newBlockImageRef = useRef<HTMLInputElement>(null);
 
   // Dialog affichage contenu tuile custom
@@ -1691,7 +1693,22 @@ export default function InfosUtilesPage() {
                   </div>
                   <div className="space-y-1.5">
                     <Label>Contenu <span className="text-muted-foreground font-normal">(optionnel — affiché si pas d'URL)</span></Label>
-                    <div className="space-y-2">
+                    <div
+                      className={cn('space-y-2 rounded-lg border-2 border-dashed p-1 transition-colors', isDraggingOverEdit ? 'border-primary bg-primary/5' : 'border-transparent')}
+                      onDragOver={e => { e.preventDefault(); setIsDraggingOverEdit(true); }}
+                      onDragLeave={e => { if (!e.currentTarget.contains(e.relatedTarget as Node)) setIsDraggingOverEdit(false); }}
+                      onDrop={async (e) => {
+                        e.preventDefault(); setIsDraggingOverEdit(false);
+                        const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
+                        if (!files.length) return;
+                        setIsUploadingEditBlock(true);
+                        for (const file of files) { const url = await uploadTileImage(file); if (url) setEditBlocks(prev => [...prev, { type: 'image', value: url }]); }
+                        setIsUploadingEditBlock(false);
+                      }}
+                    >
+                      {isDraggingOverEdit && editBlocks.length === 0 && (
+                        <p className="text-center text-xs text-primary py-3">Déposer l'image ici</p>
+                      )}
                       {editBlocks.map((block, i) => (
                         <div key={i} className="relative border rounded-lg p-2 pr-8 bg-muted/20">
                           {block.type === 'text' ? (
@@ -1786,7 +1803,22 @@ export default function InfosUtilesPage() {
               </div>
               <div className="space-y-1.5">
                 <Label>Contenu <span className="text-muted-foreground font-normal">(optionnel — affiché si pas d'URL)</span></Label>
-                <div className="space-y-2">
+                <div
+                  className={cn('space-y-2 rounded-lg border-2 border-dashed p-1 transition-colors', isDraggingOverNew ? 'border-primary bg-primary/5' : 'border-transparent')}
+                  onDragOver={e => { e.preventDefault(); setIsDraggingOverNew(true); }}
+                  onDragLeave={e => { if (!e.currentTarget.contains(e.relatedTarget as Node)) setIsDraggingOverNew(false); }}
+                  onDrop={async (e) => {
+                    e.preventDefault(); setIsDraggingOverNew(false);
+                    const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
+                    if (!files.length) return;
+                    setIsUploadingNewBlock(true);
+                    for (const file of files) { const url = await uploadTileImage(file); if (url) setNewBlocks(prev => [...prev, { type: 'image', value: url }]); }
+                    setIsUploadingNewBlock(false);
+                  }}
+                >
+                  {isDraggingOverNew && newBlocks.length === 0 && (
+                    <p className="text-center text-xs text-primary py-3">Déposer l'image ici</p>
+                  )}
                   {newBlocks.map((block, i) => (
                     <div key={i} className="relative border rounded-lg p-2 pr-8 bg-muted/20">
                       {block.type === 'text' ? (

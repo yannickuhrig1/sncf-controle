@@ -2,6 +2,13 @@
 
 Toutes les modifications notables de ce projet sont documentées dans ce fichier.
 
+## [1.11.9] - 2026-04-09
+
+### Ajouté
+- Tuiles custom : glisser-déposer d'images dans la zone de contenu (création et édition)
+  - Zone de dépôt avec contour bleu animé quand une image est survolée
+  - Supporte plusieurs images déposées simultanément
+
 ## [1.11.8] - 2026-04-09
 
 ### Modifié
