@@ -2,6 +2,43 @@
 
 Toutes les modifications notables de ce projet sont documentées dans ce fichier.
 
+## [1.11.8] - 2026-04-09
+
+### Modifié
+- Tuiles custom : éditeur de contenu par blocs (texte + images uploadées) au lieu d'un simple textarea
+  - Bouton "Texte" pour ajouter un bloc texte libre
+  - Bouton "Image" pour uploader une photo depuis l'appareil (bucket Supabase tile-images)
+  - Chaque bloc peut être supprimé individuellement
+  - L'ouverture de la tuile affiche tous les blocs (textes et images) dans un dialog
+- Bucket Supabase `tile-images` créé avec RLS (upload managers/admins, lecture authentifiés)
+
+## [1.11.7] - 2026-04-08
+
+### Ajouté
+- Tuiles custom : génération automatique de l'ID depuis le nom (slugify) au lieu d'un timestamp
+- Tuiles custom : champ "Contenu texte" (optionnel) dans les dialogs création et édition
+- Tuiles custom : si la tuile a un contenu texte et pas d'URL, le clic ouvre un dialog affichant ce contenu
+- Résolution de conflit d'ID automatique si deux tuiles ont le même slug
+
+## [1.11.6] - 2026-04-09
+
+### Ajouté
+- Infos utiles : mode édition admin (bouton "Modifier" dans le header)
+  - Drag & drop pour réordonner les tuiles
+  - Bascule œil pour masquer/afficher une tuile aux agents
+  - Crayon pour renommer une tuile built-in
+  - Ajout de tuiles custom (label + URL + icône + couleur)
+  - Édition complète des tuiles custom (label, URL, icône, couleur)
+  - Suppression des tuiles custom
+  - Config persistée dans Supabase (admin_settings → infos_tiles_config)
+
+## [1.11.5] - 2026-04-09
+
+### Modifié
+- Infos utiles → Personnes recherchées : ouverture dans un Sheet pleine page au lieu d'un popup
+- Managers et admins : ajout, édition, désactivation et suppression directement dans le Sheet
+- Agents : vue lecture seule inchangée (personnes actives uniquement)
+
 ## [1.11.4] - 2026-04-08
 
 ### Ajouté

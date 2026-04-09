@@ -1,4 +1,21 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+  rectSortingStrategy,
+  useSortable,
+  arrayMove,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { Navigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useAdminSettings } from '@/hooks/useAdminSettings';
@@ -11,6 +28,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet';
 import {
   Accordion,
   AccordionContent,
@@ -52,9 +75,26 @@ import {
   Paperclip,
   Send,
   Loader2,
+  Plus,
+  Pencil,
+  Trash2,
+  Eye,
+  EyeOff,
+  Upload,
+  X,
+  GripVertical,
+  Link,
+  Star,
+  Globe,
+  Bell,
+  Zap,
+  PenLine,
+  Check,
 } from 'lucide-react';
+import { useQueryClient } from '@tanstack/react-query';
+import { cn } from '@/lib/utils';
 import { DeparturesWidget } from '@/components/controls/DeparturesWidget';
-import { useWantedPersons } from '@/hooks/useWantedPersons';
+import { useWantedPersons, type WantedPerson } from '@/hooks/useWantedPersons';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -67,6 +107,74 @@ interface Tile {
   iconBg: string;
   iconColor: string;
 }
+
+/* ─── Config tuiles ─────────────────────────────────────────────────────── */
+interface TilesConfig {
+  order: string[];
+  disabled: string[];
+  labels: Record<string, string>;
+  customTiles: CustomTileConfig[];
+}
+
+interface ContentBlock {
+  type: 'text' | 'image';
+  value: string;
+}
+
+interface CustomTileConfig {
+  id: string;
+  label: string;
+  icon: string;
+  gradient: string;
+  url?: string;
+  content?: string;    // legacy
+  blocks?: ContentBlock[];
+}
+
+interface RenderedTile {
+  id: string;
+  label: string;
+  Icon: React.ElementType;
+  gradient: string;
+  isCustom: boolean;
+  url?: string;
+  content?: string;
+}
+
+const ICON_MAP: Record<string, React.ElementType> = {
+  Calculator, AlertTriangle, Phone, Share2, Monitor, Train, Info, LifeBuoy,
+  ExternalLink, BookOpen, HelpCircle, Building2, BarChart3, History, Settings,
+  MessageSquare, FileText, Mail, Link, Star, Globe, Bell, Zap, Download, QrCode,
+  Shield, Users, Copy, Check,
+};
+
+const ICON_OPTIONS = [
+  'ExternalLink', 'Link', 'FileText', 'BookOpen', 'Star', 'Globe', 'Bell', 'Zap',
+  'Phone', 'Mail', 'Shield', 'Users', 'Building2', 'Settings', 'Download', 'QrCode',
+  'BarChart3', 'MessageSquare', 'Train', 'Monitor', 'Calculator', 'AlertTriangle',
+];
+
+const GRADIENT_PRESETS = [
+  { label: 'Bleu',    value: 'from-blue-400 to-indigo-500' },
+  { label: 'Rouge',   value: 'from-red-500 to-rose-700' },
+  { label: 'Vert',    value: 'from-green-400 to-emerald-500' },
+  { label: 'Cyan',    value: 'from-teal-400 to-cyan-500' },
+  { label: 'Rose',    value: 'from-rose-400 to-pink-600' },
+  { label: 'Ciel',    value: 'from-sky-400 to-blue-600' },
+  { label: 'Orange',  value: 'from-orange-400 to-red-500' },
+  { label: 'Violet',  value: 'from-violet-400 to-purple-600' },
+  { label: 'Ambre',   value: 'from-amber-400 to-orange-500' },
+  { label: 'Gris',    value: 'from-slate-400 to-slate-600' },
+];
+
+const DEFAULT_TILES_ORDER = ['fraude', 'wanted', 'contacts', 'partager', 'presentation', 'departures', 'about', 'assistance'];
+
+const slugify = (str: string) =>
+  str.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase().trim()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 40);
 
 /* ─── Tuiles ─────────────────────────────────────────────────────────────── */
 const TILES: Tile[] = [
@@ -135,6 +243,86 @@ const TILES: Tile[] = [
     iconColor: 'text-white',
   },
 ];
+
+/* ─── SortableTileItem ───────────────────────────────────────────────────── */
+function SortableTileItem({
+  tile, editMode, isDisabled, onEdit, onToggle, onDelete, onClick, badge,
+}: {
+  tile: RenderedTile;
+  editMode: boolean;
+  isDisabled: boolean;
+  onEdit: () => void;
+  onToggle: () => void;
+  onDelete?: () => void;
+  onClick: () => void;
+  badge?: number;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
+    useSortable({ id: tile.id, disabled: !editMode });
+
+  const style = { transform: CSS.Transform.toString(transform), transition };
+
+  return (
+    <div ref={setNodeRef} style={style} className={cn('relative', isDragging && 'opacity-50 z-50')}>
+      {/* Badge non lus */}
+      {!editMode && badge && badge > 0 ? (
+        <span className="absolute top-1.5 right-1.5 z-10 flex items-center justify-center h-5 min-w-5 px-1 rounded-full bg-red-500 text-white text-[10px] font-bold">
+          {badge > 9 ? '9+' : badge}
+        </span>
+      ) : null}
+
+      {/* Overlay éditeur */}
+      {editMode && (
+        <div className="absolute inset-0 z-10 rounded-xl ring-2 ring-white/40 ring-inset pointer-events-none" />
+      )}
+
+      {/* Contrôles edit mode */}
+      {editMode && (
+        <>
+          {/* Drag handle */}
+          <button
+            {...attributes}
+            {...listeners}
+            className="absolute top-1 left-1 z-20 p-1 bg-black/50 rounded text-white cursor-grab active:cursor-grabbing touch-none"
+          >
+            <GripVertical className="h-3 w-3" />
+          </button>
+
+          {/* Actions top-right */}
+          <div className="absolute top-1 right-1 z-20 flex gap-0.5">
+            <button onClick={onEdit} className="p-1 bg-black/50 rounded text-white hover:bg-black/70">
+              <Pencil className="h-3 w-3" />
+            </button>
+            <button onClick={onToggle} className="p-1 bg-black/50 rounded text-white hover:bg-black/70" title={isDisabled ? 'Réactiver' : 'Désactiver pour les agents'}>
+              {isDisabled ? <Eye className="h-3 w-3" /> : <EyeOff className="h-3 w-3" />}
+            </button>
+            {tile.isCustom && (
+              <button onClick={onDelete} className="p-1 bg-red-500/80 rounded text-white hover:bg-red-600">
+                <Trash2 className="h-3 w-3" />
+              </button>
+            )}
+          </div>
+        </>
+      )}
+
+      <Card
+        onClick={editMode ? undefined : onClick}
+        className={cn(
+          'border-0 shadow-sm overflow-hidden transition-all select-none',
+          !editMode && 'cursor-pointer hover:shadow-md active:scale-95 transition-transform',
+          isDisabled && editMode && 'opacity-50',
+        )}
+      >
+        <div className={`bg-gradient-to-br ${tile.gradient} p-5 flex flex-col items-center gap-3 text-white`}>
+          <div className="p-3 rounded-2xl bg-white/20">
+            <tile.Icon className="h-6 w-6 text-white" />
+          </div>
+          <span className="text-sm font-semibold text-center leading-tight">{tile.label}</span>
+        </div>
+      </Card>
+    </div>
+  );
+}
 
 /* ─── Contenu des dialogs ────────────────────────────────────────────────── */
 function ContentAbout() {
@@ -286,58 +474,203 @@ function ContentTarifs() {
   );
 }
 
-function ContentWantedPersons() {
-  const { persons, isLoading } = useWantedPersons(true);
+function WantedPersonsPanel({ canEdit }: { canEdit: boolean }) {
+  const { persons, isLoading, addPerson, updatePerson, deletePerson, toggleActive } = useWantedPersons(!canEdit);
 
-  if (isLoading) {
-    return (
-      <div className="flex justify-center py-8">
-        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-      </div>
-    );
-  }
+  const [formOpen, setFormOpen]             = useState(false);
+  const [editingPerson, setEditingPerson]   = useState<WantedPerson | null>(null);
+  const [form, setForm]                     = useState({ nom: '', prenom: '', date_naissance: '', notes: '' });
+  const [photoFile, setPhotoFile]           = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview]     = useState<string | null>(null);
+  const [saving, setSaving]                 = useState(false);
+  const photoRef                            = useRef<HTMLInputElement>(null);
 
-  if (persons.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center py-10 text-center gap-3 text-muted-foreground">
-        <AlertTriangle className="h-10 w-10 opacity-30" />
-        <p className="text-sm">Aucune personne recherchée en ce moment.</p>
-      </div>
-    );
-  }
+  const openAdd = () => {
+    setEditingPerson(null);
+    setForm({ nom: '', prenom: '', date_naissance: '', notes: '' });
+    setPhotoFile(null);
+    setPhotoPreview(null);
+    setFormOpen(true);
+  };
+
+  const openEdit = (p: WantedPerson) => {
+    setEditingPerson(p);
+    setForm({ nom: p.nom, prenom: p.prenom, date_naissance: p.date_naissance || '', notes: p.notes || '' });
+    setPhotoFile(null);
+    setPhotoPreview(p.photo_url);
+    setFormOpen(true);
+  };
+
+  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setPhotoFile(file);
+    const reader = new FileReader();
+    reader.onload = () => setPhotoPreview(reader.result as string);
+    reader.readAsDataURL(file);
+  };
+
+  const handleSave = async () => {
+    if (!form.nom.trim() || !form.prenom.trim()) return;
+    setSaving(true);
+    let ok: boolean;
+    if (editingPerson) {
+      ok = await updatePerson(editingPerson.id, {
+        nom: form.nom.trim(), prenom: form.prenom.trim(),
+        date_naissance: form.date_naissance || null,
+        notes: form.notes || null,
+        ...(photoFile ? { photoFile } : {}),
+      });
+    } else {
+      ok = await addPerson({
+        nom: form.nom.trim(), prenom: form.prenom.trim(),
+        date_naissance: form.date_naissance || null,
+        photo_url: null, notes: form.notes || null,
+        ...(photoFile ? { photoFile } : {}),
+      });
+    }
+    setSaving(false);
+    if (ok) {
+      setFormOpen(false);
+      toast.success(editingPerson ? 'Fiche mise à jour' : 'Personne ajoutée');
+    } else {
+      toast.error('Erreur lors de la sauvegarde');
+    }
+  };
+
+  const handleDelete = async (p: WantedPerson) => {
+    if (!confirm(`Supprimer la fiche de ${p.prenom} ${p.nom} ?`)) return;
+    const ok = await deletePerson(p.id);
+    if (ok) toast.success('Fiche supprimée');
+    else toast.error('Erreur lors de la suppression');
+  };
 
   return (
-    <div className="space-y-3">
+    <div className="flex flex-col gap-4 h-full">
+      {/* Avertissement */}
       <p className="text-xs text-muted-foreground bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900 rounded-lg px-3 py-2 flex items-center gap-2">
         <AlertTriangle className="h-3.5 w-3.5 text-red-500 shrink-0" />
         Informations confidentielles — Usage professionnel uniquement.
       </p>
-      {persons.map((p) => (
-        <div key={p.id} className="flex gap-3 p-3 bg-muted/30 border border-border rounded-lg">
-          {p.photo_url ? (
-            <img
-              src={p.photo_url}
-              alt={`${p.prenom} ${p.nom}`}
-              className="w-16 h-20 object-cover rounded-md border shrink-0"
-            />
-          ) : (
-            <div className="w-16 h-20 bg-muted rounded-md border flex items-center justify-center shrink-0">
-              <Users className="h-6 w-6 text-muted-foreground" />
-            </div>
-          )}
-          <div className="flex-1 min-w-0">
-            <p className="font-bold text-base text-foreground">{p.prenom} {p.nom}</p>
-            {p.date_naissance && (
-              <p className="text-sm text-muted-foreground mt-0.5">
-                Né(e) le {new Date(p.date_naissance).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })}
-              </p>
-            )}
-            {p.notes && (
-              <p className="text-xs text-muted-foreground mt-1.5 line-clamp-3 italic">{p.notes}</p>
-            )}
-          </div>
+
+      {/* Bouton ajout (managers/admins) */}
+      {canEdit && (
+        <Button size="sm" className="self-start" onClick={openAdd}>
+          <Plus className="h-4 w-4 mr-1.5" />
+          Ajouter une personne
+        </Button>
+      )}
+
+      {/* Liste */}
+      {isLoading ? (
+        <div className="flex justify-center py-10">
+          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
         </div>
-      ))}
+      ) : persons.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-10 text-center gap-3 text-muted-foreground">
+          <AlertTriangle className="h-10 w-10 opacity-30" />
+          <p className="text-sm">Aucune personne recherchée en ce moment.</p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {persons.map((p) => (
+            <div key={p.id} className={`flex gap-3 p-3 border rounded-lg ${p.active ? 'bg-muted/30 border-border' : 'bg-muted/10 border-border/40 opacity-60'}`}>
+              {p.photo_url ? (
+                <img src={p.photo_url} alt={`${p.prenom} ${p.nom}`} className="w-16 h-20 object-cover rounded-md border shrink-0" />
+              ) : (
+                <div className="w-16 h-20 bg-muted rounded-md border flex items-center justify-center shrink-0">
+                  <Users className="h-6 w-6 text-muted-foreground" />
+                </div>
+              )}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <p className="font-bold text-base text-foreground">{p.prenom} {p.nom}</p>
+                    {!p.active && <Badge variant="outline" className="text-[10px] mt-0.5">Inactif</Badge>}
+                  </div>
+                  {canEdit && (
+                    <div className="flex gap-1 shrink-0">
+                      <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => openEdit(p)} title="Modifier">
+                        <Pencil className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => toggleActive(p.id, !p.active)} title={p.active ? 'Désactiver' : 'Réactiver'}>
+                        {p.active ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                      </Button>
+                      <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => handleDelete(p)} title="Supprimer">
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  )}
+                </div>
+                {p.date_naissance && (
+                  <p className="text-sm text-muted-foreground mt-0.5">
+                    Né(e) le {new Date(p.date_naissance).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })}
+                  </p>
+                )}
+                {p.notes && <p className="text-xs text-muted-foreground mt-1.5 italic line-clamp-3">{p.notes}</p>}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Dialog ajout / édition */}
+      {canEdit && (
+        <Dialog open={formOpen} onOpenChange={(open) => { if (!open) setFormOpen(false); }}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>{editingPerson ? 'Modifier la fiche' : 'Nouvelle personne recherchée'}</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-2">
+              {/* Photo */}
+              <div className="flex items-center gap-4">
+                <div className="w-16 h-20 bg-muted rounded-md border overflow-hidden flex items-center justify-center shrink-0">
+                  {photoPreview
+                    ? <img src={photoPreview} className="w-full h-full object-cover" alt="" />
+                    : <Users className="h-6 w-6 text-muted-foreground" />}
+                </div>
+                <div>
+                  <input ref={photoRef} type="file" accept="image/*" className="hidden" onChange={handlePhotoChange} />
+                  <Button size="sm" variant="outline" onClick={() => photoRef.current?.click()}>
+                    <Upload className="h-3.5 w-3.5 mr-1.5" />
+                    {photoPreview ? 'Changer la photo' : 'Ajouter une photo'}
+                  </Button>
+                  {photoPreview && (
+                    <Button size="sm" variant="ghost" className="mt-1 text-destructive hover:text-destructive" onClick={() => { setPhotoFile(null); setPhotoPreview(null); }}>
+                      <X className="h-3.5 w-3.5 mr-1" />Retirer
+                    </Button>
+                  )}
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label>Prénom *</Label>
+                  <Input value={form.prenom} onChange={e => setForm(f => ({ ...f, prenom: e.target.value }))} placeholder="Prénom" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Nom *</Label>
+                  <Input value={form.nom} onChange={e => setForm(f => ({ ...f, nom: e.target.value }))} placeholder="Nom" />
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <Label>Date de naissance</Label>
+                <Input type="date" value={form.date_naissance} onChange={e => setForm(f => ({ ...f, date_naissance: e.target.value }))} />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Notes / Signalement</Label>
+                <Textarea rows={3} value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} placeholder="Ex : Fraude récurrente ligne Metz-Thionville…" />
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button variant="outline" onClick={() => setFormOpen(false)}>Annuler</Button>
+              <Button onClick={handleSave} disabled={saving || !form.nom.trim() || !form.prenom.trim()}>
+                {saving && <Loader2 className="h-4 w-4 animate-spin mr-1.5" />}
+                {editingPerson ? 'Enregistrer' : 'Ajouter'}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }
@@ -958,26 +1291,251 @@ function ContentAssistance() {
 }
 
 const DIALOG_CONTENT: Record<string, { title: string; Content: () => JSX.Element }> = {
-  fraude:    { title: 'Calcul du taux de fraude',   Content: ContentFraude },
-  wanted:    { title: 'Personnes recherchées',        Content: ContentWantedPersons },
-  contacts:  { title: 'Contacts utiles',             Content: ContentContacts },
-  partager:      { title: "Partager l'application",     Content: ContentPartager },
-  presentation:  { title: 'Présentation de l\'application', Content: ContentPresentation },
-  departures:    { title: 'Départs/Arrivées en gare',       Content: () => <DeparturesWidget showTrainSearch /> },
-  about:         { title: "À propos de l'application",      Content: ContentAbout },
-  assistance:    { title: 'Assistance',                      Content: ContentAssistance },
+  fraude:        { title: 'Calcul du taux de fraude',          Content: ContentFraude },
+  contacts:      { title: 'Contacts utiles',                   Content: ContentContacts },
+  partager:      { title: "Partager l'application",            Content: ContentPartager },
+  presentation:  { title: "Présentation de l'application",     Content: ContentPresentation },
+  departures:    { title: 'Départs/Arrivées en gare',          Content: () => <DeparturesWidget showTrainSearch /> },
+  about:         { title: "À propos de l'application",         Content: ContentAbout },
+  assistance:    { title: 'Assistance',                        Content: ContentAssistance },
 };
 
 /* ─── Page principale ────────────────────────────────────────────────────── */
 export default function InfosUtilesPage() {
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, isAdmin, isManager } = useAuth();
   const { settings, isLoading: settingsLoading } = useAdminSettings();
+  const queryClient = useQueryClient();
+  const canEditWanted = isAdmin() || isManager();
   const [searchParams] = useSearchParams();
   const [openTile, setOpenTile] = useState<string | null>(() => {
     const tile = searchParams.get('tile');
-    return tile && DIALOG_CONTENT[tile] ? tile : null;
+    return tile && (DIALOG_CONTENT[tile] || tile === 'wanted') ? tile : null;
   });
   const [unreadRepliesCount, setUnreadRepliesCount] = useState(0);
+
+  // ── Edit mode (admin only) ─────────────────────────────────────────────
+  const [editMode, setEditMode]             = useState(false);
+  const [localOrder, setLocalOrder]         = useState<string[]>([]);
+  const [localDisabled, setLocalDisabled]   = useState<string[]>([]);
+  const [localLabels, setLocalLabels]       = useState<Record<string, string>>({});
+  const [localCustom, setLocalCustom]       = useState<CustomTileConfig[]>([]);
+  const [isSavingConfig, setIsSavingConfig] = useState(false);
+
+  // Dialog édition d'une tuile
+  const [editTileId,    setEditTileId]    = useState<string | null>(null);
+  const [editTileLabel, setEditTileLabel] = useState('');
+  // Pour les custom tiles
+  const [editTileIcon,     setEditTileIcon]     = useState('ExternalLink');
+  const [editTileGradient, setEditTileGradient] = useState(GRADIENT_PRESETS[0].value);
+  const [editTileUrl,          setEditTileUrl]          = useState('');
+  const [editBlocks,           setEditBlocks]           = useState<ContentBlock[]>([]);
+  const [isUploadingEditBlock, setIsUploadingEditBlock] = useState(false);
+  const editBlockImageRef = useRef<HTMLInputElement>(null);
+
+  // Dialog ajout tuile custom
+  const [addTileOpen,         setAddTileOpen]         = useState(false);
+  const [newTileLabel,        setNewTileLabel]        = useState('');
+  const [newTileIcon,         setNewTileIcon]         = useState('ExternalLink');
+  const [newTileGradient,     setNewTileGradient]     = useState(GRADIENT_PRESETS[0].value);
+  const [newTileUrl,          setNewTileUrl]          = useState('');
+  const [newBlocks,           setNewBlocks]           = useState<ContentBlock[]>([]);
+  const [isUploadingNewBlock, setIsUploadingNewBlock] = useState(false);
+  const newBlockImageRef = useRef<HTMLInputElement>(null);
+
+  // Dialog affichage contenu tuile custom
+  const [customContentTile, setCustomContentTile] = useState<CustomTileConfig | null>(null);
+
+  // ── Config tuiles ──────────────────────────────────────────────────────
+  const tilesConfigRaw = settings?.find(s => s.key === 'infos_tiles_config')?.value as TilesConfig | undefined;
+  const tilesConfig: TilesConfig = {
+    order:       tilesConfigRaw?.order       ?? DEFAULT_TILES_ORDER,
+    disabled:    tilesConfigRaw?.disabled    ?? [],
+    labels:      tilesConfigRaw?.labels      ?? {},
+    customTiles: tilesConfigRaw?.customTiles ?? [],
+  };
+
+  // Toutes les tuiles (built-in + custom) sous forme RenderedTile
+  const allRenderedTiles: RenderedTile[] = [
+    ...TILES.map(t => ({
+      id: t.id,
+      label: tilesConfig.labels[t.id] ?? t.label,
+      Icon: t.icon,
+      gradient: t.gradient,
+      isCustom: false,
+    })),
+    ...tilesConfig.customTiles.map(ct => ({
+      id: ct.id,
+      label: ct.label,
+      Icon: ICON_MAP[ct.icon] ?? ExternalLink,
+      gradient: ct.gradient,
+      isCustom: true,
+      url: ct.url,
+      content: ct.content,
+    })),
+  ];
+
+  // Ordonner selon la config (les nouveaux non encore en ordre vont à la fin)
+  const orderedIds = [
+    ...tilesConfig.order,
+    ...allRenderedTiles.map(t => t.id).filter(id => !tilesConfig.order.includes(id)),
+  ];
+  const orderedTiles = orderedIds
+    .map(id => allRenderedTiles.find(t => t.id === id))
+    .filter((t): t is RenderedTile => !!t);
+
+  // Pour non-admins : filtrer les tuiles désactivées
+  const visibleTiles = isAdmin()
+    ? orderedTiles
+    : orderedTiles.filter(t => !tilesConfig.disabled.includes(t.id));
+
+  // DnD sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+
+  const openEditMode = () => {
+    setLocalOrder(orderedIds.filter(id => allRenderedTiles.some(t => t.id === id)));
+    setLocalDisabled([...tilesConfig.disabled]);
+    setLocalLabels({ ...tilesConfig.labels });
+    setLocalCustom([...tilesConfig.customTiles]);
+    setEditMode(true);
+  };
+
+  const cancelEditMode = () => {
+    setEditMode(false);
+    setEditTileId(null);
+  };
+
+  const saveEditMode = useCallback(async () => {
+    setIsSavingConfig(true);
+    try {
+      const config: TilesConfig = {
+        order: localOrder,
+        disabled: localDisabled,
+        labels: localLabels,
+        customTiles: localCustom,
+      };
+      const { error } = await supabase
+        .from('admin_settings' as any)
+        .update({ value: config })
+        .eq('key', 'infos_tiles_config');
+      if (error) throw error;
+      queryClient.invalidateQueries({ queryKey: ['admin-settings'] });
+      toast.success('Configuration sauvegardée');
+      setEditMode(false);
+    } catch {
+      toast.error('Erreur lors de la sauvegarde');
+    } finally {
+      setIsSavingConfig(false);
+    }
+  }, [localOrder, localDisabled, localLabels, localCustom, queryClient]);
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (over && active.id !== over.id) {
+      setLocalOrder(prev => {
+        const oldIdx = prev.indexOf(active.id as string);
+        const newIdx = prev.indexOf(over.id as string);
+        return arrayMove(prev, oldIdx, newIdx);
+      });
+    }
+  };
+
+  const uploadTileImage = async (file: File): Promise<string | null> => {
+    const ext = file.name.split('.').pop() ?? 'jpg';
+    const path = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+    const { data, error } = await supabase.storage.from('tile-images').upload(path, file);
+    if (error) { toast.error('Erreur upload : ' + error.message); return null; }
+    return supabase.storage.from('tile-images').getPublicUrl(data.path).data.publicUrl;
+  };
+
+  const openEditTile = (tile: RenderedTile) => {
+    setEditTileId(tile.id);
+    setEditTileLabel(localLabels[tile.id] ?? tile.label);
+    if (tile.isCustom) {
+      const ct = localCustom.find(c => c.id === tile.id);
+      setEditTileIcon(ct?.icon ?? 'ExternalLink');
+      setEditTileGradient(ct?.gradient ?? GRADIENT_PRESETS[0].value);
+      setEditTileUrl(ct?.url ?? '');
+      if (ct?.blocks) setEditBlocks(ct.blocks);
+      else if (ct?.content) setEditBlocks([{ type: 'text', value: ct.content }]);
+      else setEditBlocks([]);
+    }
+  };
+
+  const saveTileEdit = () => {
+    if (!editTileId) return;
+    const isCustom = localCustom.some(c => c.id === editTileId);
+    if (isCustom) {
+      setLocalCustom(prev => prev.map(c => c.id === editTileId
+        ? { ...c, label: editTileLabel, icon: editTileIcon, gradient: editTileGradient, url: editTileUrl || undefined, blocks: editBlocks.length > 0 ? editBlocks : undefined, content: undefined }
+        : c
+      ));
+    } else {
+      const originalTile = TILES.find(t => t.id === editTileId);
+      const newLabels = { ...localLabels };
+      if (editTileLabel === originalTile?.label) delete newLabels[editTileId];
+      else newLabels[editTileId] = editTileLabel;
+      setLocalLabels(newLabels);
+    }
+    setEditTileId(null);
+  };
+
+  const toggleTileDisabled = (id: string) => {
+    setLocalDisabled(prev =>
+      prev.includes(id) ? prev.filter(d => d !== id) : [...prev, id]
+    );
+  };
+
+  const deleteTile = (id: string) => {
+    if (!confirm('Supprimer cette tuile ?')) return;
+    setLocalCustom(prev => prev.filter(c => c.id !== id));
+    setLocalOrder(prev => prev.filter(o => o !== id));
+  };
+
+  const addCustomTile = () => {
+    if (!newTileLabel.trim()) return;
+    const slug = slugify(newTileLabel.trim());
+    const base = `custom_${slug || Date.now()}`;
+    // Avoid ID collision by appending a suffix if needed
+    const existingIds = localCustom.map(c => c.id);
+    let newId = base;
+    let suffix = 2;
+    while (existingIds.includes(newId)) { newId = `${base}_${suffix++}`; }
+    const newTile: CustomTileConfig = {
+      id: newId,
+      label: newTileLabel.trim(),
+      icon: newTileIcon,
+      gradient: newTileGradient,
+      url: newTileUrl.trim() || undefined,
+      blocks: newBlocks.length > 0 ? newBlocks : undefined,
+    };
+    setLocalCustom(prev => [...prev, newTile]);
+    setLocalOrder(prev => [...prev, newId]);
+    setNewTileLabel(''); setNewTileUrl(''); setNewBlocks([]);
+    setNewTileIcon('ExternalLink'); setNewTileGradient(GRADIENT_PRESETS[0].value);
+    setAddTileOpen(false);
+    toast.success('Tuile ajoutée — pensez à sauvegarder');
+  };
+
+  // Tuiles à afficher en mode édition (toutes, ordonnées selon localOrder)
+  const editModeTiles: RenderedTile[] = [
+    ...TILES.map(t => ({
+      id: t.id,
+      label: localLabels[t.id] ?? t.label,
+      Icon: t.icon, gradient: t.gradient, isCustom: false,
+    })),
+    ...localCustom.map(ct => ({
+      id: ct.id, label: ct.label,
+      Icon: ICON_MAP[ct.icon] ?? ExternalLink,
+      gradient: ct.gradient, isCustom: true, url: ct.url, content: ct.content,
+    })),
+  ].sort((a, b) => {
+    const ai = localOrder.indexOf(a.id);
+    const bi = localOrder.indexOf(b.id);
+    return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
+  });
 
   const hideInfosPage = settings?.find(s => s.key === 'hide_infos_page')?.value === true;
 
@@ -1023,58 +1581,336 @@ export default function InfosUtilesPage() {
   if (!user) return <Navigate to="/auth" replace />;
   if (hideInfosPage) return <Navigate to="/" replace />;
 
-  const dialogDef = openTile ? DIALOG_CONTENT[openTile] : null;
+  const dialogDef = openTile && openTile !== 'wanted' ? DIALOG_CONTENT[openTile] : null;
 
   return (
     <AppLayout>
       <div className="space-y-5 max-w-4xl mx-auto">
         {/* Header */}
-        <div>
-          <h1 className="text-xl font-bold flex items-center gap-2">
-            <Info className="h-5 w-5 text-primary" />
-            Infos utiles
-          </h1>
-          <p className="text-sm text-muted-foreground mt-0.5">
-            Guides, procédures et informations pour les contrôleurs
-          </p>
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <h1 className="text-xl font-bold flex items-center gap-2">
+              <Info className="h-5 w-5 text-primary" />
+              Infos utiles
+            </h1>
+            <p className="text-sm text-muted-foreground mt-0.5">
+              Guides, procédures et informations pour les contrôleurs
+            </p>
+          </div>
+          {isAdmin() && !editMode && (
+            <Button size="sm" variant="outline" onClick={openEditMode} className="shrink-0">
+              <PenLine className="h-3.5 w-3.5 mr-1.5" />
+              Modifier
+            </Button>
+          )}
+          {isAdmin() && editMode && (
+            <div className="flex gap-2 shrink-0">
+              <Button size="sm" variant="ghost" onClick={cancelEditMode}>Annuler</Button>
+              <Button size="sm" onClick={saveEditMode} disabled={isSavingConfig}>
+                {isSavingConfig ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" /> : <Check className="h-3.5 w-3.5 mr-1.5" />}
+                Sauvegarder
+              </Button>
+            </div>
+          )}
         </div>
+
+        {/* Bandeau mode édition */}
+        {editMode && (
+          <div className="flex items-center justify-between bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg px-3 py-2">
+            <p className="text-xs text-amber-700 dark:text-amber-400 font-medium">
+              Mode édition — Glissez pour réordonner, œil pour masquer aux agents, crayon pour renommer
+            </p>
+            <Button size="sm" variant="outline" className="h-7 text-xs border-amber-300 dark:border-amber-700" onClick={() => setAddTileOpen(true)}>
+              <Plus className="h-3 w-3 mr-1" />Ajouter
+            </Button>
+          </div>
+        )}
 
         {/* Grille de tuiles */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-          {TILES.map((tile) => {
-            const Icon = tile.icon;
-            return (
-              <div key={tile.id} className="relative">
-                {tile.id === 'assistance' && unreadRepliesCount > 0 && (
-                  <span className="absolute top-1.5 right-1.5 z-10 flex items-center justify-center h-5 min-w-5 px-1 rounded-full bg-red-500 text-white text-[10px] font-bold">
-                    {unreadRepliesCount > 9 ? '9+' : unreadRepliesCount}
-                  </span>
-                )}
-                <Card
-                  onClick={() => setOpenTile(tile.id)}
-                  className="cursor-pointer border-0 shadow-sm overflow-hidden hover:shadow-md transition-shadow active:scale-95 transition-transform select-none"
-                >
-                  <div className={`bg-gradient-to-br ${tile.gradient} p-5 flex flex-col items-center gap-3 text-white`}>
-                    <div className={`p-3 rounded-2xl ${tile.iconBg}`}>
-                      <Icon className={`h-6 w-6 ${tile.iconColor}`} />
-                    </div>
-                    <span className="text-sm font-semibold text-center leading-tight">
-                      {tile.label}
-                    </span>
-                  </div>
-                </Card>
+        {editMode ? (
+          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+            <SortableContext items={localOrder} strategy={rectSortingStrategy}>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {editModeTiles.map(tile => (
+                  <SortableTileItem
+                    key={tile.id}
+                    tile={tile}
+                    editMode
+                    isDisabled={localDisabled.includes(tile.id)}
+                    onEdit={() => openEditTile(tile)}
+                    onToggle={() => toggleTileDisabled(tile.id)}
+                    onDelete={tile.isCustom ? () => deleteTile(tile.id) : undefined}
+                    onClick={() => {}}
+                  />
+                ))}
               </div>
-            );
-          })}
-        </div>
+            </SortableContext>
+          </DndContext>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            {visibleTiles.map(tile => (
+              <SortableTileItem
+                key={tile.id}
+                tile={tile}
+                editMode={false}
+                isDisabled={false}
+                onEdit={() => {}}
+                onToggle={() => {}}
+                onClick={() => {
+                  if (tile.url) { window.open(tile.url, '_blank', 'noopener'); return; }
+                  if (tile.isCustom) {
+                    const ct = tilesConfig.customTiles.find(c => c.id === tile.id);
+                    if (ct && (ct.blocks?.length || ct.content)) { setCustomContentTile(ct); return; }
+                    return;
+                  }
+                  setOpenTile(tile.id);
+                }}
+                badge={tile.id === 'assistance' ? unreadRepliesCount : undefined}
+              />
+            ))}
+          </div>
+        )}
 
-        {/* Dialog */}
-        <Dialog open={!!openTile} onOpenChange={(open) => !open && setOpenTile(null)}>
+        {/* Dialog — Édition d'une tuile */}
+        <Dialog open={!!editTileId} onOpenChange={(open) => !open && setEditTileId(null)}>
+          <DialogContent className="sm:max-w-sm">
+            <DialogHeader>
+              <DialogTitle>Modifier la tuile</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-2">
+              <div className="space-y-1.5">
+                <Label>Label affiché</Label>
+                <Input value={editTileLabel} onChange={e => setEditTileLabel(e.target.value)} placeholder="Nom de la tuile" />
+              </div>
+              {/* Champs custom seulement */}
+              {editTileId && localCustom.some(c => c.id === editTileId) && (
+                <>
+                  <div className="space-y-1.5">
+                    <Label>URL <span className="text-muted-foreground font-normal">(optionnel)</span></Label>
+                    <Input value={editTileUrl} onChange={e => setEditTileUrl(e.target.value)} placeholder="https://... — laisser vide si non applicable" type="url" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>Contenu <span className="text-muted-foreground font-normal">(optionnel — affiché si pas d'URL)</span></Label>
+                    <div className="space-y-2">
+                      {editBlocks.map((block, i) => (
+                        <div key={i} className="relative border rounded-lg p-2 pr-8 bg-muted/20">
+                          {block.type === 'text' ? (
+                            <Textarea
+                              value={block.value}
+                              onChange={e => setEditBlocks(prev => prev.map((b, j) => j === i ? { ...b, value: e.target.value } : b))}
+                              placeholder="Votre texte…"
+                              rows={3}
+                              className="resize-none border-0 p-0 shadow-none focus-visible:ring-0 bg-transparent"
+                            />
+                          ) : (
+                            <img src={block.value} alt="" className="max-h-40 rounded object-contain" />
+                          )}
+                          <button type="button" onClick={() => setEditBlocks(prev => prev.filter((_, j) => j !== i))} className="absolute top-1.5 right-1.5 p-1 text-muted-foreground hover:text-destructive">
+                            <X className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="flex gap-2 pt-1">
+                      <Button size="sm" variant="outline" type="button" onClick={() => setEditBlocks(prev => [...prev, { type: 'text', value: '' }])}>
+                        <FileText className="h-3.5 w-3.5 mr-1.5" />Texte
+                      </Button>
+                      <Button size="sm" variant="outline" type="button" disabled={isUploadingEditBlock} onClick={() => editBlockImageRef.current?.click()}>
+                        {isUploadingEditBlock ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" /> : <Upload className="h-3.5 w-3.5 mr-1.5" />}
+                        Image
+                      </Button>
+                      <input ref={editBlockImageRef} type="file" accept="image/*" className="hidden" onChange={async (e) => {
+                        const file = e.target.files?.[0]; if (!file) return;
+                        setIsUploadingEditBlock(true);
+                        const url = await uploadTileImage(file);
+                        if (url) setEditBlocks(prev => [...prev, { type: 'image', value: url }]);
+                        setIsUploadingEditBlock(false); e.target.value = '';
+                      }} />
+                    </div>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>Icône</Label>
+                    <div className="grid grid-cols-6 gap-1.5">
+                      {ICON_OPTIONS.map(iconKey => {
+                        const Ic = ICON_MAP[iconKey];
+                        return (
+                          <button
+                            key={iconKey}
+                            onClick={() => setEditTileIcon(iconKey)}
+                            className={cn('p-2 rounded-lg border flex items-center justify-center transition-colors', editTileIcon === iconKey ? 'bg-primary text-primary-foreground border-primary' : 'hover:bg-muted')}
+                            title={iconKey}
+                          >
+                            {Ic && <Ic className="h-4 w-4" />}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>Couleur</Label>
+                    <div className="grid grid-cols-5 gap-1.5">
+                      {GRADIENT_PRESETS.map(g => (
+                        <button
+                          key={g.value}
+                          onClick={() => setEditTileGradient(g.value)}
+                          className={cn(`h-8 rounded-lg bg-gradient-to-br ${g.value} transition-all`, editTileGradient === g.value ? 'ring-2 ring-offset-2 ring-foreground' : 'opacity-70 hover:opacity-100')}
+                          title={g.label}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button variant="outline" onClick={() => setEditTileId(null)}>Annuler</Button>
+              <Button onClick={saveTileEdit} disabled={!editTileLabel.trim()}>Enregistrer</Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Dialog — Ajouter une tuile custom */}
+        <Dialog open={addTileOpen} onOpenChange={setAddTileOpen}>
+          <DialogContent className="sm:max-w-sm">
+            <DialogHeader>
+              <DialogTitle>Nouvelle tuile</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-2">
+              <div className="space-y-1.5">
+                <Label>Label *</Label>
+                <Input value={newTileLabel} onChange={e => setNewTileLabel(e.target.value)} placeholder="Nom de la tuile" />
+              </div>
+              <div className="space-y-1.5">
+                <Label>URL <span className="text-muted-foreground font-normal">(optionnel)</span></Label>
+                <Input value={newTileUrl} onChange={e => setNewTileUrl(e.target.value)} placeholder="https://... — laisser vide si non applicable" type="url" />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Contenu <span className="text-muted-foreground font-normal">(optionnel — affiché si pas d'URL)</span></Label>
+                <div className="space-y-2">
+                  {newBlocks.map((block, i) => (
+                    <div key={i} className="relative border rounded-lg p-2 pr-8 bg-muted/20">
+                      {block.type === 'text' ? (
+                        <Textarea
+                          value={block.value}
+                          onChange={e => setNewBlocks(prev => prev.map((b, j) => j === i ? { ...b, value: e.target.value } : b))}
+                          placeholder="Votre texte…"
+                          rows={3}
+                          className="resize-none border-0 p-0 shadow-none focus-visible:ring-0 bg-transparent"
+                        />
+                      ) : (
+                        <img src={block.value} alt="" className="max-h-40 rounded object-contain" />
+                      )}
+                      <button type="button" onClick={() => setNewBlocks(prev => prev.filter((_, j) => j !== i))} className="absolute top-1.5 right-1.5 p-1 text-muted-foreground hover:text-destructive">
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+                <div className="flex gap-2 pt-1">
+                  <Button size="sm" variant="outline" type="button" onClick={() => setNewBlocks(prev => [...prev, { type: 'text', value: '' }])}>
+                    <FileText className="h-3.5 w-3.5 mr-1.5" />Texte
+                  </Button>
+                  <Button size="sm" variant="outline" type="button" disabled={isUploadingNewBlock} onClick={() => newBlockImageRef.current?.click()}>
+                    {isUploadingNewBlock ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" /> : <Upload className="h-3.5 w-3.5 mr-1.5" />}
+                    Image
+                  </Button>
+                  <input ref={newBlockImageRef} type="file" accept="image/*" className="hidden" onChange={async (e) => {
+                    const file = e.target.files?.[0]; if (!file) return;
+                    setIsUploadingNewBlock(true);
+                    const url = await uploadTileImage(file);
+                    if (url) setNewBlocks(prev => [...prev, { type: 'image', value: url }]);
+                    setIsUploadingNewBlock(false); e.target.value = '';
+                  }} />
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <Label>Icône</Label>
+                <div className="grid grid-cols-6 gap-1.5">
+                  {ICON_OPTIONS.map(iconKey => {
+                    const Ic = ICON_MAP[iconKey];
+                    return (
+                      <button
+                        key={iconKey}
+                        onClick={() => setNewTileIcon(iconKey)}
+                        className={cn('p-2 rounded-lg border flex items-center justify-center transition-colors', newTileIcon === iconKey ? 'bg-primary text-primary-foreground border-primary' : 'hover:bg-muted')}
+                        title={iconKey}
+                      >
+                        {Ic && <Ic className="h-4 w-4" />}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <Label>Couleur</Label>
+                <div className="grid grid-cols-5 gap-1.5">
+                  {GRADIENT_PRESETS.map(g => (
+                    <button
+                      key={g.value}
+                      onClick={() => setNewTileGradient(g.value)}
+                      className={cn(`h-8 rounded-lg bg-gradient-to-br ${g.value} transition-all`, newTileGradient === g.value ? 'ring-2 ring-offset-2 ring-foreground' : 'opacity-70 hover:opacity-100')}
+                      title={g.label}
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button variant="outline" onClick={() => setAddTileOpen(false)}>Annuler</Button>
+              <Button onClick={addCustomTile} disabled={!newTileLabel.trim()}>Ajouter</Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Sheet — Personnes recherchées */}
+        <Sheet open={openTile === 'wanted'} onOpenChange={(open) => !open && setOpenTile(null)}>
+          <SheetContent side="right" className="w-full sm:max-w-lg flex flex-col overflow-y-auto">
+            <SheetHeader className="shrink-0">
+              <SheetTitle className="flex items-center gap-2">
+                <AlertTriangle className="h-4 w-4 text-red-500" />
+                Personnes recherchées
+              </SheetTitle>
+            </SheetHeader>
+            <div className="flex-1 overflow-y-auto mt-4">
+              <WantedPersonsPanel canEdit={canEditWanted} />
+            </div>
+          </SheetContent>
+        </Sheet>
+
+        {/* Dialog — autres tuiles */}
+        <Dialog open={!!dialogDef} onOpenChange={(open) => !open && setOpenTile(null)}>
           <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>{dialogDef?.title}</DialogTitle>
             </DialogHeader>
             {dialogDef && <dialogDef.Content />}
+          </DialogContent>
+        </Dialog>
+
+        {/* Dialog — contenu texte d'une tuile custom */}
+        <Dialog open={!!customContentTile} onOpenChange={(open) => !open && setCustomContentTile(null)}>
+          <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                {customContentTile && (() => {
+                  const Ic = ICON_MAP[customContentTile.icon] ?? ExternalLink;
+                  return <Ic className="h-4 w-4 shrink-0" />;
+                })()}
+                {customContentTile?.label}
+              </DialogTitle>
+            </DialogHeader>
+            <div className="py-2 space-y-3">
+              {(customContentTile?.blocks?.length
+                ? customContentTile.blocks
+                : customContentTile?.content
+                  ? [{ type: 'text' as const, value: customContentTile.content }]
+                  : []
+              ).map((block, i) =>
+                block.type === 'image'
+                  ? <img key={i} src={block.value} alt="" className="rounded-lg max-w-full" />
+                  : <p key={i} className="text-sm text-muted-foreground whitespace-pre-wrap leading-relaxed">{block.value}</p>
+              )}
+            </div>
           </DialogContent>
         </Dialog>
       </div>
