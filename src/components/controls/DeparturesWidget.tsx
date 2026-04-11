@@ -392,6 +392,16 @@ export function DeparturesWidget({ showTrainSearch = false }: { showTrainSearch?
 
   const handleBack = () => { setSelected(null); setStops([]); setStopsError(null); };
 
+  const handleStopClick = (stopName: string) => {
+    setStation(stopName);
+    setSelected(null);
+    setStops([]);
+    setStopsError(null);
+    const dt = nowMinus1hDatetime();
+    setFromDatetime(dt);
+    fetchDepartures(stopName, dt, mode);
+  };
+
   /* ── Vue détail d'un train ──────────────────────────────────────────────── */
   if (selected) {
     return (
@@ -446,11 +456,15 @@ export function DeparturesWidget({ showTrainSearch = false }: { showTrainSearch?
                   <div className={`flex-1 pb-3 pt-2 -mx-1 px-1 rounded ${isCurrentStation ? 'bg-blue-50/70 dark:bg-blue-900/20' : stop.isDelayed ? 'bg-amber-50/50 dark:bg-amber-900/10' : ''}`}>
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex items-center gap-1.5 min-w-0">
-                        <span className={`text-sm leading-tight ${
-                          isCurrentStation ? 'font-bold text-blue-700 dark:text-blue-300' : isTerminal ? 'font-semibold' : 'text-muted-foreground'
-                        }`}>
+                        <button
+                          type="button"
+                          className={`text-sm leading-tight text-left hover:underline transition-colors ${
+                            isCurrentStation ? 'font-bold text-blue-700 dark:text-blue-300' : isTerminal ? 'font-semibold hover:text-primary' : 'text-muted-foreground hover:text-foreground'
+                          }`}
+                          onClick={() => handleStopClick(stop.name)}
+                        >
                           {stop.name}
-                        </span>
+                        </button>
                         {isCurrentStation && (
                           <Badge variant="outline" className="text-[9px] h-4 px-1 border-blue-300 text-blue-600 dark:border-blue-700 dark:text-blue-400">
                             Ici
