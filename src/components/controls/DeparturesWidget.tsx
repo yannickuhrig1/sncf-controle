@@ -33,6 +33,7 @@ interface StopTime {
   baseDepartureTime: string | null;
   platform:          string | null;
   isDelayed:         boolean;
+  delayMinutes:      number | null;
 }
 
 interface NearbyStation { id: string; name: string; distance: number; }
@@ -423,30 +424,45 @@ export function DeparturesWidget({ showTrainSearch = false }: { showTrainSearch?
               const isFirst = i === 0;
               const isLast = i === stops.length - 1;
               const isTerminal = isFirst || isLast;
+              const sn = stationName.toLowerCase();
+              const isCurrentStation = sn && (
+                stop.name.toLowerCase().includes(sn) ||
+                sn.includes(stop.name.toLowerCase())
+              );
               return (
                 <div key={i} className="flex items-stretch gap-3">
                   <div className="flex flex-col items-center w-5 shrink-0">
                     <div className={`w-3 h-3 rounded-full border-2 mt-[14px] shrink-0 ${
-                      stop.isDelayed
-                        ? 'border-amber-500 bg-amber-500'
-                        : isTerminal
-                          ? 'border-primary bg-primary'
-                          : 'border-muted-foreground/50 bg-background'
+                      isCurrentStation
+                        ? 'border-blue-500 bg-blue-500 ring-2 ring-blue-300 dark:ring-blue-700'
+                        : stop.isDelayed
+                          ? 'border-amber-500 bg-amber-500'
+                          : isTerminal
+                            ? 'border-primary bg-primary'
+                            : 'border-muted-foreground/50 bg-background'
                     }`} />
                     {i < stops.length - 1 && <div className="flex-1 w-0.5 bg-border" />}
                   </div>
-                  <div className={`flex-1 pb-3 pt-2 ${stop.isDelayed ? 'bg-amber-50/50 dark:bg-amber-900/10 -mx-1 px-1 rounded' : ''}`}>
+                  <div className={`flex-1 pb-3 pt-2 -mx-1 px-1 rounded ${isCurrentStation ? 'bg-blue-50/70 dark:bg-blue-900/20' : stop.isDelayed ? 'bg-amber-50/50 dark:bg-amber-900/10' : ''}`}>
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex items-center gap-1.5 min-w-0">
                         <span className={`text-sm leading-tight ${
-                          isTerminal ? 'font-semibold' : 'text-muted-foreground'
+                          isCurrentStation ? 'font-bold text-blue-700 dark:text-blue-300' : isTerminal ? 'font-semibold' : 'text-muted-foreground'
                         }`}>
                           {stop.name}
                         </span>
+                        {isCurrentStation && (
+                          <Badge variant="outline" className="text-[9px] h-4 px-1 border-blue-300 text-blue-600 dark:border-blue-700 dark:text-blue-400">
+                            Ici
+                          </Badge>
+                        )}
                         {stop.platform && (
                           <span className="text-[10px] text-muted-foreground flex items-center gap-0.5 shrink-0">
                             <MapPin className="h-2.5 w-2.5" />V{stop.platform}
                           </span>
+                        )}
+                        {stop.isDelayed && stop.delayMinutes && (
+                          <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400 shrink-0">+{stop.delayMinutes}min</span>
                         )}
                       </div>
                       <div className="flex items-center gap-2 shrink-0">

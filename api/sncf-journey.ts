@@ -20,7 +20,7 @@ export default async function handler(req: Request) {
   const base = 'https://api.sncf.com/v1/coverage/sncf';
 
   const res = await fetch(
-    `${base}/vehicle_journeys/${encodeURIComponent(id)}?depth=2`,
+    `${base}/vehicle_journeys/${encodeURIComponent(id)}?depth=2&data_freshness=realtime`,
     { headers: { Authorization: auth } }
   );
 
@@ -32,13 +32,62 @@ export default async function handler(req: Request) {
   const vj: any = json.vehicle_journeys?.[0];
   if (!vj) return Response.json({ error: 'Trajet introuvable' }, { status: 404 });
 
+  // Build a delay map from disruptions → impacted_stops
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const disruptions: any[] = json.disruptions ?? [];
+  const delayByStopId: Record<string, { amendedDep?: string; baseDep?: string; amendedArr?: string; baseArr?: string }> = {};
+  for (const d of disruptions) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    for (const io of (d.impacted_objects ?? [])) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      for (const is_ of (io.impacted_stops ?? [])) {
+        const spId = is_.stop_point?.id;
+        if (!spId) continue;
+        if (is_.departure_status === 'delayed' || is_.arrival_status === 'delayed' || is_.amended_departure_time || is_.amended_arrival_time) {
+          delayByStopId[spId] = {
+            amendedDep: is_.amended_departure_time,
+            baseDep:    is_.base_departure_time,
+            amendedArr: is_.amended_arrival_time,
+            baseArr:    is_.base_arrival_time,
+          };
+        }
+      }
+    }
+  }
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const stops = (vj.stop_times ?? []).map((st: any) => {
-    const depTime  = parseStopTime(st.departure_time);
-    const arrTime  = parseStopTime(st.arrival_time);
-    const baseDep  = parseStopTime(st.base_departure_time);
-    const baseArr  = parseStopTime(st.base_arrival_time);
-    const isDelayed = st.departure_status === 'delayed' || st.arrival_status === 'delayed';
+    const spId = st.stop_point?.id;
+    const disruptionDelay = spId ? delayByStopId[spId] : undefined;
+
+    // Prefer stop_times fields, fallback to disruption data
+    let depTime  = parseStopTime(st.departure_time);
+    let arrTime  = parseStopTime(st.arrival_time);
+    let baseDep  = parseStopTime(st.base_departure_time);
+    let baseArr  = parseStopTime(st.base_arrival_time);
+    let isDelayed = st.departure_status === 'delayed' || st.arrival_status === 'delayed';
+
+    // If disruption has amended times and stop_times doesn't have base times
+    if (disruptionDelay) {
+      if (!isDelayed) isDelayed = true;
+      if (!baseDep && disruptionDelay.baseDep) {
+        baseDep = parseStopTime(disruptionDelay.baseDep);
+        if (disruptionDelay.amendedDep) depTime = parseStopTime(disruptionDelay.amendedDep);
+      }
+      if (!baseArr && disruptionDelay.baseArr) {
+        baseArr = parseStopTime(disruptionDelay.baseArr);
+        if (disruptionDelay.amendedArr) arrTime = parseStopTime(disruptionDelay.amendedArr);
+      }
+    }
+
+    let delayMinutes: number | undefined;
+    if (isDelayed && baseDep && depTime && baseDep !== depTime) {
+      const [bh, bm] = baseDep.split(':').map(Number);
+      const [dh, dm] = depTime.split(':').map(Number);
+      const diff = (dh * 60 + dm) - (bh * 60 + bm);
+      if (diff > 0) delayMinutes = diff;
+    }
+
     return {
       name:              (st.stop_point?.name ?? '').replace(/\s*\([^)]*\)/, '').trim(),
       arrivalTime:       arrTime,
@@ -47,6 +96,7 @@ export default async function handler(req: Request) {
       baseDepartureTime: isDelayed && baseDep && baseDep !== depTime ? baseDep : null,
       platform:          st.stop_point?.platform_code ?? null,
       isDelayed,
+      delayMinutes:      delayMinutes ?? null,
     };
   });
 
