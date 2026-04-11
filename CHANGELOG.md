@@ -2,6 +2,13 @@
 
 Toutes les modifications notables de ce projet sont documentées dans ce fichier.
 
+## [1.12.12] - 2026-04-11
+
+### Ajouté — Schéma train amélioré
+- **Horaires détaillés** : l'itinéraire (fallback schéma) affiche désormais arrivée et départ par gare, avec label « arr. » / « dép. »
+- **Retards visibles** : si un arrêt est en retard, l'heure théorique est barrée et l'heure réelle affichée en ambre, avec le badge « +Xmin » et un indicateur global « Retard »
+- **Trains précédents (embarquement)** : seuls les 3 derniers trains sont affichés par défaut, avec un bouton « Voir les N trains précédents » pour déplier les anciens
+
 ## [1.12.11] - 2026-04-11
 
 ### Ajouté — Section passagers séparée

@@ -5,7 +5,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Loader2, Train, MapPin } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Loader2, Train, MapPin, AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { TrainInfo } from '@/hooks/useTrainLookup';
 
@@ -41,56 +42,94 @@ function getWagonStyle(w: Wagon): { bg: string; label: string; short: string } {
 
 // ── Vue itinéraire (fallback quand pas de composition) ────────────────────────
 
+function TimeDisplay({ label, time, baseTime, isDelayed }: { label: string; time?: string; baseTime?: string; isDelayed?: boolean }) {
+  if (!time) return null;
+  const hasDelay = isDelayed && baseTime && baseTime !== time;
+  return (
+    <div className="text-right leading-tight">
+      <span className="text-[10px] text-muted-foreground/60 uppercase">{label}</span>
+      <div className="flex items-center gap-1 justify-end">
+        {hasDelay && (
+          <span className="text-xs font-mono tabular-nums text-muted-foreground/50 line-through">{baseTime}</span>
+        )}
+        <span className={cn('text-xs font-mono tabular-nums', hasDelay ? 'text-amber-600 dark:text-amber-400 font-semibold' : 'text-muted-foreground')}>
+          {time}
+        </span>
+      </div>
+    </div>
+  );
+}
+
 function StopsFallback({ stops, origin, destination }: { stops: TrainInfo['stops']; origin: string; destination: string }) {
+  const hasAnyDelay = stops.some(s => s.isDelayed);
   return (
     <div className="space-y-2">
-      <p className="text-xs text-muted-foreground">
-        Composition non disponible pour ce train. Itinéraire :
-      </p>
+      <div className="flex items-center justify-between">
+        <p className="text-xs text-muted-foreground">
+          Composition non disponible pour ce train. Itinéraire :
+        </p>
+        {hasAnyDelay && (
+          <Badge variant="outline" className="text-amber-600 border-amber-300 gap-1 text-[10px]">
+            <AlertTriangle className="h-3 w-3" />
+            Retard
+          </Badge>
+        )}
+      </div>
       <div>
-        {stops.map((stop, i) => (
-          <div key={i} className="flex items-stretch gap-3">
-            <div className="flex flex-col items-center w-5 shrink-0">
-              <div className={cn(
-                'w-3 h-3 rounded-full border-2 mt-[14px] shrink-0',
-                i === 0 || i === stops.length - 1
-                  ? 'border-primary bg-primary'
-                  : 'border-muted-foreground/50 bg-background'
-              )} />
-              {i < stops.length - 1 && <div className="flex-1 w-0.5 bg-border" />}
-            </div>
-            <div className="flex-1 pb-3 pt-2">
-              <div className="flex items-center justify-between gap-2">
-                <span className={cn(
-                  'text-sm leading-tight',
-                  i === 0 || i === stops.length - 1 ? 'font-semibold' : 'text-muted-foreground'
-                )}>
-                  {stop.name}
-                </span>
-                <div className="flex items-center gap-2 shrink-0">
-                  {stop.platform && (
-                    <span className="text-xs text-muted-foreground flex items-center gap-0.5">
-                      <MapPin className="h-3 w-3" />V{stop.platform}
+        {stops.map((stop, i) => {
+          const isFirst = i === 0;
+          const isLast = i === stops.length - 1;
+          const isTerminal = isFirst || isLast;
+          return (
+            <div key={i} className="flex items-stretch gap-3">
+              <div className="flex flex-col items-center w-5 shrink-0">
+                <div className={cn(
+                  'w-3 h-3 rounded-full border-2 mt-[14px] shrink-0',
+                  stop.isDelayed
+                    ? 'border-amber-500 bg-amber-500'
+                    : isTerminal
+                      ? 'border-primary bg-primary'
+                      : 'border-muted-foreground/50 bg-background'
+                )} />
+                {i < stops.length - 1 && <div className="flex-1 w-0.5 bg-border" />}
+              </div>
+              <div className={cn('flex-1 pb-3 pt-2', stop.isDelayed && 'bg-amber-50/50 dark:bg-amber-900/10 -mx-1 px-1 rounded')}>
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <span className={cn(
+                      'text-sm leading-tight',
+                      isTerminal ? 'font-semibold' : 'text-muted-foreground'
+                    )}>
+                      {stop.name}
                     </span>
-                  )}
-                  {stop.arrivalTime && stop.departureTime && stop.arrivalTime !== stop.departureTime ? (
-                    <div className="text-right">
-                      <div className="text-xs font-mono tabular-nums text-muted-foreground/70">arr. {stop.arrivalTime}</div>
-                      <div className="text-xs font-mono tabular-nums text-muted-foreground">dep. {stop.departureTime}</div>
-                    </div>
-                  ) : (
-                    <span className="text-sm font-mono tabular-nums text-muted-foreground">
-                      {stop.departureTime || stop.arrivalTime}
-                    </span>
-                  )}
-                  {stop.isDelayed && stop.delayMinutes && (
-                    <span className="text-xs font-bold text-amber-600">+{stop.delayMinutes} min</span>
-                  )}
+                    {stop.platform && (
+                      <span className="text-[10px] text-muted-foreground flex items-center gap-0.5 shrink-0">
+                        <MapPin className="h-2.5 w-2.5" />V{stop.platform}
+                      </span>
+                    )}
+                    {stop.isDelayed && stop.delayMinutes && (
+                      <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400 shrink-0">+{stop.delayMinutes}min</span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    {!isFirst && (
+                      <TimeDisplay label="arr." time={stop.arrivalTime} baseTime={stop.baseArrivalTime} isDelayed={stop.isDelayed} />
+                    )}
+                    {!isLast && (
+                      <TimeDisplay label="dép." time={stop.departureTime} baseTime={stop.baseDepartureTime} isDelayed={stop.isDelayed} />
+                    )}
+                    {isFirst && !stop.arrivalTime && (
+                      <TimeDisplay label="dép." time={stop.departureTime} baseTime={stop.baseDepartureTime} isDelayed={stop.isDelayed} />
+                    )}
+                    {isLast && !stop.departureTime && (
+                      <TimeDisplay label="arr." time={stop.arrivalTime} baseTime={stop.baseArrivalTime} isDelayed={stop.isDelayed} />
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
@@ -128,13 +167,28 @@ export function TrainSchemaDialog({ open, onOpenChange, trainNumber, date, train
                 if (!journey) return;
                 const rawStops = journey.stop_times ?? [];
                 if (rawStops.length < 2) return;
-                const stops = rawStops.map((s: any) => ({
-                  name:          (s.stop_point?.name ?? '').replace(/\s*\([^)]*\)/, '').trim(),
-                  departureTime: parseHHMM(s.departure_time),
-                  arrivalTime:   parseHHMM(s.arrival_time),
-                  platform:      s.stop_point?.platform_code ?? undefined,
-                  isDelayed:     s.departure_status === 'delayed',
-                }));
+                const stops = rawStops.map((s: any) => {
+                  const isDelayed = s.departure_status === 'delayed';
+                  const depTime = parseHHMM(s.departure_time);
+                  const arrTime = parseHHMM(s.arrival_time);
+                  const baseDep = isDelayed && s.base_departure_time ? parseHHMM(s.base_departure_time) : undefined;
+                  const baseArr = isDelayed && s.base_arrival_time ? parseHHMM(s.base_arrival_time) : undefined;
+                  let delayMinutes: number | undefined;
+                  if (isDelayed && s.base_departure_time && s.departure_time) {
+                    const d = toMinutes(s.departure_time) - toMinutes(s.base_departure_time);
+                    if (d > 0) delayMinutes = d;
+                  }
+                  return {
+                    name:          (s.stop_point?.name ?? '').replace(/\s*\([^)]*\)/, '').trim(),
+                    departureTime: depTime,
+                    arrivalTime:   arrTime,
+                    baseDepartureTime: baseDep && baseDep !== depTime ? baseDep : undefined,
+                    baseArrivalTime:   baseArr && baseArr !== arrTime ? baseArr : undefined,
+                    platform:      s.stop_point?.platform_code ?? undefined,
+                    isDelayed,
+                    delayMinutes,
+                  };
+                });
                 setFallback({
                   origin:      stops[0].name,
                   destination: stops[stops.length - 1].name,
@@ -258,4 +312,8 @@ function parseHHMM(hhmmss: string | undefined): string {
   const h = Math.floor(parseInt(hhmmss.slice(0, 2))) % 24;
   const m = hhmmss.slice(2, 4);
   return `${String(h).padStart(2, '0')}:${m}`;
+}
+
+function toMinutes(hhmmss: string): number {
+  return parseInt(hhmmss.slice(0, 2)) * 60 + parseInt(hhmmss.slice(2, 4));
 }

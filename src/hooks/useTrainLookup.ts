@@ -6,6 +6,8 @@ export interface TrainStop {
   name: string;
   departureTime: string;   // HH:MM (réel si dispo)
   arrivalTime?: string;    // HH:MM
+  baseDepartureTime?: string; // HH:MM (horaire théorique, si retard)
+  baseArrivalTime?: string;   // HH:MM (horaire théorique, si retard)
   platform?: string;       // Voie/quai
   isDelayed: boolean;
   delayMinutes?: number;
@@ -93,6 +95,7 @@ export function useTrainLookup() {
         departure_time?:      string;
         arrival_time?:        string;
         base_departure_time?: string;
+        base_arrival_time?:   string;
         departure_status?:    string;
       }[] = journey.stop_times || [];
 
@@ -108,10 +111,14 @@ export function useTrainLookup() {
           const d = toMinutes(s.departure_time) - toMinutes(s.base_departure_time);
           if (d > 0) delayMinutes = d;
         }
+        const baseDep = isDelayed && s.base_departure_time ? parseHHMMSS(s.base_departure_time) : undefined;
+        const baseArr = isDelayed && s.base_arrival_time ? parseHHMMSS(s.base_arrival_time) : undefined;
         return {
           name:          cleanStationName(s.stop_point?.name || ''),
           departureTime: parseHHMMSS(s.departure_time),
           arrivalTime:   parseHHMMSS(s.arrival_time),
+          baseDepartureTime: baseDep && baseDep !== parseHHMMSS(s.departure_time) ? baseDep : undefined,
+          baseArrivalTime:   baseArr && baseArr !== parseHHMMSS(s.arrival_time) ? baseArr : undefined,
           platform:      s.stop_point?.platform_code || undefined,
           isDelayed,
           delayMinutes,

@@ -170,6 +170,9 @@ export function EmbarkmentControl({ stationName, onStationChange }: EmbarkmentCo
   const [newDepartureTime, setNewDepartureTime] = useState('');
   const [newPlatform, setNewPlatform] = useState('');
 
+  // Show all trains or only recent ones
+  const [showAllTrains, setShowAllTrains] = useState(false);
+
   // Info SNCF panel par train
   const [trainLookupOpen,        setTrainLookupOpen]        = useState<Record<string, boolean>>({});
   const [trainLookupAutoTrigger, setTrainLookupAutoTrigger] = useState<Record<string, number>>({});
@@ -660,8 +663,22 @@ export function EmbarkmentControl({ stationName, onStationChange }: EmbarkmentCo
       {trains.length > 0 && (
         <div className="space-y-3">
           <Label className="text-sm font-medium">Trains ({trains.length})</Label>
-          
-          {trains.map((train) => {
+
+          {/* Show more button for older trains */}
+          {trains.length > 3 && !showAllTrains && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="w-full text-xs gap-1.5 text-muted-foreground"
+              onClick={() => setShowAllTrains(true)}
+            >
+              <History className="h-3.5 w-3.5" />
+              Voir les {trains.length - 3} trains précédents
+            </Button>
+          )}
+
+          {(showAllTrains ? trains : trains.slice(-3)).map((train) => {
             const trainFraudRate = getTrainFraudRate(train);
             const isExpanded = expandedTrainId === train.id;
             const trainColor = getThresholdColor(trainFraudRate);
@@ -886,6 +903,19 @@ export function EmbarkmentControl({ stationName, onStationChange }: EmbarkmentCo
               </Card>
             );
           })}
+
+          {/* Collapse button */}
+          {trains.length > 3 && showAllTrains && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="w-full text-xs text-muted-foreground"
+              onClick={() => setShowAllTrains(false)}
+            >
+              Voir moins
+            </Button>
+          )}
         </div>
       )}
 

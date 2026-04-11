@@ -485,7 +485,7 @@ function ContentAbout() {
           <li>Section passagers dédiée, informations du contrôle repliables</li>
           <li>En gare : navigation sections, autocomplete gare, brouillon auto-sauvegardé</li>
           <li>Embarquement : Info SNCF + schéma + autocomplete par train (heure, origine, destination)</li>
-          <li>Schéma train : heure d'arrivée et de départ par gare dans l'itinéraire</li>
+          <li>Schéma train : horaires arr./dép. par gare, retards avec heure théorique barrée</li>
           <li>Compatible mobile, tablette et PC</li>
         </ul>
       </div>
