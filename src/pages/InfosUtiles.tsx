@@ -96,7 +96,7 @@ import {
   Columns2,
   SeparatorHorizontal,
   Tag,
-  NavigationArrow,
+  Navigation,
   SunDim,
 } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
@@ -1897,7 +1897,7 @@ export default function InfosUtilesPage() {
                   {/* Lien interne */}
                   {!editTileSeparator && (
                     <div className="space-y-1.5">
-                      <Label className="flex items-center gap-1.5"><NavigationArrow className="h-3.5 w-3.5" />Lien interne <span className="text-muted-foreground font-normal">(page de l'app)</span></Label>
+                      <Label className="flex items-center gap-1.5"><Navigation className="h-3.5 w-3.5" />Lien interne <span className="text-muted-foreground font-normal">(page de l'app)</span></Label>
                       <select value={editTileInternal} onChange={e => setEditTileInternal(e.target.value)}
                         className="w-full text-sm rounded-md border border-input bg-background px-3 py-2">
                         <option value="">— Aucun lien interne —</option>
@@ -1971,6 +1971,7 @@ export default function InfosUtilesPage() {
                   )} {/* fin !editTileSeparator */}
 
                   {!editTileSeparator && (
+                  <>
                   <div className="space-y-1.5">
                     <Label>Icône</Label>
                     <div className="grid grid-cols-6 gap-1.5">
@@ -2002,6 +2003,7 @@ export default function InfosUtilesPage() {
                       ))}
                     </div>
                   </div>
+                  </>
                   )} {/* fin !editTileSeparator icône+couleur */}
 
                   {/* ── Sous-tuiles ── */}
@@ -2102,7 +2104,7 @@ export default function InfosUtilesPage() {
               </div>
               {!newTileSeparator && (
                 <div className="space-y-1.5">
-                  <Label className="flex items-center gap-1.5"><NavigationArrow className="h-3.5 w-3.5" />Lien interne <span className="text-muted-foreground font-normal">(optionnel)</span></Label>
+                  <Label className="flex items-center gap-1.5"><Navigation className="h-3.5 w-3.5" />Lien interne <span className="text-muted-foreground font-normal">(optionnel)</span></Label>
                   <select value={newTileInternal} onChange={e => setNewTileInternal(e.target.value)}
                     className="w-full text-sm rounded-md border border-input bg-background px-3 py-2">
                     <option value="">— Aucun lien interne —</option>
