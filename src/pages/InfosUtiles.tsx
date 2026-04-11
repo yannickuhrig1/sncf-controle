@@ -96,7 +96,6 @@ import {
   Columns2,
   SeparatorHorizontal,
   Tag,
-  Navigation,
   SunDim,
 } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
@@ -125,8 +124,9 @@ interface TilesConfig {
 }
 
 interface ContentBlock {
-  type: 'text' | 'image';
+  type: 'text' | 'image' | 'file';
   value: string;
+  fileName?: string; // nom original du fichier
 }
 
 interface SubTileConfig {
@@ -135,7 +135,8 @@ interface SubTileConfig {
   icon: string;
   gradient: string;
   url?: string;
-  content?: string;
+  content?: string;       // legacy texte simple
+  blocks?: ContentBlock[];
 }
 
 interface CustomTileConfig {
@@ -1417,6 +1418,7 @@ export default function InfosUtilesPage() {
   const [editBlocks,           setEditBlocks]           = useState<ContentBlock[]>([]);
   const [isUploadingEditBlock, setIsUploadingEditBlock] = useState(false);
   const editBlockImageRef = useRef<HTMLInputElement>(null);
+  const editBlockFileRef = useRef<HTMLInputElement>(null);
 
   // Dialog ajout tuile custom
   const [addTileOpen,         setAddTileOpen]         = useState(false);
@@ -1429,6 +1431,13 @@ export default function InfosUtilesPage() {
   const [isDraggingOverEdit,   setIsDraggingOverEdit]   = useState(false);
   const [isDraggingOverNew,    setIsDraggingOverNew]    = useState(false);
   const newBlockImageRef = useRef<HTMLInputElement>(null);
+  const newBlockFileRef = useRef<HTMLInputElement>(null);
+
+  // Sub-tile blocks editor
+  const [newSubBlocks,          setNewSubBlocks]          = useState<ContentBlock[]>([]);
+  const [isUploadingSubBlock,   setIsUploadingSubBlock]   = useState(false);
+  const subBlockImageRef = useRef<HTMLInputElement>(null);
+  const subBlockFileRef  = useRef<HTMLInputElement>(null);
 
   // Dialog affichage contenu tuile custom
   const [customContentTile, setCustomContentTile] = useState<CustomTileConfig | null>(null);
@@ -1569,13 +1578,14 @@ export default function InfosUtilesPage() {
     }
   };
 
-  const uploadTileImage = async (file: File): Promise<string | null> => {
-    const ext = file.name.split('.').pop() ?? 'jpg';
+  const uploadTileFile = async (file: File): Promise<string | null> => {
+    const ext = file.name.split('.').pop() ?? 'bin';
     const path = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
     const { data, error } = await supabase.storage.from('tile-images').upload(path, file);
     if (error) { toast.error('Erreur upload : ' + error.message); return null; }
     return supabase.storage.from('tile-images').getPublicUrl(data.path).data.publicUrl;
   };
+  const uploadTileImage = uploadTileFile;
 
   const openEditTile = (tile: RenderedTile) => {
     setEditTileId(tile.id);
@@ -1873,11 +1883,10 @@ export default function InfosUtilesPage() {
               {editTileId && localCustom.some(c => c.id === editTileId) && (
                 <>
                   {/* ── Options rapides ── */}
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-3 gap-2">
                     {[
                       { key: 'sep', label: 'Séparateur', icon: SeparatorHorizontal, val: editTileSeparator, set: setEditTileSeparator },
                       { key: 'wide', label: 'Double largeur', icon: Columns2, val: editTileWide, set: setEditTileWide },
-                      { key: 'pin', label: 'Épingler', icon: Pin, val: editTilePinned, set: setEditTilePinned },
                       { key: 'dark', label: 'Texte sombre', icon: SunDim, val: editTileDarkText, set: setEditTileDarkText },
                     ].map(({ key, label, icon: Ic, val, set }) => (
                       <button key={key} type="button"
@@ -1893,18 +1902,6 @@ export default function InfosUtilesPage() {
                     <Label className="flex items-center gap-1.5"><Tag className="h-3.5 w-3.5" />Badge <span className="text-muted-foreground font-normal">(ex : Nouveau, Urgent)</span></Label>
                     <Input value={editTileBadge} onChange={e => setEditTileBadge(e.target.value)} placeholder="Texte du badge — laisser vide pour aucun" maxLength={12} />
                   </div>
-
-                  {/* Lien interne */}
-                  {!editTileSeparator && (
-                    <div className="space-y-1.5">
-                      <Label className="flex items-center gap-1.5"><Navigation className="h-3.5 w-3.5" />Lien interne <span className="text-muted-foreground font-normal">(page de l'app)</span></Label>
-                      <select value={editTileInternal} onChange={e => setEditTileInternal(e.target.value)}
-                        className="w-full text-sm rounded-md border border-input bg-background px-3 py-2">
-                        <option value="">— Aucun lien interne —</option>
-                        {INTERNAL_PATHS.map(p => <option key={p.path} value={p.path}>{p.label}</option>)}
-                      </select>
-                    </div>
-                  )}
 
                   {/* URL externe */}
                   {!editTileSeparator && (
@@ -1941,8 +1938,12 @@ export default function InfosUtilesPage() {
                               rows={3}
                               className="resize-none border-0 p-0 shadow-none focus-visible:ring-0 bg-transparent"
                             />
-                          ) : (
+                          ) : block.type === 'image' ? (
                             <img src={block.value} alt="" className="max-h-40 rounded object-contain" />
+                          ) : (
+                            <a href={block.value} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-primary hover:underline">
+                              <Paperclip className="h-3.5 w-3.5 shrink-0" />{block.fileName || 'Fichier'}
+                            </a>
                           )}
                           <button type="button" onClick={() => setEditBlocks(prev => prev.filter((_, j) => j !== i))} className="absolute top-1.5 right-1.5 p-1 text-muted-foreground hover:text-destructive">
                             <X className="h-3.5 w-3.5" />
@@ -1958,11 +1959,22 @@ export default function InfosUtilesPage() {
                         {isUploadingEditBlock ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" /> : <Upload className="h-3.5 w-3.5 mr-1.5" />}
                         Image
                       </Button>
+                      <Button size="sm" variant="outline" type="button" disabled={isUploadingEditBlock} onClick={() => editBlockFileRef.current?.click()}>
+                        {isUploadingEditBlock ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" /> : <Paperclip className="h-3.5 w-3.5 mr-1.5" />}
+                        Fichier
+                      </Button>
                       <input ref={editBlockImageRef} type="file" accept="image/*" className="hidden" onChange={async (e) => {
                         const file = e.target.files?.[0]; if (!file) return;
                         setIsUploadingEditBlock(true);
                         const url = await uploadTileImage(file);
                         if (url) setEditBlocks(prev => [...prev, { type: 'image', value: url }]);
+                        setIsUploadingEditBlock(false); e.target.value = '';
+                      }} />
+                      <input ref={editBlockFileRef} type="file" className="hidden" onChange={async (e) => {
+                        const file = e.target.files?.[0]; if (!file) return;
+                        setIsUploadingEditBlock(true);
+                        const url = await uploadTileFile(file);
+                        if (url) setEditBlocks(prev => [...prev, { type: 'file', value: url, fileName: file.name }]);
                         setIsUploadingEditBlock(false); e.target.value = '';
                       }} />
                     </div>
@@ -2018,6 +2030,7 @@ export default function InfosUtilesPage() {
                     </div>
                     {editSubTiles.map((st, i) => {
                       const Ic = ICON_MAP[st.icon] ?? ExternalLink;
+                      const hasContent = (st.blocks?.length ?? 0) > 0 || !!st.content;
                       return (
                         <div key={st.id} className="flex items-center gap-2 p-2 bg-muted/20 rounded-lg">
                           <div className={`p-1.5 rounded-lg bg-gradient-to-br ${st.gradient} shrink-0`}>
@@ -2025,7 +2038,7 @@ export default function InfosUtilesPage() {
                           </div>
                           <span className="text-sm flex-1 truncate">{st.label}</span>
                           {st.url && <ExternalLink className="h-3 w-3 text-muted-foreground shrink-0" />}
-                          {st.content && <FileText className="h-3 w-3 text-muted-foreground shrink-0" />}
+                          {hasContent && <FileText className="h-3 w-3 text-muted-foreground shrink-0" />}
                           <button type="button" onClick={() => setEditSubTiles(prev => prev.filter((_, j) => j !== i))}
                             className="p-1 text-muted-foreground hover:text-destructive shrink-0">
                             <Trash2 className="h-3.5 w-3.5" />
@@ -2037,7 +2050,52 @@ export default function InfosUtilesPage() {
                       <div className="space-y-2.5 p-3 border rounded-lg bg-muted/10">
                         <Input value={newSubLabel} onChange={e => setNewSubLabel(e.target.value)} placeholder="Nom de la sous-tuile *" />
                         <Input value={newSubUrl} onChange={e => setNewSubUrl(e.target.value)} placeholder="URL (optionnel)" type="url" />
-                        <Textarea value={newSubContent} onChange={e => setNewSubContent(e.target.value)} placeholder="Texte affiché si pas d'URL (optionnel)" rows={2} className="resize-none" />
+                        {/* Blocs de contenu sous-tuile */}
+                        <div className="space-y-1.5">
+                          <Label className="text-xs">Contenu <span className="text-muted-foreground font-normal">(optionnel)</span></Label>
+                          {newSubBlocks.map((block, i) => (
+                            <div key={i} className="relative border rounded p-2 pr-7 bg-background">
+                              {block.type === 'text' ? (
+                                <Textarea value={block.value} onChange={e => setNewSubBlocks(prev => prev.map((b, j) => j === i ? { ...b, value: e.target.value } : b))}
+                                  placeholder="Votre texte…" rows={2} className="resize-none border-0 p-0 shadow-none focus-visible:ring-0 bg-transparent text-sm" />
+                              ) : block.type === 'image' ? (
+                                <img src={block.value} alt="" className="max-h-28 rounded object-contain" />
+                              ) : (
+                                <a href={block.value} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-xs text-primary hover:underline">
+                                  <Paperclip className="h-3 w-3 shrink-0" />{block.fileName || 'Fichier'}
+                                </a>
+                              )}
+                              <button type="button" onClick={() => setNewSubBlocks(prev => prev.filter((_, j) => j !== i))} className="absolute top-1 right-1 p-0.5 text-muted-foreground hover:text-destructive">
+                                <X className="h-3 w-3" />
+                              </button>
+                            </div>
+                          ))}
+                          <div className="flex gap-1.5">
+                            <Button size="sm" variant="outline" type="button" className="h-7 text-xs" onClick={() => setNewSubBlocks(prev => [...prev, { type: 'text', value: '' }])}>
+                              <FileText className="h-3 w-3 mr-1" />Texte
+                            </Button>
+                            <Button size="sm" variant="outline" type="button" className="h-7 text-xs" disabled={isUploadingSubBlock} onClick={() => subBlockImageRef.current?.click()}>
+                              {isUploadingSubBlock ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Upload className="h-3 w-3 mr-1" />}Image
+                            </Button>
+                            <Button size="sm" variant="outline" type="button" className="h-7 text-xs" disabled={isUploadingSubBlock} onClick={() => subBlockFileRef.current?.click()}>
+                              {isUploadingSubBlock ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Paperclip className="h-3 w-3 mr-1" />}Fichier
+                            </Button>
+                            <input ref={subBlockImageRef} type="file" accept="image/*" className="hidden" onChange={async (e) => {
+                              const file = e.target.files?.[0]; if (!file) return;
+                              setIsUploadingSubBlock(true);
+                              const url = await uploadTileFile(file);
+                              if (url) setNewSubBlocks(prev => [...prev, { type: 'image', value: url }]);
+                              setIsUploadingSubBlock(false); e.target.value = '';
+                            }} />
+                            <input ref={subBlockFileRef} type="file" className="hidden" onChange={async (e) => {
+                              const file = e.target.files?.[0]; if (!file) return;
+                              setIsUploadingSubBlock(true);
+                              const url = await uploadTileFile(file);
+                              if (url) setNewSubBlocks(prev => [...prev, { type: 'file', value: url, fileName: file.name }]);
+                              setIsUploadingSubBlock(false); e.target.value = '';
+                            }} />
+                          </div>
+                        </div>
                         <div className="grid grid-cols-6 gap-1">
                           {ICON_OPTIONS.map(k => { const Ic = ICON_MAP[k]; return (
                             <button key={k} type="button" onClick={() => setNewSubIcon(k)}
@@ -2054,8 +2112,13 @@ export default function InfosUtilesPage() {
                         </div>
                         <Button size="sm" type="button" className="w-full" disabled={!newSubLabel.trim()} onClick={() => {
                           const subId = `sub_${slugify(newSubLabel) || Date.now()}`;
-                          setEditSubTiles(prev => [...prev, { id: subId, label: newSubLabel.trim(), icon: newSubIcon, gradient: newSubGradient, url: newSubUrl.trim() || undefined, content: newSubContent.trim() || undefined }]);
-                          setNewSubLabel(''); setNewSubUrl(''); setNewSubContent('');
+                          setEditSubTiles(prev => [...prev, {
+                            id: subId, label: newSubLabel.trim(), icon: newSubIcon, gradient: newSubGradient,
+                            url: newSubUrl.trim() || undefined,
+                            blocks: newSubBlocks.length > 0 ? newSubBlocks : undefined,
+                            content: undefined,
+                          }]);
+                          setNewSubLabel(''); setNewSubUrl(''); setNewSubContent(''); setNewSubBlocks([]);
                           setNewSubIcon('ExternalLink'); setNewSubGradient(GRADIENT_PRESETS[0].value);
                           setAddSubOpen(false);
                         }}>Confirmer la sous-tuile</Button>
@@ -2085,11 +2148,10 @@ export default function InfosUtilesPage() {
                 <Input value={newTileLabel} onChange={e => setNewTileLabel(e.target.value)} placeholder="Nom de la tuile" />
               </div>
               {/* Options rapides add */}
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-3 gap-2">
                 {[
                   { key: 'sep', label: 'Séparateur', icon: SeparatorHorizontal, val: newTileSeparator, set: setNewTileSeparator },
                   { key: 'wide', label: 'Double largeur', icon: Columns2, val: newTileWide, set: setNewTileWide },
-                  { key: 'pin', label: 'Épingler', icon: Pin, val: newTilePinned, set: setNewTilePinned },
                   { key: 'dark', label: 'Texte sombre', icon: SunDim, val: newTileDarkText, set: setNewTileDarkText },
                 ].map(({ key, label, icon: Ic, val, set }) => (
                   <button key={key} type="button" onClick={() => set(!val)}
@@ -2102,16 +2164,6 @@ export default function InfosUtilesPage() {
                 <Label className="flex items-center gap-1.5"><Tag className="h-3.5 w-3.5" />Badge <span className="text-muted-foreground font-normal">(optionnel)</span></Label>
                 <Input value={newTileBadge} onChange={e => setNewTileBadge(e.target.value)} placeholder="Nouveau, Urgent…" maxLength={12} />
               </div>
-              {!newTileSeparator && (
-                <div className="space-y-1.5">
-                  <Label className="flex items-center gap-1.5"><Navigation className="h-3.5 w-3.5" />Lien interne <span className="text-muted-foreground font-normal">(optionnel)</span></Label>
-                  <select value={newTileInternal} onChange={e => setNewTileInternal(e.target.value)}
-                    className="w-full text-sm rounded-md border border-input bg-background px-3 py-2">
-                    <option value="">— Aucun lien interne —</option>
-                    {INTERNAL_PATHS.map(p => <option key={p.path} value={p.path}>{p.label}</option>)}
-                  </select>
-                </div>
-              )}
               {!newTileSeparator && (
               <>
               <div className="space-y-1.5">
@@ -2146,8 +2198,12 @@ export default function InfosUtilesPage() {
                           rows={3}
                           className="resize-none border-0 p-0 shadow-none focus-visible:ring-0 bg-transparent"
                         />
-                      ) : (
+                      ) : block.type === 'image' ? (
                         <img src={block.value} alt="" className="max-h-40 rounded object-contain" />
+                      ) : (
+                        <a href={block.value} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-primary hover:underline">
+                          <Paperclip className="h-3.5 w-3.5 shrink-0" />{block.fileName || 'Fichier'}
+                        </a>
                       )}
                       <button type="button" onClick={() => setNewBlocks(prev => prev.filter((_, j) => j !== i))} className="absolute top-1.5 right-1.5 p-1 text-muted-foreground hover:text-destructive">
                         <X className="h-3.5 w-3.5" />
@@ -2163,11 +2219,22 @@ export default function InfosUtilesPage() {
                     {isUploadingNewBlock ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" /> : <Upload className="h-3.5 w-3.5 mr-1.5" />}
                     Image
                   </Button>
+                  <Button size="sm" variant="outline" type="button" disabled={isUploadingNewBlock} onClick={() => newBlockFileRef.current?.click()}>
+                    {isUploadingNewBlock ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" /> : <Paperclip className="h-3.5 w-3.5 mr-1.5" />}
+                    Fichier
+                  </Button>
                   <input ref={newBlockImageRef} type="file" accept="image/*" className="hidden" onChange={async (e) => {
                     const file = e.target.files?.[0]; if (!file) return;
                     setIsUploadingNewBlock(true);
                     const url = await uploadTileImage(file);
                     if (url) setNewBlocks(prev => [...prev, { type: 'image', value: url }]);
+                    setIsUploadingNewBlock(false); e.target.value = '';
+                  }} />
+                  <input ref={newBlockFileRef} type="file" className="hidden" onChange={async (e) => {
+                    const file = e.target.files?.[0]; if (!file) return;
+                    setIsUploadingNewBlock(true);
+                    const url = await uploadTileFile(file);
+                    if (url) setNewBlocks(prev => [...prev, { type: 'file', value: url, fileName: file.name }]);
                     setIsUploadingNewBlock(false); e.target.value = '';
                   }} />
                 </div>
@@ -2233,7 +2300,7 @@ export default function InfosUtilesPage() {
                     key={st.id}
                     onClick={() => {
                       if (st.url) { window.open(st.url, '_blank', 'noopener'); return; }
-                      if (st.content) { setOpenSubTileContent(st); }
+                      if ((st.blocks?.length ?? 0) > 0 || st.content) { setOpenSubTileContent(st); }
                     }}
                     className="border-0 shadow-sm overflow-hidden cursor-pointer hover:shadow-md active:scale-95 transition-all select-none"
                   >
@@ -2257,9 +2324,22 @@ export default function InfosUtilesPage() {
                 {openSubTileContent?.label}
               </DialogTitle>
             </DialogHeader>
-            <p className="text-sm text-muted-foreground whitespace-pre-wrap leading-relaxed py-2">
-              {openSubTileContent?.content}
-            </p>
+            <div className="py-2 space-y-3">
+              {(openSubTileContent?.blocks?.length
+                ? openSubTileContent.blocks
+                : openSubTileContent?.content
+                  ? [{ type: 'text' as const, value: openSubTileContent.content }]
+                  : []
+              ).map((block, i) =>
+                block.type === 'image'
+                  ? <img key={i} src={block.value} alt="" className="rounded-lg max-w-full" />
+                  : block.type === 'file'
+                    ? <a key={i} href={block.value} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 p-3 rounded-lg border bg-muted/30 text-sm text-primary hover:bg-muted/50 transition-colors">
+                        <Download className="h-4 w-4 shrink-0" />{block.fileName || 'Télécharger le fichier'}
+                      </a>
+                    : <p key={i} className="text-sm text-muted-foreground whitespace-pre-wrap leading-relaxed">{block.value}</p>
+              )}
+            </div>
           </DialogContent>
         </Dialog>
 
@@ -2309,7 +2389,11 @@ export default function InfosUtilesPage() {
               ).map((block, i) =>
                 block.type === 'image'
                   ? <img key={i} src={block.value} alt="" className="rounded-lg max-w-full" />
-                  : <p key={i} className="text-sm text-muted-foreground whitespace-pre-wrap leading-relaxed">{block.value}</p>
+                  : block.type === 'file'
+                    ? <a key={i} href={block.value} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 p-3 rounded-lg border bg-muted/30 text-sm text-primary hover:bg-muted/50 transition-colors">
+                        <Download className="h-4 w-4 shrink-0" />{block.fileName || 'Télécharger le fichier'}
+                      </a>
+                    : <p key={i} className="text-sm text-muted-foreground whitespace-pre-wrap leading-relaxed">{block.value}</p>
               )}
             </div>
           </DialogContent>

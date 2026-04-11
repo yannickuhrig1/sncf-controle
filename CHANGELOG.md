@@ -2,6 +2,14 @@
 
 Toutes les modifications notables de ce projet sont documentées dans ce fichier.
 
+## [1.12.4] - 2026-04-11
+
+### Modifié — Éditeur de tuiles
+- **Supprimé** : options "Épingler" et "Lien interne" retirées des dialogs création/modification
+- **Fichiers partagés** : bouton "Fichier" (upload tout type) dans le contenu des tuiles principales et des sous-tuiles
+- **Sous-tuiles enrichies** : éditeur de blocs complet (texte + image + fichier) remplace le simple champ texte
+- **Affichage fichiers** : boutons de téléchargement stylisés dans les dialogs de contenu (tuiles + sous-tuiles)
+
 ## [1.12.3] - 2026-04-11
 
 ### Corrigé
