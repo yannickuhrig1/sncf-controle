@@ -1446,6 +1446,9 @@ export default function InfosUtilesPage() {
   const [openSubTilesSheet, setOpenSubTilesSheet] = useState<CustomTileConfig | null>(null);
   const [openSubTileContent, setOpenSubTileContent] = useState<SubTileConfig | null>(null);
 
+  // Zoom image
+  const [zoomImage, setZoomImage] = useState<string | null>(null);
+
   // Édition sous-tuiles (dans le dialog d'édition de tuile)
   const [editSubTiles,  setEditSubTiles]  = useState<SubTileConfig[]>([]);
   const [addSubOpen,    setAddSubOpen]    = useState(false);
@@ -2332,7 +2335,7 @@ export default function InfosUtilesPage() {
                   : []
               ).map((block, i) =>
                 block.type === 'image'
-                  ? <img key={i} src={block.value} alt="" className="rounded-lg max-w-full" />
+                  ? <img key={i} src={block.value} alt="" className="rounded-lg max-w-full cursor-zoom-in active:opacity-80 transition-opacity" onClick={() => setZoomImage(block.value)} />
                   : block.type === 'file'
                     ? <a key={i} href={block.value} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 p-3 rounded-lg border bg-muted/30 text-sm text-primary hover:bg-muted/50 transition-colors">
                         <Download className="h-4 w-4 shrink-0" />{block.fileName || 'Télécharger le fichier'}
@@ -2388,7 +2391,7 @@ export default function InfosUtilesPage() {
                   : []
               ).map((block, i) =>
                 block.type === 'image'
-                  ? <img key={i} src={block.value} alt="" className="rounded-lg max-w-full" />
+                  ? <img key={i} src={block.value} alt="" className="rounded-lg max-w-full cursor-zoom-in active:opacity-80 transition-opacity" onClick={() => setZoomImage(block.value)} />
                   : block.type === 'file'
                     ? <a key={i} href={block.value} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 p-3 rounded-lg border bg-muted/30 text-sm text-primary hover:bg-muted/50 transition-colors">
                         <Download className="h-4 w-4 shrink-0" />{block.fileName || 'Télécharger le fichier'}
@@ -2398,6 +2401,29 @@ export default function InfosUtilesPage() {
             </div>
           </DialogContent>
         </Dialog>
+
+        {/* Overlay zoom image */}
+        {zoomImage && (
+          <div
+            className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4 animate-in fade-in-0 duration-200"
+            onClick={() => setZoomImage(null)}
+          >
+            <button
+              type="button"
+              onClick={() => setZoomImage(null)}
+              className="absolute top-4 right-4 p-2 rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors z-10"
+            >
+              <X className="h-6 w-6" />
+            </button>
+            <img
+              src={zoomImage}
+              alt=""
+              className="max-w-full max-h-full object-contain rounded-lg select-none"
+              onClick={e => e.stopPropagation()}
+              draggable={false}
+            />
+          </div>
+        )}
       </div>
     </AppLayout>
   );

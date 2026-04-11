@@ -2,6 +2,11 @@
 
 Toutes les modifications notables de ce projet sont documentées dans ce fichier.
 
+## [1.12.5] - 2026-04-11
+
+### Ajouté
+- **Zoom image** : clic sur une image dans les tuiles/sous-tuiles ouvre un overlay plein écran zoomable — bouton fermeture + clic extérieur pour quitter. Curseur zoom-in pour indiquer l'interactivité
+
 ## [1.12.4] - 2026-04-11
 
 ### Modifié — Éditeur de tuiles
