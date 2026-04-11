@@ -127,7 +127,7 @@ export function FraudSummary({
                 <button
                   type="button"
                   onClick={(e) => { e.stopPropagation(); onBigCounterOpen(); }}
-                  className="absolute top-2 right-2 p-1.5 rounded-md bg-primary/10 text-primary hover:bg-primary/20 active:bg-primary/30 transition-colors"
+                  className="absolute bottom-1.5 right-1.5 p-1.5 rounded-md bg-primary/10 text-primary hover:bg-primary/20 active:bg-primary/30 transition-colors"
                   aria-label="Compteur plein écran"
                 >
                   <Maximize2 className="h-4 w-4" />

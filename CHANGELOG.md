@@ -2,6 +2,12 @@
 
 Toutes les modifications notables de ce projet sont documentées dans ce fichier.
 
+## [1.12.9] - 2026-04-11
+
+### Ajouté — Compteur voyageurs plein écran
+- **STT 50€ / PV 100€** affichés en bas du compteur plein écran avec boutons +/−, couleurs ambre (STT) et rouge (PV)
+- **Bouton plein écran** dans le bandeau Voyageurs (icône Maximize en bas à droite) — ouvre le compteur grand format depuis À bord et En gare
+
 ## [1.12.8] - 2026-04-11
 
 ### Ajouté
