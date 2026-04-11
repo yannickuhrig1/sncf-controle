@@ -2,6 +2,11 @@
 
 Toutes les modifications notables de ce projet sont documentées dans ce fichier.
 
+## [1.12.7] - 2026-04-11
+
+### Corrigé
+- **Zoom image** : remplacement de l'overlay portal par un vrai Dialog Radix — Radix bloquait les interactions hors de son contenu modal, le portal ne recevait jamais les clics
+
 ## [1.12.6] - 2026-04-11
 
 ### Corrigé

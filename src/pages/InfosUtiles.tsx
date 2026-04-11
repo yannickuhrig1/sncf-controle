@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { createPortal } from 'react-dom';
 import {
   DndContext,
   closestCenter,
@@ -2403,31 +2402,27 @@ export default function InfosUtilesPage() {
           </DialogContent>
         </Dialog>
 
-        {/* Overlay zoom image (portal pour passer au-dessus des Dialogs) */}
-        {zoomImage && createPortal(
-          <div
-            className="fixed inset-0 z-[200] bg-black/90 flex items-center justify-center p-4"
-            onClick={() => setZoomImage(null)}
-            style={{ touchAction: 'none' }}
-          >
+        {/* Dialog zoom image */}
+        <Dialog open={!!zoomImage} onOpenChange={open => { if (!open) setZoomImage(null); }}>
+          <DialogContent className="max-w-[95vw] max-h-[95vh] p-2 bg-black/95 border-0 flex items-center justify-center" showCloseButton={false}>
             <button
               type="button"
-              onClick={(e) => { e.stopPropagation(); setZoomImage(null); }}
-              className="absolute top-4 right-4 p-3 rounded-full bg-white/20 text-white hover:bg-white/30 active:bg-white/40 transition-colors z-10"
+              onClick={() => setZoomImage(null)}
+              className="absolute top-3 right-3 p-2.5 rounded-full bg-white/20 text-white hover:bg-white/30 active:bg-white/40 transition-colors z-10"
               aria-label="Fermer"
             >
-              <X className="h-7 w-7" />
+              <X className="h-6 w-6" />
             </button>
-            <img
-              src={zoomImage}
-              alt=""
-              className="max-w-full max-h-full object-contain rounded-lg select-none"
-              onClick={e => e.stopPropagation()}
-              draggable={false}
-            />
-          </div>,
-          document.body
-        )}
+            {zoomImage && (
+              <img
+                src={zoomImage}
+                alt=""
+                className="max-w-full max-h-[90vh] object-contain rounded select-none"
+                draggable={false}
+              />
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </AppLayout>
   );
