@@ -2,6 +2,11 @@
 
 Toutes les modifications notables de ce projet sont documentées dans ce fichier.
 
+## [1.12.6] - 2026-04-11
+
+### Corrigé
+- **Zoom image** : overlay rendu via React Portal (`document.body`) pour passer au-dessus des Dialogs Radix — z-index 200, bouton fermeture agrandi pour mobile, `stopPropagation` sur les clics
+
 ## [1.12.5] - 2026-04-11
 
 ### Ajouté

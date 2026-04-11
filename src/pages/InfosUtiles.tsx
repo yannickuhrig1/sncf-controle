@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import {
   DndContext,
   closestCenter,
@@ -2402,18 +2403,20 @@ export default function InfosUtilesPage() {
           </DialogContent>
         </Dialog>
 
-        {/* Overlay zoom image */}
-        {zoomImage && (
+        {/* Overlay zoom image (portal pour passer au-dessus des Dialogs) */}
+        {zoomImage && createPortal(
           <div
-            className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4 animate-in fade-in-0 duration-200"
+            className="fixed inset-0 z-[200] bg-black/90 flex items-center justify-center p-4"
             onClick={() => setZoomImage(null)}
+            style={{ touchAction: 'none' }}
           >
             <button
               type="button"
-              onClick={() => setZoomImage(null)}
-              className="absolute top-4 right-4 p-2 rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors z-10"
+              onClick={(e) => { e.stopPropagation(); setZoomImage(null); }}
+              className="absolute top-4 right-4 p-3 rounded-full bg-white/20 text-white hover:bg-white/30 active:bg-white/40 transition-colors z-10"
+              aria-label="Fermer"
             >
-              <X className="h-6 w-6" />
+              <X className="h-7 w-7" />
             </button>
             <img
               src={zoomImage}
@@ -2422,7 +2425,8 @@ export default function InfosUtilesPage() {
               onClick={e => e.stopPropagation()}
               draggable={false}
             />
-          </div>
+          </div>,
+          document.body
         )}
       </div>
     </AppLayout>
