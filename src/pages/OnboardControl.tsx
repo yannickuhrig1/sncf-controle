@@ -910,6 +910,7 @@ export default function OnboardControl() {
             fraudCount={fraudStats.fraudCount}
             fraudRate={fraudStats.fraudRate}
             onPassengersChange={(v) => setFormState((p) => ({ ...p, passengers: v }))}
+            onBigCounterOpen={() => setBigCounterOpen(true)}
             tarifsControle={formState.tarifsControle}
             pvList={formState.pvList}
             stt50Count={formState.stt50Count}
@@ -1885,6 +1886,8 @@ export default function OnboardControl() {
         onChange={(v) => setFormState((p) => ({ ...p, passengers: v }))}
         min={0}
         max={9999}
+        stt50Count={formState.stt50Count}
+        stt100Count={formState.stt100Count}
       />
 
       {/* Train Share Dialog */}

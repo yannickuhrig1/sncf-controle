@@ -561,6 +561,9 @@ export default function StationControl() {
                 passengers={formState.nbPassagers}
                 fraudCount={fraudStats.fraudCount}
                 fraudRate={fraudStats.fraudRate}
+                onBigCounterOpen={() => setBigCounterOpen(true)}
+                stt50Count={formState.stt50Count}
+                stt100Count={formState.stt100Count}
               />
             </div>
 
@@ -1096,6 +1099,8 @@ export default function StationControl() {
         onOpenChange={setBigCounterOpen}
         value={formState.nbPassagers}
         onChange={(v) => setFormState(p => ({ ...p, nbPassagers: v }))}
+        stt50Count={formState.stt50Count}
+        stt100Count={formState.stt100Count}
       />
 
       {/* ── Dialog : Rejoindre un groupe ───────────────────────────────────── */}

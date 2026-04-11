@@ -8,7 +8,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { AlertTriangle, Users, FileText, Ticket, TrendingUp, Pencil } from 'lucide-react';
+import { AlertTriangle, Users, FileText, Ticket, TrendingUp, Pencil, Maximize2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getFraudThresholds } from '@/lib/stats';
 import { motion } from 'framer-motion';
@@ -26,6 +26,7 @@ interface FraudSummaryProps {
   fraudCount: number;
   fraudRate: number;
   onPassengersChange?: (value: number) => void;
+  onBigCounterOpen?: () => void;
   tarifsControle?: Array<{ id: string; type: string; typeLabel: string; montant?: number; category?: string }>;
   pvList?: Array<{ id: string; type: string; typeLabel: string; montant?: number; category?: string }>;
   stt50Count?: number;
@@ -37,6 +38,7 @@ export function FraudSummary({
   fraudCount,
   fraudRate,
   onPassengersChange,
+  onBigCounterOpen,
   tarifsControle = [],
   pvList = [],
   stt50Count = 0,
@@ -115,12 +117,22 @@ export function FraudSummary({
             <button
               type="button"
               className={cn(
-                'px-4 sm:px-6 py-4 flex flex-col gap-1.5 text-left transition-colors w-full',
+                'px-4 sm:px-6 py-4 flex flex-col gap-1.5 text-left transition-colors w-full relative',
                 onPassengersChange ? 'cursor-pointer hover:bg-muted/40 active:bg-muted/60' : 'cursor-default'
               )}
               onClick={() => onPassengersChange && setIsEditingPassengers(true)}
               disabled={!onPassengersChange}
             >
+              {onBigCounterOpen && (
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); onBigCounterOpen(); }}
+                  className="absolute top-1.5 right-1.5 p-1 rounded text-muted-foreground/50 hover:text-foreground hover:bg-muted/60 transition-colors"
+                  aria-label="Compteur plein écran"
+                >
+                  <Maximize2 className="h-3.5 w-3.5" />
+                </button>
+              )}
               <div className="flex items-center gap-1.5">
                 <Users className="h-3.5 w-3.5 text-muted-foreground" />
                 <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
