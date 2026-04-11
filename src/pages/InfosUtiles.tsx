@@ -1860,11 +1860,11 @@ export default function InfosUtilesPage() {
 
         {/* Dialog — Édition d'une tuile */}
         <Dialog open={!!editTileId} onOpenChange={(open) => !open && setEditTileId(null)}>
-          <DialogContent className="sm:max-w-sm max-h-[90vh] overflow-y-auto">
+          <DialogContent className="sm:max-w-sm max-h-[90vh] overflow-hidden">
             <DialogHeader>
               <DialogTitle>Modifier la tuile</DialogTitle>
             </DialogHeader>
-            <div className="space-y-4 py-2">
+            <div className="flex-1 overflow-y-auto min-h-0 space-y-4 py-2">
               <div className="space-y-1.5">
                 <Label>Label affiché</Label>
                 <Input value={editTileLabel} onChange={e => setEditTileLabel(e.target.value)} placeholder="Nom de la tuile" />
@@ -2062,7 +2062,7 @@ export default function InfosUtilesPage() {
                 </>
               )}
             </div>
-            <div className="flex justify-end gap-2 pt-2">
+            <div className="shrink-0 flex justify-end gap-2 pt-2 border-t mt-2">
               <Button variant="outline" onClick={() => setEditTileId(null)}>Annuler</Button>
               <Button onClick={saveTileEdit} disabled={!editTileLabel.trim()}>Enregistrer</Button>
             </div>
@@ -2071,11 +2071,11 @@ export default function InfosUtilesPage() {
 
         {/* Dialog — Ajouter une tuile custom */}
         <Dialog open={addTileOpen} onOpenChange={v => { setAddTileOpen(v); if (!v) { setNewTileWide(false); setNewTilePinned(false); setNewTileDarkText(false); setNewTileBadge(''); setNewTileInternal(''); setNewTileSeparator(false); } }}>
-          <DialogContent className="sm:max-w-sm max-h-[90vh] overflow-y-auto">
+          <DialogContent className="sm:max-w-sm max-h-[90vh] overflow-hidden">
             <DialogHeader>
               <DialogTitle>Nouvelle tuile</DialogTitle>
             </DialogHeader>
-            <div className="space-y-4 py-2">
+            <div className="flex-1 overflow-y-auto min-h-0 space-y-4 py-2">
               <div className="space-y-1.5">
                 <Label>Label *</Label>
                 <Input value={newTileLabel} onChange={e => setNewTileLabel(e.target.value)} placeholder="Nom de la tuile" />
@@ -2200,7 +2200,7 @@ export default function InfosUtilesPage() {
               </div>
               )} {/* fin !newTileSeparator */}
             </div>
-            <div className="flex justify-end gap-2 pt-2">
+            <div className="shrink-0 flex justify-end gap-2 pt-2 border-t mt-2">
               <Button variant="outline" onClick={() => setAddTileOpen(false)}>Annuler</Button>
               <Button onClick={addCustomTile} disabled={!newTileLabel.trim()}>Ajouter</Button>
             </div>

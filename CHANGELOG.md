@@ -2,6 +2,11 @@
 
 Toutes les modifications notables de ce projet sont documentées dans ce fichier.
 
+## [1.12.2] - 2026-04-09
+
+### Corrigé
+- **Dialogs tuiles** : scroll opérationnel dans les dialogs de création/modification de tuile — le contenu ne dépasse plus de l'écran (header fixe, zone centrale scrollable, boutons fixes en bas)
+
 ## [1.12.1] - 2026-04-09
 
 ### Ajouté — 7 nouvelles fonctions éditeur de tuiles
