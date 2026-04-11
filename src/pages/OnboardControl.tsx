@@ -1888,6 +1888,8 @@ export default function OnboardControl() {
         max={9999}
         stt50Count={formState.stt50Count}
         stt100Count={formState.stt100Count}
+        onStt50Change={(v) => setFormState((p) => ({ ...p, stt50Count: v }))}
+        onStt100Change={(v) => setFormState((p) => ({ ...p, stt100Count: v }))}
       />
 
       {/* Train Share Dialog */}

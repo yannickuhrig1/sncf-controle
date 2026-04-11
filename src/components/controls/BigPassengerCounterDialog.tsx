@@ -13,9 +13,11 @@ interface Props {
   max?: number;
   stt50Count?: number;
   stt100Count?: number;
+  onStt50Change?: (value: number) => void;
+  onStt100Change?: (value: number) => void;
 }
 
-export function BigPassengerCounterDialog({ open, onOpenChange, value, onChange, min = 0, max = 9999, stt50Count = 0, stt100Count = 0 }: Props) {
+export function BigPassengerCounterDialog({ open, onOpenChange, value, onChange, min = 0, max = 9999, stt50Count = 0, stt100Count = 0, onStt50Change, onStt100Change }: Props) {
   // Close on Escape
   useEffect(() => {
     if (!open) return;
@@ -118,15 +120,43 @@ export function BigPassengerCounterDialog({ open, onOpenChange, value, onChange,
           <span className="text-sm font-medium uppercase tracking-wider">Compteurs STT</span>
         </div>
         <div className="grid grid-cols-2 gap-3">
-          <div className="flex flex-col items-center gap-1 p-4 rounded-xl bg-muted/60">
-            <span className="text-xs text-muted-foreground font-medium">STT 50€</span>
-            <span className="text-3xl font-bold tabular-nums">{stt50Count}</span>
-            <Badge variant="secondary" className="text-xs">{stt50Count * 50}€</Badge>
+          {/* STT 50€ — jaune/ambre */}
+          <div className="flex flex-col items-center gap-2 p-4 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
+            <span className="text-xs font-semibold text-amber-700 dark:text-amber-400 uppercase tracking-wide">STT 50€</span>
+            <span className="text-3xl font-bold tabular-nums text-amber-600 dark:text-amber-400">{stt50Count}</span>
+            <Badge className="text-xs bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-300 border-amber-300 dark:border-amber-700">{stt50Count * 50}€</Badge>
+            {onStt50Change && (
+              <div className="flex items-center gap-2 mt-1">
+                <button type="button" onClick={() => onStt50Change(Math.max(0, stt50Count - 1))}
+                  className="h-9 w-9 rounded-lg border border-amber-300 dark:border-amber-700 bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center text-amber-700 dark:text-amber-400 hover:bg-amber-200 dark:hover:bg-amber-900/60 active:scale-95 transition-all disabled:opacity-30"
+                  disabled={stt50Count <= 0}>
+                  <Minus className="h-4 w-4" />
+                </button>
+                <button type="button" onClick={() => onStt50Change(stt50Count + 1)}
+                  className="h-9 w-9 rounded-lg border border-amber-300 dark:border-amber-700 bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center text-amber-700 dark:text-amber-400 hover:bg-amber-200 dark:hover:bg-amber-900/60 active:scale-95 transition-all">
+                  <Plus className="h-4 w-4" />
+                </button>
+              </div>
+            )}
           </div>
-          <div className="flex flex-col items-center gap-1 p-4 rounded-xl bg-muted/60">
-            <span className="text-xs text-muted-foreground font-medium">PV 100€</span>
-            <span className="text-3xl font-bold tabular-nums">{stt100Count}</span>
-            <Badge variant="secondary" className="text-xs">{stt100Count * 100}€</Badge>
+          {/* PV 100€ — rouge */}
+          <div className="flex flex-col items-center gap-2 p-4 rounded-xl bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800">
+            <span className="text-xs font-semibold text-red-700 dark:text-red-400 uppercase tracking-wide">PV 100€</span>
+            <span className="text-3xl font-bold tabular-nums text-red-600 dark:text-red-400">{stt100Count}</span>
+            <Badge className="text-xs bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300 border-red-300 dark:border-red-700">{stt100Count * 100}€</Badge>
+            {onStt100Change && (
+              <div className="flex items-center gap-2 mt-1">
+                <button type="button" onClick={() => onStt100Change(Math.max(0, stt100Count - 1))}
+                  className="h-9 w-9 rounded-lg border border-red-300 dark:border-red-700 bg-red-100 dark:bg-red-900/40 flex items-center justify-center text-red-700 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-900/60 active:scale-95 transition-all disabled:opacity-30"
+                  disabled={stt100Count <= 0}>
+                  <Minus className="h-4 w-4" />
+                </button>
+                <button type="button" onClick={() => onStt100Change(stt100Count + 1)}
+                  className="h-9 w-9 rounded-lg border border-red-300 dark:border-red-700 bg-red-100 dark:bg-red-900/40 flex items-center justify-center text-red-700 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-900/60 active:scale-95 transition-all">
+                  <Plus className="h-4 w-4" />
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>
