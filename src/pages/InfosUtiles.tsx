@@ -1908,6 +1908,7 @@ export default function InfosUtilesPage() {
 
                   {/* URL externe */}
                   {!editTileSeparator && (
+                  <>
                   <div className="space-y-1.5">
                     <Label>URL <span className="text-muted-foreground font-normal">(optionnel)</span></Label>
                     <Input value={editTileUrl} onChange={e => setEditTileUrl(e.target.value)} placeholder="https://... — laisser vide si non applicable" type="url" />
@@ -1966,6 +1967,7 @@ export default function InfosUtilesPage() {
                       }} />
                     </div>
                   </div>
+                  </>
                   )} {/* fin !editTileSeparator */}
 
                   {!editTileSeparator && (
@@ -2109,6 +2111,7 @@ export default function InfosUtilesPage() {
                 </div>
               )}
               {!newTileSeparator && (
+              <>
               <div className="space-y-1.5">
                 <Label>URL <span className="text-muted-foreground font-normal">(optionnel)</span></Label>
                 <Input value={newTileUrl} onChange={e => setNewTileUrl(e.target.value)} placeholder="https://... — laisser vide si non applicable" type="url" />
@@ -2198,6 +2201,7 @@ export default function InfosUtilesPage() {
                   ))}
                 </div>
               </div>
+              </>
               )} {/* fin !newTileSeparator */}
             </div>
             <div className="shrink-0 flex justify-end gap-2 pt-2 border-t mt-2">
