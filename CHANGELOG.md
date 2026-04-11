@@ -2,6 +2,11 @@
 
 Toutes les modifications notables de ce projet sont documentées dans ce fichier.
 
+## [1.12.8] - 2026-04-11
+
+### Ajouté
+- **Zoom image interactif** : boutons −/+, indicateur %, molette souris, double-clic pour basculer 100%↔250%. L'image s'agrandit réellement et la zone est scrollable pour naviguer dans l'image zoomée
+
 ## [1.12.7] - 2026-04-11
 
 ### Corrigé

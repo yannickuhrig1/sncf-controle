@@ -1448,6 +1448,8 @@ export default function InfosUtilesPage() {
 
   // Zoom image
   const [zoomImage, setZoomImage] = useState<string | null>(null);
+  const [zoomLevel, setZoomLevel] = useState(1);
+  const zoomScrollRef = useRef<HTMLDivElement>(null);
 
   // Édition sous-tuiles (dans le dialog d'édition de tuile)
   const [editSubTiles,  setEditSubTiles]  = useState<SubTileConfig[]>([]);
@@ -2403,24 +2405,48 @@ export default function InfosUtilesPage() {
         </Dialog>
 
         {/* Dialog zoom image */}
-        <Dialog open={!!zoomImage} onOpenChange={open => { if (!open) setZoomImage(null); }}>
-          <DialogContent className="max-w-[95vw] max-h-[95vh] p-2 bg-black/95 border-0 flex items-center justify-center" showCloseButton={false}>
-            <button
-              type="button"
-              onClick={() => setZoomImage(null)}
-              className="absolute top-3 right-3 p-2.5 rounded-full bg-white/20 text-white hover:bg-white/30 active:bg-white/40 transition-colors z-10"
-              aria-label="Fermer"
+        <Dialog open={!!zoomImage} onOpenChange={open => { if (!open) { setZoomImage(null); setZoomLevel(1); } }}>
+          <DialogContent className="max-w-[95vw] max-h-[95vh] p-0 bg-black/95 border-0 flex flex-col overflow-hidden" showCloseButton={false}>
+            {/* Barre de contrôle */}
+            <div className="shrink-0 flex items-center justify-between px-3 py-2 bg-black/60">
+              <div className="flex items-center gap-1.5">
+                <button type="button" onClick={() => setZoomLevel(z => Math.max(0.5, +(z - 0.5).toFixed(1)))}
+                  className="p-2 rounded-full bg-white/15 text-white hover:bg-white/25 active:bg-white/35 transition-colors disabled:opacity-30"
+                  disabled={zoomLevel <= 0.5}>
+                  <span className="text-lg font-bold leading-none w-5 h-5 flex items-center justify-center">−</span>
+                </button>
+                <button type="button" onClick={() => setZoomLevel(1)}
+                  className="px-2.5 py-1 rounded-full bg-white/15 text-white text-sm font-medium hover:bg-white/25 active:bg-white/35 transition-colors min-w-[3.5rem] text-center">
+                  {Math.round(zoomLevel * 100)}%
+                </button>
+                <button type="button" onClick={() => setZoomLevel(z => Math.min(5, +(z + 0.5).toFixed(1)))}
+                  className="p-2 rounded-full bg-white/15 text-white hover:bg-white/25 active:bg-white/35 transition-colors disabled:opacity-30"
+                  disabled={zoomLevel >= 5}>
+                  <span className="text-lg font-bold leading-none w-5 h-5 flex items-center justify-center">+</span>
+                </button>
+              </div>
+              <button type="button" onClick={() => { setZoomImage(null); setZoomLevel(1); }}
+                className="p-2 rounded-full bg-white/15 text-white hover:bg-white/25 active:bg-white/35 transition-colors" aria-label="Fermer">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            {/* Image zoomable */}
+            <div
+              ref={zoomScrollRef}
+              className="flex-1 overflow-auto min-h-0"
+              onWheel={e => { e.stopPropagation(); setZoomLevel(z => Math.min(5, Math.max(0.5, +(z + (e.deltaY < 0 ? 0.25 : -0.25)).toFixed(2)))); }}
+              onDoubleClick={() => setZoomLevel(z => z === 1 ? 2.5 : 1)}
             >
-              <X className="h-6 w-6" />
-            </button>
-            {zoomImage && (
-              <img
-                src={zoomImage}
-                alt=""
-                className="max-w-full max-h-[90vh] object-contain rounded select-none"
-                draggable={false}
-              />
-            )}
+              {zoomImage && (
+                <img
+                  src={zoomImage}
+                  alt=""
+                  style={{ width: `${zoomLevel * 100}%`, maxWidth: 'none' }}
+                  className="select-none"
+                  draggable={false}
+                />
+              )}
+            </div>
           </DialogContent>
         </Dialog>
       </div>
