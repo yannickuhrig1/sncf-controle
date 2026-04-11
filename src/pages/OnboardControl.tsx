@@ -33,7 +33,6 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
   AlertDialog,
@@ -71,6 +70,8 @@ import {
   ChevronDown,
   X,
   RefreshCw,
+  Ban,
+  Shield,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -1245,6 +1246,50 @@ export default function OnboardControl() {
                 </CardContent>
               </Card>
 
+              {/* Toggle buttons: Train supprimé, Sur-occupation, Police, SUGE */}
+              <div className="flex flex-wrap gap-1.5">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className={cn('gap-1.5 text-xs border', formState.isCancelled ? 'bg-red-500 border-red-500 text-white hover:bg-red-600 hover:text-white' : 'border-red-200 bg-red-50 text-red-700 hover:bg-red-100 hover:text-red-700')}
+                  onClick={() => setFormState(p => ({...p, isCancelled: !p.isCancelled}))}
+                >
+                  <Ban className="h-3.5 w-3.5" />
+                  Supprimé
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className={cn('gap-1.5 text-xs border', formState.isOvercrowded ? 'bg-orange-500 border-orange-500 text-white hover:bg-orange-600 hover:text-white' : 'border-orange-200 bg-orange-50 text-orange-700 hover:bg-orange-100 hover:text-orange-700')}
+                  onClick={() => setFormState(p => ({...p, isOvercrowded: !p.isOvercrowded}))}
+                >
+                  <Users className="h-3.5 w-3.5" />
+                  Sur-occupation
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className={cn('gap-1.5 text-xs border', formState.isPoliceOnBoard ? 'bg-blue-500 border-blue-500 text-white hover:bg-blue-600 hover:text-white' : 'border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100 hover:text-blue-700')}
+                  onClick={() => setFormState(p => ({...p, isPoliceOnBoard: !p.isPoliceOnBoard}))}
+                >
+                  <Shield className="h-3.5 w-3.5" />
+                  Police
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className={cn('gap-1.5 text-xs border', formState.isSugeOnBoard ? 'bg-indigo-500 border-indigo-500 text-white hover:bg-indigo-600 hover:text-white' : 'border-indigo-200 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 hover:text-indigo-700')}
+                  onClick={() => setFormState(p => ({...p, isSugeOnBoard: !p.isSugeOnBoard}))}
+                >
+                  <Shield className="h-3.5 w-3.5" />
+                  SUGE
+                </Button>
+              </div>
+
               {/* Passengers section - always visible in compact mode */}
               <Card className="border-0 shadow-sm overflow-hidden">
                 <div className="h-1 bg-gradient-to-r from-blue-400 to-indigo-500" />
@@ -1256,26 +1301,8 @@ export default function OnboardControl() {
                     Nombre de passagers
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent>
                   <CounterInput label="Nombre de passagers" value={formState.passengers} onChange={(v) => setFormState((p) => ({ ...p, passengers: v }))} min={0} max={9999} steps={[1, 10]} onLongPress={() => setBigCounterOpen(true)} />
-                  <div className="flex items-center gap-4 flex-wrap pt-1">
-                    <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
-                      <Checkbox checked={formState.isCancelled} onCheckedChange={(v) => setFormState(p => ({...p, isCancelled: !!v}))} />
-                      <span>Train supprimé</span>
-                    </label>
-                    <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
-                      <Checkbox checked={formState.isOvercrowded} onCheckedChange={(v) => setFormState(p => ({...p, isOvercrowded: !!v}))} />
-                      <span>Sur-occupation</span>
-                    </label>
-                    <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
-                      <Checkbox checked={formState.isPoliceOnBoard} onCheckedChange={(v) => setFormState(p => ({...p, isPoliceOnBoard: !!v}))} />
-                      <span>Police à bord</span>
-                    </label>
-                    <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
-                      <Checkbox checked={formState.isSugeOnBoard} onCheckedChange={(v) => setFormState(p => ({...p, isSugeOnBoard: !!v}))} />
-                      <span>SUGE à bord</span>
-                    </label>
-                  </div>
                 </CardContent>
               </Card>
               </>
@@ -1510,6 +1537,50 @@ export default function OnboardControl() {
                 </Card>
                 </Collapsible>
 
+                {/* Toggle buttons: Train supprimé, Sur-occupation, Police, SUGE */}
+                <div className="flex flex-wrap gap-1.5">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className={cn('gap-1.5 text-xs border', formState.isCancelled ? 'bg-red-500 border-red-500 text-white hover:bg-red-600 hover:text-white' : 'border-red-200 bg-red-50 text-red-700 hover:bg-red-100 hover:text-red-700')}
+                    onClick={() => setFormState(p => ({...p, isCancelled: !p.isCancelled}))}
+                  >
+                    <Ban className="h-3.5 w-3.5" />
+                    Supprimé
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className={cn('gap-1.5 text-xs border', formState.isOvercrowded ? 'bg-orange-500 border-orange-500 text-white hover:bg-orange-600 hover:text-white' : 'border-orange-200 bg-orange-50 text-orange-700 hover:bg-orange-100 hover:text-orange-700')}
+                    onClick={() => setFormState(p => ({...p, isOvercrowded: !p.isOvercrowded}))}
+                  >
+                    <Users className="h-3.5 w-3.5" />
+                    Sur-occupation
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className={cn('gap-1.5 text-xs border', formState.isPoliceOnBoard ? 'bg-blue-500 border-blue-500 text-white hover:bg-blue-600 hover:text-white' : 'border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100 hover:text-blue-700')}
+                    onClick={() => setFormState(p => ({...p, isPoliceOnBoard: !p.isPoliceOnBoard}))}
+                  >
+                    <Shield className="h-3.5 w-3.5" />
+                    Police
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className={cn('gap-1.5 text-xs border', formState.isSugeOnBoard ? 'bg-indigo-500 border-indigo-500 text-white hover:bg-indigo-600 hover:text-white' : 'border-indigo-200 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 hover:text-indigo-700')}
+                    onClick={() => setFormState(p => ({...p, isSugeOnBoard: !p.isSugeOnBoard}))}
+                  >
+                    <Shield className="h-3.5 w-3.5" />
+                    SUGE
+                  </Button>
+                </div>
+
                 {/* Card: Nombre de passagers */}
                 <Card className="border-0 shadow-sm overflow-hidden">
                   <div className="h-1 bg-gradient-to-r from-blue-400 to-indigo-500" />
@@ -1521,7 +1592,7 @@ export default function OnboardControl() {
                       Nombre de passagers
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-4">
+                  <CardContent>
                     <CounterInput
                       label="Nombre de passagers"
                       value={formState.passengers}
@@ -1531,24 +1602,6 @@ export default function OnboardControl() {
                       steps={[1, 10]}
                       onLongPress={() => setBigCounterOpen(true)}
                     />
-                    <div className="flex items-center gap-4 flex-wrap pt-1">
-                      <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
-                        <Checkbox checked={formState.isCancelled} onCheckedChange={(v) => setFormState(p => ({...p, isCancelled: !!v}))} />
-                        <span>Train supprimé</span>
-                      </label>
-                      <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
-                        <Checkbox checked={formState.isOvercrowded} onCheckedChange={(v) => setFormState(p => ({...p, isOvercrowded: !!v}))} />
-                        <span>Sur-occupation</span>
-                      </label>
-                      <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
-                        <Checkbox checked={formState.isPoliceOnBoard} onCheckedChange={(v) => setFormState(p => ({...p, isPoliceOnBoard: !!v}))} />
-                        <span>Police à bord</span>
-                      </label>
-                      <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
-                        <Checkbox checked={formState.isSugeOnBoard} onCheckedChange={(v) => setFormState(p => ({...p, isSugeOnBoard: !!v}))} />
-                        <span>SUGE à bord</span>
-                      </label>
-                    </div>
                   </CardContent>
                 </Card>
 
