@@ -30,6 +30,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -67,7 +68,7 @@ import {
   Users,
   Users2,
   ChevronRight,
-
+  ChevronDown,
   X,
   RefreshCw,
 } from 'lucide-react';
@@ -197,6 +198,8 @@ export default function OnboardControl() {
 
   // Grand compteur voyageurs
   const [bigCounterOpen, setBigCounterOpen] = useState(false);
+  // Collapsible info section
+  const [infoOpen, setInfoOpen] = useState(true);
 
   // Trains du jour
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
@@ -923,6 +926,7 @@ export default function OnboardControl() {
 
             {/* === COMPACT MODE === */}
             {compactMode ? (
+              <>
               <Card>
                 {/* Section navigation buttons */}
                 <CardHeader className="pb-3">
@@ -1041,7 +1045,7 @@ export default function OnboardControl() {
                         </div>
                       )}
                       <div className="space-y-2">
-                        <Label htmlFor="trainNumber">Numéro de train *</Label>
+                        <Label htmlFor="trainNumber">Numéro de train</Label>
                         <Input
                           id="trainNumber"
                           placeholder="TGV 6201"
@@ -1154,25 +1158,6 @@ export default function OnboardControl() {
                           </div>
                         </div>
                       </div>
-                      <CounterInput label="Nombre de passagers *" value={formState.passengers} onChange={(v) => setFormState((p) => ({ ...p, passengers: v }))} min={0} max={9999} steps={[1, 10]} onLongPress={() => setBigCounterOpen(true)} />
-                      <div className="flex items-center gap-4 flex-wrap pt-1">
-                        <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
-                          <Checkbox checked={formState.isCancelled} onCheckedChange={(v) => setFormState(p => ({...p, isCancelled: !!v}))} />
-                          <span>Train supprimé</span>
-                        </label>
-                        <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
-                          <Checkbox checked={formState.isOvercrowded} onCheckedChange={(v) => setFormState(p => ({...p, isOvercrowded: !!v}))} />
-                          <span>Sur-occupation</span>
-                        </label>
-                        <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
-                          <Checkbox checked={formState.isPoliceOnBoard} onCheckedChange={(v) => setFormState(p => ({...p, isPoliceOnBoard: !!v}))} />
-                          <span>Police à bord</span>
-                        </label>
-                        <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
-                          <Checkbox checked={formState.isSugeOnBoard} onCheckedChange={(v) => setFormState(p => ({...p, isSugeOnBoard: !!v}))} />
-                          <span>SUGE à bord</span>
-                        </label>
-                      </div>
                     </>
                   )}
 
@@ -1259,20 +1244,60 @@ export default function OnboardControl() {
                   )}
                 </CardContent>
               </Card>
+
+              {/* Passengers section - always visible in compact mode */}
+              <Card className="border-0 shadow-sm overflow-hidden">
+                <div className="h-1 bg-gradient-to-r from-blue-400 to-indigo-500" />
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <div className="p-1.5 rounded-lg bg-blue-100 dark:bg-blue-900/30">
+                      <Users className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
+                    </div>
+                    Nombre de passagers
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <CounterInput label="Nombre de passagers" value={formState.passengers} onChange={(v) => setFormState((p) => ({ ...p, passengers: v }))} min={0} max={9999} steps={[1, 10]} onLongPress={() => setBigCounterOpen(true)} />
+                  <div className="flex items-center gap-4 flex-wrap pt-1">
+                    <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
+                      <Checkbox checked={formState.isCancelled} onCheckedChange={(v) => setFormState(p => ({...p, isCancelled: !!v}))} />
+                      <span>Train supprimé</span>
+                    </label>
+                    <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
+                      <Checkbox checked={formState.isOvercrowded} onCheckedChange={(v) => setFormState(p => ({...p, isOvercrowded: !!v}))} />
+                      <span>Sur-occupation</span>
+                    </label>
+                    <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
+                      <Checkbox checked={formState.isPoliceOnBoard} onCheckedChange={(v) => setFormState(p => ({...p, isPoliceOnBoard: !!v}))} />
+                      <span>Police à bord</span>
+                    </label>
+                    <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
+                      <Checkbox checked={formState.isSugeOnBoard} onCheckedChange={(v) => setFormState(p => ({...p, isSugeOnBoard: !!v}))} />
+                      <span>SUGE à bord</span>
+                    </label>
+                  </div>
+                </CardContent>
+              </Card>
+              </>
             ) : (
               /* === EXTENDED MODE (original layout) === */
               <>
-                {/* Card 1: Train Info */}
+                {/* Card 1: Train Info (collapsible) */}
+                <Collapsible open={infoOpen} onOpenChange={setInfoOpen}>
                 <Card className="border-0 shadow-sm overflow-hidden bg-card-cyan text-card-cyan-foreground border-card-cyan">
                   <div className="h-1 bg-gradient-to-r from-cyan-400 to-teal-500" />
-                  <CardHeader className="pb-3">
+                  <CollapsibleTrigger asChild>
+                  <CardHeader className="pb-3 cursor-pointer hover:bg-muted/30 transition-colors">
                     <CardTitle className="text-base flex items-center gap-2">
                       <div className="p-1.5 rounded-lg bg-cyan-100 dark:bg-cyan-900/30">
                         <Train className="h-3.5 w-3.5 text-cyan-600 dark:text-cyan-400" />
                       </div>
                       Informations du contrôle
+                      <ChevronDown className={cn('h-4 w-4 ml-auto text-muted-foreground transition-transform duration-200', infoOpen && 'rotate-180')} />
                     </CardTitle>
                   </CardHeader>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
                   <CardContent className="space-y-4">
                     {/* Trains du jour */}
                     {(dailyTrains.length > 0 || teamTrains.length > 0) && (
@@ -1347,7 +1372,7 @@ export default function OnboardControl() {
                       </div>
                     )}
                     <div className="space-y-2">
-                      <Label htmlFor="trainNumber">Numéro de train *</Label>
+                      <Label htmlFor="trainNumber">Numéro de train</Label>
                       <Input
                         id="trainNumber"
                         placeholder="TGV 6201"
@@ -1480,8 +1505,25 @@ export default function OnboardControl() {
                       </div>
                     </div>
 
+                  </CardContent>
+                  </CollapsibleContent>
+                </Card>
+                </Collapsible>
+
+                {/* Card: Nombre de passagers */}
+                <Card className="border-0 shadow-sm overflow-hidden">
+                  <div className="h-1 bg-gradient-to-r from-blue-400 to-indigo-500" />
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <div className="p-1.5 rounded-lg bg-blue-100 dark:bg-blue-900/30">
+                        <Users className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
+                      </div>
+                      Nombre de passagers
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
                     <CounterInput
-                      label="Nombre de passagers *"
+                      label="Nombre de passagers"
                       value={formState.passengers}
                       onChange={(v) => setFormState((p) => ({ ...p, passengers: v }))}
                       min={0}

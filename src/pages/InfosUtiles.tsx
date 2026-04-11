@@ -481,7 +481,8 @@ function ContentAbout() {
           <li>Navigation personnalisable (sidebar + barre du bas)</li>
           <li>Trains du jour partagés par code privé ou QR code (équipe)</li>
           <li>Personnes recherchées (fiches photo, gérées par le manager)</li>
-          <li>Compteur voyageurs grand écran (maintien appui)</li>
+          <li>Compteur voyageurs grand écran (maintien appui) + STT/PV intégrés</li>
+          <li>Section passagers dédiée, informations du contrôle repliables</li>
           <li>En gare : navigation sections, autocomplete gare, brouillon auto-sauvegardé</li>
           <li>Embarquement : Info SNCF + schéma + autocomplete par train (heure, origine, destination)</li>
           <li>Schéma train : heure d'arrivée et de départ par gare dans l'itinéraire</li>

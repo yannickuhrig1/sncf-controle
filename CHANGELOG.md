@@ -2,6 +2,13 @@
 
 Toutes les modifications notables de ce projet sont documentées dans ce fichier.
 
+## [1.12.11] - 2026-04-11
+
+### Ajouté — Section passagers séparée
+- **Section "Nombre de passagers"** : carte dédiée sous "Informations du contrôle" avec le compteur et les checkboxes (supprimé/sur-occupation/police/SUGE) — modes compact et étendu
+- **Info contrôle repliable** : la carte "Informations du contrôle" est désormais repliable (chevron) en mode étendu, pour gagner de la place une fois les infos renseignées
+- **Labels simplifiés** : suppression des `*` sur "Numéro de train" et "Nombre de passagers"
+
 ## [1.12.10] - 2026-04-11
 
 ### Corrigé
