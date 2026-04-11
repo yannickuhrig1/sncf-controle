@@ -112,30 +112,24 @@ export function BigPassengerCounterDialog({ open, onOpenChange, value, onChange,
       <div className="flex-1" />
 
       {/* STT counters at bottom */}
-      {(stt50Count > 0 || stt100Count > 0) && (
-        <div className="w-full max-w-md px-6 pb-8">
-          <div className="flex items-center gap-2 text-muted-foreground mb-3 justify-center">
-            <Ticket className="h-4 w-4" />
-            <span className="text-sm font-medium uppercase tracking-wider">Compteurs STT</span>
+      <div className="w-full max-w-md px-6 pb-8">
+        <div className="flex items-center gap-2 text-muted-foreground mb-3 justify-center">
+          <Ticket className="h-4 w-4" />
+          <span className="text-sm font-medium uppercase tracking-wider">Compteurs STT</span>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div className="flex flex-col items-center gap-1 p-4 rounded-xl bg-muted/60">
+            <span className="text-xs text-muted-foreground font-medium">STT 50€</span>
+            <span className="text-3xl font-bold tabular-nums">{stt50Count}</span>
+            <Badge variant="secondary" className="text-xs">{stt50Count * 50}€</Badge>
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            {stt50Count > 0 && (
-              <div className="flex flex-col items-center gap-1 p-4 rounded-xl bg-muted/60">
-                <span className="text-xs text-muted-foreground font-medium">STT 50€</span>
-                <span className="text-3xl font-bold tabular-nums">{stt50Count}</span>
-                <Badge variant="secondary" className="text-xs">{stt50Count * 50}€</Badge>
-              </div>
-            )}
-            {stt100Count > 0 && (
-              <div className="flex flex-col items-center gap-1 p-4 rounded-xl bg-muted/60">
-                <span className="text-xs text-muted-foreground font-medium">PV 100€</span>
-                <span className="text-3xl font-bold tabular-nums">{stt100Count}</span>
-                <Badge variant="secondary" className="text-xs">{stt100Count * 100}€</Badge>
-              </div>
-            )}
+          <div className="flex flex-col items-center gap-1 p-4 rounded-xl bg-muted/60">
+            <span className="text-xs text-muted-foreground font-medium">PV 100€</span>
+            <span className="text-3xl font-bold tabular-nums">{stt100Count}</span>
+            <Badge variant="secondary" className="text-xs">{stt100Count * 100}€</Badge>
           </div>
         </div>
-      )}
+      </div>
 
       {/* Footer hint */}
       <p className="pb-6 text-xs text-muted-foreground">Appuyez sur Échap ou touchez l'extérieur pour fermer</p>
