@@ -2,6 +2,11 @@
 
 Toutes les modifications notables de ce projet sont documentées dans ce fichier.
 
+## [1.12.3] - 2026-04-11
+
+### Corrigé
+- **Build** : fragments JSX manquants dans les blocs `{!separator && (...)}` des deux dialogs tuiles — erreur "Expected ')' but found 'className'" résolue
+
 ## [1.12.2] - 2026-04-09
 
 ### Corrigé
