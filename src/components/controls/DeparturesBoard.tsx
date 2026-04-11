@@ -116,12 +116,21 @@ export function DeparturesBoard({ station, onSelect }: DeparturesBoardProps) {
             >
               {/* Heure */}
               <div className="w-14 shrink-0 text-center">
-                <div className={`text-sm font-bold tabular-nums ${dep.status === 'cancelled' ? 'line-through text-muted-foreground' : ''}`}>
-                  {dep.scheduledTime}
-                </div>
-                {dep.delayMinutes > 0 && (
-                  <div className="text-xs font-bold text-amber-600 dark:text-amber-400 tabular-nums">
-                    +{dep.delayMinutes} min
+                {dep.delayMinutes > 0 ? (
+                  <>
+                    <div className="text-xs tabular-nums text-muted-foreground/60 line-through">
+                      {dep.scheduledTime}
+                    </div>
+                    <div className="text-sm font-bold tabular-nums text-amber-600 dark:text-amber-400">
+                      {dep.realTime}
+                    </div>
+                    <div className="text-[10px] font-bold text-amber-600 dark:text-amber-400">
+                      +{dep.delayMinutes} min
+                    </div>
+                  </>
+                ) : (
+                  <div className={`text-sm font-bold tabular-nums ${dep.status === 'cancelled' ? 'line-through text-muted-foreground' : ''}`}>
+                    {dep.scheduledTime}
                   </div>
                 )}
               </div>

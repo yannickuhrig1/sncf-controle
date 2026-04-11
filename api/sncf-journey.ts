@@ -33,12 +33,22 @@ export default async function handler(req: Request) {
   if (!vj) return Response.json({ error: 'Trajet introuvable' }, { status: 404 });
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const stops = (vj.stop_times ?? []).map((st: any) => ({
-    name:          (st.stop_point?.name ?? '').replace(/\s*\([^)]*\)/, '').trim(),
-    arrivalTime:   parseStopTime(st.arrival_time),
-    departureTime: parseStopTime(st.departure_time),
-    platform:      st.stop_point?.platform_code ?? null,
-  }));
+  const stops = (vj.stop_times ?? []).map((st: any) => {
+    const depTime  = parseStopTime(st.departure_time);
+    const arrTime  = parseStopTime(st.arrival_time);
+    const baseDep  = parseStopTime(st.base_departure_time);
+    const baseArr  = parseStopTime(st.base_arrival_time);
+    const isDelayed = st.departure_status === 'delayed' || st.arrival_status === 'delayed';
+    return {
+      name:              (st.stop_point?.name ?? '').replace(/\s*\([^)]*\)/, '').trim(),
+      arrivalTime:       arrTime,
+      departureTime:     depTime,
+      baseArrivalTime:   isDelayed && baseArr && baseArr !== arrTime ? baseArr : null,
+      baseDepartureTime: isDelayed && baseDep && baseDep !== depTime ? baseDep : null,
+      platform:          st.stop_point?.platform_code ?? null,
+      isDelayed,
+    };
+  });
 
   return Response.json({
     stops,

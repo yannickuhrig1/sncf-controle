@@ -26,10 +26,13 @@ import { toast } from 'sonner';
 // ── Types ──────────────────────────────────────────────────────────────────────
 
 interface StopTime {
-  name:          string;
-  arrivalTime:   string;
-  departureTime: string;
-  platform:      string | null;
+  name:              string;
+  arrivalTime:       string;
+  departureTime:     string;
+  baseArrivalTime:   string | null;
+  baseDepartureTime: string | null;
+  platform:          string | null;
+  isDelayed:         boolean;
 }
 
 interface NearbyStation { id: string; name: string; distance: number; }
@@ -62,12 +65,21 @@ function TrainHeader({ dep, mode }: { dep: DepartureEntry; mode: 'departures' | 
   return (
     <div className={`flex items-start gap-3 p-4 rounded-xl ${mc.bg} ${mc.border}`}>
       <div className="w-14 shrink-0 text-center">
-        <div className={`text-sm font-bold tabular-nums ${dep.status === 'cancelled' ? 'line-through text-muted-foreground' : mc.time}`}>
-          {dep.scheduledTime}
-        </div>
-        {dep.delayMinutes > 0 && (
-          <div className="text-xs font-bold text-amber-600 dark:text-amber-400 tabular-nums">
-            +{dep.delayMinutes} min
+        {dep.delayMinutes > 0 ? (
+          <>
+            <div className="text-xs tabular-nums text-muted-foreground/60 line-through">
+              {dep.scheduledTime}
+            </div>
+            <div className="text-sm font-bold tabular-nums text-amber-600 dark:text-amber-400">
+              {dep.realTime}
+            </div>
+            <div className="text-[10px] font-bold text-amber-600 dark:text-amber-400">
+              +{dep.delayMinutes} min
+            </div>
+          </>
+        ) : (
+          <div className={`text-sm font-bold tabular-nums ${dep.status === 'cancelled' ? 'line-through text-muted-foreground' : mc.time}`}>
+            {dep.scheduledTime}
           </div>
         )}
       </div>
@@ -200,40 +212,72 @@ function TrainNumberSearch() {
 
           {/* Liste des arrêts */}
           <div>
-            {trainInfo.stops.map((stop, i) => (
+            {trainInfo.stops.map((stop, i) => {
+              const isFirst = i === 0;
+              const isLast = i === trainInfo.stops.length - 1;
+              const isTerminal = isFirst || isLast;
+              return (
               <div key={i} className="flex items-stretch gap-3">
                 <div className="flex flex-col items-center w-5 shrink-0">
                   <div className={`w-3 h-3 rounded-full border-2 mt-[14px] shrink-0 ${
-                    i === 0 || i === trainInfo.stops.length - 1
-                      ? 'border-primary bg-primary'
-                      : 'border-muted-foreground/50 bg-background'
+                    stop.isDelayed
+                      ? 'border-amber-500 bg-amber-500'
+                      : isTerminal
+                        ? 'border-primary bg-primary'
+                        : 'border-muted-foreground/50 bg-background'
                   }`} />
                   {i < trainInfo.stops.length - 1 && <div className="flex-1 w-0.5 bg-border" />}
                 </div>
-                <div className="flex-1 pb-3 pt-2">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className={`text-sm leading-tight ${
-                      i === 0 || i === trainInfo.stops.length - 1 ? 'font-semibold' : 'text-muted-foreground'
-                    }`}>
-                      {stop.name}
-                    </span>
-                    <div className="flex items-center gap-2 shrink-0">
+                <div className={`flex-1 pb-3 pt-2 ${stop.isDelayed ? 'bg-amber-50/50 dark:bg-amber-900/10 -mx-1 px-1 rounded' : ''}`}>
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <span className={`text-sm leading-tight ${
+                        isTerminal ? 'font-semibold' : 'text-muted-foreground'
+                      }`}>
+                        {stop.name}
+                      </span>
                       {stop.platform && (
-                        <span className="text-xs text-muted-foreground flex items-center gap-0.5">
-                          <MapPin className="h-3 w-3" />V{stop.platform}
+                        <span className="text-[10px] text-muted-foreground flex items-center gap-0.5 shrink-0">
+                          <MapPin className="h-2.5 w-2.5" />V{stop.platform}
                         </span>
                       )}
-                      <span className="text-sm font-mono tabular-nums text-muted-foreground">
-                        {stop.departureTime || stop.arrivalTime}
-                      </span>
                       {stop.isDelayed && stop.delayMinutes && (
-                        <span className="text-xs font-bold text-amber-600">+{stop.delayMinutes} min</span>
+                        <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400 shrink-0">+{stop.delayMinutes}min</span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      {!isFirst && stop.arrivalTime && (
+                        <div className="text-right leading-tight">
+                          <span className="text-[10px] text-muted-foreground/60 uppercase">arr.</span>
+                          <div className="flex items-center gap-1 justify-end">
+                            {stop.baseArrivalTime && (
+                              <span className="text-xs font-mono tabular-nums text-muted-foreground/50 line-through">{stop.baseArrivalTime}</span>
+                            )}
+                            <span className={`text-xs font-mono tabular-nums ${stop.isDelayed && stop.baseArrivalTime ? 'text-amber-600 dark:text-amber-400 font-semibold' : 'text-muted-foreground'}`}>
+                              {stop.arrivalTime}
+                            </span>
+                          </div>
+                        </div>
+                      )}
+                      {!isLast && stop.departureTime && (
+                        <div className="text-right leading-tight">
+                          <span className="text-[10px] text-muted-foreground/60 uppercase">dép.</span>
+                          <div className="flex items-center gap-1 justify-end">
+                            {stop.baseDepartureTime && (
+                              <span className="text-xs font-mono tabular-nums text-muted-foreground/50 line-through">{stop.baseDepartureTime}</span>
+                            )}
+                            <span className={`text-xs font-mono tabular-nums ${stop.isDelayed && stop.baseDepartureTime ? 'text-amber-600 dark:text-amber-400 font-semibold' : 'text-muted-foreground'}`}>
+                              {stop.departureTime}
+                            </span>
+                          </div>
+                        </div>
                       )}
                     </div>
                   </div>
                 </div>
               </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}
@@ -375,37 +419,95 @@ export function DeparturesWidget({ showTrainSearch = false }: { showTrainSearch?
         )}
         {stops.length > 0 && (
           <div>
-            {stops.map((stop, i) => (
-              <div key={i} className="flex items-stretch gap-3">
-                <div className="flex flex-col items-center w-5 shrink-0">
-                  <div className={`w-3 h-3 rounded-full border-2 mt-[14px] shrink-0 ${
-                    i === 0 || i === stops.length - 1
-                      ? 'border-primary bg-primary'
-                      : 'border-muted-foreground/50 bg-background'
-                  }`} />
-                  {i < stops.length - 1 && <div className="flex-1 w-0.5 bg-border" />}
-                </div>
-                <div className="flex-1 pb-3 pt-2">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className={`text-sm leading-tight ${
-                      i === 0 || i === stops.length - 1 ? 'font-semibold' : 'text-muted-foreground'
-                    }`}>
-                      {stop.name}
-                    </span>
-                    <div className="flex items-center gap-2 shrink-0">
-                      {stop.platform && (
-                        <span className="text-xs text-muted-foreground flex items-center gap-0.5">
-                          <MapPin className="h-3 w-3" />V{stop.platform}
+            {stops.map((stop, i) => {
+              const isFirst = i === 0;
+              const isLast = i === stops.length - 1;
+              const isTerminal = isFirst || isLast;
+              return (
+                <div key={i} className="flex items-stretch gap-3">
+                  <div className="flex flex-col items-center w-5 shrink-0">
+                    <div className={`w-3 h-3 rounded-full border-2 mt-[14px] shrink-0 ${
+                      stop.isDelayed
+                        ? 'border-amber-500 bg-amber-500'
+                        : isTerminal
+                          ? 'border-primary bg-primary'
+                          : 'border-muted-foreground/50 bg-background'
+                    }`} />
+                    {i < stops.length - 1 && <div className="flex-1 w-0.5 bg-border" />}
+                  </div>
+                  <div className={`flex-1 pb-3 pt-2 ${stop.isDelayed ? 'bg-amber-50/50 dark:bg-amber-900/10 -mx-1 px-1 rounded' : ''}`}>
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <span className={`text-sm leading-tight ${
+                          isTerminal ? 'font-semibold' : 'text-muted-foreground'
+                        }`}>
+                          {stop.name}
                         </span>
-                      )}
-                      <span className="text-sm font-mono tabular-nums text-muted-foreground">
-                        {stop.departureTime || stop.arrivalTime}
-                      </span>
+                        {stop.platform && (
+                          <span className="text-[10px] text-muted-foreground flex items-center gap-0.5 shrink-0">
+                            <MapPin className="h-2.5 w-2.5" />V{stop.platform}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        {!isFirst && stop.arrivalTime && (
+                          <div className="text-right leading-tight">
+                            <span className="text-[10px] text-muted-foreground/60 uppercase">arr.</span>
+                            <div className="flex items-center gap-1 justify-end">
+                              {stop.baseArrivalTime && (
+                                <span className="text-xs font-mono tabular-nums text-muted-foreground/50 line-through">{stop.baseArrivalTime}</span>
+                              )}
+                              <span className={`text-xs font-mono tabular-nums ${stop.isDelayed && stop.baseArrivalTime ? 'text-amber-600 dark:text-amber-400 font-semibold' : 'text-muted-foreground'}`}>
+                                {stop.arrivalTime}
+                              </span>
+                            </div>
+                          </div>
+                        )}
+                        {!isLast && stop.departureTime && (
+                          <div className="text-right leading-tight">
+                            <span className="text-[10px] text-muted-foreground/60 uppercase">dép.</span>
+                            <div className="flex items-center gap-1 justify-end">
+                              {stop.baseDepartureTime && (
+                                <span className="text-xs font-mono tabular-nums text-muted-foreground/50 line-through">{stop.baseDepartureTime}</span>
+                              )}
+                              <span className={`text-xs font-mono tabular-nums ${stop.isDelayed && stop.baseDepartureTime ? 'text-amber-600 dark:text-amber-400 font-semibold' : 'text-muted-foreground'}`}>
+                                {stop.departureTime}
+                              </span>
+                            </div>
+                          </div>
+                        )}
+                        {isFirst && !stop.arrivalTime && stop.departureTime && (
+                          <div className="text-right leading-tight">
+                            <span className="text-[10px] text-muted-foreground/60 uppercase">dép.</span>
+                            <div className="flex items-center gap-1 justify-end">
+                              {stop.baseDepartureTime && (
+                                <span className="text-xs font-mono tabular-nums text-muted-foreground/50 line-through">{stop.baseDepartureTime}</span>
+                              )}
+                              <span className={`text-xs font-mono tabular-nums ${stop.isDelayed && stop.baseDepartureTime ? 'text-amber-600 dark:text-amber-400 font-semibold' : 'text-muted-foreground'}`}>
+                                {stop.departureTime}
+                              </span>
+                            </div>
+                          </div>
+                        )}
+                        {isLast && !stop.departureTime && stop.arrivalTime && (
+                          <div className="text-right leading-tight">
+                            <span className="text-[10px] text-muted-foreground/60 uppercase">arr.</span>
+                            <div className="flex items-center gap-1 justify-end">
+                              {stop.baseArrivalTime && (
+                                <span className="text-xs font-mono tabular-nums text-muted-foreground/50 line-through">{stop.baseArrivalTime}</span>
+                              )}
+                              <span className={`text-xs font-mono tabular-nums ${stop.isDelayed && stop.baseArrivalTime ? 'text-amber-600 dark:text-amber-400 font-semibold' : 'text-muted-foreground'}`}>
+                                {stop.arrivalTime}
+                              </span>
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
@@ -513,12 +615,21 @@ export function DeparturesWidget({ showTrainSearch = false }: { showTrainSearch?
               className={`w-full flex items-start gap-3 px-3 py-2.5 rounded-xl transition-colors text-left ${mc.bg} ${mc.border} ${mc.hoverBg} active:opacity-80`}
               onClick={() => handleSelectTrain(dep)}>
               <div className="w-14 shrink-0 text-center pt-0.5">
-                <div className={`text-sm font-bold tabular-nums ${dep.status === 'cancelled' ? 'line-through text-muted-foreground' : mc.time}`}>
-                  {dep.scheduledTime}
-                </div>
-                {dep.delayMinutes > 0 && (
-                  <div className="text-xs font-bold text-amber-600 dark:text-amber-400 tabular-nums">
-                    +{dep.delayMinutes} min
+                {dep.delayMinutes > 0 ? (
+                  <>
+                    <div className="text-xs tabular-nums text-muted-foreground/60 line-through">
+                      {dep.scheduledTime}
+                    </div>
+                    <div className="text-sm font-bold tabular-nums text-amber-600 dark:text-amber-400">
+                      {dep.realTime}
+                    </div>
+                    <div className="text-[10px] font-bold text-amber-600 dark:text-amber-400">
+                      +{dep.delayMinutes} min
+                    </div>
+                  </>
+                ) : (
+                  <div className={`text-sm font-bold tabular-nums ${dep.status === 'cancelled' ? 'line-through text-muted-foreground' : mc.time}`}>
+                    {dep.scheduledTime}
                   </div>
                 )}
               </div>
