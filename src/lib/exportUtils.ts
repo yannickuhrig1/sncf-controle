@@ -489,8 +489,8 @@ export function exportToPDF({ controls, title, dateRange, includeStats, orientat
       startY: pvBarY,
       head: [['Type', 'Nbre', 'Montant (€)']],
       body: [
-        ['STT 100€',    stats.stt100.toString(),                    stats.totalAmounts.stt100.toFixed(2)],
-        ['STT100',      stats.pvBreakdown.stt100.toString(),        stats.totalAmounts.pvStt100.toFixed(2)],
+        ['STT 100€',          stats.stt100.toString(),                    stats.totalAmounts.stt100.toFixed(2)],
+        ['STT autre montant', stats.pvBreakdown.stt100.toString(),        stats.totalAmounts.pvStt100.toFixed(2)],
         ['RNV',         stats.pvBreakdown.rnv.toString(),           stats.totalAmounts.pvRnv.toFixed(2)],
         ['Titre tiers', stats.pvBreakdown.titreTiers.toString(),    stats.totalAmounts.pvTitreTiers.toFixed(2)],
         ['D. naissance',stats.pvBreakdown.docNaissance.toString(),  stats.totalAmounts.pvDocNaissance.toFixed(2)],
@@ -1869,8 +1869,8 @@ export function exportToHTML({ controls, title, dateRange, includeStats, exportM
           <h3>Procès-verbaux (PV)</h3>
           <table class="detail-table">
             <tr><th>Type</th><th>Nbre</th><th>Montant</th></tr>
-            ${detailRow('STT 100€',       stats.stt100,              stats.totalAmounts.stt100)}
-            ${detailRow('STT100',      stats.pvBreakdown.stt100,       stats.totalAmounts.pvStt100)}
+            ${detailRow('STT 100€',          stats.stt100,              stats.totalAmounts.stt100)}
+            ${detailRow('STT autre montant', stats.pvBreakdown.stt100,       stats.totalAmounts.pvStt100)}
             ${detailRow('RNV',         stats.pvBreakdown.rnv,          stats.totalAmounts.pvRnv)}
             ${detailRow('Titre tiers', stats.pvBreakdown.titreTiers,   stats.totalAmounts.pvTitreTiers)}
             ${detailRow('D. naissance',stats.pvBreakdown.docNaissance, stats.totalAmounts.pvDocNaissance)}
@@ -2245,7 +2245,7 @@ export function generateEmailContent({ controls, title, dateRange, includeStats 
     if (details.pv > 0) {
       body += `\n   ⚠️  PV : ${details.pv}\n`;
       const pvParts: string[] = [];
-      if (details.pvStt100 > 0) pvParts.push(`STT100: ${details.pvStt100}`);
+      if (details.pvStt100 > 0) pvParts.push(`STT autre montant: ${details.pvStt100}`);
       if (details.pvRnv > 0) pvParts.push(`RNV: ${details.pvRnv}`);
       if (details.pvTitreTiers > 0) pvParts.push(`T.Tiers: ${details.pvTitreTiers}`);
       if (details.pvDocNaissance > 0) pvParts.push(`D.Naiss.: ${details.pvDocNaissance}`);

@@ -2,6 +2,11 @@
 
 Toutes les modifications notables de ce projet sont documentées dans ce fichier.
 
+## [1.12.10] - 2026-04-11
+
+### Corrigé
+- **Export PV** : label "STT100" renommé en "STT autre montant" dans les exports PDF, HTML et email — évite la confusion avec "STT 100€" (compteur)
+
 ## [1.12.9] - 2026-04-11
 
 ### Ajouté — Compteur voyageurs plein écran
