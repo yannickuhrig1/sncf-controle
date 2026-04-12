@@ -92,6 +92,8 @@ import {
   Check,
   Layers,
   ChevronLeft,
+  ChevronUp,
+  ChevronDown,
   Pin,
   Columns2,
   SeparatorHorizontal,
@@ -129,12 +131,18 @@ interface ContentBlock {
   fileName?: string; // nom original du fichier
 }
 
+interface TileLink {
+  label: string;
+  url: string;
+}
+
 interface SubTileConfig {
   id: string;
   label: string;
   icon: string;
   gradient: string;
   url?: string;
+  links?: TileLink[];
   content?: string;       // legacy texte simple
   blocks?: ContentBlock[];
 }
@@ -145,6 +153,7 @@ interface CustomTileConfig {
   icon: string;
   gradient: string;
   url?: string;
+  links?: TileLink[];
   internalPath?: string;  // lien interne app
   content?: string;       // legacy
   blocks?: ContentBlock[];
@@ -486,6 +495,7 @@ function ContentAbout() {
           <li>En gare : navigation sections, autocomplete gare, brouillon auto-sauvegardé</li>
           <li>Embarquement : Info SNCF + schéma + autocomplete par train (heure, origine, destination)</li>
           <li>Schéma train : horaires arr./dép. par gare, retards avec heure théorique barrée</li>
+          <li>Éditeur de tuiles : aperçu live, liens multiples, édition/réorganisation/duplication de sous-tuiles</li>
           <li>Compatible mobile, tablette et PC</li>
         </ul>
       </div>
@@ -1416,6 +1426,7 @@ export default function InfosUtilesPage() {
   const [editTileIcon,     setEditTileIcon]     = useState('ExternalLink');
   const [editTileGradient, setEditTileGradient] = useState(GRADIENT_PRESETS[0].value);
   const [editTileUrl,          setEditTileUrl]          = useState('');
+  const [editTileLinks,        setEditTileLinks]        = useState<TileLink[]>([]);
   const [editBlocks,           setEditBlocks]           = useState<ContentBlock[]>([]);
   const [isUploadingEditBlock, setIsUploadingEditBlock] = useState(false);
   const editBlockImageRef = useRef<HTMLInputElement>(null);
@@ -1427,6 +1438,7 @@ export default function InfosUtilesPage() {
   const [newTileIcon,         setNewTileIcon]         = useState('ExternalLink');
   const [newTileGradient,     setNewTileGradient]     = useState(GRADIENT_PRESETS[0].value);
   const [newTileUrl,          setNewTileUrl]          = useState('');
+  const [newTileLinks,        setNewTileLinks]        = useState<TileLink[]>([]);
   const [newBlocks,           setNewBlocks]           = useState<ContentBlock[]>([]);
   const [isUploadingNewBlock,  setIsUploadingNewBlock]  = useState(false);
   const [isDraggingOverEdit,   setIsDraggingOverEdit]   = useState(false);
@@ -1455,11 +1467,13 @@ export default function InfosUtilesPage() {
   // Édition sous-tuiles (dans le dialog d'édition de tuile)
   const [editSubTiles,  setEditSubTiles]  = useState<SubTileConfig[]>([]);
   const [addSubOpen,    setAddSubOpen]    = useState(false);
+  const [editSubIndex,  setEditSubIndex]  = useState<number | null>(null); // index de la sous-tuile en cours d'édition
   const [newSubLabel,   setNewSubLabel]   = useState('');
   const [newSubIcon,    setNewSubIcon]    = useState('ExternalLink');
   const [newSubGradient,setNewSubGradient]= useState(GRADIENT_PRESETS[0].value);
   const [newSubUrl,     setNewSubUrl]     = useState('');
   const [newSubContent, setNewSubContent] = useState('');
+  const [newSubLinks,   setNewSubLinks]   = useState<TileLink[]>([]);
 
   // Nouvelles propriétés tuile (edit)
   const [editTileWide,      setEditTileWide]      = useState(false);
@@ -1599,13 +1613,14 @@ export default function InfosUtilesPage() {
     // reset champs built-in
     setEditTileWide(false); setEditTilePinned(false); setEditTileDarkText(false);
     setEditTileBadge(''); setEditTileInternal(''); setEditTileSeparator(false);
-    setEditBlocks([]); setEditSubTiles([]); setAddSubOpen(false);
+    setEditBlocks([]); setEditSubTiles([]); setAddSubOpen(false); setEditSubIndex(null); setEditTileLinks([]);
     if (tile.isCustom) {
       const ct = localCustom.find(c => c.id === tile.id);
       setEditTileIcon(ct?.icon ?? 'ExternalLink');
       setEditTileGradient(ct?.gradient ?? GRADIENT_PRESETS[0].value);
       setEditTileUrl(ct?.url ?? '');
       setEditTileInternal(ct?.internalPath ?? '');
+      setEditTileLinks(ct?.links ?? []);
       if (ct?.blocks) setEditBlocks(ct.blocks);
       else if (ct?.content) setEditBlocks([{ type: 'text', value: ct.content }]);
       else setEditBlocks([]);
@@ -1631,6 +1646,7 @@ export default function InfosUtilesPage() {
             gradient:     editTileGradient,
             url:          editTileUrl || undefined,
             internalPath: editTileInternal || undefined,
+            links:        editTileLinks.filter(l => l.url.trim()).length > 0 ? editTileLinks.filter(l => l.url.trim()) : undefined,
             blocks:       editBlocks.length > 0 ? editBlocks : undefined,
             content:      undefined,
             subTiles:     editSubTiles.length > 0 ? editSubTiles : undefined,
@@ -1697,6 +1713,7 @@ export default function InfosUtilesPage() {
       gradient: newTileGradient,
       url: newTileUrl.trim() || undefined,
       internalPath: newTileInternal || undefined,
+      links: newTileLinks.filter(l => l.url.trim()).length > 0 ? newTileLinks.filter(l => l.url.trim()) : undefined,
       blocks: newBlocks.length > 0 ? newBlocks : undefined,
       wide: newTileWide || undefined,
       isSeparator: newTileSeparator || undefined,
@@ -1706,7 +1723,7 @@ export default function InfosUtilesPage() {
     };
     setLocalCustom(prev => [...prev, newTile]);
     setLocalOrder(prev => [...prev, newId]);
-    setNewTileLabel(''); setNewTileUrl(''); setNewBlocks([]);
+    setNewTileLabel(''); setNewTileUrl(''); setNewBlocks([]); setNewTileLinks([]);
     setNewTileIcon('ExternalLink'); setNewTileGradient(GRADIENT_PRESETS[0].value);
     setNewTileWide(false); setNewTilePinned(false); setNewTileDarkText(false);
     setNewTileBadge(''); setNewTileInternal(''); setNewTileSeparator(false);
@@ -1863,7 +1880,7 @@ export default function InfosUtilesPage() {
                     const ct = tilesConfig.customTiles.find(c => c.id === tile.id);
                     if (!ct) return;
                     if (ct.subTiles?.length) { setOpenSubTilesSheet(ct); return; }
-                    if (ct.blocks?.length || ct.content) { setCustomContentTile(ct); return; }
+                    if (ct.blocks?.length || ct.content || ct.links?.length) { setCustomContentTile(ct); return; }
                     return;
                   }
                   setOpenTile(tile.id);
@@ -1875,11 +1892,23 @@ export default function InfosUtilesPage() {
         )}
 
         {/* Dialog — Édition d'une tuile */}
-        <Dialog open={!!editTileId} onOpenChange={(open) => !open && setEditTileId(null)}>
-          <DialogContent className="sm:max-w-sm max-h-[90vh] overflow-hidden">
+        <Dialog open={!!editTileId} onOpenChange={(open) => { if (!open) { setEditTileId(null); setEditSubIndex(null); } }}>
+          <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-hidden">
             <DialogHeader>
               <DialogTitle>Modifier la tuile</DialogTitle>
             </DialogHeader>
+            {/* ── Aperçu live ── */}
+            <div className="flex justify-center pb-2">
+              <div className={cn(
+                'flex items-center gap-3 rounded-xl px-4 py-3 bg-gradient-to-br shadow-sm min-w-[180px]',
+                editTileId && localCustom.some(c => c.id === editTileId) ? editTileGradient : 'from-gray-400 to-gray-600',
+                (editTileId && localCustom.some(c => c.id === editTileId) && editTileDarkText) ? 'text-gray-900' : 'text-white'
+              )}>
+                {(() => { const Ic = ICON_MAP[editTileIcon] ?? ExternalLink; return <div className="p-2 rounded-xl bg-white/20"><Ic className="h-5 w-5" /></div>; })()}
+                <span className="text-sm font-semibold leading-tight">{editTileLabel || 'Aperçu'}</span>
+                {editTileBadge && <Badge className="bg-white/25 text-xs border-0 ml-auto">{editTileBadge}</Badge>}
+              </div>
+            </div>
             <div className="flex-1 overflow-y-auto min-h-0 space-y-4 py-2">
               <div className="space-y-1.5">
                 <Label>Label affiché</Label>
@@ -1913,8 +1942,27 @@ export default function InfosUtilesPage() {
                   {!editTileSeparator && (
                   <>
                   <div className="space-y-1.5">
-                    <Label>URL <span className="text-muted-foreground font-normal">(optionnel)</span></Label>
+                    <Label>URL principale <span className="text-muted-foreground font-normal">(optionnel)</span></Label>
                     <Input value={editTileUrl} onChange={e => setEditTileUrl(e.target.value)} placeholder="https://... — laisser vide si non applicable" type="url" />
+                  </div>
+                  {/* ── Liens multiples ── */}
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Label className="flex items-center gap-1.5"><Link className="h-3.5 w-3.5" />Liens supplémentaires</Label>
+                      <Button size="sm" variant="outline" type="button" className="h-7 text-xs" onClick={() => setEditTileLinks(prev => [...prev, { label: '', url: '' }])}>
+                        <Plus className="h-3 w-3 mr-1" />Ajouter
+                      </Button>
+                    </div>
+                    {editTileLinks.map((link, i) => (
+                      <div key={i} className="flex items-center gap-2">
+                        <Input value={link.label} onChange={e => setEditTileLinks(prev => prev.map((l, j) => j === i ? { ...l, label: e.target.value } : l))}
+                          placeholder="Libellé" className="flex-1" />
+                        <Input value={link.url} onChange={e => setEditTileLinks(prev => prev.map((l, j) => j === i ? { ...l, url: e.target.value } : l))}
+                          placeholder="https://..." type="url" className="flex-1" />
+                        <button type="button" onClick={() => setEditTileLinks(prev => prev.filter((_, j) => j !== i))}
+                          className="p-1 text-muted-foreground hover:text-destructive shrink-0"><X className="h-3.5 w-3.5" /></button>
+                      </div>
+                    ))}
                   </div>
                   <div className="space-y-1.5">
                     <Label>Contenu <span className="text-muted-foreground font-normal">(optionnel — affiché si pas d'URL)</span></Label>
@@ -2028,34 +2076,99 @@ export default function InfosUtilesPage() {
                   {!editTileSeparator && (
                   <div className="space-y-2 pt-1">
                     <div className="flex items-center justify-between">
-                      <Label className="flex items-center gap-1.5"><Layers className="h-3.5 w-3.5" />Sous-tuiles</Label>
+                      <Label className="flex items-center gap-1.5"><Layers className="h-3.5 w-3.5" />Sous-tuiles ({editSubTiles.length})</Label>
                       <Button size="sm" variant="outline" type="button" className="h-7 text-xs"
-                        onClick={() => setAddSubOpen(v => !v)}>
+                        onClick={() => { setAddSubOpen(v => !v); setEditSubIndex(null); }}>
                         <Plus className="h-3 w-3 mr-1" />{addSubOpen ? 'Annuler' : 'Ajouter'}
                       </Button>
                     </div>
                     {editSubTiles.map((st, i) => {
                       const Ic = ICON_MAP[st.icon] ?? ExternalLink;
-                      const hasContent = (st.blocks?.length ?? 0) > 0 || !!st.content;
+                      const textCount = (st.blocks ?? []).filter(b => b.type === 'text').length + (st.content ? 1 : 0);
+                      const imgCount = (st.blocks ?? []).filter(b => b.type === 'image').length;
+                      const fileCount = (st.blocks ?? []).filter(b => b.type === 'file').length;
+                      const linkCount = (st.links?.length ?? 0) + (st.url ? 1 : 0);
+                      const contentParts: string[] = [];
+                      if (textCount) contentParts.push(`${textCount} texte${textCount > 1 ? 's' : ''}`);
+                      if (imgCount) contentParts.push(`${imgCount} image${imgCount > 1 ? 's' : ''}`);
+                      if (fileCount) contentParts.push(`${fileCount} fichier${fileCount > 1 ? 's' : ''}`);
+                      if (linkCount) contentParts.push(`${linkCount} lien${linkCount > 1 ? 's' : ''}`);
                       return (
-                        <div key={st.id} className="flex items-center gap-2 p-2 bg-muted/20 rounded-lg">
+                        <div key={st.id} className={cn('flex items-center gap-2 p-2 rounded-lg transition-colors', editSubIndex === i ? 'bg-primary/10 ring-1 ring-primary' : 'bg-muted/20')}>
                           <div className={`p-1.5 rounded-lg bg-gradient-to-br ${st.gradient} shrink-0`}>
                             <Ic className="h-3.5 w-3.5 text-white" />
                           </div>
-                          <span className="text-sm flex-1 truncate">{st.label}</span>
-                          {st.url && <ExternalLink className="h-3 w-3 text-muted-foreground shrink-0" />}
-                          {hasContent && <FileText className="h-3 w-3 text-muted-foreground shrink-0" />}
-                          <button type="button" onClick={() => setEditSubTiles(prev => prev.filter((_, j) => j !== i))}
-                            className="p-1 text-muted-foreground hover:text-destructive shrink-0">
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </button>
+                          <div className="flex-1 min-w-0">
+                            <span className="text-sm truncate block">{st.label}</span>
+                            {contentParts.length > 0 && (
+                              <span className="text-[10px] text-muted-foreground">{contentParts.join(', ')}</span>
+                            )}
+                          </div>
+                          {/* Actions */}
+                          <div className="flex items-center gap-0.5 shrink-0">
+                            <button type="button" onClick={() => setEditSubTiles(prev => { if (i === 0) return prev; const next = [...prev]; [next[i-1], next[i]] = [next[i], next[i-1]]; return next; })}
+                              className="p-1 text-muted-foreground hover:text-foreground disabled:opacity-30" disabled={i === 0}>
+                              <ChevronUp className="h-3.5 w-3.5" />
+                            </button>
+                            <button type="button" onClick={() => setEditSubTiles(prev => { if (i === prev.length - 1) return prev; const next = [...prev]; [next[i], next[i+1]] = [next[i+1], next[i]]; return next; })}
+                              className="p-1 text-muted-foreground hover:text-foreground disabled:opacity-30" disabled={i === editSubTiles.length - 1}>
+                              <ChevronDown className="h-3.5 w-3.5" />
+                            </button>
+                            <button type="button" onClick={() => {
+                              setEditSubIndex(i); setAddSubOpen(false);
+                              setNewSubLabel(st.label); setNewSubIcon(st.icon); setNewSubGradient(st.gradient);
+                              setNewSubUrl(st.url ?? ''); setNewSubBlocks(st.blocks ?? (st.content ? [{ type: 'text', value: st.content }] : []));
+                              setNewSubLinks(st.links ?? []);
+                            }} className="p-1 text-muted-foreground hover:text-primary">
+                              <Pencil className="h-3.5 w-3.5" />
+                            </button>
+                            <button type="button" onClick={() => {
+                              const clone = { ...st, id: `${st.id}_copy_${Date.now()}`, label: `${st.label} (copie)` };
+                              setEditSubTiles(prev => { const next = [...prev]; next.splice(i + 1, 0, clone); return next; });
+                            }} className="p-1 text-muted-foreground hover:text-foreground">
+                              <Copy className="h-3.5 w-3.5" />
+                            </button>
+                            <button type="button" onClick={() => { setEditSubTiles(prev => prev.filter((_, j) => j !== i)); if (editSubIndex === i) setEditSubIndex(null); }}
+                              className="p-1 text-muted-foreground hover:text-destructive">
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
                         </div>
                       );
                     })}
-                    {addSubOpen && (
+                    {/* ── Formulaire sous-tuile (ajout ou édition) ── */}
+                    {(addSubOpen || editSubIndex !== null) && (
                       <div className="space-y-2.5 p-3 border rounded-lg bg-muted/10">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-medium">{editSubIndex !== null ? `Modifier "${editSubTiles[editSubIndex]?.label}"` : 'Nouvelle sous-tuile'}</span>
+                          {editSubIndex !== null && (
+                            <Button size="sm" variant="ghost" type="button" className="h-6 text-xs px-2" onClick={() => {
+                              setEditSubIndex(null); setNewSubLabel(''); setNewSubUrl(''); setNewSubContent(''); setNewSubBlocks([]); setNewSubLinks([]);
+                              setNewSubIcon('ExternalLink'); setNewSubGradient(GRADIENT_PRESETS[0].value);
+                            }}>Annuler</Button>
+                          )}
+                        </div>
                         <Input value={newSubLabel} onChange={e => setNewSubLabel(e.target.value)} placeholder="Nom de la sous-tuile *" />
-                        <Input value={newSubUrl} onChange={e => setNewSubUrl(e.target.value)} placeholder="URL (optionnel)" type="url" />
+                        <Input value={newSubUrl} onChange={e => setNewSubUrl(e.target.value)} placeholder="URL principale (optionnel)" type="url" />
+                        {/* Liens supplémentaires sous-tuile */}
+                        <div className="space-y-1.5">
+                          <div className="flex items-center justify-between">
+                            <Label className="text-xs flex items-center gap-1"><Link className="h-3 w-3" />Liens</Label>
+                            <Button size="sm" variant="outline" type="button" className="h-6 text-[10px] px-2" onClick={() => setNewSubLinks(prev => [...prev, { label: '', url: '' }])}>
+                              <Plus className="h-2.5 w-2.5 mr-0.5" />Lien
+                            </Button>
+                          </div>
+                          {newSubLinks.map((link, i) => (
+                            <div key={i} className="flex items-center gap-1.5">
+                              <Input value={link.label} onChange={e => setNewSubLinks(prev => prev.map((l, j) => j === i ? { ...l, label: e.target.value } : l))}
+                                placeholder="Libellé" className="flex-1 h-8 text-xs" />
+                              <Input value={link.url} onChange={e => setNewSubLinks(prev => prev.map((l, j) => j === i ? { ...l, url: e.target.value } : l))}
+                                placeholder="https://..." type="url" className="flex-1 h-8 text-xs" />
+                              <button type="button" onClick={() => setNewSubLinks(prev => prev.filter((_, j) => j !== i))}
+                                className="p-0.5 text-muted-foreground hover:text-destructive"><X className="h-3 w-3" /></button>
+                            </div>
+                          ))}
+                        </div>
                         {/* Blocs de contenu sous-tuile */}
                         <div className="space-y-1.5">
                           <Label className="text-xs">Contenu <span className="text-muted-foreground font-normal">(optionnel)</span></Label>
@@ -2117,17 +2230,32 @@ export default function InfosUtilesPage() {
                           ))}
                         </div>
                         <Button size="sm" type="button" className="w-full" disabled={!newSubLabel.trim()} onClick={() => {
-                          const subId = `sub_${slugify(newSubLabel) || Date.now()}`;
-                          setEditSubTiles(prev => [...prev, {
-                            id: subId, label: newSubLabel.trim(), icon: newSubIcon, gradient: newSubGradient,
-                            url: newSubUrl.trim() || undefined,
-                            blocks: newSubBlocks.length > 0 ? newSubBlocks : undefined,
-                            content: undefined,
-                          }]);
-                          setNewSubLabel(''); setNewSubUrl(''); setNewSubContent(''); setNewSubBlocks([]);
+                          const filteredLinks = newSubLinks.filter(l => l.url.trim());
+                          if (editSubIndex !== null) {
+                            // Mode édition
+                            setEditSubTiles(prev => prev.map((st, j) => j === editSubIndex ? {
+                              ...st, label: newSubLabel.trim(), icon: newSubIcon, gradient: newSubGradient,
+                              url: newSubUrl.trim() || undefined,
+                              links: filteredLinks.length > 0 ? filteredLinks : undefined,
+                              blocks: newSubBlocks.length > 0 ? newSubBlocks : undefined,
+                              content: undefined,
+                            } : st));
+                            setEditSubIndex(null);
+                          } else {
+                            // Mode ajout
+                            const subId = `sub_${slugify(newSubLabel) || Date.now()}`;
+                            setEditSubTiles(prev => [...prev, {
+                              id: subId, label: newSubLabel.trim(), icon: newSubIcon, gradient: newSubGradient,
+                              url: newSubUrl.trim() || undefined,
+                              links: filteredLinks.length > 0 ? filteredLinks : undefined,
+                              blocks: newSubBlocks.length > 0 ? newSubBlocks : undefined,
+                              content: undefined,
+                            }]);
+                          }
+                          setNewSubLabel(''); setNewSubUrl(''); setNewSubContent(''); setNewSubBlocks([]); setNewSubLinks([]);
                           setNewSubIcon('ExternalLink'); setNewSubGradient(GRADIENT_PRESETS[0].value);
                           setAddSubOpen(false);
-                        }}>Confirmer la sous-tuile</Button>
+                        }}>{editSubIndex !== null ? 'Enregistrer' : 'Confirmer la sous-tuile'}</Button>
                       </div>
                     )}
                   </div>
@@ -2143,11 +2271,23 @@ export default function InfosUtilesPage() {
         </Dialog>
 
         {/* Dialog — Ajouter une tuile custom */}
-        <Dialog open={addTileOpen} onOpenChange={v => { setAddTileOpen(v); if (!v) { setNewTileWide(false); setNewTilePinned(false); setNewTileDarkText(false); setNewTileBadge(''); setNewTileInternal(''); setNewTileSeparator(false); } }}>
-          <DialogContent className="sm:max-w-sm max-h-[90vh] overflow-hidden">
+        <Dialog open={addTileOpen} onOpenChange={v => { setAddTileOpen(v); if (!v) { setNewTileWide(false); setNewTilePinned(false); setNewTileDarkText(false); setNewTileBadge(''); setNewTileInternal(''); setNewTileSeparator(false); setNewTileLinks([]); } }}>
+          <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-hidden">
             <DialogHeader>
               <DialogTitle>Nouvelle tuile</DialogTitle>
             </DialogHeader>
+            {/* ── Aperçu live ── */}
+            <div className="flex justify-center pb-2">
+              <div className={cn(
+                'flex items-center gap-3 rounded-xl px-4 py-3 bg-gradient-to-br shadow-sm min-w-[180px]',
+                newTileGradient,
+                newTileDarkText ? 'text-gray-900' : 'text-white'
+              )}>
+                {(() => { const Ic = ICON_MAP[newTileIcon] ?? ExternalLink; return <div className="p-2 rounded-xl bg-white/20"><Ic className="h-5 w-5" /></div>; })()}
+                <span className="text-sm font-semibold leading-tight">{newTileLabel || 'Aperçu'}</span>
+                {newTileBadge && <Badge className="bg-white/25 text-xs border-0 ml-auto">{newTileBadge}</Badge>}
+              </div>
+            </div>
             <div className="flex-1 overflow-y-auto min-h-0 space-y-4 py-2">
               <div className="space-y-1.5">
                 <Label>Label *</Label>
@@ -2173,8 +2313,27 @@ export default function InfosUtilesPage() {
               {!newTileSeparator && (
               <>
               <div className="space-y-1.5">
-                <Label>URL <span className="text-muted-foreground font-normal">(optionnel)</span></Label>
+                <Label>URL principale <span className="text-muted-foreground font-normal">(optionnel)</span></Label>
                 <Input value={newTileUrl} onChange={e => setNewTileUrl(e.target.value)} placeholder="https://... — laisser vide si non applicable" type="url" />
+              </div>
+              {/* ── Liens multiples ── */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label className="flex items-center gap-1.5"><Link className="h-3.5 w-3.5" />Liens supplémentaires</Label>
+                  <Button size="sm" variant="outline" type="button" className="h-7 text-xs" onClick={() => setNewTileLinks(prev => [...prev, { label: '', url: '' }])}>
+                    <Plus className="h-3 w-3 mr-1" />Ajouter
+                  </Button>
+                </div>
+                {newTileLinks.map((link, i) => (
+                  <div key={i} className="flex items-center gap-2">
+                    <Input value={link.label} onChange={e => setNewTileLinks(prev => prev.map((l, j) => j === i ? { ...l, label: e.target.value } : l))}
+                      placeholder="Libellé" className="flex-1" />
+                    <Input value={link.url} onChange={e => setNewTileLinks(prev => prev.map((l, j) => j === i ? { ...l, url: e.target.value } : l))}
+                      placeholder="https://..." type="url" className="flex-1" />
+                    <button type="button" onClick={() => setNewTileLinks(prev => prev.filter((_, j) => j !== i))}
+                      className="p-1 text-muted-foreground hover:text-destructive shrink-0"><X className="h-3.5 w-3.5" /></button>
+                  </div>
+                ))}
               </div>
               <div className="space-y-1.5">
                 <Label>Contenu <span className="text-muted-foreground font-normal">(optionnel — affiché si pas d'URL)</span></Label>
@@ -2305,8 +2464,9 @@ export default function InfosUtilesPage() {
                   <Card
                     key={st.id}
                     onClick={() => {
-                      if (st.url) { window.open(st.url, '_blank', 'noopener'); return; }
-                      if ((st.blocks?.length ?? 0) > 0 || st.content) { setOpenSubTileContent(st); }
+                      if (st.url && !st.links?.length && !(st.blocks?.length) && !st.content) { window.open(st.url, '_blank', 'noopener'); return; }
+                      if ((st.blocks?.length ?? 0) > 0 || st.content || st.links?.length) { setOpenSubTileContent(st); return; }
+                      if (st.url) { window.open(st.url, '_blank', 'noopener'); }
                     }}
                     className="border-0 shadow-sm overflow-hidden cursor-pointer hover:shadow-md active:scale-95 transition-all select-none"
                   >
@@ -2344,6 +2504,17 @@ export default function InfosUtilesPage() {
                         <Download className="h-4 w-4 shrink-0" />{block.fileName || 'Télécharger le fichier'}
                       </a>
                     : <p key={i} className="text-sm text-muted-foreground whitespace-pre-wrap leading-relaxed">{block.value}</p>
+              )}
+              {/* Liens sous-tuile */}
+              {openSubTileContent?.links && openSubTileContent.links.length > 0 && (
+                <div className="space-y-2 pt-2 border-t">
+                  {openSubTileContent.links.map((link, i) => (
+                    <a key={i} href={link.url} target="_blank" rel="noopener noreferrer"
+                      className="flex items-center gap-2 p-3 rounded-lg border bg-muted/30 text-sm text-primary hover:bg-muted/50 transition-colors">
+                      <ExternalLink className="h-4 w-4 shrink-0" />{link.label || link.url}
+                    </a>
+                  ))}
+                </div>
               )}
             </div>
           </DialogContent>
@@ -2400,6 +2571,17 @@ export default function InfosUtilesPage() {
                         <Download className="h-4 w-4 shrink-0" />{block.fileName || 'Télécharger le fichier'}
                       </a>
                     : <p key={i} className="text-sm text-muted-foreground whitespace-pre-wrap leading-relaxed">{block.value}</p>
+              )}
+              {/* Liens */}
+              {customContentTile?.links && customContentTile.links.length > 0 && (
+                <div className="space-y-2 pt-2 border-t">
+                  {customContentTile.links.map((link, i) => (
+                    <a key={i} href={link.url} target="_blank" rel="noopener noreferrer"
+                      className="flex items-center gap-2 p-3 rounded-lg border bg-muted/30 text-sm text-primary hover:bg-muted/50 transition-colors">
+                      <ExternalLink className="h-4 w-4 shrink-0" />{link.label || link.url}
+                    </a>
+                  ))}
+                </div>
               )}
             </div>
           </DialogContent>

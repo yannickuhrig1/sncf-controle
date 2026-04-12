@@ -2,6 +2,17 @@
 
 Toutes les modifications notables de ce projet sont documentées dans ce fichier.
 
+## [1.12.13] - 2026-04-11
+
+### Amélioré — Éditeur de tuiles (Infos utiles)
+- **Dialogs élargis** : les dialogs d'ajout et de modification de tuile sont plus larges (sm:max-w-lg) pour plus de confort
+- **Aperçu live** : prévisualisation en temps réel de la tuile (gradient + icône + label + badge) dans les dialogs
+- **Liens multiples** : chaque tuile et sous-tuile peut avoir plusieurs liens (label + URL), affichés dans le dialog de contenu
+- **Édition de sous-tuiles** : clic sur le crayon d'une sous-tuile pour modifier ses propriétés (label, icône, couleur, liens, contenu)
+- **Réorganisation** : boutons haut/bas pour réordonner les sous-tuiles dans la liste
+- **Duplication** : bouton copie pour dupliquer une sous-tuile existante
+- **Compteur de contenu** : chaque sous-tuile affiche un résumé (ex : « 2 textes, 1 image, 1 lien ») dans la liste
+
 ## [1.12.12] - 2026-04-11
 
 ### Ajouté — Schéma train amélioré
