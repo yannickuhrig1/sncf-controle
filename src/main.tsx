@@ -60,9 +60,10 @@ try {
 // Auto-reload when a new service worker takes control (after silent update)
 if ('serviceWorker' in navigator) {
   // Reload once when the SW changes (skipWaiting fired → new version active)
+  // But NOT if we're offline — reloading offline can cause a blank page
   let reloading = false;
   navigator.serviceWorker.addEventListener('controllerchange', () => {
-    if (!reloading) {
+    if (!reloading && navigator.onLine) {
       reloading = true;
       window.location.reload();
     }

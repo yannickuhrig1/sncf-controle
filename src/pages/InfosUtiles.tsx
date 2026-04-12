@@ -496,6 +496,7 @@ function ContentAbout() {
           <li>Embarquement : Info SNCF + schéma + autocomplete par train (heure, origine, destination)</li>
           <li>Schéma train : horaires arr./dép. par gare, retards avec heure théorique barrée</li>
           <li>Éditeur de tuiles : aperçu live, liens multiples, édition/réorganisation/duplication de sous-tuiles</li>
+          <li>Mode hors-ligne amélioré : cache auth local, pas de page blanche sans réseau</li>
           <li>Compatible mobile, tablette et PC</li>
         </ul>
       </div>

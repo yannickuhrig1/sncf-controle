@@ -2,6 +2,17 @@
 
 Toutes les modifications notables de ce projet sont documentées dans ce fichier.
 
+## [1.12.14] - 2026-04-12
+
+### Corrigé — Mode hors-ligne (page blanche)
+- **Cache auth local** : la session et le profil sont sauvegardés dans localStorage après chaque connexion réussie ; au retour hors-ligne, l'app s'affiche immédiatement sans attendre Supabase
+- **Pas de redirect /auth hors-ligne** : si on a un cache valide, les pages protégées se chargent même sans réseau
+- **Timeout auth réduit** : 2s hors-ligne (au lieu de 8s) pour ne pas bloquer l'interface
+- **Service worker : pas de reload hors-ligne** : le `controllerchange` ne déclenche plus un `window.location.reload()` quand le réseau est coupé
+- **React Query offline-aware** : les requêtes ne retentent plus quand hors-ligne (fail-fast) pour éviter les délais, et le staleTime est augmenté à 2 min
+- **Bandeau hors-ligne** : un bandeau ambre s'affiche sous le header quand le réseau est coupé
+- **Précache élargi** : les fichiers JSON et webmanifest sont maintenant précachés par le service worker
+
 ## [1.12.13] - 2026-04-11
 
 ### Amélioré — Éditeur de tuiles (Infos utiles)

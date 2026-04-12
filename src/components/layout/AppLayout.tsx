@@ -517,6 +517,14 @@ export function AppLayout({ children }: AppLayoutProps) {
           </div>
         </header>
 
+        {/* Bandeau hors-ligne */}
+        {!isOnline && (
+          <div className="bg-amber-500 text-white text-center text-xs font-medium py-1.5 px-4 flex items-center justify-center gap-2">
+            <WifiOff className="h-3.5 w-3.5 shrink-0" />
+            Mode hors-ligne — les données affichées peuvent ne pas être à jour
+          </div>
+        )}
+
         {/* Contenu principal */}
         <main className="flex-1 px-4 py-6 md:px-8 md:py-8 md:w-full">
           {children}

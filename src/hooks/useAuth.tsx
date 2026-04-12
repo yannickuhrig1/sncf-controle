@@ -6,11 +6,47 @@ import type { Database } from '@/integrations/supabase/types';
 type Profile = Database['public']['Tables']['profiles']['Row'];
 type AppRole = Database['public']['Enums']['app_role'];
 
+const AUTH_CACHE_KEY = 'sncf_auth_cache';
+
+interface AuthCache {
+  user: User;
+  profile: Profile;
+  timestamp: number;
+}
+
+function loadAuthCache(): AuthCache | null {
+  try {
+    const raw = localStorage.getItem(AUTH_CACHE_KEY);
+    if (!raw) return null;
+    const cached = JSON.parse(raw) as AuthCache;
+    // Cache valid for 30 days max
+    if (Date.now() - cached.timestamp > 30 * 24 * 60 * 60 * 1000) {
+      localStorage.removeItem(AUTH_CACHE_KEY);
+      return null;
+    }
+    return cached;
+  } catch {
+    return null;
+  }
+}
+
+function saveAuthCache(user: User, profile: Profile) {
+  try {
+    const cache: AuthCache = { user, profile, timestamp: Date.now() };
+    localStorage.setItem(AUTH_CACHE_KEY, JSON.stringify(cache));
+  } catch { /* storage full or unavailable */ }
+}
+
+function clearAuthCache() {
+  try { localStorage.removeItem(AUTH_CACHE_KEY); } catch { /* ignore */ }
+}
+
 interface AuthContextType {
   user: User | null;
   session: Session | null;
   profile: Profile | null;
   loading: boolean;
+  isOffline: boolean;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signUp: (email: string, password: string, metadata: { first_name: string; last_name: string; phone_number?: string }) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
@@ -22,17 +58,36 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
+  // Try to restore from cache immediately (synchronous) to avoid blank screen
+  const cached = loadAuthCache();
+
+  const [user, setUser] = useState<User | null>(cached?.user ?? null);
   const [session, setSession] = useState<Session | null>(null);
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [profile, setProfile] = useState<Profile | null>(cached?.profile ?? null);
+  // If we have a cache, skip the loading state entirely — app renders immediately
+  const [loading, setLoading] = useState(!cached);
+  const [isOffline, setIsOffline] = useState(!navigator.onLine);
+
+  // Track online/offline status
+  useEffect(() => {
+    const goOnline = () => setIsOffline(false);
+    const goOffline = () => setIsOffline(true);
+    window.addEventListener('online', goOnline);
+    window.addEventListener('offline', goOffline);
+    return () => {
+      window.removeEventListener('online', goOnline);
+      window.removeEventListener('offline', goOffline);
+    };
+  }, []);
 
   useEffect(() => {
-    // Safety net: if auth init hangs for any reason, don't block the whole app forever.
+    // Shorter timeout when offline or when we already have cached data
+    const timeoutMs = !navigator.onLine ? 2000 : cached ? 4000 : 8000;
+
     const initTimeout = window.setTimeout(() => {
       console.warn('Auth init timeout: forcing loading=false');
       setLoading(false);
-    }, 8000);
+    }, timeoutMs);
 
     // IMPORTANT: subscribe first to avoid missing events during init
     const {
@@ -44,12 +99,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(session?.user ?? null);
 
       if (session?.user) {
-        setLoading(true);
+        if (!profile) setLoading(true); // only show loading if we don't have cached profile
         // Defer any additional Supabase calls to avoid deadlocks
         window.setTimeout(() => {
           fetchProfile(session.user);
         }, 0);
       } else {
+        // User signed out — clear cache
+        if (_event === 'SIGNED_OUT') {
+          clearAuthCache();
+        }
         setProfile(null);
         setLoading(false);
       }
@@ -65,28 +124,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(session?.user ?? null);
 
         if (session?.user) {
-          setLoading(true);
+          if (!profile) setLoading(true);
           window.setTimeout(() => {
             fetchProfile(session.user);
           }, 0);
         } else {
-          setProfile(null);
-          setLoading(false);
+          // No session from Supabase — but if we're offline and have cache, keep using it
+          if (!navigator.onLine && cached) {
+            // Stay with cached user/profile, don't reset
+            setLoading(false);
+          } else {
+            setProfile(null);
+            setUser(null);
+            setLoading(false);
+          }
         }
       })
       .catch((error) => {
         window.clearTimeout(initTimeout);
         console.error('Error getting session:', error);
-        setSession(null);
-        setUser(null);
-        setProfile(null);
-        setLoading(false);
+        // If offline and we have cached auth, don't wipe it
+        if (!navigator.onLine && cached) {
+          setLoading(false);
+        } else {
+          setSession(null);
+          setUser(null);
+          setProfile(null);
+          setLoading(false);
+        }
       });
 
     return () => {
       window.clearTimeout(initTimeout);
       subscription.unsubscribe();
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fetchProfile = async (authUser: User) => {
@@ -141,10 +213,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       }
 
-      setProfile((data as Profile) ?? null);
+      const profileData = (data as Profile) ?? null;
+      setProfile(profileData);
+
+      // Cache auth data for offline use
+      if (profileData) {
+        saveAuthCache(authUser, profileData);
+      }
     } catch (error) {
       console.error('Error fetching profile:', error);
-      setProfile(null);
+      // If offline, keep the cached profile instead of wiping it
+      if (!navigator.onLine && cached?.profile) {
+        // Keep existing profile from cache
+      } else {
+        setProfile(null);
+      }
     } finally {
       setLoading(false);
     }
@@ -153,19 +236,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signIn = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) return { error: error as Error | null };
-    
+
     // Check if user is approved
     const { data: profileData } = await supabase
       .from('profiles')
       .select('is_approved')
       .eq('user_id', (await supabase.auth.getUser()).data.user?.id ?? '')
       .maybeSingle();
-    
+
     if (profileData && !(profileData as any).is_approved) {
       await supabase.auth.signOut();
       return { error: new Error('Votre compte est en attente de validation par un administrateur ou manager.') };
     }
-    
+
     return { error: null };
   };
 
@@ -175,7 +258,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     metadata: { first_name: string; last_name: string; phone_number?: string }
   ) => {
     const redirectUrl = `${window.location.origin}/`;
-    
+
     const { error } = await supabase.auth.signUp({
       email,
       password,
@@ -188,6 +271,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signOut = async () => {
+    clearAuthCache();
     await supabase.auth.signOut();
     setProfile(null);
   };
@@ -203,6 +287,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         session,
         profile,
         loading,
+        isOffline,
         signIn,
         signUp,
         signOut,

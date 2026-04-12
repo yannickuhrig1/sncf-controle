@@ -37,7 +37,19 @@ function ThemeInitializer() {
   return null;
 }
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      // Don't retry when offline — fail immediately so stale cache is shown
+      retry: (failureCount, error) => {
+        if (!navigator.onLine) return false;
+        return failureCount < 3;
+      },
+      // Keep stale data visible while refetching
+      staleTime: 1000 * 60 * 2, // 2 minutes
+    },
+  },
+});
 
 const AnimatedRoutes = () => {
   const location = useLocation();
