@@ -6,7 +6,7 @@ import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYea
 
 type Control = Database['public']['Tables']['controls']['Row'];
 
-export type ViewMode = 'my-data' | 'all-data';
+export type ViewMode = 'my-data' | 'all-data' | 'by-team' | 'by-agent';
 export type Period = 'day' | 'week' | 'month' | 'year' | 'custom';
 
 interface UseControlsWithFilterOptions {

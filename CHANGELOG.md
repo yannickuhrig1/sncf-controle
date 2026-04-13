@@ -2,6 +2,13 @@
 
 Toutes les modifications notables de ce projet sont documentées dans ce fichier.
 
+## [1.12.16] - 2026-04-13
+
+### Amélioré — Filtres avancés dans l'historique
+- **Filtrage par équipe / par agent** : modes « Équipe » et « Agent » ajoutés à côté de « Mes données » et « Tout voir » (visible admin/manager), avec sélecteur dropdown
+- **Badges sur la même ligne** : les filtres Police, SUGE, Sur-occ. et Supprimé sont alignés à droite des filtres Tous/Train/Gare sur PC
+- **Date picker inline** : le sélecteur de date (flèches ← →) est maintenant sur la même ligne que le sélecteur de période (Jour/Semaine/Mois/…)
+
 ## [1.12.15] - 2026-04-13
 
 ### Amélioré — Sélecteur de période dans l'historique

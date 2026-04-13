@@ -283,6 +283,8 @@ export default function HistoryPage() {
   const [customEnd, setCustomEnd] = useState('');
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [dataViewMode, setDataViewMode] = useState<ViewMode>('all-data');
+  const [selectedTeamId, setSelectedTeamId] = useState<string>('');
+  const [selectedAgentId, setSelectedAgentId] = useState<string>('');
   const [pdfPreviewOpen, setPdfPreviewOpen] = useState(false);
   const [pdfPreviewUrl, setPdfPreviewUrl] = useState<string | null>(null);
   const [pdfDocRef, setPdfDocRef] = useState<ReturnType<typeof exportToPDF> | null>(null);
@@ -337,14 +339,19 @@ export default function HistoryPage() {
   // Use infinite controls for display, fall back to regular controls for filtering
   const displayControls = useMemo(() => {
     const sourceControls = infiniteControls.length > 0 ? infiniteControls : controls;
-    
-    // Filter by agent if viewing "my data" only
+
     if (dataViewMode === 'my-data' && profile) {
       return sourceControls.filter(c => c.agent_id === profile.id);
     }
-    
+    if (dataViewMode === 'by-team' && selectedTeamId) {
+      return sourceControls.filter(c => (c as any).team_id === selectedTeamId);
+    }
+    if (dataViewMode === 'by-agent' && selectedAgentId) {
+      return sourceControls.filter(c => c.agent_id === selectedAgentId);
+    }
+
     return sourceControls;
-  }, [infiniteControls, controls, dataViewMode, profile]);
+  }, [infiniteControls, controls, dataViewMode, profile, selectedTeamId, selectedAgentId]);
 
   // Fetch agent profiles for multi-agent grouping display
   const allControls = infiniteControls.length > 0 ? infiniteControls : controls;
@@ -370,6 +377,31 @@ export default function HistoryPage() {
     Object.fromEntries(agentProfiles.map(p => [p.id, { first_name: p.first_name ?? '', last_name: p.last_name ?? '' }])),
     [agentProfiles]
   );
+
+  // Fetch teams list for "by-team" selector
+  const { data: teamsList = [] } = useQuery({
+    queryKey: ['teams-list'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('teams').select('id, name').order('name');
+      if (error) throw error;
+      return data ?? [];
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
+  // Fetch all agents for "by-agent" selector
+  const { data: allAgentsList = [] } = useQuery({
+    queryKey: ['all-agents-list'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, first_name, last_name')
+        .order('last_name');
+      if (error) throw error;
+      return data ?? [];
+    },
+    staleTime: 5 * 60 * 1000,
+  });
 
   // Permission helper: can current user edit/delete this control?
   const canEditControl = useCallback((control: Control) =>
@@ -747,12 +779,44 @@ export default function HistoryPage() {
             </div>
           </div>
 
-          {/* Data view mode toggle */}
-          <ViewModeToggle 
-            viewMode={dataViewMode} 
-            onViewModeChange={setDataViewMode}
-          />
-          
+          {/* Data view mode toggle + team/agent selector */}
+          <div className="flex flex-wrap items-center gap-2">
+            <ViewModeToggle
+              viewMode={dataViewMode}
+              onViewModeChange={(mode) => {
+                setDataViewMode(mode);
+                if (mode !== 'by-team') setSelectedTeamId('');
+                if (mode !== 'by-agent') setSelectedAgentId('');
+              }}
+              showTeamAgent={isUserAdmin || isUserManager}
+            />
+            {dataViewMode === 'by-team' && (
+              <Select value={selectedTeamId} onValueChange={setSelectedTeamId}>
+                <SelectTrigger className="w-[180px] h-8 text-xs">
+                  <SelectValue placeholder="Choisir équipe…" />
+                </SelectTrigger>
+                <SelectContent>
+                  {teamsList.map(t => (
+                    <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+            {dataViewMode === 'by-agent' && (
+              <Select value={selectedAgentId} onValueChange={setSelectedAgentId}>
+                <SelectTrigger className="w-[200px] h-8 text-xs">
+                  <SelectValue placeholder="Choisir agent…" />
+                </SelectTrigger>
+                <SelectContent>
+                  {allAgentsList.map(a => (
+                    <SelectItem key={a.id} value={a.id}>
+                      {a.last_name} {a.first_name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+          </div>
         </div>
 
         {/* Controls content */}
@@ -782,12 +846,12 @@ export default function HistoryPage() {
                   )}
                 </div>
                 
-                {/* Location type filter and sort */}
+                {/* Location type filter + badge filters (same row on desktop) */}
                 <div className="flex flex-wrap items-center gap-2">
                   <Filter className="h-4 w-4 text-muted-foreground shrink-0" />
-                  <ToggleGroup 
-                    type="single" 
-                    value={locationFilter} 
+                  <ToggleGroup
+                    type="single"
+                    value={locationFilter}
                     onValueChange={(v) => v && setLocationFilter(v as LocationType | 'all')}
                     className="justify-start"
                   >
@@ -803,57 +867,59 @@ export default function HistoryPage() {
                       Gare
                     </ToggleGroupItem>
                   </ToggleGroup>
+
+                  {/* Badge filters — same row on desktop, wraps on mobile */}
+                  <div className="flex flex-wrap items-center gap-1.5 sm:ml-auto">
+                    <button type="button" onClick={() => setPoliceFilter(v => !v)}
+                      className={`inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs font-medium transition-colors ${
+                        policeFilter ? 'bg-blue-600 text-white border-blue-600' : 'border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100 dark:border-blue-800 dark:bg-blue-900/30 dark:text-blue-400 dark:hover:bg-blue-900/50'
+                      }`}>
+                      <Shield className="h-3.5 w-3.5" />Police
+                    </button>
+                    <button type="button" onClick={() => setSugeFilter(v => !v)}
+                      className={`inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs font-medium transition-colors ${
+                        sugeFilter ? 'bg-indigo-600 text-white border-indigo-600' : 'border-indigo-200 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 dark:border-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-400 dark:hover:bg-indigo-900/50'
+                      }`}>
+                      <Shield className="h-3.5 w-3.5" />SUGE
+                    </button>
+                    <button type="button" onClick={() => setOvercrowdedFilter(v => !v)}
+                      className={`inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs font-medium transition-colors ${
+                        overcrowdedFilter ? 'bg-orange-500 text-white border-orange-500' : 'border-orange-200 bg-orange-50 text-orange-700 hover:bg-orange-100 dark:border-orange-800 dark:bg-orange-900/30 dark:text-orange-400 dark:hover:bg-orange-900/50'
+                      }`}>
+                      <Users className="h-3.5 w-3.5" />Sur-occ.
+                    </button>
+                    <button type="button" onClick={() => setCancelledFilter(v => !v)}
+                      className={`inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs font-medium transition-colors ${
+                        cancelledFilter ? 'bg-slate-700 text-white border-slate-700' : 'border-slate-300 bg-slate-100 text-slate-700 hover:bg-slate-200 dark:border-slate-700 dark:bg-slate-800/50 dark:text-slate-400 dark:hover:bg-slate-800'
+                      }`}>
+                      <Ban className="h-3.5 w-3.5" />Supprimé
+                    </button>
+                  </div>
                 </div>
 
-                {/* Badge filters */}
-                <div className="flex flex-wrap items-center gap-1.5">
-                  <button type="button" onClick={() => setPoliceFilter(v => !v)}
-                    className={`inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs font-medium transition-colors ${
-                      policeFilter ? 'bg-blue-600 text-white border-blue-600' : 'border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100 dark:border-blue-800 dark:bg-blue-900/30 dark:text-blue-400 dark:hover:bg-blue-900/50'
-                    }`}>
-                    <Shield className="h-3.5 w-3.5" />Police
-                  </button>
-                  <button type="button" onClick={() => setSugeFilter(v => !v)}
-                    className={`inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs font-medium transition-colors ${
-                      sugeFilter ? 'bg-indigo-600 text-white border-indigo-600' : 'border-indigo-200 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 dark:border-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-400 dark:hover:bg-indigo-900/50'
-                    }`}>
-                    <Shield className="h-3.5 w-3.5" />SUGE
-                  </button>
-                  <button type="button" onClick={() => setOvercrowdedFilter(v => !v)}
-                    className={`inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs font-medium transition-colors ${
-                      overcrowdedFilter ? 'bg-orange-500 text-white border-orange-500' : 'border-orange-200 bg-orange-50 text-orange-700 hover:bg-orange-100 dark:border-orange-800 dark:bg-orange-900/30 dark:text-orange-400 dark:hover:bg-orange-900/50'
-                    }`}>
-                    <Users className="h-3.5 w-3.5" />Sur-occ.
-                  </button>
-                  <button type="button" onClick={() => setCancelledFilter(v => !v)}
-                    className={`inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs font-medium transition-colors ${
-                      cancelledFilter ? 'bg-slate-700 text-white border-slate-700' : 'border-slate-300 bg-slate-100 text-slate-700 hover:bg-slate-200 dark:border-slate-700 dark:bg-slate-800/50 dark:text-slate-400 dark:hover:bg-slate-800'
-                    }`}>
-                    <Ban className="h-3.5 w-3.5" />Supprimé
-                  </button>
-                </div>
-
-                {/* Period filter */}
-                <PeriodSelector
-                  selectedPeriod={historyPeriod}
-                  onPeriodChange={(p) => {
-                    setHistoryPeriod(p);
-                    if (p !== 'custom') { setCustomStart(''); setCustomEnd(''); }
-                    if (p !== 'all' && p !== 'custom') setSelectedDate(new Date());
-                  }}
-                  showAll
-                  customStart={customStart}
-                  customEnd={customEnd}
-                  onCustomStartChange={setCustomStart}
-                  onCustomEndChange={setCustomEnd}
-                />
-                {historyPeriod !== 'all' && historyPeriod !== 'custom' && (
-                  <DashboardDatePicker
-                    date={selectedDate}
-                    onDateChange={setSelectedDate}
-                    period={historyPeriod}
+                {/* Period filter + date picker (same row) */}
+                <div className="flex flex-wrap items-center gap-2">
+                  <PeriodSelector
+                    selectedPeriod={historyPeriod}
+                    onPeriodChange={(p) => {
+                      setHistoryPeriod(p);
+                      if (p !== 'custom') { setCustomStart(''); setCustomEnd(''); }
+                      if (p !== 'all' && p !== 'custom') setSelectedDate(new Date());
+                    }}
+                    showAll
+                    customStart={customStart}
+                    customEnd={customEnd}
+                    onCustomStartChange={setCustomStart}
+                    onCustomEndChange={setCustomEnd}
                   />
-                )}
+                  {historyPeriod !== 'all' && historyPeriod !== 'custom' && (
+                    <DashboardDatePicker
+                      date={selectedDate}
+                      onDateChange={setSelectedDate}
+                      period={historyPeriod}
+                    />
+                  )}
+                </div>
 
                 {/* Sort options */}
                 <div className="flex items-center gap-2">
