@@ -74,10 +74,17 @@ export function AppLayout({ children }: AppLayoutProps) {
     return () => { clearInterval(heartbeat); supabase.removeChannel(channel); };
   }, [user?.id]);
 
-  // Detect scroll for header glass effect
+  // Detect scroll for header effect — throttled via RAF
   useEffect(() => {
+    let ticking = false;
     const handleScroll = () => {
-      setIsScrolled(window.scrollY > 10);
+      if (!ticking) {
+        requestAnimationFrame(() => {
+          setIsScrolled(window.scrollY > 10);
+          ticking = false;
+        });
+        ticking = true;
+      }
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
@@ -301,28 +308,25 @@ export function AppLayout({ children }: AppLayoutProps) {
       {bottomNavItems.map((item) => {
         const isActive = location.pathname === item.href;
         return (
-          <motion.div
+          <div
             key={item.href}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            transition={{ duration: 0.1 }}
-            className="flex flex-col items-center justify-center flex-1 h-full relative"
+            className="flex flex-col items-center justify-center flex-1 h-full relative active:scale-95 transition-transform duration-100"
           >
             <Link
               to={item.href}
               className={cn(
-                'flex flex-col items-center justify-center gap-1 transition-all w-full h-full',
+                'flex flex-col items-center justify-center gap-1 w-full h-full',
                 isActive
                   ? 'text-primary'
                   : 'text-muted-foreground hover:text-foreground'
               )}
             >
               <div className={cn(
-                'relative flex items-center justify-center rounded-full transition-all duration-200 px-4 py-1.5',
+                'relative flex items-center justify-center rounded-full px-4 py-1.5',
                 isActive && 'bg-primary/10'
               )}>
                 <item.icon className={cn(
-                  'h-5 w-5 transition-all duration-200',
+                  'h-5 w-5',
                   isActive && 'text-primary scale-110'
                 )} />
                 {item.pageId === 'admin' && adminBadgeCount > 0 && (
@@ -337,11 +341,11 @@ export function AppLayout({ children }: AppLayoutProps) {
                 )}
               </div>
               <span className={cn(
-                'text-xs transition-all duration-200',
+                'text-xs',
                 isActive ? 'font-semibold text-primary' : 'font-normal'
               )}>{item.label}</span>
             </Link>
-          </motion.div>
+          </div>
         );
       })}
     </>
@@ -356,37 +360,18 @@ export function AppLayout({ children }: AppLayoutProps) {
         )}>
           {isOnline && user ? (
             <>
-              <motion.div
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                className="h-2 w-2 rounded-full bg-green-400"
-              />
+              <div className="h-2 w-2 rounded-full bg-green-400" />
               <Wifi className="h-3.5 w-3.5 text-green-400" />
             </>
           ) : isOnline && !user ? (
             <>
-              <motion.div
-                initial={{ scale: 0 }}
-                animate={{ scale: [1, 1.2, 1] }}
-                transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
-                className="h-2 w-2 rounded-full bg-yellow-400"
-              />
+              <div className="h-2 w-2 rounded-full bg-yellow-400 animate-pulse" />
               <Wifi className="h-3.5 w-3.5 text-yellow-400" />
             </>
           ) : (
             <>
-              <motion.div
-                initial={{ scale: 0 }}
-                animate={{ scale: [1, 1.3, 1], opacity: [1, 0.5, 1] }}
-                transition={{ duration: 1, repeat: Infinity, ease: "easeInOut" }}
-                className="h-2 w-2 rounded-full bg-red-400"
-              />
-              <motion.div
-                animate={{ opacity: [1, 0.5, 1] }}
-                transition={{ duration: 1, repeat: Infinity, ease: "easeInOut" }}
-              >
-                <WifiOff className="h-3.5 w-3.5 text-red-400" />
-              </motion.div>
+              <div className="h-2 w-2 rounded-full bg-red-400 animate-pulse" />
+              <WifiOff className="h-3.5 w-3.5 text-red-400 animate-pulse" />
             </>
           )}
         </div>
@@ -440,9 +425,9 @@ export function AppLayout({ children }: AppLayoutProps) {
         {/* Header — Mobile uniquement */}
         <header
           className={cn(
-            "sticky top-0 z-40 transition-all duration-300 md:hidden",
+            "sticky top-0 z-40 transition-colors duration-200 md:hidden",
             isScrolled
-              ? "bg-primary/90 backdrop-blur-md shadow-lg dark:bg-primary/80"
+              ? "bg-primary shadow-md dark:bg-primary/95"
               : "bg-primary",
             "text-primary-foreground"
           )}
@@ -466,20 +451,18 @@ export function AppLayout({ children }: AppLayoutProps) {
                   )}>
                     {isOnline && user ? (
                       <>
-                        <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="h-2 w-2 rounded-full bg-green-400" />
+                        <div className="h-2 w-2 rounded-full bg-green-400" />
                         <Wifi className="h-3.5 w-3.5 text-green-400" />
                       </>
                     ) : isOnline && !user ? (
                       <>
-                        <motion.div initial={{ scale: 0 }} animate={{ scale: [1, 1.2, 1] }} transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }} className="h-2 w-2 rounded-full bg-yellow-400" />
+                        <div className="h-2 w-2 rounded-full bg-yellow-400 animate-pulse" />
                         <Wifi className="h-3.5 w-3.5 text-yellow-400" />
                       </>
                     ) : (
                       <>
-                        <motion.div initial={{ scale: 0 }} animate={{ scale: [1, 1.3, 1], opacity: [1, 0.5, 1] }} transition={{ duration: 1, repeat: Infinity, ease: "easeInOut" }} className="h-2 w-2 rounded-full bg-red-400" />
-                        <motion.div animate={{ opacity: [1, 0.5, 1] }} transition={{ duration: 1, repeat: Infinity, ease: "easeInOut" }}>
-                          <WifiOff className="h-3.5 w-3.5 text-red-400" />
-                        </motion.div>
+                        <div className="h-2 w-2 rounded-full bg-red-400 animate-pulse" />
+                        <WifiOff className="h-3.5 w-3.5 text-red-400 animate-pulse" />
                       </>
                     )}
                   </div>

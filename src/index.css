@@ -872,9 +872,16 @@
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
   }
 
-  /* Smooth transitions for theme switching — crossfade 400ms */
-  * {
-    transition: background-color 0.4s ease, border-color 0.4s ease, color 0.3s ease, box-shadow 0.4s ease;
+  /* Smooth transitions for theme switching — only on key elements, not * */
+  [data-slot="card"],
+  [data-slot="button"],
+  nav,
+  header,
+  aside,
+  .glass,
+  .glass-dark,
+  .glass-frosted {
+    transition: background-color 0.3s ease, border-color 0.3s ease, color 0.2s ease, box-shadow 0.3s ease;
   }
 
   /* During theme change, add transition to pseudo-elements (animated backgrounds) */
@@ -886,6 +893,20 @@
 @layer utilities {
   .safe-area-inset-bottom {
     padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+/* Mobile touch optimizations */
+@media (max-width: 767px) {
+  /* Eliminate 300ms tap delay on all interactive elements */
+  a, button, [role="button"], input, select, textarea, label {
+    touch-action: manipulation;
+  }
+
+  /* Smooth momentum scrolling */
+  main, .overflow-y-auto, .overflow-auto {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: contain;
   }
 }
 
@@ -989,6 +1010,8 @@ html.dark:not([class*="theme-"]) body::before {
     radial-gradient(ellipse 60% 70% at 5%  95%,   hsl(350 65% 60% / 0.15) 0%, transparent 55%),
     radial-gradient(ellipse 45% 40% at 50% 50%,   hsl(155 45% 50% / 0.07) 0%, transparent 50%);
   animation: colore-drift 13s ease-in-out infinite alternate;
+  will-change: transform;
+  transform: translateZ(0);
 }
 
 .theme-colore.dark body::before {
@@ -997,6 +1020,8 @@ html.dark:not([class*="theme-"]) body::before {
     radial-gradient(ellipse 65% 70% at 5%  95%,   hsl(350 60% 55% / 0.20) 0%, transparent 58%),
     radial-gradient(ellipse 45% 40% at 50% 45%,   hsl(155 50% 45% / 0.10) 0%, transparent 50%);
   animation: colore-drift 13s ease-in-out infinite alternate;
+  will-change: transform;
+  transform: translateZ(0);
 }
 
 @keyframes colore-drift {
@@ -1019,6 +1044,8 @@ html.dark:not([class*="theme-"]) body::before {
     radial-gradient(ellipse 60% 80% at 80% 90%, hsl(239 70% 65% / 0.18) 0%, transparent 55%),
     radial-gradient(ellipse 50% 50% at 60% 40%, hsl(280 55% 55% / 0.08) 0%, transparent 50%);
   animation: moderne-drift 12s ease-in-out infinite alternate;
+  will-change: transform;
+  transform: translateZ(0);
 }
 
 .theme-moderne.dark body::before {
@@ -1027,6 +1054,8 @@ html.dark:not([class*="theme-"]) body::before {
     radial-gradient(ellipse 60% 80% at 80% 90%, hsl(239 80% 62% / 0.22) 0%, transparent 55%),
     radial-gradient(ellipse 50% 50% at 60% 40%, hsl(280 65% 50% / 0.10) 0%, transparent 50%);
   animation: moderne-drift 12s ease-in-out infinite alternate;
+  will-change: transform;
+  transform: translateZ(0);
 }
 
 @keyframes moderne-drift {
@@ -1049,6 +1078,8 @@ html.dark:not([class*="theme-"]) body::before {
     radial-gradient(ellipse 55% 70% at 85% 85%, hsl(200 85% 50% / 0.16) 0%, transparent 55%),
     radial-gradient(ellipse 45% 45% at 55% 35%, hsl(210 100% 60% / 0.07) 0%, transparent 50%);
   animation: pro-drift 14s ease-in-out infinite alternate;
+  will-change: transform;
+  transform: translateZ(0);
 }
 
 .theme-pro.dark body::before {
@@ -1057,6 +1088,8 @@ html.dark:not([class*="theme-"]) body::before {
     radial-gradient(ellipse 55% 70% at 85% 85%, hsl(195 100% 52% / 0.20) 0%, transparent 55%),
     radial-gradient(ellipse 45% 45% at 55% 35%, hsl(210 100% 62% / 0.09) 0%, transparent 50%);
   animation: pro-drift 14s ease-in-out infinite alternate;
+  will-change: transform;
+  transform: translateZ(0);
 }
 
 @keyframes pro-drift {
@@ -1064,6 +1097,32 @@ html.dark:not([class*="theme-"]) body::before {
   30%  { transform: scale(1.05) translateX(-10px) translateY(10px); }
   60%  { transform: scale(0.97) translateX(14px)  translateY(-6px); }
   100% { transform: scale(1.03) translateX(-4px)  translateY(8px);  }
+}
+
+/* Disable gradient animations on mobile — save battery + CPU */
+@media (max-width: 767px) {
+  .theme-colore body::before,
+  .theme-colore.dark body::before,
+  .theme-moderne body::before,
+  .theme-moderne.dark body::before,
+  .theme-pro body::before,
+  .theme-pro.dark body::before {
+    animation: none !important;
+  }
+
+  /* Disable card hover transforms on touch devices */
+  [data-slot="card"]:hover {
+    transform: none !important;
+  }
+}
+
+/* Prefer reduced motion — respect OS setting */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 /* Glassmorphism utilities */
@@ -1107,15 +1166,25 @@ html.dark:not([class*="theme-"]) body::before {
     inset 0 1px 0 0 hsl(0 0% 100% / 0.04);
 }
 
-/* Frosted glass effect for nav/overlays */
+/* Frosted glass effect for nav/overlays — solid on mobile for perf */
 .glass-frosted {
-  background: hsl(var(--background) / 0.85);
-  backdrop-filter: saturate(180%) blur(20px);
-  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  background: hsl(var(--background) / 0.97);
 }
 
 .dark .glass-frosted {
-  background: hsl(var(--background) / 0.75);
+  background: hsl(var(--background) / 0.95);
+}
+
+@media (min-width: 768px) {
+  .glass-frosted {
+    background: hsl(var(--background) / 0.85);
+    backdrop-filter: saturate(180%) blur(20px);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+  }
+
+  .dark .glass-frosted {
+    background: hsl(var(--background) / 0.75);
+  }
 }
 
 /* ===== AUTH PAGE — Theme-aware visual effects ===== */

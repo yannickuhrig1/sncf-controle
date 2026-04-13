@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import { ReactNode } from 'react';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface PageTransitionProps {
   children: ReactNode;
@@ -22,11 +23,18 @@ const pageVariants = {
 
 const pageTransition = {
   type: 'tween' as const,
-  ease: 'easeInOut' as const,
-  duration: 0.2,
+  ease: 'easeOut' as const,
+  duration: 0.15,
 };
 
 export const PageTransition = ({ children }: PageTransitionProps) => {
+  const isMobile = useIsMobile();
+
+  // On mobile, skip framer-motion entirely for instant page loads
+  if (isMobile) {
+    return <div className="w-full">{children}</div>;
+  }
+
   return (
     <motion.div
       initial="initial"

@@ -2,6 +2,22 @@
 
 Toutes les modifications notables de ce projet sont documentées dans ce fichier.
 
+## [1.12.18] - 2026-04-13
+
+### Amélioré — Fluidité mobile
+- **Suppression transition globale `*`** : les transitions CSS ne s'appliquent plus à tous les éléments — uniquement cartes, boutons, nav et header. Élimine le lag au clic et au scroll
+- **Header mobile sans backdrop-blur** : couleur solide au lieu du flou GPU-coûteux, `transition-colors` au lieu de `transition-all`
+- **Barre de navigation mobile sans glass-frosted** : fond opaque sur mobile, effet verre réservé au desktop
+- **Animations de fond désactivées sur mobile** : les gradients animés (thèmes Coloré/Moderne/Pro) ne tournent plus sur petit écran — économie CPU et batterie
+- **Scroll throttlé via RAF** : le détecteur de scroll du header utilise `requestAnimationFrame` pour éviter les re-renders excessifs
+- **Indicateurs de connexion en CSS** : les animations infinies Framer-Motion remplacées par `animate-pulse` CSS natif
+- **Navigation du bas en CSS pur** : `active:scale-95` CSS au lieu de Framer-Motion `whileTap`
+- **Transitions de page désactivées sur mobile** : `PageTransition` rend un `<div>` simple sur mobile au lieu de `motion.div`
+- **Touch optimisé** : `touch-action: manipulation` sur tous les éléments interactifs (élimine le délai 300ms), momentum scrolling natif
+- **`prefers-reduced-motion` respecté** : toutes les animations désactivées si l'OS le demande
+- **GPU-accelerated gradients** : `will-change: transform` + `translateZ(0)` sur les fonds animés desktop
+- **Hover cards désactivé sur mobile** : pas de `transform: translateY(-2px)` sur les cartes en tactile
+
 ## [1.12.17] - 2026-04-13
 
 ### Amélioré — Numérotation des trains dans les missions
