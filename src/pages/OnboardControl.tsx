@@ -989,7 +989,7 @@ export default function OnboardControl() {
                             </button>
                           </div>
                           <div className="flex flex-wrap gap-1.5">
-                            {dailyTrains.map(t => (
+                            {dailyTrains.map((t, i) => (
                               <span
                                 key={t.trainNumber}
                                 className={cn(
@@ -1001,6 +1001,7 @@ export default function OnboardControl() {
                                 )}
                               >
                                 <button type="button" onClick={() => handleLoadDailyTrain(t)} className="inline-flex items-center gap-1 hover:opacity-80">
+                                  <span className="font-bold text-[10px] opacity-60">{i + 1}.</span>
                                   <Train className="h-3 w-3" />
                                   {t.trainNumber}
                                   {t.trainInfo?.status === 'delayed' && t.trainInfo.delayMinutes && (
@@ -1012,7 +1013,7 @@ export default function OnboardControl() {
                                 </button>
                               </span>
                             ))}
-                            {teamTrains.filter(t => !dailyTrains.some(d => d.trainNumber === t.trainNumber)).map(t => (
+                            {teamTrains.filter(t => !dailyTrains.some(d => d.trainNumber === t.trainNumber)).map((t, i) => (
                               <span
                                 key={`team-${t.trainNumber}`}
                                 className={cn(
@@ -1024,6 +1025,7 @@ export default function OnboardControl() {
                                 )}
                               >
                                 <button type="button" onClick={() => handleLoadDailyTrain(t)} className="inline-flex items-center gap-1 hover:opacity-80" title="Train partagé par l'équipe">
+                                  <span className="font-bold text-[10px] opacity-60">{dailyTrains.length + i + 1}.</span>
                                   <Users2 className="h-3 w-3" />
                                   {t.trainNumber}
                                   {t.trainInfo?.status === 'delayed' && t.trainInfo.delayMinutes && (
@@ -1342,7 +1344,7 @@ export default function OnboardControl() {
                           </button>
                         </div>
                         <div className="flex flex-wrap gap-1.5">
-                          {dailyTrains.map(t => (
+                          {dailyTrains.map((t, i) => (
                             <span
                               key={t.trainNumber}
                               className={cn(
@@ -1354,6 +1356,7 @@ export default function OnboardControl() {
                               )}
                             >
                               <button type="button" onClick={() => handleLoadDailyTrain(t)} className="inline-flex items-center gap-1 hover:opacity-80">
+                                <span className="font-bold text-[10px] opacity-60">{i + 1}.</span>
                                 <Train className="h-3 w-3" />
                                 {t.trainNumber}
                                 {t.trainInfo?.status === 'delayed' && t.trainInfo.delayMinutes && (
@@ -1365,7 +1368,7 @@ export default function OnboardControl() {
                               </button>
                             </span>
                           ))}
-                          {teamTrains.filter(t => !dailyTrains.some(d => d.trainNumber === t.trainNumber)).map(t => (
+                          {teamTrains.filter(t => !dailyTrains.some(d => d.trainNumber === t.trainNumber)).map((t, i) => (
                             <span
                               key={`team-${t.trainNumber}`}
                               className={cn(
@@ -1377,6 +1380,7 @@ export default function OnboardControl() {
                               )}
                             >
                               <button type="button" onClick={() => handleLoadDailyTrain(t)} className="inline-flex items-center gap-1 hover:opacity-80" title="Train partagé par l'équipe">
+                                <span className="font-bold text-[10px] opacity-60">{dailyTrains.length + i + 1}.</span>
                                 <Users2 className="h-3 w-3" />
                                 {t.trainNumber}
                                 {t.trainInfo?.status === 'delayed' && t.trainInfo.delayMinutes && (

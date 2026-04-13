@@ -679,10 +679,11 @@ export function EmbarkmentControl({ stationName, onStationChange }: EmbarkmentCo
           )}
 
           {(showAllTrains ? trains : trains.slice(-3)).map((train) => {
+            const globalIndex = trains.indexOf(train);
             const trainFraudRate = getTrainFraudRate(train);
             const isExpanded = expandedTrainId === train.id;
             const trainColor = getThresholdColor(trainFraudRate);
-            
+
             const isLookupOpen = !!trainLookupOpen[train.id];
 
             return (
@@ -693,6 +694,7 @@ export function EmbarkmentControl({ stationName, onStationChange }: EmbarkmentCo
                   onClick={() => setExpandedTrainId(isExpanded ? null : train.id)}
                 >
                   <div className="flex items-center gap-3">
+                    <span className="text-xs font-bold text-muted-foreground w-5 text-center shrink-0">{globalIndex + 1}</span>
                     <Train className="h-4 w-4 text-primary" />
                     <div>
                       <div className="flex items-center gap-2">

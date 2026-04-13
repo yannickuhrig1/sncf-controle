@@ -54,7 +54,8 @@ export function useDailyTrains(date: string, shareCode?: string | null) {
       .eq('date', date)
       .eq('shared', true)
       .eq('share_code', shareCode)
-      .neq('user_id', user.id);
+      .neq('user_id', user.id)
+      .order('created_at');
 
     if (teamErr) {
       console.error('useDailyTrains fetchFromDb team:', teamErr.message);

@@ -2,6 +2,13 @@
 
 Toutes les modifications notables de ce projet sont documentées dans ce fichier.
 
+## [1.12.17] - 2026-04-13
+
+### Amélioré — Numérotation des trains dans les missions
+- **Numéro devant chaque train** : chaque train ajouté affiche son numéro d'ordre (1, 2, 3…) dans les trains du jour et dans les missions embarquement
+- **Ordre conservé pour les membres** : les trains partagés par code sont triés par `created_at`, garantissant le même ordre pour celui qui rejoint la session
+- La numérotation continue entre trains personnels et trains d'équipe
+
 ## [1.12.16] - 2026-04-13
 
 ### Amélioré — Filtres avancés dans l'historique
