@@ -61,6 +61,7 @@ import {
   LayoutList,
   FileDown,
   Shield,
+  Ban,
 } from 'lucide-react';
 import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -274,6 +275,9 @@ export default function HistoryPage() {
   const [locationFilter, setLocationFilter] = useState<LocationType | 'all'>('all');
   const [sortOption, setSortOption] = useState<SortOption>('date');
   const [policeFilter, setPoliceFilter] = useState(false);
+  const [sugeFilter, setSugeFilter] = useState(false);
+  const [overcrowdedFilter, setOvercrowdedFilter] = useState(false);
+  const [cancelledFilter, setCancelledFilter] = useState(false);
   const [historyPeriod, setHistoryPeriod] = useState<Period | 'all'>('all');
   const [customStart, setCustomStart] = useState('');
   const [customEnd, setCustomEnd] = useState('');
@@ -427,10 +431,11 @@ export default function HistoryPage() {
         }
       }
       
-      // Police filter
-      if (policeFilter && !(control as any).is_police_on_board) {
-        return false;
-      }
+      // Badge filters
+      if (policeFilter && !(control as any).is_police_on_board) return false;
+      if (sugeFilter && !(control as any).is_suge_on_board) return false;
+      if (overcrowdedFilter && !(control as any).is_overcrowded) return false;
+      if (cancelledFilter && !(control as any).is_cancelled) return false;
 
       // Search filter
       if (searchQuery.trim()) {
@@ -469,7 +474,7 @@ export default function HistoryPage() {
     }
 
     return result;
-  }, [displayControls, searchQuery, locationFilter, sortOption, periodDateRange, getFraudRate, policeFilter]);
+  }, [displayControls, searchQuery, locationFilter, sortOption, periodDateRange, getFraudRate, policeFilter, sugeFilter, overcrowdedFilter, cancelledFilter]);
 
   // Group filtered controls by date, then sub-group multi-agent trains/gares
   const groupedByDate = useMemo(() => {
@@ -513,7 +518,7 @@ export default function HistoryPage() {
       });
   }, [filteredControls]);
 
-  const hasActiveFilters = searchQuery.trim() !== '' || locationFilter !== 'all' || sortOption !== 'date' || historyPeriod !== 'all' || policeFilter;
+  const hasActiveFilters = searchQuery.trim() !== '' || locationFilter !== 'all' || sortOption !== 'date' || historyPeriod !== 'all' || policeFilter || sugeFilter || overcrowdedFilter || cancelledFilter;
 
   const clearFilters = () => {
     setSearchQuery('');
@@ -523,6 +528,9 @@ export default function HistoryPage() {
     setCustomStart('');
     setCustomEnd('');
     setPoliceFilter(false);
+    setSugeFilter(false);
+    setOvercrowdedFilter(false);
+    setCancelledFilter(false);
   };
 
   const handleExportTableExtended = () => {
@@ -797,19 +805,31 @@ export default function HistoryPage() {
                   </ToggleGroup>
                 </div>
 
-                {/* Police présente toggle */}
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setPoliceFilter(v => !v)}
+                {/* Badge filters */}
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <button type="button" onClick={() => setPoliceFilter(v => !v)}
                     className={`inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs font-medium transition-colors ${
-                      policeFilter
-                        ? 'bg-blue-600 text-white border-blue-600'
-                        : 'bg-background text-muted-foreground border-input hover:bg-muted'
-                    }`}
-                  >
-                    <Shield className="h-3.5 w-3.5" />
-                    Police présente
+                      policeFilter ? 'bg-blue-600 text-white border-blue-600' : 'border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100 dark:border-blue-800 dark:bg-blue-900/30 dark:text-blue-400 dark:hover:bg-blue-900/50'
+                    }`}>
+                    <Shield className="h-3.5 w-3.5" />Police
+                  </button>
+                  <button type="button" onClick={() => setSugeFilter(v => !v)}
+                    className={`inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs font-medium transition-colors ${
+                      sugeFilter ? 'bg-indigo-600 text-white border-indigo-600' : 'border-indigo-200 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 dark:border-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-400 dark:hover:bg-indigo-900/50'
+                    }`}>
+                    <Shield className="h-3.5 w-3.5" />SUGE
+                  </button>
+                  <button type="button" onClick={() => setOvercrowdedFilter(v => !v)}
+                    className={`inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs font-medium transition-colors ${
+                      overcrowdedFilter ? 'bg-orange-500 text-white border-orange-500' : 'border-orange-200 bg-orange-50 text-orange-700 hover:bg-orange-100 dark:border-orange-800 dark:bg-orange-900/30 dark:text-orange-400 dark:hover:bg-orange-900/50'
+                    }`}>
+                    <Users className="h-3.5 w-3.5" />Sur-occ.
+                  </button>
+                  <button type="button" onClick={() => setCancelledFilter(v => !v)}
+                    className={`inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs font-medium transition-colors ${
+                      cancelledFilter ? 'bg-slate-700 text-white border-slate-700' : 'border-slate-300 bg-slate-100 text-slate-700 hover:bg-slate-200 dark:border-slate-700 dark:bg-slate-800/50 dark:text-slate-400 dark:hover:bg-slate-800'
+                    }`}>
+                    <Ban className="h-3.5 w-3.5" />Supprimé
                   </button>
                 </div>
 
