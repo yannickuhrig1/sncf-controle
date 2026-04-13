@@ -2,6 +2,14 @@
 
 Toutes les modifications notables de ce projet sont documentées dans ce fichier.
 
+## [1.12.15] - 2026-04-13
+
+### Amélioré — Sélecteur de période dans l'historique
+- **Navigation par flèches** : le sélecteur de période utilise désormais le même composant que les Statistiques — flèches ← → pour naviguer entre jour/semaine/mois/année, calendrier popup pour choisir une date précise
+- **Affichage contextuel** : label adapté à la période (ex : « Sem. 15 · 7 avr. – 13 avr. », « avril 2026 », « 2026 »)
+- **Bouton retour à aujourd'hui** : accessible directement depuis le calendrier
+- Suppression des anciens champs `<input type="date">` et `<select>` mois/année au profit du `DashboardDatePicker`
+
 ## [1.12.14] - 2026-04-12
 
 ### Corrigé — Mode hors-ligne (page blanche)

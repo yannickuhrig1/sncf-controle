@@ -26,6 +26,7 @@ import { HistoryTableView } from '@/components/history/HistoryTableView';
 import { EmbarkmentHistoryView } from '@/components/history/EmbarkmentHistoryView';
 import { PeriodSelector } from '@/components/dashboard/PeriodSelector';
 import type { Period } from '@/components/dashboard/PeriodSelector';
+import { DashboardDatePicker } from '@/components/dashboard/DashboardDatePicker';
 import { ViewModeToggle } from '@/components/dashboard/ViewModeToggle';
 import { getFraudRateColor } from '@/lib/stats';
 import { exportTableToPDF, exportTableToHTML, exportToPDF, downloadPDF } from '@/lib/exportUtils';
@@ -61,7 +62,7 @@ import {
   FileDown,
   Shield,
 } from 'lucide-react';
-import { format, parseISO, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear } from 'date-fns';
+import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { toast } from 'sonner';
 import type { Database } from '@/integrations/supabase/types';
@@ -276,9 +277,7 @@ export default function HistoryPage() {
   const [historyPeriod, setHistoryPeriod] = useState<Period | 'all'>('all');
   const [customStart, setCustomStart] = useState('');
   const [customEnd, setCustomEnd] = useState('');
-  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth()); // 0-11
-  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
-  const [selectedDay, setSelectedDay] = useState(format(new Date(), 'yyyy-MM-dd'));
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [dataViewMode, setDataViewMode] = useState<ViewMode>('all-data');
   const [pdfPreviewOpen, setPdfPreviewOpen] = useState(false);
   const [pdfPreviewUrl, setPdfPreviewUrl] = useState<string | null>(null);
@@ -382,23 +381,17 @@ export default function HistoryPage() {
 
   // Compute effective date range from period selection
   const periodDateRange = useMemo(() => {
-    const today = new Date();
     switch (historyPeriod) {
       case 'day': {
-        const ref = selectedDay ? parseISO(selectedDay) : today;
-        const d = new Date(ref.getFullYear(), ref.getMonth(), ref.getDate());
+        const d = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate());
         return { start: d, end: d };
       }
       case 'week':
-        return { start: startOfWeek(today, { weekStartsOn: 1 }), end: endOfWeek(today, { weekStartsOn: 1 }) };
-      case 'month': {
-        const ref = new Date(selectedYear, selectedMonth, 1);
-        return { start: startOfMonth(ref), end: endOfMonth(ref) };
-      }
-      case 'year': {
-        const refY = new Date(selectedYear, 0, 1);
-        return { start: startOfYear(refY), end: endOfYear(refY) };
-      }
+        return { start: startOfWeek(selectedDate, { weekStartsOn: 1 }), end: endOfWeek(selectedDate, { weekStartsOn: 1 }) };
+      case 'month':
+        return { start: startOfMonth(selectedDate), end: endOfMonth(selectedDate) };
+      case 'year':
+        return { start: startOfYear(selectedDate), end: endOfYear(selectedDate) };
       case 'custom':
         return {
           start: customStart ? new Date(customStart) : null,
@@ -407,7 +400,7 @@ export default function HistoryPage() {
       default: // 'all'
         return { start: null, end: null };
     }
-  }, [historyPeriod, customStart, customEnd, selectedMonth, selectedYear, selectedDay]);
+  }, [historyPeriod, customStart, customEnd, selectedDate]);
 
   // Filter and sort controls
   const filteredControls = useMemo(() => {
@@ -826,19 +819,21 @@ export default function HistoryPage() {
                   onPeriodChange={(p) => {
                     setHistoryPeriod(p);
                     if (p !== 'custom') { setCustomStart(''); setCustomEnd(''); }
+                    if (p !== 'all' && p !== 'custom') setSelectedDate(new Date());
                   }}
                   showAll
                   customStart={customStart}
                   customEnd={customEnd}
                   onCustomStartChange={setCustomStart}
                   onCustomEndChange={setCustomEnd}
-                  selectedDay={selectedDay}
-                  onDayChange={setSelectedDay}
-                  selectedMonth={selectedMonth}
-                  onMonthChange={setSelectedMonth}
-                  selectedYear={selectedYear}
-                  onYearChange={setSelectedYear}
                 />
+                {historyPeriod !== 'all' && historyPeriod !== 'custom' && (
+                  <DashboardDatePicker
+                    date={selectedDate}
+                    onDateChange={setSelectedDate}
+                    period={historyPeriod}
+                  />
+                )}
 
                 {/* Sort options */}
                 <div className="flex items-center gap-2">
