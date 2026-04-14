@@ -2,24 +2,26 @@ import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Minus, Plus, X, Users, Ticket, FileText, ClipboardList, ChevronRight } from 'lucide-react';
-import type { TarifEntry } from './TarifListItem';
+import { TarifListItem, type TarifEntry } from './TarifListItem';
+import { TarifTypeToggle } from './TarifTypeToggle';
 
 const TARIF_TYPES = [
-  { value: 'stt', label: 'STT', montant: 50 },
-  { value: 'rnv', label: 'RNV', montant: 35 },
-  { value: 'titre_tiers', label: 'Titre tiers', montant: 50 },
-  { value: 'd_naissance', label: 'D. naissance', montant: 50 },
-  { value: 'autre', label: 'Autre', montant: 0 },
+  { value: 'stt', label: 'STT' },
+  { value: 'rnv', label: 'RNV' },
+  { value: 'titre_tiers', label: 'Titre tiers' },
+  { value: 'd_naissance', label: 'D. naissance' },
+  { value: 'autre', label: 'Autre' },
 ];
 
 const PV_TYPES = [
-  { value: 'pv_stt100', label: 'STT', montant: 100 },
-  { value: 'pv_rnv', label: 'RNV', montant: 100 },
-  { value: 'pv_titre_tiers', label: 'Titre tiers', montant: 100 },
-  { value: 'pv_doc_naissance', label: 'D. naissance', montant: 100 },
-  { value: 'pv_autre', label: 'Autre', montant: 0 },
+  { value: 'pv_stt100', label: 'STT' },
+  { value: 'pv_rnv', label: 'RNV' },
+  { value: 'pv_titre_tiers', label: 'Titre tiers' },
+  { value: 'pv_doc_naissance', label: 'D. naissance' },
+  { value: 'pv_autre', label: 'Autre' },
 ];
 
 interface Props {
@@ -50,7 +52,7 @@ function generateId() {
   return Math.random().toString(36).substring(2, 9);
 }
 
-/** Popup saisie rapide tarifs contrôle ou PV */
+/** Popup saisie rapide tarifs contrôle ou PV — même UX que OnboardControl */
 function QuickEntryDialog({
   open,
   onOpenChange,
@@ -63,28 +65,30 @@ function QuickEntryDialog({
   open: boolean;
   onOpenChange: (open: boolean) => void;
   title: string;
-  types: { value: string; label: string; montant: number }[];
+  types: { value: string; label: string }[];
   entries: TarifEntry[];
   onEntriesChange: (entries: TarifEntry[]) => void;
   category: 'controle' | 'pv';
 }) {
-  const countByType = (type: string) => entries.filter(e => e.type === type).length;
+  const [selectedType, setSelectedType] = useState(types[0]?.value ?? '');
+  const [montant, setMontant] = useState('');
 
-  const addEntry = (type: { value: string; label: string; montant: number }) => {
+  const handleAdd = () => {
+    const m = parseFloat(montant);
+    if (!m || m <= 0) return;
+    const typeObj = types.find(t => t.value === selectedType);
     onEntriesChange([...entries, {
       id: generateId(),
-      type: type.value,
-      typeLabel: type.label,
-      montant: type.montant,
+      type: selectedType,
+      typeLabel: typeObj?.label ?? selectedType,
+      montant: m,
       category,
     }]);
+    setMontant('');
   };
 
-  const removeEntry = (type: string) => {
-    const idx = entries.findLastIndex(e => e.type === type);
-    if (idx >= 0) {
-      onEntriesChange(entries.filter((_, i) => i !== idx));
-    }
+  const handleRemove = (id: string) => {
+    onEntriesChange(entries.filter(e => e.id !== id));
   };
 
   return (
@@ -96,41 +100,50 @@ function QuickEntryDialog({
             {title}
           </DialogTitle>
         </DialogHeader>
-        <div className="space-y-2 mt-2">
-          {types.map(t => {
-            const count = countByType(t.value);
-            return (
-              <div key={t.value} className="flex items-center justify-between py-2 px-3 rounded-lg bg-muted/50">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium">{t.label}</span>
-                  {t.montant > 0 && (
-                    <span className="text-xs text-muted-foreground">{t.montant}€</span>
-                  )}
-                </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => removeEntry(t.value)}
-                    disabled={count === 0}
-                    className="h-8 w-8 rounded-md border flex items-center justify-center hover:bg-muted active:scale-95 transition-all disabled:opacity-30"
-                  >
-                    <Minus className="h-4 w-4" />
-                  </button>
-                  <span className="text-lg font-bold tabular-nums w-8 text-center">{count}</span>
-                  <button
-                    type="button"
-                    onClick={() => addEntry(t)}
-                    className="h-8 w-8 rounded-md border flex items-center justify-center hover:bg-muted active:scale-95 transition-all"
-                  >
-                    <Plus className="h-4 w-4" />
-                  </button>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-        <div className="flex justify-end mt-2">
-          <Button size="sm" onClick={() => onOpenChange(false)}>Fermer</Button>
+        <div className="space-y-3 mt-2">
+          {/* Type selector */}
+          <TarifTypeToggle types={types} value={selectedType} onChange={setSelectedType} />
+
+          {/* Montant + ajouter */}
+          <div className="flex gap-2">
+            <Input
+              type="number"
+              min="0"
+              step="0.01"
+              placeholder="Montant (€)"
+              value={montant}
+              onChange={(e) => setMontant(e.target.value)}
+              className="flex-1"
+              onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAdd(); } }}
+            />
+            <Button
+              type="button"
+              onClick={handleAdd}
+              disabled={!montant || parseFloat(montant) <= 0}
+              variant={category === 'pv' ? 'destructive' : 'default'}
+              size="sm"
+            >
+              <Plus className="h-4 w-4 mr-1" />
+              Ajouter
+            </Button>
+          </div>
+
+          {/* Liste des entrées */}
+          {entries.length > 0 && (
+            <div className="space-y-1.5 max-h-48 overflow-y-auto">
+              {entries.map((e) => (
+                <TarifListItem key={e.id} item={e} onRemove={handleRemove} />
+              ))}
+            </div>
+          )}
+
+          {/* Total */}
+          {entries.length > 0 && (
+            <div className="flex justify-between items-center pt-2 border-t text-sm">
+              <span className="text-muted-foreground">{entries.length} entrée{entries.length > 1 ? 's' : ''}</span>
+              <span className="font-semibold">{entries.reduce((s, e) => s + e.montant, 0).toFixed(2)}€</span>
+            </div>
+          )}
         </div>
       </DialogContent>
     </Dialog>
