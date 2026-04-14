@@ -2,6 +2,13 @@
 
 Toutes les modifications notables de ce projet sont documentées dans ce fichier.
 
+## [1.12.23] - 2026-04-14
+
+### Modifié — Renommage « En règle » → « Tarif contrôle »
+- Carte KPI sur le Dashboard : « en règle » → « tarif contrôle »
+- Carte KPI sur la page Statistiques : idem
+- Export texte Dashboard : idem
+
 ## [1.12.22] - 2026-04-14
 
 ### Corrigé — « Dernière activité » affiche la vraie dernière activité

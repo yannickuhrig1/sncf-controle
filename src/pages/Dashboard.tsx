@@ -102,7 +102,7 @@ function buildDashboardText({ stats, detailedStats, periodLabel, dateRangeLabel,
   t += `${thin}\n`;
   t += `  👥  Voyageurs       ${String(stats.totalPassengers).padStart(5)}   (${stats.controlCount} contrôle${stats.controlCount > 1 ? 's' : ''})\n`;
   t += `  📊  Taux fraude     ${String(formatFraudRate(stats.fraudRate)).padStart(5)}   (${stats.fraudCount} fraude${stats.fraudCount !== 1 ? 's' : ''})\n`;
-  t += `  ✅  En règle        ${String(stats.passengersInRule).padStart(5)}${inRulePct}\n`;
+  t += `  ✅  Tarif contrôle   ${String(stats.passengersInRule).padStart(5)}${inRulePct}\n`;
   t += `  📋  Procès-verbaux  ${String(stats.pv).padStart(5)}\n`;
   t += `\n`;
 
@@ -286,7 +286,7 @@ footer{text-align:center;color:#9ca3af;font-size:.68rem;padding:1.5rem;border-to
       <div class="kpi-bar"><div class="kpi-fill" style="width:${fraudBarW}%"></div></div>
     </div>
     <div class="kpi" style="background:${kpiColors.emerald};box-shadow:${kpiShadow.emerald}">
-      <div class="kpi-lbl">En règle</div>
+      <div class="kpi-lbl">Tarif contrôle</div>
       <div class="kpi-val">${stats.passengersInRule}</div>
       <div class="kpi-sub">${inRulePct}</div>
     </div>
@@ -1012,14 +1012,14 @@ export default function Dashboard() {
                 </CardContent>
               </Card>
 
-              {/* En règle */}
+              {/* Tarif contrôle */}
               <Card className="border-0 shadow-md overflow-hidden bg-gradient-to-br from-emerald-500 to-teal-600 text-white">
                 <CardContent className="p-4">
                   <div className="flex items-start justify-between mb-3">
                     <div className="p-2 rounded-xl bg-white/20">
                       <CheckCircle2 className="h-4 w-4" />
                     </div>
-                    <span className="text-[10px] font-medium text-white/60 uppercase tracking-wide">en règle</span>
+                    <span className="text-[10px] font-medium text-white/60 uppercase tracking-wide">tarif contrôle</span>
                   </div>
                   <div className="text-3xl font-bold tracking-tight">{stats.passengersInRule}</div>
                   <p className="text-xs text-white/65 mt-1">

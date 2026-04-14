@@ -386,7 +386,7 @@ export default function StatisticsPage() {
                 <CardContent className="p-4">
                   <div className="flex items-start justify-between mb-3">
                     <div className="p-2 rounded-xl bg-white/20"><CheckCircle2 className="h-4 w-4" /></div>
-                    <span className="text-[10px] font-medium text-white/60 uppercase tracking-wide">en règle</span>
+                    <span className="text-[10px] font-medium text-white/60 uppercase tracking-wide">tarif contrôle</span>
                   </div>
                   <div className="text-3xl font-bold tracking-tight">{stats.passengersInRule}</div>
                   <p className="text-xs text-white/65 mt-1">
