@@ -2,6 +2,13 @@
 
 Toutes les modifications notables de ce projet sont documentées dans ce fichier.
 
+## [1.12.20] - 2026-04-14
+
+### Amélioré — Grand compteur : saisie Bord avec montant
+- **Carré Bord** : remplacé le compteur +/− simple par un popup identique à TC/PV — toggle Bord/Exceptionnel, champ montant libre, liste des entrées
+- **Popups TC / PV / Bord** : même UX que le formulaire OnboardControl (sélecteur type + montant + ajouter + liste + total)
+- La catégorie Bord/Exceptionnel est correctement propagée pour le calcul des exports
+
 ## [1.12.19] - 2026-04-14
 
 ### Amélioré — Grand compteur voyageurs : saisie rapide complète

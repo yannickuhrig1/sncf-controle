@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Minus, Plus, X, Users, Ticket, FileText, ClipboardList, ChevronRight } from 'lucide-react';
+import { Minus, Plus, X, Users, Ticket, FileText, ClipboardList, ChevronRight, ShoppingBag } from 'lucide-react';
 import { TarifListItem, type TarifEntry } from './TarifListItem';
 import { TarifTypeToggle } from './TarifTypeToggle';
 
@@ -22,6 +22,11 @@ const PV_TYPES = [
   { value: 'pv_titre_tiers', label: 'Titre tiers' },
   { value: 'pv_doc_naissance', label: 'D. naissance' },
   { value: 'pv_autre', label: 'Autre' },
+];
+
+const BORD_TYPES = [
+  { value: 'bord', label: 'Bord' },
+  { value: 'exceptionnel', label: 'Exceptionnel' },
 ];
 
 interface Props {
@@ -68,7 +73,7 @@ function QuickEntryDialog({
   types: { value: string; label: string }[];
   entries: TarifEntry[];
   onEntriesChange: (entries: TarifEntry[]) => void;
-  category: 'controle' | 'pv';
+  category: 'controle' | 'pv' | 'bord';
 }) {
   const [selectedType, setSelectedType] = useState(types[0]?.value ?? '');
   const [montant, setMontant] = useState('');
@@ -77,12 +82,16 @@ function QuickEntryDialog({
     const m = parseFloat(montant);
     if (!m || m <= 0) return;
     const typeObj = types.find(t => t.value === selectedType);
+    // For bord entries, category matches the selected type (bord/exceptionnel)
+    const entryCategory = category === 'bord'
+      ? (selectedType as 'bord' | 'exceptionnel')
+      : category;
     onEntriesChange([...entries, {
       id: generateId(),
       type: selectedType,
       typeLabel: typeObj?.label ?? selectedType,
       montant: m,
-      category,
+      category: entryCategory,
     }]);
     setMontant('');
   };
@@ -96,7 +105,7 @@ function QuickEntryDialog({
       <DialogContent className="sm:max-w-sm">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            {category === 'controle' ? <ClipboardList className="h-5 w-5 text-amber-600" /> : <FileText className="h-5 w-5 text-red-600" />}
+            {category === 'controle' ? <ClipboardList className="h-5 w-5 text-amber-600" /> : category === 'pv' ? <FileText className="h-5 w-5 text-red-600" /> : <ShoppingBag className="h-5 w-5 text-blue-600" />}
             {title}
           </DialogTitle>
         </DialogHeader>
@@ -120,7 +129,7 @@ function QuickEntryDialog({
               type="button"
               onClick={handleAdd}
               disabled={!montant || parseFloat(montant) <= 0}
-              variant={category === 'pv' ? 'destructive' : 'default'}
+              variant={category === 'pv' ? 'destructive' : category === 'bord' ? 'outline' : 'default'}
               size="sm"
             >
               <Plus className="h-4 w-4 mr-1" />
@@ -160,6 +169,7 @@ export function BigPassengerCounterDialog({
 }: Props) {
   const [tcPopupOpen, setTcPopupOpen] = useState(false);
   const [pvPopupOpen, setPvPopupOpen] = useState(false);
+  const [bordPopupOpen, setBordPopupOpen] = useState(false);
 
   // Close on Escape
   useEffect(() => {
@@ -313,21 +323,20 @@ export function BigPassengerCounterDialog({
               <div className="flex flex-col items-center gap-2 p-4 rounded-xl bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800">
                 <span className="text-xs font-semibold text-blue-700 dark:text-blue-400 uppercase tracking-wide">Bord</span>
                 <span className="text-3xl font-bold tabular-nums text-blue-600 dark:text-blue-400">{bordCount}</span>
-                <div className="flex items-center gap-2 mt-1">
-                  <button type="button" onClick={() => {
-                    if (tarifsBord.length > 0) onTarifsBordChange(tarifsBord.slice(0, -1));
-                  }}
-                    className="h-9 w-9 rounded-lg border border-blue-300 dark:border-blue-700 bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center text-blue-700 dark:text-blue-400 hover:bg-blue-200 dark:hover:bg-blue-900/60 active:scale-95 transition-all disabled:opacity-30"
-                    disabled={bordCount <= 0}>
-                    <Minus className="h-4 w-4" />
-                  </button>
-                  <button type="button" onClick={() => {
-                    onTarifsBordChange([...tarifsBord, { id: generateId(), type: 'stt', typeLabel: 'Tarif bord', montant: 50, category: 'bord' }]);
-                  }}
-                    className="h-9 w-9 rounded-lg border border-blue-300 dark:border-blue-700 bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center text-blue-700 dark:text-blue-400 hover:bg-blue-200 dark:hover:bg-blue-900/60 active:scale-95 transition-all">
-                    <Plus className="h-4 w-4" />
-                  </button>
-                </div>
+                {bordCount > 0 && (
+                  <Badge className="text-xs bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300 border-blue-300 dark:border-blue-700">
+                    {tarifsBord.reduce((s, t) => s + t.montant, 0).toFixed(0)}€
+                  </Badge>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setBordPopupOpen(true)}
+                  className="mt-1 inline-flex items-center gap-1 text-[10px] font-medium text-blue-600 dark:text-blue-400 hover:underline"
+                >
+                  <ShoppingBag className="h-3 w-3" />
+                  Saisir{bordCount > 0 && ` (${bordCount})`}
+                  <ChevronRight className="h-3 w-3" />
+                </button>
               </div>
             )}
 
@@ -404,6 +413,19 @@ export function BigPassengerCounterDialog({
           entries={pvList}
           onEntriesChange={onPvListChange}
           category="pv"
+        />
+      )}
+
+      {/* Popup saisie rapide Bord */}
+      {onTarifsBordChange && (
+        <QuickEntryDialog
+          open={bordPopupOpen}
+          onOpenChange={setBordPopupOpen}
+          title="Tarifs à bord"
+          types={BORD_TYPES}
+          entries={tarifsBord}
+          onEntriesChange={onTarifsBordChange}
+          category="bord"
         />
       )}
     </>
