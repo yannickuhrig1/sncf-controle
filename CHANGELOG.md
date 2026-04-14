@@ -2,6 +2,15 @@
 
 Toutes les modifications notables de ce projet sont documentées dans ce fichier.
 
+## [1.12.19] - 2026-04-14
+
+### Amélioré — Grand compteur voyageurs : saisie rapide complète
+- **Bouton « Détail TC »** sur le carré STT 50€ : ouvre un popup avec les tarifs contrôle détaillés (STT, RNV, Titre tiers, D. naissance, Autre) — compteurs +/− par type
+- **Bouton « Détail PV »** sur le carré PV 100€ : même principe pour les procès-verbaux détaillés
+- **Nouveau carré « Bord »** (bleu) : compteur rapide des tarifs à bord, sous les carrés STT
+- **Nouveau carré « RI »** (violet) : compteurs séparés RI+ (vert) et RI− (rouge) avec +/− indépendants
+- Layout en grille 2×2 : STT 50€ / PV 100€ en haut, Bord / RI en bas
+
 ## [1.12.18] - 2026-04-13
 
 ### Amélioré — Fluidité mobile

@@ -1989,6 +1989,16 @@ export default function OnboardControl() {
         stt100Count={formState.stt100Count}
         onStt50Change={(v) => setFormState((p) => ({ ...p, stt50Count: v }))}
         onStt100Change={(v) => setFormState((p) => ({ ...p, stt100Count: v }))}
+        tarifsControle={formState.tarifsControle}
+        onTarifsControleChange={(entries) => setFormState((p) => ({ ...p, tarifsControle: entries }))}
+        pvList={formState.pvList}
+        onPvListChange={(entries) => setFormState((p) => ({ ...p, pvList: entries }))}
+        tarifsBord={formState.tarifsBord}
+        onTarifsBordChange={(entries) => setFormState((p) => ({ ...p, tarifsBord: entries }))}
+        riPositif={formState.riPositif}
+        riNegatif={formState.riNegatif}
+        onRiPositifChange={(v) => setFormState((p) => ({ ...p, riPositif: v }))}
+        onRiNegatifChange={(v) => setFormState((p) => ({ ...p, riNegatif: v }))}
       />
 
       {/* Train Share Dialog */}
