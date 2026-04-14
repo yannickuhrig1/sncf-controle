@@ -729,7 +729,7 @@ export default function AdminPage() {
                           <TableHead>Nom</TableHead>
                           <TableHead>Rôle</TableHead>
                           <TableHead>Équipe</TableHead>
-                          <TableHead>Dernière connexion</TableHead>
+                          <TableHead>Dernière activité</TableHead>
                           <TableHead className="w-[100px]">Actions</TableHead>
                         </TableRow>
                       </TableHeader>

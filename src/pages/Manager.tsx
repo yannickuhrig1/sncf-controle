@@ -634,7 +634,7 @@ export default function ManagerPage() {
                           <TableHead>Nom</TableHead>
                           <TableHead>Matricule</TableHead>
                           <TableHead>Rôle</TableHead>
-                          <TableHead>Dernière connexion</TableHead>
+                          <TableHead>Dernière activité</TableHead>
                           {managerTeams.length > 1 && <TableHead>Équipe</TableHead>}
                         </TableRow>
                       </TableHeader>

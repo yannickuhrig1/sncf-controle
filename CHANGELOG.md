@@ -2,6 +2,13 @@
 
 Toutes les modifications notables de ce projet sont documentées dans ce fichier.
 
+## [1.12.22] - 2026-04-14
+
+### Corrigé — « Dernière activité » affiche la vraie dernière activité
+- **RPC `get_users_last_sign_in`** : retourne maintenant le MAX entre `auth.last_sign_in_at` et le dernier contrôle enregistré (`controls.created_at` via `profiles`)
+- Avant : utilisait uniquement la date de login Supabase Auth, qui ne se met pas à jour quand le token se rafraîchit automatiquement → les agents actifs apparaissaient "hors ligne depuis X jours"
+- Renommé la colonne "Dernière connexion" → "Dernière activité" (Admin + Manager)
+
 ## [1.12.21] - 2026-04-13
 
 ### Corrigé — Grand compteur : carte RI débordante
