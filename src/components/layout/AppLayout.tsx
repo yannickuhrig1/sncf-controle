@@ -509,7 +509,7 @@ export function AppLayout({ children }: AppLayoutProps) {
         )}
 
         {/* Contenu principal */}
-        <main className="flex-1 px-4 py-6 md:px-8 md:py-8 md:w-full">
+        <main className="flex-1 px-4 py-6 pb-20 md:px-8 md:py-8 md:pb-8 md:w-full">
           {children}
         </main>
       </div>
