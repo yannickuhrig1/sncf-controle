@@ -342,22 +342,22 @@ export function BigPassengerCounterDialog({
 
             {/* RI — régularisations */}
             {(onRiPositifChange || onRiNegatifChange) && (
-              <div className="flex flex-col items-center gap-2 p-4 rounded-xl bg-purple-50 dark:bg-purple-950/30 border border-purple-200 dark:border-purple-800">
+              <div className="flex flex-col items-center gap-2 p-3 rounded-xl bg-purple-50 dark:bg-purple-950/30 border border-purple-200 dark:border-purple-800 overflow-hidden">
                 <span className="text-xs font-semibold text-purple-700 dark:text-purple-400 uppercase tracking-wide">RI</span>
                 <span className="text-3xl font-bold tabular-nums text-purple-600 dark:text-purple-400">{riTotal}</span>
-                <div className="flex items-center gap-1 mt-1">
+                <div className="flex items-center gap-2 mt-1">
                   {onRiPositifChange && (
                     <div className="flex flex-col items-center gap-0.5">
                       <span className="text-[9px] text-green-600 dark:text-green-400 font-medium">+RI</span>
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center gap-0.5">
                         <button type="button" onClick={() => onRiPositifChange(Math.max(0, riPositif - 1))}
-                          className="h-8 w-8 rounded-md border border-green-300 dark:border-green-700 bg-green-100 dark:bg-green-900/40 flex items-center justify-center text-green-700 dark:text-green-400 active:scale-95 transition-all disabled:opacity-30 text-xs"
+                          className="h-7 w-7 rounded-md border border-green-300 dark:border-green-700 bg-green-100 dark:bg-green-900/40 flex items-center justify-center text-green-700 dark:text-green-400 active:scale-95 transition-all disabled:opacity-30 text-xs"
                           disabled={riPositif <= 0}>
                           <Minus className="h-3 w-3" />
                         </button>
-                        <span className="text-sm font-bold tabular-nums w-5 text-center text-green-600 dark:text-green-400">{riPositif}</span>
+                        <span className="text-sm font-bold tabular-nums w-4 text-center text-green-600 dark:text-green-400">{riPositif}</span>
                         <button type="button" onClick={() => onRiPositifChange(riPositif + 1)}
-                          className="h-8 w-8 rounded-md border border-green-300 dark:border-green-700 bg-green-100 dark:bg-green-900/40 flex items-center justify-center text-green-700 dark:text-green-400 active:scale-95 transition-all text-xs">
+                          className="h-7 w-7 rounded-md border border-green-300 dark:border-green-700 bg-green-100 dark:bg-green-900/40 flex items-center justify-center text-green-700 dark:text-green-400 active:scale-95 transition-all text-xs">
                           <Plus className="h-3 w-3" />
                         </button>
                       </div>
@@ -366,15 +366,15 @@ export function BigPassengerCounterDialog({
                   {onRiNegatifChange && (
                     <div className="flex flex-col items-center gap-0.5">
                       <span className="text-[9px] text-red-600 dark:text-red-400 font-medium">−RI</span>
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center gap-0.5">
                         <button type="button" onClick={() => onRiNegatifChange(Math.max(0, riNegatif - 1))}
-                          className="h-8 w-8 rounded-md border border-red-300 dark:border-red-700 bg-red-100 dark:bg-red-900/40 flex items-center justify-center text-red-700 dark:text-red-400 active:scale-95 transition-all disabled:opacity-30 text-xs"
+                          className="h-7 w-7 rounded-md border border-red-300 dark:border-red-700 bg-red-100 dark:bg-red-900/40 flex items-center justify-center text-red-700 dark:text-red-400 active:scale-95 transition-all disabled:opacity-30 text-xs"
                           disabled={riNegatif <= 0}>
                           <Minus className="h-3 w-3" />
                         </button>
-                        <span className="text-sm font-bold tabular-nums w-5 text-center text-red-600 dark:text-red-400">{riNegatif}</span>
+                        <span className="text-sm font-bold tabular-nums w-4 text-center text-red-600 dark:text-red-400">{riNegatif}</span>
                         <button type="button" onClick={() => onRiNegatifChange(riNegatif + 1)}
-                          className="h-8 w-8 rounded-md border border-red-300 dark:border-red-700 bg-red-100 dark:bg-red-900/40 flex items-center justify-center text-red-700 dark:text-red-400 active:scale-95 transition-all text-xs">
+                          className="h-7 w-7 rounded-md border border-red-300 dark:border-red-700 bg-red-100 dark:bg-red-900/40 flex items-center justify-center text-red-700 dark:text-red-400 active:scale-95 transition-all text-xs">
                           <Plus className="h-3 w-3" />
                         </button>
                       </div>

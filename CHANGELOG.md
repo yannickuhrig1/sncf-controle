@@ -2,6 +2,12 @@
 
 Toutes les modifications notables de ce projet sont documentées dans ce fichier.
 
+## [1.12.21] - 2026-04-13
+
+### Corrigé — Grand compteur : carte RI débordante
+- **Carte RI** : corrigé le débordement horizontal des boutons +RI/−RI dans la grille du grand compteur
+- Boutons réduits (h-7 w-7), espacement resserré, padding ajusté, overflow-hidden en sécurité
+
 ## [1.12.20] - 2026-04-14
 
 ### Amélioré — Grand compteur : saisie Bord avec montant
