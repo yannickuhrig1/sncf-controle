@@ -188,7 +188,7 @@ export function AppLayout({ children }: AppLayoutProps) {
   const showBurgerMenu = preferences?.show_burger_menu ?? false;
   const visiblePages = useMemo(() => {
     const base: PageId[] = preferences?.visible_pages || DEFAULT_VISIBLE_PAGES;
-    const forced: PageId[] = ['settings', 'profile'];
+    const forced: PageId[] = ['settings', 'profile', 'watched-lines'];
     if (isUserManager || isAdmin()) forced.push('manager');
     const merged = [...base];
     for (const p of forced) { if (!merged.includes(p)) merged.push(p); }
