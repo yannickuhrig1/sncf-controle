@@ -1,6 +1,6 @@
 import { ReactNode, useState, useEffect, useMemo } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Train, Building2, History, User, BarChart3, Settings, Shield, Menu, UserCheck, Wifi, WifiOff, Download, Info } from 'lucide-react';
+import { LayoutDashboard, Train, Building2, History, User, BarChart3, Settings, Shield, Menu, UserCheck, Wifi, WifiOff, Download, Info, Eye } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -32,6 +32,7 @@ const allNavItems: NavItem[] = [
   { href: '/statistics', icon: BarChart3, label: 'Stats', pageId: 'statistics' },
   { href: '/history', icon: History, label: 'Historique', pageId: 'history' },
   { href: '/infos', icon: Info, label: 'Infos', pageId: 'infos' },
+  { href: '/watched-lines', icon: Eye, label: 'Surveillance', pageId: 'watched-lines' },
   { href: '/manager', icon: UserCheck, label: 'Manager', pageId: 'manager', managerOnly: true },
   { href: '/settings', icon: Settings, label: 'Paramètres', pageId: 'settings' },
   { href: '/admin', icon: Shield, label: 'Admin', pageId: 'admin', adminOnly: true },
@@ -105,6 +106,7 @@ export function AppLayout({ children }: AppLayoutProps) {
   });
 
   const hideInfosPage = adminSettings.find(s => s.key === 'hide_infos_page')?.value === true;
+  const hideWatchedLinesPage = adminSettings.find(s => s.key === 'hide_watched_lines_page')?.value === true;
 
   // Fetch pending approval count for admin badge
   const { data: pendingApprovalCount = 0 } = useQuery({
@@ -200,12 +202,13 @@ export function AppLayout({ children }: AppLayoutProps) {
       if (item.adminOnly && !isUserAdmin && !isUserManager) return false;
       if (item.managerOnly && !isUserManager && !isUserAdmin) return false;
       if (item.pageId === 'infos' && hideInfosPage) return false;
+      if (item.pageId === 'watched-lines' && hideWatchedLinesPage) return false;
       return visiblePages.includes(item.pageId);
     });
     return [...allowedItems].sort((a, b) =>
       visiblePages.indexOf(a.pageId) - visiblePages.indexOf(b.pageId)
     );
-  }, [isUserAdmin, isUserManager, hideInfosPage, visiblePages]);
+  }, [isUserAdmin, isUserManager, hideInfosPage, hideWatchedLinesPage, visiblePages]);
 
   // Filter and order nav items for bottom bar (memoïsé)
   const bottomNavItems = useMemo(() => {
@@ -213,12 +216,13 @@ export function AppLayout({ children }: AppLayoutProps) {
       if (item.adminOnly && !isUserAdmin && !isUserManager) return false;
       if (item.managerOnly && !isUserManager && !isUserAdmin) return false;
       if (item.pageId === 'infos' && hideInfosPage) return false;
+      if (item.pageId === 'watched-lines' && hideWatchedLinesPage) return false;
       return bottomBarPages.includes(item.pageId);
     });
     return [...allowedItems].sort((a, b) =>
       bottomBarPages.indexOf(a.pageId) - bottomBarPages.indexOf(b.pageId)
     );
-  }, [isUserAdmin, isUserManager, hideInfosPage, bottomBarPages]);
+  }, [isUserAdmin, isUserManager, hideInfosPage, hideWatchedLinesPage, bottomBarPages]);
 
   const renderBurgerLinks = () => (
     <>

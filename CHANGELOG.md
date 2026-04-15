@@ -2,6 +2,20 @@
 
 Toutes les modifications notables de ce projet sont documentées dans ce fichier.
 
+## [1.13.0] - 2026-04-15
+
+### Ajouté — Page « Lignes à surveiller »
+- **Nouvelle page `/watched-lines`** : tableau de bord des lignes ferroviaires à surveiller avec horaires temps réel
+- **Cartes visuelles** par ligne : bande de couleur, trajet Origine → Destination, priorité (haute/moyenne/basse), nombre de trains, prochain départ
+- **Frise horaire** (timeline 5h→23h) avec points colorés pour chaque train, indicateur "maintenant"
+- **Détail par train** : horaire prévu vs réel, retard, type (TER/TGV/…), statut (à l'heure / retardé / supprimé)
+- **Badge "Imminent"** quand un train part dans les 30 prochaines minutes
+- **CRUD complet** pour les managers/admins : créer, modifier, supprimer des lignes avec couleur, priorité, notes, équipe
+- **Table Supabase `watched_lines`** avec RLS par équipe
+- **Toggle admin** : "Visibilité des pages" → activer/désactiver la page Surveillance
+- **Settings** : la page apparaît dans les pages visibles configurables par l'utilisateur
+- Navigation : nouvel item "Surveillance" avec icône Eye dans le menu burger et la barre du bas
+
 ## [1.12.23] - 2026-04-14
 
 ### Modifié — Renommage « En règle » → « Tarif contrôle »

@@ -1009,6 +1009,7 @@ export default function AdminPage() {
                   { key: 'hide_statistics_page', label: 'Statistiques', icon: Database, description: 'Graphiques et analyses statistiques' },
                   { key: 'hide_history_page', label: 'Historique', icon: Settings, description: 'Historique et export des contrôles' },
                   { key: 'hide_infos_page', label: 'Infos utiles', icon: Info, description: 'Page d\'informations, FAQ et contacts' },
+                  { key: 'hide_watched_lines_page', label: 'Surveillance', icon: Eye, description: 'Lignes à surveiller avec horaires temps réel' },
                 ].map(page => (
                   <div key={page.key} className="flex items-center justify-between py-2">
                     <div className="space-y-0.5">

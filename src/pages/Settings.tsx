@@ -81,6 +81,7 @@ const PAGE_OPTIONS: { id: PageId; label: string; canDisable: boolean; canDisable
   { id: 'statistics', label: 'Statistiques', canDisable: true },
   { id: 'history', label: 'Historique', canDisable: true },
   { id: 'infos', label: 'Infos', canDisable: true },
+  { id: 'watched-lines', label: 'Surveillance', canDisable: true },
   { id: 'manager', label: 'Manager', canDisable: false, roleRequired: 'manager' },
   { id: 'profile', label: 'Profil', canDisable: false },
   { id: 'settings', label: 'Paramètres', canDisable: false, canDisableBottomBar: true },
