@@ -388,11 +388,11 @@ export default function StatisticsPage() {
                     <div className="p-2 rounded-xl bg-white/20"><CheckCircle2 className="h-4 w-4" /></div>
                     <span className="text-[10px] font-medium text-white/60 uppercase tracking-wide">tarif contrôle</span>
                   </div>
-                  <div className="text-3xl font-bold tracking-tight">{stats.passengersInRule}</div>
+                  <div className="text-3xl font-bold tracking-tight">{stats.tarifsControle}</div>
                   <p className="text-xs text-white/65 mt-1">
-                    {stats.totalPassengers > 0
-                      ? `${((stats.passengersInRule / stats.totalPassengers) * 100).toFixed(1)}%`
-                      : '0%'}
+                    {stats.tarifsControle > 0
+                      ? `${stats.tarifsControle} infraction${stats.tarifsControle !== 1 ? 's' : ''}`
+                      : 'Aucun'}
                   </p>
                 </CardContent>
               </Card>

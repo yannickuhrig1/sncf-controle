@@ -102,7 +102,7 @@ function buildDashboardText({ stats, detailedStats, periodLabel, dateRangeLabel,
   t += `${thin}\n`;
   t += `  👥  Voyageurs       ${String(stats.totalPassengers).padStart(5)}   (${stats.controlCount} contrôle${stats.controlCount > 1 ? 's' : ''})\n`;
   t += `  📊  Taux fraude     ${String(formatFraudRate(stats.fraudRate)).padStart(5)}   (${stats.fraudCount} fraude${stats.fraudCount !== 1 ? 's' : ''})\n`;
-  t += `  ✅  Tarif contrôle   ${String(stats.passengersInRule).padStart(5)}${inRulePct}\n`;
+  t += `  ✅  Tarif contrôle   ${String(stats.tarifsControle).padStart(5)}\n`;
   t += `  📋  Procès-verbaux  ${String(stats.pv).padStart(5)}\n`;
   t += `\n`;
 
@@ -287,8 +287,8 @@ footer{text-align:center;color:#9ca3af;font-size:.68rem;padding:1.5rem;border-to
     </div>
     <div class="kpi" style="background:${kpiColors.emerald};box-shadow:${kpiShadow.emerald}">
       <div class="kpi-lbl">Tarif contrôle</div>
-      <div class="kpi-val">${stats.passengersInRule}</div>
-      <div class="kpi-sub">${inRulePct}</div>
+      <div class="kpi-val">${stats.tarifsControle}</div>
+      <div class="kpi-sub">${stats.tarifsControle > 0 ? stats.tarifsControle + ' infraction' + (stats.tarifsControle !== 1 ? 's' : '') : ''}</div>
     </div>
     <div class="kpi" style="background:${kpiColors[pvColor]};box-shadow:${kpiShadow[pvColor]}">
       <div class="kpi-lbl">Procès-verbaux</div>
@@ -1021,11 +1021,11 @@ export default function Dashboard() {
                     </div>
                     <span className="text-[10px] font-medium text-white/60 uppercase tracking-wide">tarif contrôle</span>
                   </div>
-                  <div className="text-3xl font-bold tracking-tight">{stats.passengersInRule}</div>
+                  <div className="text-3xl font-bold tracking-tight">{stats.tarifsControle}</div>
                   <p className="text-xs text-white/65 mt-1">
-                    {stats.totalPassengers > 0
-                      ? `${((stats.passengersInRule / stats.totalPassengers) * 100).toFixed(1)}% des voyageurs`
-                      : '0%'}
+                    {stats.tarifsControle > 0
+                      ? `${stats.tarifsControle} infraction${stats.tarifsControle !== 1 ? 's' : ''}`
+                      : 'Aucun'}
                   </p>
                 </CardContent>
               </Card>
