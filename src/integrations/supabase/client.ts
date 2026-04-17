@@ -41,6 +41,10 @@ function getSafeStorage(): SimpleStorage {
   }
 }
 
+// Exported for Edge Function calls — the gateway rejects ES256 user JWTs,
+// so we override Authorization with the anon key and pass the user token in the body.
+export const SUPABASE_ANON_KEY = SUPABASE_PUBLISHABLE_KEY;
+
 export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   auth: {
     storage: getSafeStorage(),

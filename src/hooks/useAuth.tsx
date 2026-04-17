@@ -214,6 +214,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       const profileData = (data as Profile) ?? null;
+
+      // Safety net: if user is not approved, sign them out immediately
+      if (profileData && !profileData.is_approved) {
+        await supabase.auth.signOut();
+        clearAuthCache();
+        setUser(null);
+        setSession(null);
+        setProfile(null);
+        setLoading(false);
+        return;
+      }
+
       setProfile(profileData);
 
       // Cache auth data for offline use
@@ -267,6 +279,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         emailRedirectTo: redirectUrl,
       },
     });
+
+    if (!error) {
+      // Sign out immediately after signup so the user doesn't bypass
+      // admin/manager approval. They must wait for approval + log in manually.
+      await supabase.auth.signOut();
+    }
+
     return { error: error as Error | null };
   };
 

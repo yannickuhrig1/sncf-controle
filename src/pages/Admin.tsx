@@ -1,7 +1,7 @@
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, SUPABASE_ANON_KEY } from '@/integrations/supabase/client';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -525,8 +525,9 @@ export default function AdminPage() {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       const response = await supabase.functions.invoke('update-user', {
-        headers: session ? { Authorization: `Bearer ${session.access_token}` } : undefined,
+        headers: { Authorization: `Bearer ${SUPABASE_ANON_KEY}` },
         body: {
+          accessToken: session?.access_token,
           userId: editingUser.user_id,
           firstName: editFirstName,
           lastName: editLastName,
@@ -568,7 +569,9 @@ export default function AdminPage() {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       const response = await supabase.functions.invoke('create-user', {
+        headers: { Authorization: `Bearer ${SUPABASE_ANON_KEY}` },
         body: {
+          accessToken: session?.access_token,
           email: newUserEmail,
           password: newUserPassword,
           first_name: newUserFirstName,

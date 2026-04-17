@@ -2,6 +2,15 @@
 
 Toutes les modifications notables de ce projet sont documentées dans ce fichier.
 
+## [1.13.1] - 2026-04-17
+
+### Corrigé — Sécurité auth + Edge Functions + Templates email
+- **fix(auth)**: les utilisateurs inscrits ne sont plus connectés automatiquement — `signOut` immédiat après signup pour forcer la validation admin/manager
+- **fix(auth)**: filet de sécurité dans `fetchProfile` — déconnexion automatique si `is_approved === false`
+- **fix(edge-functions)**: contournement du rejet ES256 du gateway Supabase — le JWT utilisateur est passé dans le body, l'Authorization header utilise la clé anon (HS256)
+- **fix(edge-functions)**: correction des 3 fonctions `create-user`, `update-user`, `delete-user`
+- **feat(email)**: 6 templates email personnalisés SNCF (Confirm signup, Reset password, Invite user, Magic link, Change email, Reauthentication) avec branding SNCF rouge
+
 ## [1.13.0] - 2026-04-15
 
 ### Ajouté — Page « Lignes à surveiller »

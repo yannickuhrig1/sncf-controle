@@ -14,8 +14,12 @@ Deno.serve(async (req) => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
+    const body = await req.json();
+    // Support token in body (accessToken) to bypass gateway ES256 rejection,
+    // with fallback to Authorization header for backwards compatibility
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
+    const token = body.accessToken || (authHeader ? authHeader.replace("Bearer ", "") : null);
+    if (!token) {
       return new Response(JSON.stringify({ error: "Non authentifié" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -23,7 +27,6 @@ Deno.serve(async (req) => {
     }
 
     const adminClient = createClient(supabaseUrl, serviceRoleKey);
-    const token = authHeader.replace("Bearer ", "");
     const { data: { user: caller }, error: authError } = await adminClient.auth.getUser(token);
     if (authError || !caller) {
       return new Response(JSON.stringify({ error: "Non authentifié" }), {
@@ -46,7 +49,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { userId, firstName, lastName, phone, matricule, email, role, teamId, isApproved, password } = await req.json();
+    const { userId, firstName, lastName, phone, matricule, email, role, teamId, isApproved, password } = body;
 
     if (!userId) {
       return new Response(JSON.stringify({ error: "userId manquant" }), {

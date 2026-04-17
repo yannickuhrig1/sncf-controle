@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, SUPABASE_ANON_KEY } from '@/integrations/supabase/client';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -186,8 +186,9 @@ export default function ManagerPage() {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       const response = await supabase.functions.invoke('update-user', {
-        headers: session ? { Authorization: `Bearer ${session.access_token}` } : undefined,
+        headers: { Authorization: `Bearer ${SUPABASE_ANON_KEY}` },
         body: {
+          accessToken: session?.access_token,
           userId: editingMember.user_id,
           email: editMemberEmail || undefined,
           password: editMemberPassword || undefined,
@@ -419,6 +420,7 @@ export default function ManagerPage() {
       // Notify team manager + admins
       const requesterName = `${profile!.first_name} ${profile!.last_name}`;
       await supabase.functions.invoke('notify-team-join-request', {
+        headers: { Authorization: `Bearer ${SUPABASE_ANON_KEY}` },
         body: {
           request_id: data.id,
           team_id: teamId,

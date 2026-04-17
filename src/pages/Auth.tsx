@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, SUPABASE_ANON_KEY } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -97,6 +97,7 @@ export default function Auth() {
       // Notify admins/managers of new signup
       try {
         await supabase.functions.invoke('notify-new-signup', {
+          headers: { Authorization: `Bearer ${SUPABASE_ANON_KEY}` },
           body: { user_name: `${firstName} ${lastName}`, user_email: registerEmail },
         });
       } catch (e) {
