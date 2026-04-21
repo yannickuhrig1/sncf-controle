@@ -955,6 +955,33 @@ export default function HistoryPage() {
               </div>
             )}
 
+            {/* Embarkment section — visible when Tout or Gare filter is active */}
+            {(locationFilter === 'all' || locationFilter === 'gare') && embarkmentMissions.length > 0 && (
+              <div className="mb-4">
+                <div className="flex items-center gap-2 mb-3 px-1">
+                  <ArrowUpFromLine className="h-4 w-4 text-blue-500" />
+                  <span className="text-sm font-semibold text-blue-600">Missions embarquement / débarquement</span>
+                  <Badge variant="secondary" className="text-xs">{embarkmentMissions.length}</Badge>
+                </div>
+                {isLoadingEmbarkment ? (
+                  <div className="flex justify-center py-8">
+                    <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                  </div>
+                ) : (
+                  <EmbarkmentHistoryView
+                    missions={embarkmentMissions}
+                    viewMode={viewMode}
+                    profileMap={profileMap}
+                    onMissionClick={(mission) => {
+                      navigate(`/station?mission=${mission.id}`);
+                    }}
+                    onDelete={deleteEmbarkmentMission}
+                    onRemoveTrain={removeEmbarkmentTrain}
+                  />
+                )}
+              </div>
+            )}
+
             {isLoading || isLoadingInfinite ? (
               <div className="flex justify-center py-12">
                 <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -1052,38 +1079,6 @@ export default function HistoryPage() {
           </>
         )}
 
-        {/* Embarkment section — visible when Tout or Gare filter is active */}
-        {(locationFilter === 'all' || locationFilter === 'gare') && (
-          <div className="mt-4">
-            <div className="flex items-center gap-2 mb-3 px-1">
-              <ArrowUpFromLine className="h-4 w-4 text-blue-500" />
-              <span className="text-sm font-semibold text-blue-600">Missions embarquement / débarquement</span>
-              {embarkmentMissions.length > 0 && (
-                <Badge variant="secondary" className="text-xs">{embarkmentMissions.length}</Badge>
-              )}
-            </div>
-            {isLoadingEmbarkment ? (
-              <div className="flex justify-center py-8">
-                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-              </div>
-            ) : embarkmentMissions.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground text-sm">
-                Aucune mission embarquement enregistrée.
-              </div>
-            ) : (
-              <EmbarkmentHistoryView
-                missions={embarkmentMissions}
-                viewMode={viewMode}
-                profileMap={profileMap}
-                onMissionClick={(mission) => {
-                  navigate(`/station?mission=${mission.id}`);
-                }}
-                onDelete={deleteEmbarkmentMission}
-                onRemoveTrain={removeEmbarkmentTrain}
-              />
-            )}
-          </div>
-        )}
       </div>
       
       {/* Detail Dialog */}
