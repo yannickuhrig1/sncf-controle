@@ -511,11 +511,27 @@ export default function HistoryPage() {
   }, [displayControls, searchQuery, locationFilter, sortOption, periodDateRange, getFraudRate, policeFilter, sugeFilter, overcrowdedFilter, cancelledFilter]);
 
   // Group filtered controls by date, then sub-group multi-agent trains/gares
+  // Group embarkment missions by date for inline display
+  const embarkmentByDate = useMemo(() => {
+    if (locationFilter !== 'all' && locationFilter !== 'gare') return {};
+    const byDate: Record<string, typeof embarkmentMissions> = {};
+    embarkmentMissions.forEach(m => {
+      if (!byDate[m.mission_date]) byDate[m.mission_date] = [];
+      byDate[m.mission_date].push(m);
+    });
+    return byDate;
+  }, [embarkmentMissions, locationFilter]);
+
   const groupedByDate = useMemo(() => {
     const byDate: Record<string, Control[]> = {};
     filteredControls.forEach(c => {
       if (!byDate[c.control_date]) byDate[c.control_date] = [];
       byDate[c.control_date].push(c);
+    });
+
+    // Also include dates that only have embarkment missions
+    Object.keys(embarkmentByDate).forEach(date => {
+      if (!byDate[date]) byDate[date] = [];
     });
 
     return Object.entries(byDate)
@@ -548,9 +564,10 @@ export default function HistoryPage() {
         });
 
         solo.sort((a, b) => b.control_time.localeCompare(a.control_time));
-        return { date, groups, solo };
+        const embarkments = embarkmentByDate[date] || [];
+        return { date, groups, solo, embarkments };
       });
-  }, [filteredControls]);
+  }, [filteredControls, embarkmentByDate]);
 
   const hasActiveFilters = searchQuery.trim() !== '' || locationFilter !== 'all' || sortOption !== 'date' || historyPeriod !== 'all' || policeFilter || sugeFilter || overcrowdedFilter || cancelledFilter;
 
@@ -955,38 +972,11 @@ export default function HistoryPage() {
               </div>
             )}
 
-            {/* Embarkment section — visible when Tout or Gare filter is active */}
-            {(locationFilter === 'all' || locationFilter === 'gare') && embarkmentMissions.length > 0 && (
-              <div className="mb-4">
-                <div className="flex items-center gap-2 mb-3 px-1">
-                  <ArrowUpFromLine className="h-4 w-4 text-blue-500" />
-                  <span className="text-sm font-semibold text-blue-600">Missions embarquement / débarquement</span>
-                  <Badge variant="secondary" className="text-xs">{embarkmentMissions.length}</Badge>
-                </div>
-                {isLoadingEmbarkment ? (
-                  <div className="flex justify-center py-8">
-                    <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-                  </div>
-                ) : (
-                  <EmbarkmentHistoryView
-                    missions={embarkmentMissions}
-                    viewMode={viewMode}
-                    profileMap={profileMap}
-                    onMissionClick={(mission) => {
-                      navigate(`/station?mission=${mission.id}`);
-                    }}
-                    onDelete={deleteEmbarkmentMission}
-                    onRemoveTrain={removeEmbarkmentTrain}
-                  />
-                )}
-              </div>
-            )}
-
             {isLoading || isLoadingInfinite ? (
               <div className="flex justify-center py-12">
                 <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
               </div>
-            ) : displayControls.length === 0 ? (
+            ) : displayControls.length === 0 && embarkmentMissions.length === 0 ? (
               <div className="text-center py-12">
                 <History className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
                 <h2 className="text-lg font-semibold mb-2">Aucun contrôle</h2>
@@ -997,7 +987,7 @@ export default function HistoryPage() {
                   Nouveau contrôle
                 </Link>
               </div>
-            ) : filteredControls.length === 0 ? (
+            ) : filteredControls.length === 0 && Object.keys(embarkmentByDate).length === 0 ? (
               <div className="text-center py-12">
                 <Search className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
                 <h2 className="text-lg font-semibold mb-2">Aucun résultat</h2>
@@ -1029,39 +1019,55 @@ export default function HistoryPage() {
               </div>
             ) : (
               <div className="space-y-6">
-                {groupedByDate.map(({ date, groups, solo }) => (
-                  <div key={date} className="space-y-2">
-                    <h2 className="text-sm font-medium text-muted-foreground sticky top-0 bg-background py-2 flex items-center gap-2">
-                      <Calendar className="h-4 w-4" />
-                      {format(new Date(date), 'EEEE d MMMM yyyy', { locale: fr })}
-                      <Badge variant="secondary" className="ml-auto">
-                        {groups.reduce((n, g) => n + g.controls.length, 0) + solo.length} contrôle{groups.reduce((n, g) => n + g.controls.length, 0) + solo.length > 1 ? 's' : ''}
-                      </Badge>
-                    </h2>
-                    <div className="space-y-2">
-                      {groups.map((g, i) => (
-                        <TrainGroupCard
-                          key={i}
-                          groupType={g.type}
-                          controls={g.controls}
-                          profileMap={profileMap}
-                          currentUserId={profile?.id}
-                          isUserAdmin={isUserAdmin}
-                          isUserManager={isUserManager}
-                          onControlClick={handleControlClick}
-                          onGroupClick={handleGroupClick}
-                        />
-                      ))}
-                      {solo.map((control) => (
-                        <ControlRow
-                          key={control.id}
-                          control={control}
-                          onClick={() => handleControlClick(control)}
-                        />
-                      ))}
+                {groupedByDate.map(({ date, groups, solo, embarkments }) => {
+                  const controlCount = groups.reduce((n, g) => n + g.controls.length, 0) + solo.length;
+                  const totalCount = controlCount + embarkments.length;
+                  return (
+                    <div key={date} className="space-y-2">
+                      <h2 className="text-sm font-medium text-muted-foreground sticky top-0 bg-background py-2 flex items-center gap-2">
+                        <Calendar className="h-4 w-4" />
+                        {format(new Date(date), 'EEEE d MMMM yyyy', { locale: fr })}
+                        <Badge variant="secondary" className="ml-auto">
+                          {totalCount} {totalCount > 1 ? 'éléments' : 'élément'}
+                        </Badge>
+                      </h2>
+                      <div className="space-y-2">
+                        {groups.map((g, i) => (
+                          <TrainGroupCard
+                            key={i}
+                            groupType={g.type}
+                            controls={g.controls}
+                            profileMap={profileMap}
+                            currentUserId={profile?.id}
+                            isUserAdmin={isUserAdmin}
+                            isUserManager={isUserManager}
+                            onControlClick={handleControlClick}
+                            onGroupClick={handleGroupClick}
+                          />
+                        ))}
+                        {solo.map((control) => (
+                          <ControlRow
+                            key={control.id}
+                            control={control}
+                            onClick={() => handleControlClick(control)}
+                          />
+                        ))}
+                        {embarkments.length > 0 && (
+                          <EmbarkmentHistoryView
+                            missions={embarkments}
+                            viewMode={viewMode}
+                            profileMap={profileMap}
+                            onMissionClick={(mission) => {
+                              navigate(`/station?mission=${mission.id}`);
+                            }}
+                            onDelete={deleteEmbarkmentMission}
+                            onRemoveTrain={removeEmbarkmentTrain}
+                          />
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
                 
                 <div ref={loadMoreRef} className="py-4 flex justify-center">
                   {isFetchingNextPage ? (
