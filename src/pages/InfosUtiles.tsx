@@ -493,7 +493,7 @@ function ContentAbout() {
           <li>Compteur voyageurs grand écran (maintien appui) + STT/PV intégrés</li>
           <li>Section passagers dédiée, informations du contrôle repliables</li>
           <li>En gare : navigation sections, autocomplete gare, brouillon auto-sauvegardé</li>
-          <li>Embarquement : Info SNCF + schéma + autocomplete par train (heure, origine, destination)</li>
+          <li>Embarquement : partage multi-agents, auto-save, historique groupé par train, suppression individuelle</li>
           <li>Schéma train : horaires arr./dép. par gare, retards avec heure théorique barrée</li>
           <li>Éditeur de tuiles : aperçu live, liens multiples, édition/réorganisation/duplication de sous-tuiles</li>
           <li>Historique : filtrage par équipe/agent, badges et date picker inline</li>

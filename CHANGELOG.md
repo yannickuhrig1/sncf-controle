@@ -2,6 +2,21 @@
 
 Toutes les modifications notables de ce projet sont documentées dans ce fichier.
 
+## [1.14.0] - 2026-04-21
+
+### Ajouté — Embarquement amélioré (multi-agents, historique, partage)
+- **Historique embarquement** visible dans le filtre "Tous" (plus seulement "Gare")
+- **Groupement par train** dans l'historique : en-tête avec totaux par numéro de train, sous-lignes par agent avec avatar coloré
+- **Groupement multi-agents** : missions sur la même gare et date sont fusionnées avec les noms de chaque agent
+- **Partage de mission** : QR code, lien copiable, SMS, email pour inviter d'autres agents
+- **Auto-save serveur** : sauvegarde automatique (5s debounce) avec indicateur visuel (Sauvegardé / En cours / Non sauvegardé)
+- **Chargement mission via URL** : `/station?mission=<id>` ouvre et charge la mission depuis le serveur
+- **Suppression individuelle de trains** : bouton poubelle sur chaque ligne agent/train dans l'historique
+
+### Corrigé
+- **Normalisation des noms de gares** : "Metz" → "Metz-Ville", "Nancy" → "Nancy-Ville", etc. — évite les doublons dans l'historique
+- **Date mission locale** : utilise la date locale au lieu d'UTC, évite le décalage d'un jour après minuit
+
 ## [1.13.1] - 2026-04-17
 
 ### Corrigé — Sécurité auth + Edge Functions + Templates email
