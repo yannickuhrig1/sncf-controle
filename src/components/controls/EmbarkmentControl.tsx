@@ -232,7 +232,7 @@ export function EmbarkmentControl({ stationName, onStationChange, initialMission
   useEffect(() => {
     const timeoutId = setTimeout(() => {
       const data: EmbarkmentMissionData = {
-        date: missionDate.toISOString(),
+        date: missionDateStr,
         stationName,
         trains,
         globalComment,
@@ -265,7 +265,7 @@ export function EmbarkmentControl({ stationName, onStationChange, initialMission
       setSaveStatus('saving');
 
       const data: EmbarkmentMissionData = {
-        date: missionDate.toISOString(),
+        date: missionDateStr,
         stationName,
         trains,
         globalComment,
@@ -357,7 +357,7 @@ export function EmbarkmentControl({ stationName, onStationChange, initialMission
     if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
     setSaveStatus('saving');
     const data: EmbarkmentMissionData = {
-      date: missionDate.toISOString(),
+      date: missionDateStr,
       stationName,
       trains,
       globalComment,
@@ -370,7 +370,7 @@ export function EmbarkmentControl({ stationName, onStationChange, initialMission
     if (!currentMission) {
       // Save first, then complete
       const data: EmbarkmentMissionData = {
-        date: missionDate.toISOString(),
+        date: missionDateStr,
         stationName,
         trains,
         globalComment,
@@ -388,7 +388,7 @@ export function EmbarkmentControl({ stationName, onStationChange, initialMission
 
   const handleExportPDF = () => {
     const data: EmbarkmentMissionData = {
-      date: missionDate.toISOString(),
+      date: missionDateStr,
       stationName,
       trains,
       globalComment,
@@ -398,7 +398,7 @@ export function EmbarkmentControl({ stationName, onStationChange, initialMission
 
   const handleExportHTML = () => {
     const data: EmbarkmentMissionData = {
-      date: missionDate.toISOString(),
+      date: missionDateStr,
       stationName,
       trains,
       globalComment,
@@ -408,7 +408,7 @@ export function EmbarkmentControl({ stationName, onStationChange, initialMission
 
   const handlePreviewHTML = () => {
     const data: EmbarkmentMissionData = {
-      date: missionDate.toISOString(),
+      date: missionDateStr,
       stationName,
       trains,
       globalComment,
