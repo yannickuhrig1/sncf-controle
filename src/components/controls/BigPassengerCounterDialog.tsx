@@ -4,9 +4,10 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Minus, Plus, X, Users, Ticket, FileText, ClipboardList, ChevronRight, ShoppingBag } from 'lucide-react';
+import { Minus, Plus, X, Users, Ticket, FileText, ClipboardList, ChevronRight, ShoppingBag, Train, ArrowRight, Clock, MapPin, ChevronDown, ChevronUp } from 'lucide-react';
 import { TarifListItem, type TarifEntry } from './TarifListItem';
 import { TarifTypeToggle } from './TarifTypeToggle';
+import type { TrainStop } from '@/hooks/useTrainLookup';
 
 const TARIF_TYPES = [
   { value: 'stt', label: 'STT' },
@@ -51,6 +52,12 @@ interface Props {
   riNegatif?: number;
   onRiPositifChange?: (value: number) => void;
   onRiNegatifChange?: (value: number) => void;
+  // Train info header
+  trainNumber?: string;
+  origin?: string;
+  destination?: string;
+  controlTime?: string;
+  trainStops?: TrainStop[];
 }
 
 function generateId() {
@@ -166,10 +173,12 @@ export function BigPassengerCounterDialog({
   pvList = [], onPvListChange,
   tarifsBord = [], onTarifsBordChange,
   riPositif = 0, riNegatif = 0, onRiPositifChange, onRiNegatifChange,
+  trainNumber, origin, destination, controlTime, trainStops = [],
 }: Props) {
   const [tcPopupOpen, setTcPopupOpen] = useState(false);
   const [pvPopupOpen, setPvPopupOpen] = useState(false);
   const [bordPopupOpen, setBordPopupOpen] = useState(false);
+  const [stopsOpen, setStopsOpen] = useState(false);
 
   // Close on Escape
   useEffect(() => {
@@ -189,20 +198,83 @@ export function BigPassengerCounterDialog({
   return (
     <>
       <div
-        className="fixed inset-0 z-50 flex flex-col items-center justify-between bg-background/95 backdrop-blur-sm"
+        className="fixed inset-0 z-50 flex flex-col bg-background/95 backdrop-blur-sm overflow-y-auto"
         onClick={(e) => { if (e.target === e.currentTarget) onOpenChange(false); }}
       >
         {/* Close */}
         <button
           onClick={() => onOpenChange(false)}
-          className="absolute top-4 right-4 p-2 rounded-full hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
+          className="absolute top-4 right-4 p-2 rounded-full hover:bg-muted transition-colors text-muted-foreground hover:text-foreground z-10"
           aria-label="Fermer"
         >
           <X className="h-6 w-6" />
         </button>
 
+        {/* Train info header */}
+        {trainNumber && (
+          <div className="w-full px-6 pt-12 pb-2">
+            <div className="max-w-lg mx-auto">
+              <div className="flex items-center gap-2 justify-center flex-wrap">
+                <Train className="h-4 w-4 text-primary" />
+                <span className="font-bold text-sm">N° {trainNumber}</span>
+                {origin && destination && (
+                  <>
+                    <span className="text-muted-foreground text-xs">—</span>
+                    <span className="text-xs text-muted-foreground flex items-center gap-1">
+                      {origin} <ArrowRight className="h-3 w-3" /> {destination}
+                    </span>
+                  </>
+                )}
+                {controlTime && (
+                  <span className="text-xs text-muted-foreground flex items-center gap-0.5">
+                    <Clock className="h-3 w-3" /> {controlTime}
+                  </span>
+                )}
+              </div>
+              {/* Train stops toggle */}
+              {trainStops.length > 1 && (
+                <div className="mt-2">
+                  <button
+                    type="button"
+                    onClick={() => setStopsOpen(!stopsOpen)}
+                    className="mx-auto flex items-center gap-1 text-[11px] text-primary font-medium hover:underline"
+                  >
+                    <MapPin className="h-3 w-3" />
+                    Schéma du train ({trainStops.length} arrêts)
+                    {stopsOpen ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                  </button>
+                  {stopsOpen && (
+                    <div className="mt-2 max-h-48 overflow-y-auto rounded-lg border bg-muted/30 p-2 space-y-0.5">
+                      {trainStops.map((stop, i) => (
+                        <div key={i} className="flex items-center gap-2 text-xs py-0.5">
+                          <div className={`h-2 w-2 rounded-full shrink-0 ${stop.isDelayed ? 'bg-amber-500' : 'bg-primary'}`} />
+                          <span className="font-medium flex-1 truncate">{stop.name}</span>
+                          {stop.platform && (
+                            <span className="text-[10px] text-muted-foreground">v.{stop.platform}</span>
+                          )}
+                          <span className="text-muted-foreground tabular-nums shrink-0">
+                            {stop.isDelayed && stop.baseDepartureTime && (
+                              <span className="line-through mr-1 text-[10px]">{stop.baseDepartureTime}</span>
+                            )}
+                            {stop.departureTime || stop.arrivalTime || '—'}
+                          </span>
+                          {stop.isDelayed && stop.delayMinutes && (
+                            <Badge variant="outline" className="text-[9px] px-1 py-0 border-amber-300 text-amber-600 h-4">
+                              +{stop.delayMinutes}m
+                            </Badge>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Spacer top */}
-        <div className="flex-1" />
+        <div className="flex-1 min-h-4" />
 
         {/* Counter section */}
         <div className="flex flex-col items-center">
@@ -244,7 +316,7 @@ export function BigPassengerCounterDialog({
         </div>
 
         {/* Spacer middle */}
-        <div className="flex-1" />
+        <div className="flex-1 min-h-4" />
 
         {/* Bottom section: STT + Bord + RI */}
         <div className="w-full max-w-lg px-6 pb-8">

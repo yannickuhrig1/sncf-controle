@@ -1999,6 +1999,11 @@ export default function OnboardControl() {
         riNegatif={formState.riNegatif}
         onRiPositifChange={(v) => setFormState((p) => ({ ...p, riPositif: v }))}
         onRiNegatifChange={(v) => setFormState((p) => ({ ...p, riNegatif: v }))}
+        trainNumber={formState.trainNumber}
+        origin={formState.origin}
+        destination={formState.destination}
+        controlTime={formState.controlTime}
+        trainStops={trainStops}
       />
 
       {/* Train Share Dialog */}
