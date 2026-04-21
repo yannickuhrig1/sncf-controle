@@ -3,10 +3,27 @@ import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { MapPin, Search } from 'lucide-react';
 
+/**
+ * Normalisation des noms de gares : mappe les noms courants vers le nom canonique SNCF.
+ * Ex: "Metz" → "Metz-Ville", "Nancy" → "Nancy-Ville", "Strasbourg" → "Strasbourg-Ville"
+ */
+const STATION_ALIASES: Record<string, string> = {
+  'Metz': 'Metz-Ville',
+  'Nancy': 'Nancy-Ville',
+  'Strasbourg': 'Strasbourg-Ville',
+  'Mulhouse': 'Mulhouse-Ville',
+  'Dijon': 'Dijon-Ville',
+};
+
+/** Normalise un nom de gare vers sa forme canonique SNCF */
+export function normalizeStationName(name: string): string {
+  const trimmed = name.trim();
+  return STATION_ALIASES[trimmed] ?? trimmed;
+}
+
 // Gares de Lorraine et principales gares de la région Grand Est
 const STATIONS = [
   // Lorraine - Meurthe-et-Moselle (54)
-  'Nancy',
   'Nancy-Ville',
   'Toul',
   'Lunéville',
@@ -21,7 +38,6 @@ const STATIONS = [
   'Blainville-Damelevières',
   
   // Lorraine - Moselle (57)
-  'Metz',
   'Metz-Ville',
   'Thionville',
   'Forbach',
@@ -68,7 +84,6 @@ const STATIONS = [
   'Gérardmer',
   
   // Alsace - Bas-Rhin (67)
-  'Strasbourg',
   'Strasbourg-Ville',
   'Haguenau',
   'Saverne',
@@ -95,7 +110,6 @@ const STATIONS = [
   'Vendenheim',
   
   // Alsace - Haut-Rhin (68)
-  'Mulhouse',
   'Mulhouse-Ville',
   'Colmar',
   'Saint-Louis',
@@ -215,16 +229,26 @@ export function StationAutocomplete({
       ).slice(0, 10)
     : STATIONS.slice(0, 10);
 
+  // Normalize station name when user finishes typing
+  const applyNormalization = useCallback(() => {
+    const normalized = normalizeStationName(inputValue);
+    if (normalized !== inputValue) {
+      setInputValue(normalized);
+      onChange(normalized);
+    }
+  }, [inputValue, onChange]);
+
   // Handle click outside to close
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
         setIsOpen(false);
+        applyNormalization();
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+  }, [applyNormalization]);
 
   // Handle keyboard navigation
   const handleKeyDown = useCallback(
@@ -307,6 +331,7 @@ export function StationAutocomplete({
           value={inputValue}
           onChange={handleInputChange}
           onFocus={() => !disabled && setIsOpen(true)}
+          onBlur={() => { setTimeout(applyNormalization, 150); }}
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
           className="pl-10"

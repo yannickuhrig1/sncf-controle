@@ -84,6 +84,8 @@ export interface EmbarkmentMissionData {
 interface EmbarkmentControlProps {
   stationName: string;
   onStationChange: (name: string) => void;
+  /** If set, load this mission on mount */
+  initialMissionId?: string;
 }
 
 const STORAGE_KEY = 'embarkment_mission_data';
@@ -143,7 +145,7 @@ const GARES_PRINCIPALES = [
   'Dijon Ville',
 ];
 
-export function EmbarkmentControl({ stationName, onStationChange }: EmbarkmentControlProps) {
+export function EmbarkmentControl({ stationName, onStationChange, initialMissionId }: EmbarkmentControlProps) {
   // Sync thresholds from admin settings
   useFraudThresholds();
   
@@ -192,21 +194,33 @@ export function EmbarkmentControl({ stationName, onStationChange }: EmbarkmentCo
 
   const missionDateStr = format(missionDate, 'yyyy-MM-dd');
 
-  // Load saved data on mount
+  // Load mission from server if initialMissionId is set, otherwise from localStorage
   useEffect(() => {
-    const savedData = loadEmbarkmentData();
-    if (savedData) {
-      const parsedDate = parseISO(savedData.date);
-      if (isValid(parsedDate)) {
-        setMissionDate(parsedDate);
-      }
-      setTrains(savedData.trains || []);
-      setGlobalComment(savedData.globalComment || '');
-      if (savedData.stationName) {
-        onStationChange(savedData.stationName);
+    if (initialMissionId) {
+      loadMission(initialMissionId).then((mission) => {
+        if (mission) {
+          setMissionDate(parseISO(mission.mission_date));
+          setTrains(mission.trains);
+          setGlobalComment(mission.global_comment || '');
+          onStationChange(mission.station_name);
+        }
+      });
+    } else {
+      const savedData = loadEmbarkmentData();
+      if (savedData) {
+        const parsedDate = parseISO(savedData.date);
+        if (isValid(parsedDate)) {
+          setMissionDate(parsedDate);
+        }
+        setTrains(savedData.trains || []);
+        setGlobalComment(savedData.globalComment || '');
+        if (savedData.stationName) {
+          onStationChange(savedData.stationName);
+        }
       }
     }
-  }, [onStationChange]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialMissionId]);
 
   // Save status: 'saved' | 'saving' | 'unsaved'
   const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'unsaved'>('saved');

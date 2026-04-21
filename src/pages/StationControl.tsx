@@ -16,7 +16,7 @@ import { EmbarkmentControl } from '@/components/controls/EmbarkmentControl';
 import { FraudSummary } from '@/components/controls/FraudSummary';
 import { SubmitProgress } from '@/components/controls/SubmitProgress';
 import { TrainLookupButton } from '@/components/controls/TrainLookupButton';
-import { StationAutocomplete } from '@/components/controls/StationAutocomplete';
+import { StationAutocomplete, normalizeStationName } from '@/components/controls/StationAutocomplete';
 import { BigPassengerCounterDialog } from '@/components/controls/BigPassengerCounterDialog';
 import { LastSyncIndicator } from '@/components/controls/LastSyncIndicator';
 import { OfflineIndicator } from '@/components/controls/OfflineIndicator';
@@ -167,8 +167,9 @@ export default function StationControl() {
   const { date: parisDate, time: parisTime } = useParisTime(60000);
 
   // ── Mode & edit state ──────────────────────────────────────────────────────
+  const missionParam = searchParams.get('mission');
   const [controlMode, setControlMode] = useState<ControlMode>(
-    searchParams.get('mode') === 'embarkment' ? 'embarkment' : 'disembarkment'
+    searchParams.get('mode') === 'embarkment' || missionParam ? 'embarkment' : 'disembarkment'
   );
   const editId      = searchParams.get('edit');
   const duplicateId = searchParams.get('duplicate');
@@ -220,7 +221,7 @@ export default function StationControl() {
   useEffect(() => {
     const stationParam = searchParams.get('station');
     if (stationParam && !editId && !duplicateId) {
-      setFormState(p => ({ ...p, stationName: decodeURIComponent(stationParam) }));
+      setFormState(p => ({ ...p, stationName: normalizeStationName(decodeURIComponent(stationParam)) }));
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -261,7 +262,7 @@ export default function StationControl() {
       });
 
     setFormState({
-      stationName:    locationParts[0] || '',
+      stationName:    normalizeStationName(locationParts[0] || ''),
       platformNumber: locationParts[1] || data.platform_number || '',
       origin:         data.origin || '',
       destination:    data.destination || '',
@@ -530,6 +531,7 @@ export default function StationControl() {
             <EmbarkmentControl
               stationName={formState.stationName}
               onStationChange={handleEmbarkmentStationChange}
+              initialMissionId={missionParam || undefined}
             />
           </div>
         ) : (

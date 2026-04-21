@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { normalizeStationName } from '@/components/controls/StationAutocomplete';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -128,7 +129,8 @@ interface GroupedMission {
 function groupMissions(missions: EmbarkmentMissionRow[]): GroupedMission[] {
   const groups = new Map<string, EmbarkmentMissionRow[]>();
   for (const m of missions) {
-    const key = `${m.station_name}::${m.mission_date}`;
+    const normalizedStation = normalizeStationName(m.station_name);
+    const key = `${normalizedStation}::${m.mission_date}`;
     if (!groups.has(key)) groups.set(key, []);
     groups.get(key)!.push(m);
   }
@@ -141,7 +143,7 @@ function groupMissions(missions: EmbarkmentMissionRow[]): GroupedMission[] {
     const agentIds = [...new Set(missions.map(m => m.agent_id))];
     return {
       key,
-      station_name: missions[0].station_name,
+      station_name: normalizeStationName(missions[0].station_name),
       mission_date: missions[0].mission_date,
       missions,
       allTrains,
@@ -632,17 +634,17 @@ export function EmbarkmentHistoryView({ missions, viewMode, profileMap = {}, onM
   const [endDate, setEndDate] = useState<Date | undefined>(undefined);
   const [statusFilter, setStatusFilter] = useState<'all' | 'completed' | 'active'>('all');
 
-  // Get unique stations for filter
+  // Get unique stations for filter (normalized)
   const uniqueStations = useMemo(() => {
-    const stations = new Set(missions.map(m => m.station_name));
+    const stations = new Set(missions.map(m => normalizeStationName(m.station_name)));
     return Array.from(stations).sort();
   }, [missions]);
 
   // Filter missions
   const filteredMissions = useMemo(() => {
     return missions.filter(mission => {
-      // Station filter
-      if (stationFilter !== 'all' && mission.station_name !== stationFilter) {
+      // Station filter (compare normalized names)
+      if (stationFilter !== 'all' && normalizeStationName(mission.station_name) !== stationFilter) {
         return false;
       }
 
