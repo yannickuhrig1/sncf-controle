@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useCallback } from 'react';
+import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -18,7 +18,8 @@ import {
 import { cn } from '@/lib/utils';
 import { format, parseISO, isValid } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { 
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
   CalendarIcon,
   Plus,
   Trash2,
@@ -40,6 +41,11 @@ import {
   CheckCircle2,
   Archive,
   Search,
+  Users,
+  Share2,
+  Copy,
+  Mail,
+  Link2,
 } from 'lucide-react';
 import type { TrainInfo } from '@/hooks/useTrainLookup';
 import { StationAutocomplete } from './StationAutocomplete';
@@ -173,6 +179,12 @@ export function EmbarkmentControl({ stationName, onStationChange }: EmbarkmentCo
   // Show all trains or only recent ones
   const [showAllTrains, setShowAllTrains] = useState(false);
 
+  // Sharing states
+  const [shareOpen, setShareOpen] = useState(false);
+  const [joinOpen, setJoinOpen] = useState(false);
+  const [joinInput, setJoinInput] = useState('');
+  const [copySuccess, setCopySuccess] = useState(false);
+
   // Info SNCF panel par train
   const [trainLookupOpen,        setTrainLookupOpen]        = useState<Record<string, boolean>>({});
   const [trainLookupAutoTrigger, setTrainLookupAutoTrigger] = useState<Record<string, number>>({});
@@ -196,7 +208,13 @@ export function EmbarkmentControl({ stationName, onStationChange }: EmbarkmentCo
     }
   }, [onStationChange]);
 
-  // Auto-save when data changes
+  // Save status: 'saved' | 'saving' | 'unsaved'
+  const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'unsaved'>('saved');
+  const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout>>();
+  const isAutoSavingRef = useRef(false);
+  const initialLoadRef = useRef(true);
+
+  // Auto-save to localStorage when data changes
   useEffect(() => {
     const timeoutId = setTimeout(() => {
       const data: EmbarkmentMissionData = {
@@ -210,6 +228,44 @@ export function EmbarkmentControl({ stationName, onStationChange }: EmbarkmentCo
 
     return () => clearTimeout(timeoutId);
   }, [missionDate, stationName, trains, globalComment]);
+
+  // Auto-save to server (debounced 5s) when meaningful data exists
+  useEffect(() => {
+    // Skip initial load to avoid saving on mount
+    if (initialLoadRef.current) {
+      initialLoadRef.current = false;
+      return;
+    }
+
+    // Only auto-save if we have a station name and at least 1 train with data
+    const hasContent = stationName.trim() && trains.length > 0;
+    if (!hasContent || isReadOnly) return;
+
+    setSaveStatus('unsaved');
+
+    if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
+
+    autoSaveTimerRef.current = setTimeout(async () => {
+      if (isAutoSavingRef.current) return;
+      isAutoSavingRef.current = true;
+      setSaveStatus('saving');
+
+      const data: EmbarkmentMissionData = {
+        date: missionDate.toISOString(),
+        stationName,
+        trains,
+        globalComment,
+      };
+      const result = await saveMission(data);
+      isAutoSavingRef.current = false;
+      setSaveStatus(result ? 'saved' : 'unsaved');
+    }, 5000);
+
+    return () => {
+      if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [missionDate, stationName, trains, globalComment, isReadOnly]);
 
   // Calculate fraud stats
   const fraudStats = useMemo(() => {
@@ -283,13 +339,17 @@ export function EmbarkmentControl({ stationName, onStationChange }: EmbarkmentCo
   };
 
   const handleSaveToServer = async () => {
+    // Cancel pending auto-save
+    if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
+    setSaveStatus('saving');
     const data: EmbarkmentMissionData = {
       date: missionDate.toISOString(),
       stationName,
       trains,
       globalComment,
     };
-    await saveMission(data);
+    const result = await saveMission(data);
+    setSaveStatus(result ? 'saved' : 'unsaved');
   };
 
   const handleCompleteMission = async () => {
@@ -370,10 +430,20 @@ export function EmbarkmentControl({ stationName, onStationChange }: EmbarkmentCo
               )}
             </CardTitle>
             <div className="flex items-center gap-2">
-              {currentMission ? (
-                <Badge variant="outline" className="text-xs flex items-center gap-1">
-                  <Cloud className="h-3 w-3 text-success" />
-                  Synchronisée
+              {saveStatus === 'saving' ? (
+                <Badge variant="outline" className="text-xs flex items-center gap-1 text-blue-600">
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                  Sauvegarde…
+                </Badge>
+              ) : saveStatus === 'unsaved' ? (
+                <Badge variant="outline" className="text-xs flex items-center gap-1 text-amber-600">
+                  <CloudOff className="h-3 w-3" />
+                  Non sauvegardé
+                </Badge>
+              ) : currentMission ? (
+                <Badge variant="outline" className="text-xs flex items-center gap-1 text-green-600">
+                  <Cloud className="h-3 w-3" />
+                  Sauvegardé
                 </Badge>
               ) : (
                 <Badge variant="outline" className="text-xs flex items-center gap-1 text-muted-foreground">
@@ -525,6 +595,28 @@ export function EmbarkmentControl({ stationName, onStationChange }: EmbarkmentCo
           </div>
         </CardContent>
       </Card>
+
+      {/* Partage multi-agents */}
+      {!isReadOnly && (
+        <Card>
+          <div className="p-3 flex items-center gap-2 flex-wrap">
+            <Users className="h-4 w-4 text-muted-foreground shrink-0" />
+            <span className="text-sm text-muted-foreground flex-1 min-w-0">Mission multi-agents</span>
+            <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setJoinOpen(true)}>
+              <Link2 className="h-3.5 w-3.5" />Rejoindre
+            </Button>
+            <Button
+              size="sm"
+              variant={stationName.trim() ? 'default' : 'outline'}
+              className="gap-1.5"
+              disabled={!stationName.trim()}
+              onClick={() => setShareOpen(true)}
+            >
+              <Share2 className="h-3.5 w-3.5" />Partager
+            </Button>
+          </div>
+        </Card>
+      )}
 
       {/* Global Stats with Fullscreen button */}
       {trains.length > 0 && (
@@ -1025,6 +1117,78 @@ export function EmbarkmentControl({ stationName, onStationChange }: EmbarkmentCo
         globalStats={fraudStats}
         readOnly={isReadOnly}
       />
+
+      {/* Dialog : Rejoindre un groupe embarquement */}
+      <Dialog open={joinOpen} onOpenChange={setJoinOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2"><Link2 className="h-4 w-4" />Rejoindre une mission</DialogTitle>
+            <DialogDescription>Entrez le nom de la gare partagée pour rejoindre la mission d'embarquement.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 pt-1">
+            <Input
+              placeholder="Ex: Metz, Luxembourg…"
+              value={joinInput}
+              onChange={(e) => setJoinInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && joinInput.trim()) {
+                  onStationChange(joinInput.trim());
+                  setJoinOpen(false);
+                  setJoinInput('');
+                }
+              }}
+            />
+            <Button className="w-full" disabled={!joinInput.trim()}
+              onClick={() => { onStationChange(joinInput.trim()); setJoinOpen(false); setJoinInput(''); }}>
+              Rejoindre
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog : Partager la mission embarquement */}
+      <Dialog open={shareOpen} onOpenChange={setShareOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2"><Share2 className="h-4 w-4" />Partager — {stationName}</DialogTitle>
+            <DialogDescription>Partagez ce lien pour que d'autres agents rejoignent la mission d'embarquement à {stationName}.</DialogDescription>
+          </DialogHeader>
+          {(() => {
+            const shareUrl = `${window.location.origin}/station?mode=embarkment&station=${encodeURIComponent(stationName)}`;
+            const qrSrc = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(shareUrl)}`;
+            return (
+              <div className="space-y-4 pt-1">
+                <div className="flex justify-center">
+                  <img src={qrSrc} alt="QR Code" width={180} height={180} className="rounded-lg border" />
+                </div>
+                <div className="flex items-center gap-2 bg-muted rounded-md px-3 py-2">
+                  <span className="text-xs text-muted-foreground truncate flex-1">{shareUrl}</span>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <Button variant="outline" size="sm" className="gap-1.5"
+                    onClick={() => navigator.clipboard.writeText(shareUrl).then(() => { setCopySuccess(true); setTimeout(() => setCopySuccess(false), 2000); })}>
+                    <Copy className="h-3.5 w-3.5" />{copySuccess ? 'Copié !' : 'Copier'}
+                  </Button>
+                  <Button variant="outline" size="sm" className="gap-1.5"
+                    onClick={() => window.open(`sms:?body=${encodeURIComponent(`Rejoins la mission embarquement à ${stationName} : ${shareUrl}`)}`)}>
+                    <MessageSquare className="h-3.5 w-3.5" />SMS
+                  </Button>
+                  <Button variant="outline" size="sm" className="gap-1.5"
+                    onClick={() => window.open(`mailto:?subject=${encodeURIComponent(`Mission embarquement — ${stationName}`)}&body=${encodeURIComponent(`Rejoins la mission d'embarquement à ${stationName} :\n${shareUrl}`)}`)}>
+                    <Mail className="h-3.5 w-3.5" />Email
+                  </Button>
+                  {typeof navigator !== 'undefined' && navigator.share && (
+                    <Button variant="outline" size="sm" className="gap-1.5"
+                      onClick={() => navigator.share({ title: `Mission embarquement — ${stationName}`, url: shareUrl })}>
+                      <Share2 className="h-3.5 w-3.5" />Partager
+                    </Button>
+                  )}
+                </div>
+              </div>
+            );
+          })()}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

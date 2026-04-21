@@ -30,6 +30,7 @@ import { getFraudRateColor, getFraudRateBgColor } from '@/lib/stats';
 import { downloadEmbarkmentPDF, downloadEmbarkmentHTML, openEmbarkmentHTMLPreview, downloadGroupedEmbarkmentPDF } from '@/lib/embarkmentExportUtils';
 import type { EmbarkmentMissionData, EmbarkmentTrain } from '@/components/controls/EmbarkmentControl';
 import { DateRangeFilter } from '@/components/history/DateRangeFilter';
+import { cn } from '@/lib/utils';
 import {
   Train,
   Building2,
@@ -37,6 +38,7 @@ import {
   Users,
   AlertTriangle,
   ChevronRight,
+  ChevronDown,
   Eye,
   Download,
   FileText,
@@ -52,6 +54,7 @@ import {
   TableIcon,
   Filter,
   Trash2,
+  ArrowRight,
 } from 'lucide-react';
 import {
   AlertDialog,
@@ -85,9 +88,71 @@ export type EmbarkmentViewMode = 'list' | 'table' | 'grid';
 interface EmbarkmentHistoryViewProps {
   missions: EmbarkmentMissionRow[];
   viewMode: 'list' | 'table';
+  profileMap?: Record<string, { first_name: string; last_name: string }>;
   onMissionClick?: (mission: EmbarkmentMissionRow) => void;
   onDelete?: (id: string) => Promise<boolean>;
   isLoading?: boolean;
+}
+
+// Avatar helpers (same as TrainGroupCard)
+const AVATAR_COLORS = [
+  'bg-blue-500', 'bg-emerald-500', 'bg-violet-500', 'bg-rose-500',
+  'bg-amber-500', 'bg-cyan-500', 'bg-indigo-500', 'bg-teal-500',
+];
+
+function avatarColor(agentId: string) {
+  let hash = 0;
+  for (let i = 0; i < agentId.length; i++) hash = (hash * 31 + agentId.charCodeAt(i)) & 0xffffffff;
+  return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
+}
+
+function getInitials(firstName: string, lastName: string) {
+  return `${firstName[0] ?? '?'}${lastName[0] ?? ''}`.toUpperCase();
+}
+
+// Grouped mission: multiple agents at the same station on the same date
+interface GroupedMission {
+  key: string;
+  station_name: string;
+  mission_date: string;
+  missions: EmbarkmentMissionRow[];
+  allTrains: Array<EmbarkmentTrain & { agent_id: string; mission_id: string }>;
+  totalControlled: number;
+  totalRefused: number;
+  fraudRate: number;
+  trainCount: number;
+  agentIds: string[];
+  is_completed: boolean;
+}
+
+function groupMissions(missions: EmbarkmentMissionRow[]): GroupedMission[] {
+  const groups = new Map<string, EmbarkmentMissionRow[]>();
+  for (const m of missions) {
+    const key = `${m.station_name}::${m.mission_date}`;
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key)!.push(m);
+  }
+  return Array.from(groups.entries()).map(([key, missions]) => {
+    const allTrains = missions.flatMap(m =>
+      m.trains.map(t => ({ ...t, agent_id: m.agent_id, mission_id: m.id }))
+    );
+    const totalControlled = allTrains.reduce((s, t) => s + t.controlled, 0);
+    const totalRefused = allTrains.reduce((s, t) => s + t.refused, 0);
+    const agentIds = [...new Set(missions.map(m => m.agent_id))];
+    return {
+      key,
+      station_name: missions[0].station_name,
+      mission_date: missions[0].mission_date,
+      missions,
+      allTrains,
+      totalControlled,
+      totalRefused,
+      fraudRate: totalControlled > 0 ? (totalRefused / totalControlled) * 100 : 0,
+      trainCount: allTrains.length,
+      agentIds,
+      is_completed: missions.every(m => m.is_completed),
+    };
+  });
 }
 
 function getMissionStats(trains: EmbarkmentTrain[]) {
@@ -196,134 +261,238 @@ function GlobalStatsSummary({ missions }: { missions: EmbarkmentMissionRow[] }) 
   );
 }
 
-function MissionRow({ mission, onClick, onDelete }: { mission: EmbarkmentMissionRow; onClick?: () => void; onDelete?: (id: string) => void }) {
-  const stats = getMissionStats(mission.trains);
-  
-  const handleExportPDF = (e: React.MouseEvent) => {
+function GroupedMissionCard({
+  group,
+  profileMap,
+  onMissionClick,
+  onDelete,
+}: {
+  group: GroupedMission;
+  profileMap: Record<string, { first_name: string; last_name: string }>;
+  onMissionClick?: (mission: EmbarkmentMissionRow) => void;
+  onDelete?: (id: string) => void;
+}) {
+  const [expanded, setExpanded] = useState(false);
+  const isMultiAgent = group.agentIds.length > 1;
+
+  const handleExport = (type: 'pdf' | 'html' | 'preview', e: React.MouseEvent) => {
     e.stopPropagation();
+    // Export first mission's data (or grouped)
+    const mission = group.missions[0];
     const missionData: EmbarkmentMissionData = {
       date: mission.mission_date,
       stationName: mission.station_name,
       globalComment: mission.global_comment || '',
-      trains: mission.trains,
+      trains: group.allTrains,
     };
-    downloadEmbarkmentPDF(missionData, mission.is_completed);
-    toast.success('PDF exporté');
-  };
-  
-  const handleExportHTML = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    const missionData: EmbarkmentMissionData = {
-      date: mission.mission_date,
-      stationName: mission.station_name,
-      globalComment: mission.global_comment || '',
-      trains: mission.trains,
-    };
-    downloadEmbarkmentHTML(missionData, mission.is_completed);
-    toast.success('HTML exporté');
-  };
-  
-  const handlePreviewHTML = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    const missionData: EmbarkmentMissionData = {
-      date: mission.mission_date,
-      stationName: mission.station_name,
-      globalComment: mission.global_comment || '',
-      trains: mission.trains,
-    };
-    openEmbarkmentHTMLPreview(missionData, mission.is_completed);
+    if (type === 'pdf') {
+      downloadEmbarkmentPDF(missionData, group.is_completed);
+      toast.success('PDF exporté');
+    } else if (type === 'html') {
+      downloadEmbarkmentHTML(missionData, group.is_completed);
+      toast.success('HTML exporté');
+    } else {
+      openEmbarkmentHTMLPreview(missionData, group.is_completed);
+    }
   };
 
   return (
-    <Card 
-      className="cursor-pointer hover:bg-muted/50 transition-colors"
-      onClick={onClick}
-    >
-      <CardContent className="p-4">
-        <div className="flex items-center gap-3">
-          {/* Icon */}
-          <div className="p-2 rounded-lg bg-primary/10 shrink-0">
-            <Building2 className="h-4 w-4 text-primary" />
-          </div>
-          
-          {/* Main info */}
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2">
-              <span className="font-medium truncate">{mission.station_name}</span>
-              <Badge variant={mission.is_completed ? 'default' : 'secondary'} className="text-xs shrink-0">
-                {mission.is_completed ? (
-                  <><CheckCircle2 className="h-3 w-3 mr-1" /> Terminée</>
-                ) : (
-                  <><Clock className="h-3 w-3 mr-1" /> En cours</>
-                )}
-              </Badge>
-            </div>
-            <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1">
-              <span className="flex items-center gap-1">
-                <Calendar className="h-3 w-3" />
-                {format(new Date(mission.mission_date), 'dd/MM/yyyy', { locale: fr })}
-              </span>
-              <span className="flex items-center gap-1">
-                <Train className="h-3 w-3" />
-                {stats.trainCount} train{stats.trainCount > 1 ? 's' : ''}
-              </span>
-            </div>
-          </div>
-          
-          {/* Stats */}
-          <div className="flex items-center gap-4 shrink-0">
-            <div className="text-center hidden sm:block">
-              <div className="flex items-center gap-1 text-sm font-medium">
-                <Users className="h-3 w-3" />
-                {stats.totalControlled}
-              </div>
-            </div>
-            <div className={`text-center ${getFraudRateColor(stats.fraudRate)}`}>
-              <div className="flex items-center gap-1 text-sm font-semibold">
-                <AlertTriangle className="h-3 w-3" />
-                {stats.fraudRate.toFixed(1)}%
-              </div>
-            </div>
-            
-            {/* Export menu */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                <Button variant="ghost" size="icon" className="h-8 w-8">
-                  <MoreHorizontal className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={handlePreviewHTML}>
-                  <Eye className="h-4 w-4 mr-2" />
-                  Aperçu
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={handleExportHTML}>
-                  <Globe className="h-4 w-4 mr-2" />
-                  Export HTML
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={handleExportPDF}>
-                  <FileText className="h-4 w-4 mr-2" />
-                  Export PDF
-                </DropdownMenuItem>
-                {onDelete && (
-                  <>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      className="text-destructive focus:text-destructive"
-                      onClick={(e) => { e.stopPropagation(); onDelete(mission.id); }}
-                    >
-                      <Trash2 className="h-4 w-4 mr-2" />
-                      Supprimer
-                    </DropdownMenuItem>
-                  </>
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
-
-            <ChevronRight className="h-4 w-4 text-muted-foreground" />
-          </div>
+    <Card className="overflow-hidden border-primary/20">
+      {/* Header — aggregated stats */}
+      <div
+        className="flex items-start gap-3 p-3 bg-primary/5 border-b border-primary/10 cursor-pointer hover:bg-primary/10 transition-colors"
+        onClick={() => setExpanded(!expanded)}
+      >
+        <div className="p-1.5 rounded-md bg-primary/15 shrink-0">
+          <Building2 className="h-4 w-4 text-primary" />
         </div>
-      </CardContent>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="font-semibold text-sm">{group.station_name}</span>
+            <Badge variant={group.is_completed ? 'default' : 'secondary'} className="text-[10px] shrink-0">
+              {group.is_completed ? (
+                <><CheckCircle2 className="h-2.5 w-2.5 mr-0.5" /> Terminée</>
+              ) : (
+                <><Clock className="h-2.5 w-2.5 mr-0.5" /> En cours</>
+              )}
+            </Badge>
+            {isMultiAgent && (
+              <Badge variant="secondary" className="text-[10px] shrink-0">
+                {group.agentIds.length} agents
+              </Badge>
+            )}
+          </div>
+          <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground flex-wrap">
+            <span className="flex items-center gap-1">
+              <Calendar className="h-3 w-3" />
+              {format(new Date(group.mission_date), 'dd/MM/yyyy', { locale: fr })}
+            </span>
+            <span className="flex items-center gap-1">
+              <Train className="h-3 w-3" />
+              {group.trainCount} train{group.trainCount > 1 ? 's' : ''}
+            </span>
+            <span className="flex items-center gap-1">
+              <Users className="h-3 w-3" />
+              {group.totalControlled} voy.
+            </span>
+            {group.totalRefused > 0 && (
+              <span className="text-destructive font-medium">
+                {group.totalRefused} refoulé{group.totalRefused > 1 ? 's' : ''}
+              </span>
+            )}
+            <span className={cn('font-semibold', getFraudRateColor(group.fraudRate))}>
+              {group.fraudRate.toFixed(1)}%
+            </span>
+          </div>
+          {/* Agent names preview (collapsed) */}
+          {!expanded && (
+            <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
+              {group.agentIds.map(agentId => {
+                const agent = profileMap[agentId];
+                const initials = agent ? getInitials(agent.first_name, agent.last_name) : '?';
+                return (
+                  <div
+                    key={agentId}
+                    className={cn('h-5 w-5 rounded-full flex items-center justify-center text-white text-[8px] font-bold', avatarColor(agentId))}
+                    title={agent ? `${agent.first_name} ${agent.last_name}` : 'Agent inconnu'}
+                  >
+                    {initials}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          {/* Export menu */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+              <Button variant="ghost" size="icon" className="h-8 w-8">
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={(e) => handleExport('preview', e)}>
+                <Eye className="h-4 w-4 mr-2" />
+                Aperçu
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={(e) => handleExport('html', e)}>
+                <Globe className="h-4 w-4 mr-2" />
+                Export HTML
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={(e) => handleExport('pdf', e)}>
+                <FileText className="h-4 w-4 mr-2" />
+                Export PDF
+              </DropdownMenuItem>
+              {onDelete && group.missions.length === 1 && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    className="text-destructive focus:text-destructive"
+                    onClick={(e) => { e.stopPropagation(); onDelete(group.missions[0].id); }}
+                  >
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Supprimer
+                  </DropdownMenuItem>
+                </>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+          {expanded ? (
+            <ChevronDown className="h-4 w-4 text-muted-foreground" />
+          ) : (
+            <ChevronRight className="h-4 w-4 text-muted-foreground" />
+          )}
+        </div>
+      </div>
+
+      {/* Expandable train sub-rows */}
+      {expanded && (
+        <CardContent className="p-0">
+          {group.allTrains.map((train, i) => {
+            const agent = profileMap[train.agent_id];
+            const initials = agent ? getInitials(agent.first_name, agent.last_name) : '?';
+            const agentName = agent ? `${agent.first_name} ${agent.last_name}` : 'Agent inconnu';
+            const rate = train.controlled > 0 ? (train.refused / train.controlled) * 100 : 0;
+            const color = avatarColor(train.agent_id);
+
+            return (
+              <button
+                key={`${train.mission_id}-${train.id}`}
+                onClick={() => {
+                  const mission = group.missions.find(m => m.id === train.mission_id);
+                  if (mission && onMissionClick) onMissionClick(mission);
+                }}
+                className={cn(
+                  'w-full flex items-center gap-3 px-3 py-2.5 text-left transition-colors hover:bg-muted/50',
+                  i < group.allTrains.length - 1 && 'border-b border-border/50'
+                )}
+              >
+                {/* Avatar */}
+                <div className={cn(
+                  'h-7 w-7 rounded-full flex items-center justify-center shrink-0 text-white text-[10px] font-bold',
+                  color
+                )}>
+                  {initials}
+                </div>
+
+                {/* Train info */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="flex items-center gap-1 text-xs font-medium">
+                      <Train className="h-3 w-3 text-primary" />
+                      N° {train.trainNumber || '—'}
+                    </span>
+                    {train.origin && train.destination && (
+                      <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                        {train.origin} <ArrowRight className="h-2.5 w-2.5" /> {train.destination}
+                      </span>
+                    )}
+                    {train.departureTime && (
+                      <span className="flex items-center gap-0.5 text-[10px] text-muted-foreground shrink-0">
+                        <Clock className="h-2.5 w-2.5" />
+                        {train.departureTime}
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2 mt-0.5">
+                    <span className="text-[10px] text-muted-foreground truncate">{agentName}</span>
+                    <span className="text-[10px] text-muted-foreground shrink-0">
+                      {train.controlled} voy.
+                    </span>
+                    {train.refused > 0 && (
+                      <span className="text-[10px] text-destructive font-medium shrink-0">
+                        {train.refused} ref.
+                      </span>
+                    )}
+                    {train.policePresence && (
+                      <Badge variant="outline" className="text-[9px] px-1 py-0 bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 border-0 h-4">
+                        Police
+                      </Badge>
+                    )}
+                    {train.trackCrossing && (
+                      <Badge variant="outline" className="text-[9px] px-1 py-0 bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400 border-0 h-4">
+                        Trav. voie
+                      </Badge>
+                    )}
+                    {train.controlLineCrossing && (
+                      <Badge variant="outline" className="text-[9px] px-1 py-0 bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400 border-0 h-4">
+                        Fraude ligne
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+
+                {/* Fraud rate */}
+                <div className={cn('text-xs font-bold shrink-0', getFraudRateColor(rate))}>
+                  {rate.toFixed(1)}%
+                </div>
+                <ChevronRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+              </button>
+            );
+          })}
+        </CardContent>
+      )}
     </Card>
   );
 }
@@ -453,7 +622,7 @@ function MissionCard({ mission, onClick, onDelete }: { mission: EmbarkmentMissio
   );
 }
 
-export function EmbarkmentHistoryView({ missions, viewMode, onMissionClick, onDelete, isLoading }: EmbarkmentHistoryViewProps) {
+export function EmbarkmentHistoryView({ missions, viewMode, profileMap = {}, onMissionClick, onDelete, isLoading }: EmbarkmentHistoryViewProps) {
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   // Internal state for embarkment-specific filtering
   const [internalViewMode, setInternalViewMode] = useState<EmbarkmentViewMode>('list');
@@ -517,7 +686,7 @@ export function EmbarkmentHistoryView({ missions, viewMode, onMissionClick, onDe
     });
   }, [missions, stationFilter, statusFilter, startDate, endDate, searchQuery]);
 
-  // Group missions by date
+  // Group missions by date (for date headers)
   const groupedMissions = useMemo(() => {
     return filteredMissions.reduce((groups, mission) => {
       const date = mission.mission_date;
@@ -528,10 +697,19 @@ export function EmbarkmentHistoryView({ missions, viewMode, onMissionClick, onDe
       return groups;
     }, {} as Record<string, EmbarkmentMissionRow[]>);
   }, [filteredMissions]);
-  
-  const sortedDates = Object.keys(groupedMissions).sort((a, b) => 
+
+  const sortedDates = Object.keys(groupedMissions).sort((a, b) =>
     new Date(b).getTime() - new Date(a).getTime()
   );
+
+  // Group missions by station+date for multi-agent display (list view)
+  const groupedByStationDate = useMemo(() => {
+    const byDate: Record<string, GroupedMission[]> = {};
+    for (const date of sortedDates) {
+      byDate[date] = groupMissions(groupedMissions[date]);
+    }
+    return byDate;
+  }, [groupedMissions, sortedDates]);
 
   const hasActiveFilters = searchQuery.trim() !== '' || stationFilter !== 'all' || statusFilter !== 'all' || startDate !== undefined || endDate !== undefined;
 
@@ -824,11 +1002,12 @@ export function EmbarkmentHistoryView({ missions, viewMode, onMissionClick, onDe
                   </Badge>
                 </h2>
                 <div className="space-y-2">
-                  {groupedMissions[date].map((mission) => (
-                    <MissionRow
-                      key={mission.id}
-                      mission={mission}
-                      onClick={() => onMissionClick?.(mission)}
+                  {(groupedByStationDate[date] ?? []).map((group) => (
+                    <GroupedMissionCard
+                      key={group.key}
+                      group={group}
+                      profileMap={profileMap}
+                      onMissionClick={onMissionClick}
                       onDelete={onDelete ? handleDeleteRequest : undefined}
                     />
                   ))}

@@ -353,13 +353,14 @@ export default function HistoryPage() {
     return sourceControls;
   }, [infiniteControls, controls, dataViewMode, profile, selectedTeamId, selectedAgentId]);
 
-  // Fetch agent profiles for multi-agent grouping display
+  // Fetch agent profiles for multi-agent grouping display (controls + embarkment missions)
   const allControls = infiniteControls.length > 0 ? infiniteControls : controls;
-  const agentIds = useMemo(() =>
-    [...new Set(allControls.map(c => c.agent_id))],
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [allControls.length]
-  );
+  const agentIds = useMemo(() => {
+    const ids = new Set(allControls.map(c => c.agent_id));
+    embarkmentMissions.forEach(m => ids.add(m.agent_id));
+    return [...ids];
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [allControls.length, embarkmentMissions.length]);
   const { data: agentProfiles = [] } = useQuery({
     queryKey: ['profiles-by-ids', agentIds],
     queryFn: async () => {
@@ -1050,8 +1051,8 @@ export default function HistoryPage() {
           </>
         )}
 
-        {/* Embarkment section — visible when Gare filter is active */}
-        {locationFilter === 'gare' && (
+        {/* Embarkment section — visible when Tout or Gare filter is active */}
+        {(locationFilter === 'all' || locationFilter === 'gare') && (
           <div className="mt-4">
             <div className="flex items-center gap-2 mb-3 px-1">
               <ArrowUpFromLine className="h-4 w-4 text-blue-500" />
@@ -1072,6 +1073,7 @@ export default function HistoryPage() {
               <EmbarkmentHistoryView
                 missions={embarkmentMissions}
                 viewMode={viewMode}
+                profileMap={profileMap}
                 onMissionClick={(mission) => {
                   navigate(`/station?mission=${mission.id}`);
                 }}
