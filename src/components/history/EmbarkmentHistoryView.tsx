@@ -408,91 +408,105 @@ function GroupedMissionCard({
         </div>
       </div>
 
-      {/* Expandable train sub-rows */}
+      {/* Expandable: trains grouped by train number */}
       {expanded && (
         <CardContent className="p-0">
-          {group.allTrains.map((train, i) => {
-            const agent = profileMap[train.agent_id];
-            const initials = agent ? getInitials(agent.first_name, agent.last_name) : '?';
-            const agentName = agent ? `${agent.first_name} ${agent.last_name}` : 'Agent inconnu';
-            const rate = train.controlled > 0 ? (train.refused / train.controlled) * 100 : 0;
-            const color = avatarColor(train.agent_id);
+          {(() => {
+            // Group trains by trainNumber
+            const trainGroups = new Map<string, typeof group.allTrains>();
+            for (const t of group.allTrains) {
+              const key = t.trainNumber || '—';
+              if (!trainGroups.has(key)) trainGroups.set(key, []);
+              trainGroups.get(key)!.push(t);
+            }
+            return Array.from(trainGroups.entries()).map(([trainNum, entries], gi) => {
+              const totalCtrl = entries.reduce((s, t) => s + t.controlled, 0);
+              const totalRef = entries.reduce((s, t) => s + t.refused, 0);
+              const trainRate = totalCtrl > 0 ? (totalRef / totalCtrl) * 100 : 0;
+              const firstEntry = entries[0];
 
-            return (
-              <button
-                key={`${train.mission_id}-${train.id}`}
-                onClick={() => {
-                  const mission = group.missions.find(m => m.id === train.mission_id);
-                  if (mission && onMissionClick) onMissionClick(mission);
-                }}
-                className={cn(
-                  'w-full flex items-center gap-3 px-3 py-2.5 text-left transition-colors hover:bg-muted/50',
-                  i < group.allTrains.length - 1 && 'border-b border-border/50'
-                )}
-              >
-                {/* Avatar */}
-                <div className={cn(
-                  'h-7 w-7 rounded-full flex items-center justify-center shrink-0 text-white text-[10px] font-bold',
-                  color
-                )}>
-                  {initials}
-                </div>
-
-                {/* Train info */}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="flex items-center gap-1 text-xs font-medium">
-                      <Train className="h-3 w-3 text-primary" />
-                      N° {train.trainNumber || '—'}
-                    </span>
-                    {train.origin && train.destination && (
-                      <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
-                        {train.origin} <ArrowRight className="h-2.5 w-2.5" /> {train.destination}
-                      </span>
-                    )}
-                    {train.departureTime && (
-                      <span className="flex items-center gap-0.5 text-[10px] text-muted-foreground shrink-0">
-                        <Clock className="h-2.5 w-2.5" />
-                        {train.departureTime}
-                      </span>
-                    )}
+              return (
+                <div key={trainNum} className={cn(gi < trainGroups.size - 1 && 'border-b border-border/50')}>
+                  {/* Train header with totals */}
+                  <div className="flex items-center gap-3 px-3 py-2 bg-muted/30">
+                    <div className="p-1 rounded bg-primary/10 shrink-0">
+                      <Train className="h-3.5 w-3.5 text-primary" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-xs font-semibold">N° {trainNum}</span>
+                        {firstEntry.origin && firstEntry.destination && (
+                          <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                            {firstEntry.origin} <ArrowRight className="h-2.5 w-2.5" /> {firstEntry.destination}
+                          </span>
+                        )}
+                        {firstEntry.departureTime && (
+                          <span className="flex items-center gap-0.5 text-[10px] text-muted-foreground shrink-0">
+                            <Clock className="h-2.5 w-2.5" />
+                            {firstEntry.departureTime}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2 mt-0.5 text-[10px] text-muted-foreground">
+                        <span>{totalCtrl} voy.</span>
+                        {totalRef > 0 && (
+                          <span className="text-destructive font-medium">{totalRef} refoulé{totalRef > 1 ? 's' : ''}</span>
+                        )}
+                        {entries.some(t => t.policePresence) && (
+                          <Badge variant="outline" className="text-[9px] px-1 py-0 bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 border-0 h-4">Police</Badge>
+                        )}
+                      </div>
+                    </div>
+                    <div className={cn('text-xs font-bold shrink-0', getFraudRateColor(trainRate))}>
+                      {trainRate.toFixed(1)}%
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2 mt-0.5">
-                    <span className="text-[10px] text-muted-foreground truncate">{agentName}</span>
-                    <span className="text-[10px] text-muted-foreground shrink-0">
-                      {train.controlled} voy.
-                    </span>
-                    {train.refused > 0 && (
-                      <span className="text-[10px] text-destructive font-medium shrink-0">
-                        {train.refused} ref.
-                      </span>
-                    )}
-                    {train.policePresence && (
-                      <Badge variant="outline" className="text-[9px] px-1 py-0 bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 border-0 h-4">
-                        Police
-                      </Badge>
-                    )}
-                    {train.trackCrossing && (
-                      <Badge variant="outline" className="text-[9px] px-1 py-0 bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400 border-0 h-4">
-                        Trav. voie
-                      </Badge>
-                    )}
-                    {train.controlLineCrossing && (
-                      <Badge variant="outline" className="text-[9px] px-1 py-0 bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400 border-0 h-4">
-                        Fraude ligne
-                      </Badge>
-                    )}
-                  </div>
-                </div>
 
-                {/* Fraud rate */}
-                <div className={cn('text-xs font-bold shrink-0', getFraudRateColor(rate))}>
-                  {rate.toFixed(1)}%
+                  {/* Agent sub-rows */}
+                  {entries.map((train) => {
+                    const agent = profileMap[train.agent_id];
+                    const initials = agent ? getInitials(agent.first_name, agent.last_name) : '?';
+                    const agentName = agent ? `${agent.first_name} ${agent.last_name}` : 'Agent inconnu';
+                    const rate = train.controlled > 0 ? (train.refused / train.controlled) * 100 : 0;
+                    const color = avatarColor(train.agent_id);
+
+                    return (
+                      <button
+                        key={`${train.mission_id}-${train.id}`}
+                        onClick={() => {
+                          const mission = group.missions.find(m => m.id === train.mission_id);
+                          if (mission && onMissionClick) onMissionClick(mission);
+                        }}
+                        className="w-full flex items-center gap-3 pl-10 pr-3 py-1.5 text-left transition-colors hover:bg-muted/50 border-t border-border/30"
+                      >
+                        <div className={cn(
+                          'h-5 w-5 rounded-full flex items-center justify-center shrink-0 text-white text-[8px] font-bold',
+                          color
+                        )}>
+                          {initials}
+                        </div>
+                        <span className="text-[11px] text-muted-foreground truncate flex-1">{agentName}</span>
+                        <span className="text-[10px] text-muted-foreground shrink-0">{train.controlled} voy.</span>
+                        {train.refused > 0 && (
+                          <span className="text-[10px] text-destructive font-medium shrink-0">{train.refused} ref.</span>
+                        )}
+                        {train.trackCrossing && (
+                          <Badge variant="outline" className="text-[9px] px-1 py-0 bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400 border-0 h-4">Trav. voie</Badge>
+                        )}
+                        {train.controlLineCrossing && (
+                          <Badge variant="outline" className="text-[9px] px-1 py-0 bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400 border-0 h-4">Fraude ligne</Badge>
+                        )}
+                        <span className={cn('text-[10px] font-semibold shrink-0', getFraudRateColor(rate))}>
+                          {rate.toFixed(1)}%
+                        </span>
+                        <ChevronRight className="h-3 w-3 text-muted-foreground shrink-0" />
+                      </button>
+                    );
+                  })}
                 </div>
-                <ChevronRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-              </button>
-            );
-          })}
+              );
+            });
+          })()}
         </CardContent>
       )}
     </Card>
