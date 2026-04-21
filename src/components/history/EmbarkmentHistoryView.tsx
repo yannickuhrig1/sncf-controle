@@ -92,6 +92,7 @@ interface EmbarkmentHistoryViewProps {
   profileMap?: Record<string, { first_name: string; last_name: string }>;
   onMissionClick?: (mission: EmbarkmentMissionRow) => void;
   onDelete?: (id: string) => Promise<boolean>;
+  onRemoveTrain?: (missionId: string, trainId: string) => Promise<boolean>;
   isLoading?: boolean;
 }
 
@@ -268,11 +269,13 @@ function GroupedMissionCard({
   profileMap,
   onMissionClick,
   onDelete,
+  onRemoveTrain,
 }: {
   group: GroupedMission;
   profileMap: Record<string, { first_name: string; last_name: string }>;
   onMissionClick?: (mission: EmbarkmentMissionRow) => void;
   onDelete?: (id: string) => void;
+  onRemoveTrain?: (missionId: string, trainId: string) => Promise<boolean>;
 }) {
   const [expanded, setExpanded] = useState(false);
   const isMultiAgent = group.agentIds.length > 1;
@@ -471,36 +474,54 @@ function GroupedMissionCard({
                     const color = avatarColor(train.agent_id);
 
                     return (
-                      <button
+                      <div
                         key={`${train.mission_id}-${train.id}`}
-                        onClick={() => {
-                          const mission = group.missions.find(m => m.id === train.mission_id);
-                          if (mission && onMissionClick) onMissionClick(mission);
-                        }}
-                        className="w-full flex items-center gap-3 pl-10 pr-3 py-1.5 text-left transition-colors hover:bg-muted/50 border-t border-border/30"
+                        className="flex items-center gap-2 pl-10 pr-3 py-1.5 border-t border-border/30 hover:bg-muted/50 transition-colors"
                       >
-                        <div className={cn(
-                          'h-5 w-5 rounded-full flex items-center justify-center shrink-0 text-white text-[8px] font-bold',
-                          color
-                        )}>
-                          {initials}
-                        </div>
-                        <span className="text-[11px] text-muted-foreground truncate flex-1">{agentName}</span>
-                        <span className="text-[10px] text-muted-foreground shrink-0">{train.controlled} voy.</span>
-                        {train.refused > 0 && (
-                          <span className="text-[10px] text-destructive font-medium shrink-0">{train.refused} ref.</span>
+                        <button
+                          onClick={() => {
+                            const mission = group.missions.find(m => m.id === train.mission_id);
+                            if (mission && onMissionClick) onMissionClick(mission);
+                          }}
+                          className="flex items-center gap-3 flex-1 min-w-0 text-left"
+                        >
+                          <div className={cn(
+                            'h-5 w-5 rounded-full flex items-center justify-center shrink-0 text-white text-[8px] font-bold',
+                            color
+                          )}>
+                            {initials}
+                          </div>
+                          <span className="text-[11px] text-muted-foreground truncate flex-1">{agentName}</span>
+                          <span className="text-[10px] text-muted-foreground shrink-0">{train.controlled} voy.</span>
+                          {train.refused > 0 && (
+                            <span className="text-[10px] text-destructive font-medium shrink-0">{train.refused} ref.</span>
+                          )}
+                          {train.trackCrossing && (
+                            <Badge variant="outline" className="text-[9px] px-1 py-0 bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400 border-0 h-4">Trav. voie</Badge>
+                          )}
+                          {train.controlLineCrossing && (
+                            <Badge variant="outline" className="text-[9px] px-1 py-0 bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400 border-0 h-4">Fraude ligne</Badge>
+                          )}
+                          <span className={cn('text-[10px] font-semibold shrink-0', getFraudRateColor(rate))}>
+                            {rate.toFixed(1)}%
+                          </span>
+                          <ChevronRight className="h-3 w-3 text-muted-foreground shrink-0" />
+                        </button>
+                        {onRemoveTrain && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (confirm(`Supprimer le train ${trainNum} de ${agentName} ?`)) {
+                                onRemoveTrain(train.mission_id, train.id);
+                              }
+                            }}
+                            className="p-1 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors shrink-0"
+                            title="Supprimer ce train"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
                         )}
-                        {train.trackCrossing && (
-                          <Badge variant="outline" className="text-[9px] px-1 py-0 bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400 border-0 h-4">Trav. voie</Badge>
-                        )}
-                        {train.controlLineCrossing && (
-                          <Badge variant="outline" className="text-[9px] px-1 py-0 bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400 border-0 h-4">Fraude ligne</Badge>
-                        )}
-                        <span className={cn('text-[10px] font-semibold shrink-0', getFraudRateColor(rate))}>
-                          {rate.toFixed(1)}%
-                        </span>
-                        <ChevronRight className="h-3 w-3 text-muted-foreground shrink-0" />
-                      </button>
+                      </div>
                     );
                   })}
                 </div>
@@ -638,7 +659,7 @@ function MissionCard({ mission, onClick, onDelete }: { mission: EmbarkmentMissio
   );
 }
 
-export function EmbarkmentHistoryView({ missions, viewMode, profileMap = {}, onMissionClick, onDelete, isLoading }: EmbarkmentHistoryViewProps) {
+export function EmbarkmentHistoryView({ missions, viewMode, profileMap = {}, onMissionClick, onDelete, onRemoveTrain, isLoading }: EmbarkmentHistoryViewProps) {
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   // Internal state for embarkment-specific filtering
   const [internalViewMode, setInternalViewMode] = useState<EmbarkmentViewMode>('list');
@@ -1025,6 +1046,7 @@ export function EmbarkmentHistoryView({ missions, viewMode, profileMap = {}, onM
                       profileMap={profileMap}
                       onMissionClick={onMissionClick}
                       onDelete={onDelete ? handleDeleteRequest : undefined}
+                      onRemoveTrain={onRemoveTrain}
                     />
                   ))}
                 </div>

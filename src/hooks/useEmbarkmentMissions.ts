@@ -27,6 +27,7 @@ interface UseEmbarkmentMissionsReturn {
   loadMission: (id: string) => Promise<EmbarkmentMissionRow | null>;
   deleteMission: (id: string) => Promise<boolean>;
   completeMission: (id: string) => Promise<boolean>;
+  removeTrainFromMission: (missionId: string, trainId: string) => Promise<boolean>;
   refreshMissions: () => Promise<void>;
   setCurrentMission: (mission: EmbarkmentMissionRow | null) => void;
   clearCurrentMission: () => void;
@@ -233,6 +234,35 @@ export function useEmbarkmentMissions(): UseEmbarkmentMissionsReturn {
     }
   }, [refreshMissions]);
 
+  const removeTrainFromMission = useCallback(async (missionId: string, trainId: string): Promise<boolean> => {
+    try {
+      const mission = missions.find(m => m.id === missionId);
+      if (!mission) return false;
+
+      const updatedTrains = mission.trains.filter(t => t.id !== trainId);
+
+      if (updatedTrains.length === 0) {
+        // No trains left — delete the whole mission
+        return deleteMission(missionId);
+      }
+
+      const { error } = await supabase
+        .from('embarkment_missions')
+        .update({ trains: trainsToJson(updatedTrains) })
+        .eq('id', missionId);
+
+      if (error) throw error;
+
+      await refreshMissions();
+      toast.success('Train supprimé');
+      return true;
+    } catch (error) {
+      console.error('Failed to remove train:', error);
+      toast.error('Erreur lors de la suppression du train');
+      return false;
+    }
+  }, [missions, deleteMission, refreshMissions]);
+
   const clearCurrentMission = useCallback(() => {
     setCurrentMission(null);
   }, []);
@@ -246,6 +276,7 @@ export function useEmbarkmentMissions(): UseEmbarkmentMissionsReturn {
     loadMission,
     deleteMission,
     completeMission,
+    removeTrainFromMission,
     refreshMissions,
     setCurrentMission,
     clearCurrentMission,

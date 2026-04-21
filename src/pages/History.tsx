@@ -260,6 +260,7 @@ export default function HistoryPage() {
     isLoading: isLoadingEmbarkment,
     refreshMissions: refetchEmbarkment,
     deleteMission: deleteEmbarkmentMission,
+    removeTrainFromMission: removeEmbarkmentTrain,
   } = useEmbarkmentMissions();
   const navigate = useNavigate();
   const { formattedLastSync, updateLastSync } = useLastSync();
@@ -1078,6 +1079,7 @@ export default function HistoryPage() {
                   navigate(`/station?mission=${mission.id}`);
                 }}
                 onDelete={deleteEmbarkmentMission}
+                onRemoveTrain={removeEmbarkmentTrain}
               />
             )}
           </div>
