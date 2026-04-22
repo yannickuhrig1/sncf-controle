@@ -252,11 +252,27 @@ export function BigPassengerCounterDialog({
                           {stop.platform && (
                             <span className="text-[10px] text-muted-foreground">v.{stop.platform}</span>
                           )}
-                          <span className="text-muted-foreground tabular-nums shrink-0">
-                            {stop.isDelayed && stop.baseDepartureTime && (
-                              <span className="line-through mr-1 text-[10px]">{stop.baseDepartureTime}</span>
+                          <span className="text-muted-foreground tabular-nums shrink-0 flex items-center gap-1">
+                            {stop.arrivalTime && (
+                              <span className="text-[10px]">
+                                {stop.isDelayed && stop.baseArrivalTime && (
+                                  <span className="line-through mr-0.5 opacity-50">{stop.baseArrivalTime}</span>
+                                )}
+                                <span title="Arrivée">{stop.arrivalTime}</span>
+                              </span>
                             )}
-                            {stop.departureTime || stop.arrivalTime || '—'}
+                            {stop.arrivalTime && stop.departureTime && (
+                              <span className="text-[9px] opacity-40">→</span>
+                            )}
+                            {stop.departureTime && (
+                              <span className="text-[10px]">
+                                {stop.isDelayed && stop.baseDepartureTime && (
+                                  <span className="line-through mr-0.5 opacity-50">{stop.baseDepartureTime}</span>
+                                )}
+                                <span title="Départ">{stop.departureTime}</span>
+                              </span>
+                            )}
+                            {!stop.arrivalTime && !stop.departureTime && '—'}
                           </span>
                           {stop.isDelayed && stop.delayMinutes && (
                             <Badge variant="outline" className="text-[9px] px-1 py-0 border-amber-300 text-amber-600 h-4">
