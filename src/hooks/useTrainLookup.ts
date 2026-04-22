@@ -13,6 +13,12 @@ export interface TrainStop {
   delayMinutes?: number;
 }
 
+export interface TrainComposition {
+  carriages: number;
+  classes: string[];
+  formation: string | null;
+}
+
 export interface TrainInfo {
   // Trajet
   origin: string;
@@ -31,6 +37,8 @@ export interface TrainInfo {
   disruptionReason?: string;
   // Occupation
   occupancy?: string;       // Libellé FR de l'occupation si fourni
+  // Composition (enrichi par HAFAS)
+  composition?: TrainComposition;
 }
 
 function parseHHMMSS(hhmmss: string | undefined): string {
@@ -57,6 +65,54 @@ function cleanStationName(name: string): string {
 }
 
 export { formatDuration };
+
+/** Enrichit les stops Navitia avec les voies HAFAS (DB) et récupère la composition */
+async function enrichWithHafas(
+  trainNumber: string,
+  date: string,
+  stops: TrainStop[],
+): Promise<{ stops: TrainStop[]; composition?: TrainComposition }> {
+  try {
+    const res = await fetch(
+      `/api/hafas-trip?trainNumber=${encodeURIComponent(trainNumber)}&date=${encodeURIComponent(date)}`
+    );
+    if (!res.ok) return { stops };
+    const data = await res.json();
+    if (!data.found || !data.stops?.length) return { stops };
+
+    // Normalise pour le matching (lowercase, sans accents, sans suffixes)
+    const norm = (s: string) =>
+      s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+        .replace(/\s*-\s*ville$/, '').replace(/-/g, ' ').trim();
+
+    // Build a map from HAFAS stop name → platform info
+    const hafasMap = new Map<string, { dPlatform: string | null; aPlatform: string | null }>();
+    for (const hs of data.stops) {
+      if (!hs.name) continue;
+      hafasMap.set(norm(hs.name), {
+        dPlatform: hs.departurePlatform,
+        aPlatform: hs.arrivalPlatform,
+      });
+    }
+
+    // Enrich Navitia stops with HAFAS platform data (only if Navitia platform is missing)
+    const enrichedStops = stops.map(stop => {
+      if (stop.platform) return stop; // Navitia already has platform
+      const hafas = hafasMap.get(norm(stop.name));
+      if (!hafas) return stop;
+      const platform = hafas.dPlatform || hafas.aPlatform;
+      return platform ? { ...stop, platform } : stop;
+    });
+
+    return {
+      stops: enrichedStops,
+      composition: data.composition ?? undefined,
+    };
+  } catch {
+    // HAFAS enrichment is optional — don't fail the lookup
+    return { stops };
+  }
+}
 
 export function useTrainLookup() {
   const [isLoading, setIsLoading] = useState(false);
@@ -195,20 +251,25 @@ export function useTrainLookup() {
       const rawOccupancy: string | undefined = journey.occupancies?.[0]?.occupancy ?? journey.occupancy;
       const occupancy = rawOccupancy ? (OCCUPANCY_LABELS[rawOccupancy] ?? rawOccupancy) : undefined;
 
+      // ── HAFAS enrichment (platforms + composition) ─────────────────────
+      const resolvedTrainNumber = journey.headsign || trainNumber.trim();
+      const hafas = await enrichWithHafas(resolvedTrainNumber, date, stops);
+
       const info: TrainInfo = {
-        origin:        stops[0].name,
-        destination:   stops[stops.length - 1].name,
-        departureTime: stops[0].departureTime,
-        arrivalTime:   stops[stops.length - 1].arrivalTime || stops[stops.length - 1].departureTime,
+        origin:        hafas.stops[0].name,
+        destination:   hafas.stops[hafas.stops.length - 1].name,
+        departureTime: hafas.stops[0].departureTime,
+        arrivalTime:   hafas.stops[hafas.stops.length - 1].arrivalTime || hafas.stops[hafas.stops.length - 1].departureTime,
         journeyDuration,
-        stops,
+        stops: hafas.stops,
         trainType,
-        trainNumber:   journey.headsign || trainNumber.trim(),
+        trainNumber:   resolvedTrainNumber,
         operator,
         status,
         delayMinutes,
         disruptionReason,
         occupancy,
+        composition:   hafas.composition,
       };
 
       setTrainInfo(info);

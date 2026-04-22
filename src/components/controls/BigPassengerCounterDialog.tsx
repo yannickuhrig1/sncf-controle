@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Minus, Plus, X, Users, Ticket, FileText, ClipboardList, ChevronRight, ShoppingBag, Train, ArrowRight, Clock, MapPin, ChevronDown, ChevronUp } from 'lucide-react';
 import { TarifListItem, type TarifEntry } from './TarifListItem';
 import { TarifTypeToggle } from './TarifTypeToggle';
-import type { TrainStop } from '@/hooks/useTrainLookup';
+import type { TrainStop, TrainComposition } from '@/hooks/useTrainLookup';
 
 const TARIF_TYPES = [
   { value: 'stt', label: 'STT' },
@@ -58,6 +58,7 @@ interface Props {
   destination?: string;
   controlTime?: string;
   trainStops?: TrainStop[];
+  trainComposition?: TrainComposition;
 }
 
 function generateId() {
@@ -173,7 +174,7 @@ export function BigPassengerCounterDialog({
   pvList = [], onPvListChange,
   tarifsBord = [], onTarifsBordChange,
   riPositif = 0, riNegatif = 0, onRiPositifChange, onRiNegatifChange,
-  trainNumber, origin, destination, controlTime, trainStops = [],
+  trainNumber, origin, destination, controlTime, trainStops = [], trainComposition,
 }: Props) {
   const [tcPopupOpen, setTcPopupOpen] = useState(false);
   const [pvPopupOpen, setPvPopupOpen] = useState(false);
@@ -228,6 +229,11 @@ export function BigPassengerCounterDialog({
                 {controlTime && (
                   <span className="text-xs text-muted-foreground flex items-center gap-0.5">
                     <Clock className="h-3 w-3" /> {controlTime}
+                  </span>
+                )}
+                {trainComposition && trainComposition.carriages > 0 && (
+                  <span className="text-xs text-muted-foreground flex items-center gap-0.5">
+                    — {trainComposition.carriages} voit.{trainComposition.classes.length > 0 && ` (${trainComposition.classes.join('+')})`}
                   </span>
                 )}
               </div>

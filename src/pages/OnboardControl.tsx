@@ -193,6 +193,7 @@ export default function OnboardControl() {
 
   // Train stops from SNCF API lookup
   const [trainStops, setTrainStops] = useState<import('@/hooks/useTrainLookup').TrainStop[]>([]);
+  const [trainComposition, setTrainComposition] = useState<import('@/hooks/useTrainLookup').TrainComposition | undefined>();
 
   // Clé pour déclencher automatiquement Info SNCF lors du chargement d'un train sauvegardé
   const [autoTriggerKey, setAutoTriggerKey] = useState(0);
@@ -272,6 +273,7 @@ export default function OnboardControl() {
       } : {}),
     }));
     if (t.trainInfo?.stops?.length) setTrainStops(t.trainInfo.stops);
+    if (t.trainInfo?.composition) setTrainComposition(t.trainInfo.composition);
     // Déclencher Info SNCF automatiquement pour avoir les mises à jour temps réel
     setAutoTriggerKey(k => k + 1);
   };
@@ -1079,6 +1081,7 @@ export default function OnboardControl() {
                               controlTime: originStop?.departureTime || info.departureTime || p.controlTime,
                             }));
                             setTrainStops(info.stops || []);
+                            setTrainComposition(info.composition);
                           }}
                           onAdd={addDailyTrain}
                         />
@@ -1105,6 +1108,9 @@ export default function OnboardControl() {
                                 {trainStops.map((stop) => (
                                   <SelectItem key={stop.name} value={stop.name}>
                                     {stop.name}
+                                    {stop.platform && (
+                                      <span className="ml-1 text-muted-foreground text-xs">v.{stop.platform}</span>
+                                    )}
                                     {stop.departureTime && (
                                       <span className="ml-2 text-muted-foreground text-xs">
                                         {stop.departureTime}
@@ -1130,6 +1136,9 @@ export default function OnboardControl() {
                                 {trainStops.map((stop) => (
                                   <SelectItem key={stop.name} value={stop.name}>
                                     {stop.name}
+                                    {stop.platform && (
+                                      <span className="ml-1 text-muted-foreground text-xs">v.{stop.platform}</span>
+                                    )}
                                     {(stop.arrivalTime || stop.departureTime) && (
                                       <span className="ml-2 text-muted-foreground text-xs">
                                         {stop.arrivalTime || stop.departureTime}
@@ -1161,6 +1170,16 @@ export default function OnboardControl() {
                           </div>
                         </div>
                       </div>
+                      {/* Composition du train (HAFAS) */}
+                      {trainComposition && trainComposition.carriages > 0 && (
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/40 rounded-md px-3 py-1.5">
+                          <Train className="h-3.5 w-3.5 shrink-0" />
+                          <span>{trainComposition.carriages} voitures</span>
+                          {trainComposition.classes.length > 0 && (
+                            <span className="text-muted-foreground/70">({trainComposition.classes.join(' + ')})</span>
+                          )}
+                        </div>
+                      )}
                     </>
                   )}
 
@@ -1429,6 +1448,7 @@ export default function OnboardControl() {
                             controlTime: info.departureTime || p.controlTime,
                           }));
                           setTrainStops(info.stops || []);
+                          setTrainComposition(info.composition);
                         }}
                         onAdd={addDailyTrain}
                       />
@@ -1456,6 +1476,9 @@ export default function OnboardControl() {
                               {trainStops.map((stop) => (
                                 <SelectItem key={stop.name} value={stop.name}>
                                   {stop.name}
+                                  {stop.platform && (
+                                    <span className="ml-1 text-muted-foreground text-xs">v.{stop.platform}</span>
+                                  )}
                                   {stop.departureTime && (
                                     <span className="ml-2 text-muted-foreground text-xs">
                                       {stop.departureTime}
@@ -1486,6 +1509,9 @@ export default function OnboardControl() {
                               {trainStops.map((stop) => (
                                 <SelectItem key={stop.name} value={stop.name}>
                                   {stop.name}
+                                  {stop.platform && (
+                                    <span className="ml-1 text-muted-foreground text-xs">v.{stop.platform}</span>
+                                  )}
                                   {stop.departureTime && (
                                     <span className="ml-2 text-muted-foreground text-xs">
                                       {stop.departureTime}
@@ -2004,6 +2030,7 @@ export default function OnboardControl() {
         destination={formState.destination}
         controlTime={formState.controlTime}
         trainStops={trainStops}
+        trainComposition={trainComposition}
       />
 
       {/* Train Share Dialog */}
