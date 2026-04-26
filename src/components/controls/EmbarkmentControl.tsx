@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import QRCode from 'qrcode';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,6 +10,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   DropdownMenu,
   DropdownMenuContent,
@@ -46,15 +48,21 @@ import {
   Copy,
   Mail,
   Link2,
+  ScanLine,
+  KeyRound,
+  Building2,
 } from 'lucide-react';
 import type { TrainInfo } from '@/hooks/useTrainLookup';
 import { StationAutocomplete } from './StationAutocomplete';
 import { TrainLookupButton } from './TrainLookupButton';
+import { QRCodeScanner } from './QRCodeScanner';
 import { useFraudThresholds } from '@/hooks/useFraudThresholds';
 import { getFraudThresholds } from '@/lib/stats';
 import { useEmbarkmentMissions } from '@/hooks/useEmbarkmentMissions';
+import { useEmbarkmentSharing, isValidShareCode } from '@/hooks/useEmbarkmentSharing';
 import { FullscreenCounterDialog } from './FullscreenCounterDialog';
 import { downloadEmbarkmentPDF, downloadEmbarkmentHTML, openEmbarkmentHTMLPreview } from '@/lib/embarkmentExportUtils';
+import { toast } from 'sonner';
 
 export interface EmbarkmentTrain {
   id: string;
@@ -185,7 +193,13 @@ export function EmbarkmentControl({ stationName, onStationChange, initialMission
   const [shareOpen, setShareOpen] = useState(false);
   const [joinOpen, setJoinOpen] = useState(false);
   const [joinInput, setJoinInput] = useState('');
+  const [joinCodeInput, setJoinCodeInput] = useState('');
+  const [joinTab, setJoinTab] = useState<'qr' | 'code' | 'station'>('qr');
   const [copySuccess, setCopySuccess] = useState(false);
+  const [shareCode, setShareCode] = useState<string | null>(null);
+  const [shareQrDataUrl, setShareQrDataUrl] = useState<string | null>(null);
+  const [isPreparingShare, setIsPreparingShare] = useState(false);
+  const { createShareCode, resolveShareCode, isResolvingCode } = useEmbarkmentSharing();
 
   // Info SNCF panel par train
   const [trainLookupOpen,        setTrainLookupOpen]        = useState<Record<string, boolean>>({});
@@ -427,6 +441,148 @@ export function EmbarkmentControl({ stationName, onStationChange, initialMission
     }
   };
 
+  // ── Sharing handlers ────────────────────────────────────────────────────
+  // Build the URL embedded in the QR code. Includes the share code so the
+  // landing page can auto-join.
+  const buildShareUrl = useCallback((code: string) => {
+    return `${window.location.origin}/station?mode=embarkment&join=${code}`;
+  }, []);
+
+  // Open the Share dialog: ensure the mission is saved server-side first
+  // (we need a mission_id to attach the code to), then create or reuse a code.
+  const handleOpenShare = useCallback(async () => {
+    if (isReadOnly) return;
+    if (!stationName.trim()) {
+      toast.error('Renseignez la gare avant de partager');
+      return;
+    }
+
+    setShareOpen(true);
+    setIsPreparingShare(true);
+    setShareCode(null);
+    setShareQrDataUrl(null);
+
+    try {
+      // Save first so we have an id to attach the code to.
+      let missionId = currentMission?.id ?? null;
+      if (!missionId) {
+        const saved = await saveMission({
+          date: missionDateStr,
+          stationName,
+          trains,
+          globalComment,
+        });
+        missionId = saved?.id ?? null;
+      }
+      if (!missionId) {
+        toast.error('Impossible de préparer le partage');
+        return;
+      }
+
+      const code = await createShareCode(missionId);
+      if (!code) return;
+
+      setShareCode(code);
+      const url = buildShareUrl(code);
+      const dataUrl = await QRCode.toDataURL(url, {
+        margin: 1,
+        width: 240,
+        errorCorrectionLevel: 'M',
+      });
+      setShareQrDataUrl(dataUrl);
+    } catch (err) {
+      console.error('Failed to prepare share:', err);
+      toast.error('Erreur lors de la préparation du partage');
+    } finally {
+      setIsPreparingShare(false);
+    }
+  }, [isReadOnly, stationName, currentMission, missionDateStr, trains, globalComment, saveMission, createShareCode, buildShareUrl]);
+
+  // Apply a join: resolve the code, copy the source mission's trains into the
+  // current agent's local state, and persist via saveMission. The dedupe
+  // logic in useEmbarkmentMissions ensures we update an existing mission for
+  // (this agent, date, station) rather than creating yet another row.
+  const applyJoin = useCallback(async (code: string) => {
+    const resolved = await resolveShareCode(code);
+    if (!resolved) return false;
+
+    setMissionDate(parseISO(resolved.missionDate));
+    onStationChange(resolved.stationName);
+    setTrains(resolved.trains);
+    // Persist immediately so the new agent has their own row for this mission.
+    await saveMission({
+      date: resolved.missionDate,
+      stationName: resolved.stationName,
+      trains: resolved.trains,
+      globalComment: '',
+    });
+    toast.success(`Mission rejointe : ${resolved.stationName}`);
+    return true;
+  }, [resolveShareCode, onStationChange, saveMission]);
+
+  // Wired to the "Code" tab submit button.
+  const handleSubmitCode = useCallback(async () => {
+    if (!isValidShareCode(joinCodeInput.replace(/\D/g, ''))) {
+      toast.error('Le code doit comporter 6 chiffres');
+      return;
+    }
+    const ok = await applyJoin(joinCodeInput.replace(/\D/g, ''));
+    if (ok) {
+      setJoinOpen(false);
+      setJoinCodeInput('');
+    }
+  }, [joinCodeInput, applyJoin]);
+
+  // Wired to the "QR scan" tab. Accepts either a 6-digit code or a full URL
+  // containing ?join=XXXXXX.
+  const handleScannedText = useCallback(async (decodedText: string) => {
+    let code = decodedText.trim();
+    try {
+      const url = new URL(decodedText);
+      const param = url.searchParams.get('join');
+      if (param) code = param;
+    } catch {
+      // Not a URL — treat as a raw code
+    }
+    code = code.replace(/\D/g, '');
+    if (!isValidShareCode(code)) {
+      toast.error('QR code invalide');
+      return;
+    }
+    const ok = await applyJoin(code);
+    if (ok) setJoinOpen(false);
+  }, [applyJoin]);
+
+  // Reset the dialog state when it closes so reopening starts fresh.
+  useEffect(() => {
+    if (!shareOpen) {
+      setShareCode(null);
+      setShareQrDataUrl(null);
+      setIsPreparingShare(false);
+    }
+  }, [shareOpen]);
+
+  // Auto-apply ?join=XXXXXX when the page is opened from a shared link.
+  // Read once on mount; we don't reload the mission state if the agent is
+  // already working on something — the join target should be applied as the
+  // primary intent of the navigation.
+  const joinFromUrlAppliedRef = useRef(false);
+  useEffect(() => {
+    if (joinFromUrlAppliedRef.current) return;
+    const params = new URLSearchParams(window.location.search);
+    const joinCode = params.get('join');
+    if (joinCode && isValidShareCode(joinCode)) {
+      joinFromUrlAppliedRef.current = true;
+      applyJoin(joinCode).finally(() => {
+        // Strip ?join= from the URL so a reload doesn't re-trigger the join.
+        const url = new URL(window.location.href);
+        url.searchParams.delete('join');
+        window.history.replaceState({}, '', url.toString());
+      });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const globalColor = getThresholdColor(fraudStats.globalFraudRate);
   const historyMissions = missions.filter(m => (historyTab === 'completed' ? m.is_completed : !m.is_completed));
 
@@ -624,7 +780,7 @@ export function EmbarkmentControl({ stationName, onStationChange, initialMission
               variant={stationName.trim() ? 'default' : 'outline'}
               className="gap-1.5"
               disabled={!stationName.trim()}
-              onClick={() => setShareOpen(true)}
+              onClick={handleOpenShare}
             >
               <Share2 className="h-3.5 w-3.5" />Partager
             </Button>
@@ -1132,31 +1288,91 @@ export function EmbarkmentControl({ stationName, onStationChange, initialMission
         readOnly={isReadOnly}
       />
 
-      {/* Dialog : Rejoindre un groupe embarquement */}
+      {/* Dialog : Rejoindre une mission embarquement */}
       <Dialog open={joinOpen} onOpenChange={setJoinOpen}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2"><Link2 className="h-4 w-4" />Rejoindre une mission</DialogTitle>
-            <DialogDescription>Entrez le nom de la gare partagée pour rejoindre la mission d'embarquement.</DialogDescription>
+            <DialogDescription>Scannez le QR code, saisissez le code à 6 chiffres, ou indiquez la gare.</DialogDescription>
           </DialogHeader>
-          <div className="space-y-3 pt-1">
-            <Input
-              placeholder="Ex: Metz, Luxembourg…"
-              value={joinInput}
-              onChange={(e) => setJoinInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && joinInput.trim()) {
+          <Tabs value={joinTab} onValueChange={(v) => setJoinTab(v as typeof joinTab)} className="pt-1">
+            <TabsList className="grid grid-cols-3 w-full">
+              <TabsTrigger value="qr" className="gap-1.5 text-xs">
+                <ScanLine className="h-3.5 w-3.5" />QR
+              </TabsTrigger>
+              <TabsTrigger value="code" className="gap-1.5 text-xs">
+                <KeyRound className="h-3.5 w-3.5" />Code
+              </TabsTrigger>
+              <TabsTrigger value="station" className="gap-1.5 text-xs">
+                <Building2 className="h-3.5 w-3.5" />Gare
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="qr" className="space-y-3 pt-3">
+              {joinTab === 'qr' && (
+                <QRCodeScanner onScan={handleScannedText} />
+              )}
+              <p className="text-[11px] text-muted-foreground text-center">
+                Visez le QR code affiché par votre collègue.
+              </p>
+            </TabsContent>
+
+            <TabsContent value="code" className="space-y-3 pt-3">
+              <div className="space-y-2">
+                <Label className="text-xs">Code à 6 chiffres</Label>
+                <Input
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  autoComplete="one-time-code"
+                  placeholder="123456"
+                  value={joinCodeInput}
+                  onChange={(e) => setJoinCodeInput(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleSubmitCode();
+                  }}
+                  className="h-12 text-center text-2xl font-mono tracking-[0.4em]"
+                />
+              </div>
+              <Button
+                className="w-full"
+                disabled={!isValidShareCode(joinCodeInput) || isResolvingCode}
+                onClick={handleSubmitCode}
+              >
+                {isResolvingCode ? (
+                  <><Loader2 className="h-4 w-4 mr-1.5 animate-spin" />Vérification…</>
+                ) : 'Rejoindre'}
+              </Button>
+            </TabsContent>
+
+            <TabsContent value="station" className="space-y-3 pt-3">
+              <Input
+                placeholder="Ex: Metz, Luxembourg…"
+                value={joinInput}
+                onChange={(e) => setJoinInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && joinInput.trim()) {
+                    onStationChange(joinInput.trim());
+                    setJoinOpen(false);
+                    setJoinInput('');
+                  }
+                }}
+              />
+              <Button
+                className="w-full"
+                disabled={!joinInput.trim()}
+                onClick={() => {
                   onStationChange(joinInput.trim());
                   setJoinOpen(false);
                   setJoinInput('');
-                }
-              }}
-            />
-            <Button className="w-full" disabled={!joinInput.trim()}
-              onClick={() => { onStationChange(joinInput.trim()); setJoinOpen(false); setJoinInput(''); }}>
-              Rejoindre
-            </Button>
-          </div>
+                }}
+              >
+                Rejoindre par gare
+              </Button>
+              <p className="text-[11px] text-muted-foreground">
+                Sans code, les trains ne seront pas pré-remplis.
+              </p>
+            </TabsContent>
+          </Tabs>
         </DialogContent>
       </Dialog>
 
@@ -1165,36 +1381,59 @@ export function EmbarkmentControl({ stationName, onStationChange, initialMission
         <DialogContent className="max-w-sm">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2"><Share2 className="h-4 w-4" />Partager — {stationName}</DialogTitle>
-            <DialogDescription>Partagez ce lien pour que d'autres agents rejoignent la mission d'embarquement à {stationName}.</DialogDescription>
+            <DialogDescription>
+              Vos collègues rejoignent la mission via QR code, lien ou code à 6 chiffres. Les trains sont copiés ; chaque agent garde ses propres compteurs.
+            </DialogDescription>
           </DialogHeader>
           {(() => {
-            const shareUrl = `${window.location.origin}/station?mode=embarkment&station=${encodeURIComponent(stationName)}`;
-            const qrSrc = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(shareUrl)}`;
+            if (isPreparingShare) {
+              return (
+                <div className="flex flex-col items-center justify-center gap-2 py-8 text-muted-foreground">
+                  <Loader2 className="h-6 w-6 animate-spin" />
+                  <span className="text-xs">Préparation du partage…</span>
+                </div>
+              );
+            }
+            if (!shareCode || !shareQrDataUrl) {
+              return (
+                <div className="text-center text-sm text-muted-foreground py-8">
+                  Impossible de générer un code. Réessayez.
+                </div>
+              );
+            }
+            const shareUrl = buildShareUrl(shareCode);
+            const formattedCode = `${shareCode.slice(0, 3)} ${shareCode.slice(3)}`;
             return (
               <div className="space-y-4 pt-1">
                 <div className="flex justify-center">
-                  <img src={qrSrc} alt="QR Code" width={180} height={180} className="rounded-lg border" />
+                  <img src={shareQrDataUrl} alt="QR Code" width={200} height={200} className="rounded-lg border" />
                 </div>
-                <div className="flex items-center gap-2 bg-muted rounded-md px-3 py-2">
-                  <span className="text-xs text-muted-foreground truncate flex-1">{shareUrl}</span>
+                <div className="text-center">
+                  <p className="text-[11px] uppercase tracking-wider text-muted-foreground mb-1">Code mission</p>
+                  <p className="text-3xl font-mono font-bold tracking-[0.4em]">{formattedCode}</p>
+                  <p className="text-[10px] text-muted-foreground mt-1">Valide 24 h</p>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <Button variant="outline" size="sm" className="gap-1.5"
-                    onClick={() => navigator.clipboard.writeText(shareUrl).then(() => { setCopySuccess(true); setTimeout(() => setCopySuccess(false), 2000); })}>
-                    <Copy className="h-3.5 w-3.5" />{copySuccess ? 'Copié !' : 'Copier'}
+                    onClick={() => navigator.clipboard.writeText(shareCode).then(() => { setCopySuccess(true); setTimeout(() => setCopySuccess(false), 2000); })}>
+                    <Copy className="h-3.5 w-3.5" />{copySuccess ? 'Copié !' : 'Copier code'}
                   </Button>
                   <Button variant="outline" size="sm" className="gap-1.5"
-                    onClick={() => window.open(`sms:?body=${encodeURIComponent(`Rejoins la mission embarquement à ${stationName} : ${shareUrl}`)}`)}>
+                    onClick={() => navigator.clipboard.writeText(shareUrl).then(() => { setCopySuccess(true); setTimeout(() => setCopySuccess(false), 2000); })}>
+                    <Link2 className="h-3.5 w-3.5" />Copier lien
+                  </Button>
+                  <Button variant="outline" size="sm" className="gap-1.5"
+                    onClick={() => window.open(`sms:?body=${encodeURIComponent(`Rejoins la mission embarquement à ${stationName} : ${shareUrl} (code ${shareCode})`)}`)}>
                     <MessageSquare className="h-3.5 w-3.5" />SMS
                   </Button>
                   <Button variant="outline" size="sm" className="gap-1.5"
-                    onClick={() => window.open(`mailto:?subject=${encodeURIComponent(`Mission embarquement — ${stationName}`)}&body=${encodeURIComponent(`Rejoins la mission d'embarquement à ${stationName} :\n${shareUrl}`)}`)}>
+                    onClick={() => window.open(`mailto:?subject=${encodeURIComponent(`Mission embarquement — ${stationName}`)}&body=${encodeURIComponent(`Rejoins la mission d'embarquement à ${stationName}.\n\nLien : ${shareUrl}\nCode : ${shareCode}`)}`)}>
                     <Mail className="h-3.5 w-3.5" />Email
                   </Button>
                   {typeof navigator !== 'undefined' && navigator.share && (
-                    <Button variant="outline" size="sm" className="gap-1.5"
-                      onClick={() => navigator.share({ title: `Mission embarquement — ${stationName}`, url: shareUrl })}>
-                      <Share2 className="h-3.5 w-3.5" />Partager
+                    <Button variant="outline" size="sm" className="gap-1.5 col-span-2"
+                      onClick={() => navigator.share({ title: `Mission embarquement — ${stationName}`, text: `Code : ${shareCode}`, url: shareUrl })}>
+                      <Share2 className="h-3.5 w-3.5" />Partager via…
                     </Button>
                   )}
                 </div>
