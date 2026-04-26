@@ -46,10 +46,82 @@ function calculateMissionStats(trains: EmbarkmentTrain[]) {
   };
 }
 
+/**
+ * Merge trains that share the same train number into a single row.
+ *
+ * Used for grouped exports (multi-agent missions on the same station/date).
+ * Each agent has their own copy of the train list with their own counters; in
+ * the printed/exported view we want a single line per train with totals.
+ *
+ * Merge rules:
+ *   - controlled / refused: summed
+ *   - origin / destination / departureTime / platform: first non-empty value
+ *   - policePresence / trackCrossing / controlLineCrossing: OR logical
+ *   - comment: non-empty comments concatenated with " | "
+ *   - id: kept from the first occurrence (only used as React key in some places)
+ *
+ * Trains without a `trainNumber` (rare, but possible if the field was left
+ * blank) are kept as separate rows so we don't merge unrelated data.
+ */
+function mergeTrainsByNumber(trains: EmbarkmentTrain[]): EmbarkmentTrain[] {
+  const groups = new Map<string, EmbarkmentTrain[]>();
+  const ungrouped: EmbarkmentTrain[] = [];
+
+  for (const t of trains) {
+    const num = (t.trainNumber || '').trim();
+    if (!num) {
+      ungrouped.push(t);
+      continue;
+    }
+    if (!groups.has(num)) groups.set(num, []);
+    groups.get(num)!.push(t);
+  }
+
+  const merged: EmbarkmentTrain[] = [];
+  for (const [, entries] of groups) {
+    if (entries.length === 1) {
+      merged.push(entries[0]);
+      continue;
+    }
+    const first = entries[0];
+    const firstNonEmpty = (key: keyof EmbarkmentTrain): string => {
+      for (const e of entries) {
+        const v = e[key];
+        if (typeof v === 'string' && v.trim()) return v;
+      }
+      return '';
+    };
+    const comments = entries.map(e => (e.comment || '').trim()).filter(Boolean);
+
+    merged.push({
+      id: first.id,
+      trainNumber: first.trainNumber,
+      origin: firstNonEmpty('origin'),
+      destination: firstNonEmpty('destination'),
+      departureTime: firstNonEmpty('departureTime'),
+      platform: firstNonEmpty('platform'),
+      controlled: entries.reduce((s, e) => s + (e.controlled || 0), 0),
+      refused: entries.reduce((s, e) => s + (e.refused || 0), 0),
+      policePresence: entries.some(e => e.policePresence),
+      trackCrossing: entries.some(e => e.trackCrossing),
+      controlLineCrossing: entries.some(e => e.controlLineCrossing),
+      comment: comments.join(' | '),
+    });
+  }
+
+  return [...merged, ...ungrouped];
+}
+
 export function exportEmbarkmentToPDF({ mission, includeStats = true, isCompleted = false }: EmbarkmentExportOptions): jsPDF {
+  // Merge trains sharing the same number (multi-agent grouped exports show
+  // each train once per agent in input; we want one row per train number).
+  const mergedMission: EmbarkmentMissionData = {
+    ...mission,
+    trains: mergeTrainsByNumber(mission.trains),
+  };
   const doc = new jsPDF({ orientation: 'landscape' });
-  const stats = calculateMissionStats(mission.trains);
-  const missionDate = new Date(mission.date);
+  const stats = calculateMissionStats(mergedMission.trains);
+  const missionDate = new Date(mergedMission.date);
   let pageNumber = 1;
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
@@ -174,7 +246,7 @@ export function exportEmbarkmentToPDF({ mission, includeStats = true, isComplete
   doc.text('📋 Détail des trains', 14, yPosition);
   yPosition += 6;
 
-  const trainTableData = mission.trains.map(train => {
+  const trainTableData = mergedMission.trains.map(train => {
     const trainFraudRate = train.controlled > 0 ? (train.refused / train.controlled) * 100 : 0;
     const incidents = [
       train.policePresence ? '👮' : '',
@@ -186,7 +258,7 @@ export function exportEmbarkmentToPDF({ mission, includeStats = true, isComplete
       train.trainNumber,
       train.departureTime || '-',
       train.platform || '-',
-      train.origin || mission.stationName,
+      train.origin || mergedMission.stationName,
       train.destination || '-',
       train.controlled.toString(),
       train.refused.toString(),
@@ -224,7 +296,7 @@ export function exportEmbarkmentToPDF({ mission, includeStats = true, isComplete
     margin: { left: 14, right: 14 },
     didParseCell: function(data) {
       if (data.section === 'body' && data.column.index === 7) {
-        const train = mission.trains[data.row.index];
+        const train = mergedMission.trains[data.row.index];
         if (train) {
           const rate = train.controlled > 0 ? (train.refused / train.controlled) * 100 : 0;
           const color = getThresholdColor(rate);
@@ -285,8 +357,13 @@ export function downloadEmbarkmentPDF(mission: EmbarkmentMissionData, isComplete
 }
 
 export function generateEmbarkmentHTML(mission: EmbarkmentMissionData, isCompleted = false): string {
-  const stats = calculateMissionStats(mission.trains);
-  const missionDate = new Date(mission.date);
+  // Same merge logic as the PDF: collapse multi-agent train duplicates.
+  const mergedMission: EmbarkmentMissionData = {
+    ...mission,
+    trains: mergeTrainsByNumber(mission.trains),
+  };
+  const stats = calculateMissionStats(mergedMission.trains);
+  const missionDate = new Date(mergedMission.date);
   const globalColor = getThresholdColor(stats.globalFraudRate);
   
   const colorMap = {
@@ -306,7 +383,7 @@ export function generateEmbarkmentHTML(mission: EmbarkmentMissionData, isComplet
     return colorMap[getThresholdColor(rate)];
   };
 
-  const trainRows = mission.trains.map(train => {
+  const trainRows = mergedMission.trains.map(train => {
     const fraudRate = train.controlled > 0 ? (train.refused / train.controlled) * 100 : 0;
     const incidents = [
       train.policePresence ? '<span class="incident-badge">👮</span>' : '',
@@ -319,7 +396,7 @@ export function generateEmbarkmentHTML(mission: EmbarkmentMissionData, isComplet
         <td class="train-number">${train.trainNumber}</td>
         <td class="center">${train.departureTime || '-'}</td>
         <td class="center">${train.platform || '-'}</td>
-        <td>${train.origin || mission.stationName}</td>
+        <td>${train.origin || mergedMission.stationName}</td>
         <td>${train.destination || '-'}</td>
         <td class="center num">${train.controlled}</td>
         <td class="center num refused">${train.refused}</td>
@@ -798,7 +875,8 @@ export function downloadGroupedEmbarkmentPDF(missions: GroupedMissionExport[]) {
   // Summary table
   let yPos = 65;
   const summaryData = missions.map(({ mission, isCompleted }) => {
-    const stats = calculateMissionStats(mission.trains);
+    const merged = mergeTrainsByNumber(mission.trains);
+    const stats = calculateMissionStats(merged);
     return [
       mission.stationName,
       format(new Date(mission.date), 'dd/MM/yyyy', { locale: fr }),
@@ -823,7 +901,7 @@ export function downloadGroupedEmbarkmentPDF(missions: GroupedMissionExport[]) {
       if (data.section === 'body' && data.column.index === 5) {
         const m = missions[data.row.index];
         if (m) {
-          const stats = calculateMissionStats(m.mission.trains);
+          const stats = calculateMissionStats(mergeTrainsByNumber(m.mission.trains));
           const color = getThresholdColor(stats.globalFraudRate);
           data.cell.styles.textColor = getColorRGB(color);
           data.cell.styles.fontStyle = 'bold';
@@ -836,7 +914,13 @@ export function downloadGroupedEmbarkmentPDF(missions: GroupedMissionExport[]) {
   pageNumber++;
 
   // Each mission on its own page(s)
-  missions.forEach(({ mission, isCompleted }) => {
+  missions.forEach(({ mission: rawMission, isCompleted }) => {
+    // Same merge as above — a single "mission" passed in could itself be an
+    // already-aggregated multi-agent group, so guard by trainNumber.
+    const mission: EmbarkmentMissionData = {
+      ...rawMission,
+      trains: mergeTrainsByNumber(rawMission.trains),
+    };
     doc.addPage();
     const missionDoc = exportEmbarkmentToPDF({ mission, includeStats: true, isCompleted });
     
