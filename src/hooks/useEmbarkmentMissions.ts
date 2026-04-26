@@ -104,17 +104,43 @@ export function useEmbarkmentMissions(): UseEmbarkmentMissionsReturn {
       // Get the user's team ID using the same RLS-compatible method
       const { data: userTeamId } = await supabase.rpc('get_user_team_id');
 
-      // Check if we have a current mission to update
-      if (currentMission) {
+      const missionDate = data.date.split('T')[0];
+      const stationName = data.stationName;
+
+      // Resolve target mission id:
+      // 1. Use in-memory currentMission if available
+      // 2. Otherwise look up by (agent_id, mission_date, station_name) on the server
+      //    so we don't create a duplicate when the app is reopened with no in-memory state.
+      let targetMissionId = currentMission?.id ?? null;
+
+      if (!targetMissionId) {
+        const { data: existing, error: lookupError } = await supabase
+          .from('embarkment_missions')
+          .select('id, updated_at')
+          .eq('agent_id', currentProfileId)
+          .eq('mission_date', missionDate)
+          .eq('station_name', stationName)
+          .order('updated_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (lookupError) {
+          console.error('Failed to look up existing mission:', lookupError);
+        } else if (existing) {
+          targetMissionId = existing.id;
+        }
+      }
+
+      if (targetMissionId) {
         const { data: updated, error } = await supabase
           .from('embarkment_missions')
           .update({
-            mission_date: data.date.split('T')[0],
-            station_name: data.stationName,
+            mission_date: missionDate,
+            station_name: stationName,
             global_comment: data.globalComment || null,
             trains: trainsToJson(data.trains),
           })
-          .eq('id', currentMission.id)
+          .eq('id', targetMissionId)
           .select()
           .single();
 
@@ -136,8 +162,8 @@ export function useEmbarkmentMissions(): UseEmbarkmentMissionsReturn {
           .insert({
             agent_id: currentProfileId,
             team_id: userTeamId || null,
-            mission_date: data.date.split('T')[0],
-            station_name: data.stationName,
+            mission_date: missionDate,
+            station_name: stationName,
             global_comment: data.globalComment || null,
             trains: trainsToJson(data.trains),
           })
