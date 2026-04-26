@@ -788,9 +788,44 @@ export function EmbarkmentControl({ stationName, onStationChange, initialMission
         </Card>
       )}
 
-      {/* Global Stats with Fullscreen button */}
+      {/* Sticky compact stats bar — mobile only.
+          Sits just below the mobile header (sticky top-0 z-40 in AppLayout)
+          so we anchor at top-14 to align below it. Hidden on md+ where the
+          full stats card below is visible without scrolling concerns. */}
       {trains.length > 0 && (
-        <Card className="bg-muted/50">
+        <div className="md:hidden sticky top-14 z-30 -mx-4 px-4 bg-background/95 backdrop-blur-sm border-b border-border/50 shadow-sm">
+          <button
+            type="button"
+            onClick={() => setShowFullscreenCounter(true)}
+            className="w-full py-2 grid grid-cols-3 gap-2 text-center active:bg-muted/40 transition-colors rounded-md"
+            aria-label="Ouvrir le compteur en plein écran"
+          >
+            <div>
+              <p className="text-lg font-bold leading-tight">{fraudStats.totalControlled}</p>
+              <p className="text-[10px] text-muted-foreground leading-none">Contrôlés</p>
+            </div>
+            <div>
+              <p className="text-lg font-bold text-destructive leading-tight">{fraudStats.totalRefused}</p>
+              <p className="text-[10px] text-muted-foreground leading-none">Refoulés</p>
+            </div>
+            <div>
+              <p className={cn(
+                "text-lg font-bold leading-tight",
+                globalColor === 'green' && "text-success",
+                globalColor === 'yellow' && "text-warning",
+                globalColor === 'red' && "text-destructive"
+              )}>
+                {fraudStats.globalFraudRate.toFixed(1)}%
+              </p>
+              <p className="text-[10px] text-muted-foreground leading-none">Taux fraude</p>
+            </div>
+          </button>
+        </div>
+      )}
+
+      {/* Global Stats with Fullscreen button — desktop only on mobile we use the sticky bar above */}
+      {trains.length > 0 && (
+        <Card className="bg-muted/50 hidden md:block">
           <CardContent className="py-4">
             <div className="flex items-center justify-between mb-3">
               <span className="text-sm font-medium text-muted-foreground">Statistiques globales</span>
