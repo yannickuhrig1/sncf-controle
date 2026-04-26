@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserPreferences } from '@/hooks/useUserPreferences';
@@ -241,6 +241,45 @@ export default function OnboardControl() {
       setSearchParams(p => { p.delete('join'); return p; }, { replace: true });
     });
   }, [joinParam, shareSession, shareLoading, authLoading, user]);
+
+  // Pre-fill from service-day deep link: ?train=&from=&to=&time=
+  // Applied only once and only when the form is fresh (no train number yet,
+  // no edit/duplicate flow). The strip-after-apply prevents a reload from
+  // re-overwriting the form once the agent has started saisie.
+  const sdPrefillAppliedRef = useRef(false);
+  useEffect(() => {
+    if (sdPrefillAppliedRef.current) return;
+    if (authLoading || !user) return;
+    if (isEditMode || duplicateId) return;
+    const t = searchParams.get('train');
+    if (!t) return;
+    if (formState.trainNumber) {
+      // Already filled — don't clobber. Just clean the URL.
+      sdPrefillAppliedRef.current = true;
+      setSearchParams(p => {
+        ['train', 'from', 'to', 'time'].forEach(k => p.delete(k));
+        return p;
+      }, { replace: true });
+      return;
+    }
+    sdPrefillAppliedRef.current = true;
+    const from = searchParams.get('from') ?? '';
+    const to = searchParams.get('to') ?? '';
+    const time = searchParams.get('time') ?? '';
+    setFormState(p => ({
+      ...p,
+      trainNumber: t,
+      ...(from ? { origin: from } : {}),
+      ...(to ? { destination: to } : {}),
+      ...(time ? { controlTime: time } : {}),
+    }));
+    // Trigger SNCF Info auto-lookup so live data overrides if available.
+    setAutoTriggerKey(k => k + 1);
+    setSearchParams(p => {
+      ['train', 'from', 'to', 'time'].forEach(k => p.delete(k));
+      return p;
+    }, { replace: true });
+  }, [authLoading, user, isEditMode, duplicateId, searchParams, setSearchParams, formState.trainNumber]);
 
   // Per-train origin/destination overrides (localStorage, keyed by date+trainNumber)
   const getTrainOverrides = (date: string): Record<string, { origin: string; destination: string }> => {
