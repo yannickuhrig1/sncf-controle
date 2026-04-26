@@ -24,6 +24,7 @@ import InfosUtilesPage from "./pages/InfosUtiles";
 import ControlDetailPage from "./pages/ControlDetail";
 import ResetPasswordPage from "./pages/ResetPassword";
 import WatchedLinesPage from "./pages/WatchedLines";
+import ServiceDayPage from "./pages/ServiceDayPage";
 import NotFound from "./pages/NotFound";
 
 // Component to initialize global fraud thresholds from admin settings
@@ -72,6 +73,7 @@ const AnimatedRoutes = () => {
         <Route path="/install" element={<PageTransition><InstallPage /></PageTransition>} />
         <Route path="/infos" element={<PageTransition><InfosUtilesPage /></PageTransition>} />
         <Route path="/control/:id" element={<PageTransition><ControlDetailPage /></PageTransition>} />
+        <Route path="/service-day/:id" element={<PageTransition><ServiceDayPage /></PageTransition>} />
         <Route path="/watched-lines" element={<PageTransition><WatchedLinesPage /></PageTransition>} />
         <Route path="/reset-password" element={<PageTransition><ResetPasswordPage /></PageTransition>} />
         <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
