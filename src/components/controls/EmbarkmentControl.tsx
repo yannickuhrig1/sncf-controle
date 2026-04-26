@@ -681,6 +681,70 @@ export function EmbarkmentControl({ stationName, onStationChange, initialMission
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Auto-apply ?seed=<base64-json> when the page is opened from a service-day
+  // import. Each entry seeds a train row with counters at 0. We only apply the
+  // seed when the current mission is empty so we never overwrite an in-progress
+  // mission. We also wait for `hydrationDone` so we don't race the load.
+  const seedFromUrlAppliedRef = useRef(false);
+  useEffect(() => {
+    if (seedFromUrlAppliedRef.current) return;
+    if (!hydrationDone) return;
+    const params = new URLSearchParams(window.location.search);
+    const seed = params.get('seed');
+    if (!seed) return;
+    seedFromUrlAppliedRef.current = true;
+
+    // Strip the param up-front so a reload doesn't re-seed.
+    const stripUrl = () => {
+      const url = new URL(window.location.href);
+      url.searchParams.delete('seed');
+      window.history.replaceState({}, '', url.toString());
+    };
+
+    if (trains.length > 0) {
+      // Mission is not empty — keep existing data, just clean the URL.
+      stripUrl();
+      return;
+    }
+
+    try {
+      const json = decodeURIComponent(escape(atob(seed)));
+      const payload = JSON.parse(json) as Array<{
+        trainNumber?: string;
+        origin?: string;
+        destination?: string;
+        departureTime?: string;
+      }>;
+      if (!Array.isArray(payload) || payload.length === 0) {
+        stripUrl();
+        return;
+      }
+      const newTrains: EmbarkmentTrain[] = payload.map((p, idx) => ({
+        // Use a stable-ish unique id: seed time + index keeps ordering stable
+        // across re-renders without needing a UUID lib.
+        id: `seed-${Date.now()}-${idx}`,
+        trainNumber: p.trainNumber || '',
+        origin: p.origin || '',
+        destination: p.destination || '',
+        departureTime: p.departureTime || '',
+        platform: '',
+        controlled: 0,
+        refused: 0,
+        policePresence: false,
+        trackCrossing: false,
+        controlLineCrossing: false,
+        comment: '',
+      }));
+      setTrains(newTrains);
+      toast.success(`${newTrains.length} train(s) pré-remplis depuis votre journée`);
+    } catch (e) {
+      console.warn('Failed to apply seed payload:', e);
+    } finally {
+      stripUrl();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hydrationDone]);
+
   const globalColor = getThresholdColor(fraudStats.globalFraudRate);
   const historyMissions = missions.filter(m => (historyTab === 'completed' ? m.is_completed : !m.is_completed));
 
