@@ -48,6 +48,7 @@ import {
   Share2,
   Shield,
   Train,
+  Upload,
   UserCheck,
   Users,
   type LucideProps,
@@ -57,6 +58,8 @@ import {
   type DashboardShortcut,
 } from '@/lib/dashboardShortcuts';
 import { DeparturesWidget } from '@/components/controls/DeparturesWidget';
+import { ImportTourneeDialog } from '@/components/ImportTourneeDialog';
+import { useServiceDays } from '@/hooks/useServiceDays';
 
 type IconComponent = React.ComponentType<LucideProps>;
 const SHORTCUT_ICONS: Record<string, IconComponent> = { Train, Building2, ArrowUpFromLine, BarChart3, Clock, Info, Shield };
@@ -635,6 +638,7 @@ export default function Dashboard() {
 
   // Dashboard shortcuts (from localStorage)
   const [shortcuts, setShortcuts] = useState<DashboardShortcut[]>(() => loadShortcuts());
+  const [importOpen, setImportOpen] = useState(false);
   useEffect(() => {
     const handler = () => setShortcuts(loadShortcuts());
     window.addEventListener(SHORTCUTS_CHANGE_EVENT, handler);
@@ -875,6 +879,8 @@ export default function Dashboard() {
         </div>
 
         <PendingControlsPanel />
+
+        <ServiceDaySection onImportClick={() => setImportOpen(true)} />
 
         {/* Raccourcis */}
         {(() => {
@@ -1242,6 +1248,64 @@ export default function Dashboard() {
         </Dialog>
 
       </div>
+      <ImportTourneeDialog open={importOpen} onOpenChange={setImportOpen} />
     </AppLayout>
+  );
+}
+
+/**
+ * Compact summary of today's imported service day(s). Renders nothing when the
+ * agent has no imported day for today; otherwise shows a quick link to the
+ * detail page and a button to import another. When nothing is imported, shows
+ * a CTA to import one.
+ */
+function ServiceDaySection({ onImportClick }: { onImportClick: () => void }) {
+  const { todayServiceDays, isLoading } = useServiceDays();
+
+  if (isLoading) return null;
+
+  if (todayServiceDays.length === 0) {
+    return (
+      <Card className="border-dashed">
+        <CardContent className="py-3 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="p-2 rounded-md bg-primary/10 shrink-0">
+              <Upload className="h-4 w-4 text-primary" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-sm font-medium leading-tight">Importer ma journée</p>
+              <p className="text-[11px] text-muted-foreground leading-tight">Pacific Web → trains pré-remplis</p>
+            </div>
+          </div>
+          <Button size="sm" onClick={onImportClick}>Importer</Button>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <div className="space-y-2">
+      {todayServiceDays.map(day => {
+        const eaCount = day.items.filter(i => i.nature === 'EA' && i.trainNumber).length;
+        return (
+          <Card key={day.id}>
+            <CardContent className="py-3 flex items-center justify-between gap-3">
+              <Link to={`/service-day/${day.id}`} className="flex items-center gap-2 min-w-0 flex-1">
+                <div className="p-2 rounded-md bg-primary/10 shrink-0">
+                  <Train className="h-4 w-4 text-primary" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-sm font-medium leading-tight truncate">Journée {day.code_journee}</p>
+                  <p className="text-[11px] text-muted-foreground leading-tight">
+                    {eaCount} train{eaCount > 1 ? 's' : ''} à contrôler
+                  </p>
+                </div>
+              </Link>
+              <Button size="sm" variant="outline" onClick={onImportClick}>+ Autre</Button>
+            </CardContent>
+          </Card>
+        );
+      })}
+    </div>
   );
 }
