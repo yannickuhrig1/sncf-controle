@@ -98,13 +98,35 @@ interface EmbarkmentControlProps {
 
 const STORAGE_KEY = 'embarkment_mission_data';
 
-function loadEmbarkmentData(): EmbarkmentMissionData | null {
+interface StoredEmbarkmentData {
+  data: EmbarkmentMissionData;
+  /** ISO timestamp written when this localStorage entry was last updated.
+   *  Used to compare against the server's `updated_at` and pick the freshest
+   *  state when restoring on mount. */
+  savedAt: string;
+}
+
+function loadEmbarkmentData(): StoredEmbarkmentData | null {
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
-      const data = JSON.parse(saved) as EmbarkmentMissionData;
-      if (data.date && isValid(parseISO(data.date))) {
-        return data;
+    if (!saved) return null;
+    const parsed = JSON.parse(saved);
+
+    // New shape: { data, savedAt }
+    if (parsed && typeof parsed === 'object' && 'data' in parsed && 'savedAt' in parsed) {
+      const inner = parsed.data as EmbarkmentMissionData;
+      if (inner?.date && isValid(parseISO(inner.date))) {
+        return parsed as StoredEmbarkmentData;
+      }
+      return null;
+    }
+
+    // Legacy shape: bare EmbarkmentMissionData. Treat as "very old" so server
+    // wins any tie. Migrate to the new shape opportunistically next save.
+    if (parsed && typeof parsed === 'object' && 'date' in parsed) {
+      const inner = parsed as EmbarkmentMissionData;
+      if (inner.date && isValid(parseISO(inner.date))) {
+        return { data: inner, savedAt: new Date(0).toISOString() };
       }
     }
   } catch (e) {
@@ -115,7 +137,8 @@ function loadEmbarkmentData(): EmbarkmentMissionData | null {
 
 function saveEmbarkmentData(data: EmbarkmentMissionData): void {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    const wrapper: StoredEmbarkmentData = { data, savedAt: new Date().toISOString() };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(wrapper));
   } catch (e) {
     console.warn('Failed to save embarkment data:', e);
   }
@@ -166,6 +189,7 @@ export function EmbarkmentControl({ stationName, onStationChange, initialMission
     loadMission,
     completeMission,
     clearCurrentMission,
+    setCurrentMission,
     isLoading: isMissionsLoading 
   } = useEmbarkmentMissions();
   
@@ -208,8 +232,41 @@ export function EmbarkmentControl({ stationName, onStationChange, initialMission
 
   const missionDateStr = format(missionDate, 'yyyy-MM-dd');
 
-  // Load mission from server if initialMissionId is set, otherwise from localStorage
+  // Save status: 'saved' | 'saving' | 'unsaved'
+  const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'unsaved'>('saved');
+  const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout>>();
+  const isAutoSavingRef = useRef(false);
+  const initialLoadRef = useRef(true);
+  // Gate that prevents auto-save effects (localStorage + server) from running
+  // before the hybrid load resolves. Without this, the first render with
+  // empty trains would overwrite the localStorage and then sync that empty
+  // state to the server.
+  const hydrationDoneRef = useRef(false);
+  const [hydrationDone, setHydrationDone] = useState(false);
+
+  // Load mission on mount.
+  //
+  // Three branches:
+  //   1. `initialMissionId` set (came from URL) → server is the source of truth.
+  //   2. No `initialMissionId` and we have a localStorage entry: wait for the
+  //      server's mission list to arrive and pick whichever is most recent
+  //      between the localStorage entry's `savedAt` and the server's
+  //      `updated_at` for the currently-open server mission. This protects
+  //      against stale localStorage overwriting fresh server data after a
+  //      migration or edits from another device.
+  //   3. Nothing in localStorage → fall back to whatever is in `currentMission`
+  //      via the missions list (most recent open mission for this agent).
   useEffect(() => {
+    // Wait for the missions list to be hydrated from the server before deciding.
+    // `isMissionsLoading` flips to false once `refreshMissions()` resolves.
+    if (isMissionsLoading) return;
+    if (hydrationDoneRef.current) return;
+
+    const finishHydration = () => {
+      hydrationDoneRef.current = true;
+      setHydrationDone(true);
+    };
+
     if (initialMissionId) {
       loadMission(initialMissionId).then((mission) => {
         if (mission) {
@@ -218,32 +275,68 @@ export function EmbarkmentControl({ stationName, onStationChange, initialMission
           setGlobalComment(mission.global_comment || '');
           onStationChange(mission.station_name);
         }
+        finishHydration();
       });
-    } else {
-      const savedData = loadEmbarkmentData();
-      if (savedData) {
-        const parsedDate = parseISO(savedData.date);
-        if (isValid(parsedDate)) {
-          setMissionDate(parsedDate);
-        }
-        setTrains(savedData.trains || []);
-        setGlobalComment(savedData.globalComment || '');
-        if (savedData.stationName) {
-          onStationChange(savedData.stationName);
-        }
-      }
+      return;
     }
+
+    const stored = loadEmbarkmentData();
+
+    // Find the most recent OPEN server mission for this agent that matches
+    // the localStorage's date+station (if any). We don't want to confuse a
+    // stale localStorage from yesterday with today's server mission.
+    const candidateServerMission = (() => {
+      if (!stored) {
+        // No local state → pick the most recent open server mission (if any)
+        return missions.find(m => !m.is_completed) ?? null;
+      }
+      const byKey = missions.find(m =>
+        !m.is_completed
+        && m.mission_date === stored.data.date
+        && m.station_name === stored.data.stationName
+      );
+      return byKey ?? null;
+    })();
+
+    // Compare timestamps and apply the freshest version.
+    const localTs = stored ? Date.parse(stored.savedAt) : 0;
+    const serverTs = candidateServerMission ? Date.parse(candidateServerMission.updated_at) : 0;
+
+    if (candidateServerMission && serverTs >= localTs) {
+      // Server wins (or tie) → use server data and refresh localStorage.
+      setMissionDate(parseISO(candidateServerMission.mission_date));
+      setTrains(candidateServerMission.trains);
+      setGlobalComment(candidateServerMission.global_comment || '');
+      onStationChange(candidateServerMission.station_name);
+      setCurrentMission(candidateServerMission);
+      // Overwrite localStorage with the canonical server version so the next
+      // boot doesn't fight with itself.
+      saveEmbarkmentData({
+        date: candidateServerMission.mission_date,
+        stationName: candidateServerMission.station_name,
+        trains: candidateServerMission.trains,
+        globalComment: candidateServerMission.global_comment || '',
+      });
+    } else if (stored) {
+      // Local wins (or no server candidate) → restore from localStorage.
+      const parsedDate = parseISO(stored.data.date);
+      if (isValid(parsedDate)) setMissionDate(parsedDate);
+      setTrains(stored.data.trains || []);
+      setGlobalComment(stored.data.globalComment || '');
+      if (stored.data.stationName) onStationChange(stored.data.stationName);
+      // If we have a matching server mission (just older), bind to it so
+      // subsequent saves UPDATE rather than INSERT.
+      if (candidateServerMission) setCurrentMission(candidateServerMission);
+    }
+
+    finishHydration();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initialMissionId]);
+  }, [initialMissionId, isMissionsLoading]);
 
-  // Save status: 'saved' | 'saving' | 'unsaved'
-  const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'unsaved'>('saved');
-  const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout>>();
-  const isAutoSavingRef = useRef(false);
-  const initialLoadRef = useRef(true);
-
-  // Auto-save to localStorage when data changes
+  // Auto-save to localStorage when data changes (skipped until hydration is done
+  // to avoid overwriting localStorage with the empty initial render state).
   useEffect(() => {
+    if (!hydrationDone) return;
     const timeoutId = setTimeout(() => {
       const data: EmbarkmentMissionData = {
         date: missionDateStr,
@@ -255,10 +348,15 @@ export function EmbarkmentControl({ stationName, onStationChange, initialMission
     }, 500);
 
     return () => clearTimeout(timeoutId);
-  }, [missionDate, stationName, trains, globalComment]);
+  }, [missionDate, stationName, trains, globalComment, hydrationDone]);
 
   // Auto-save to server (debounced 5s) when meaningful data exists
   useEffect(() => {
+    // Wait for hydration before auto-saving to the server, otherwise we could
+    // race the load and overwrite freshly fetched server data with the empty
+    // initial state.
+    if (!hydrationDone) return;
+
     // Skip initial load to avoid saving on mount
     if (initialLoadRef.current) {
       initialLoadRef.current = false;
