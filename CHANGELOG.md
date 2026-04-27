@@ -2,6 +2,16 @@
 
 Toutes les modifications notables de ce projet sont documentées dans ce fichier.
 
+## [1.15.0] - 2026-04-22
+
+### Ajouté — Contrôle en civile
+- **Toggle "En civile"** dans les formulaires À bord et En gare (badge émeraude avec icône EyeOff)
+- **Filtre civile** dans l'historique : bouton dédié pour ne voir que les contrôles en civile
+- **Distinction visuelle** : cartes bordées en émeraude dans l'historique pour les contrôles civile
+- **Badges civile** dans toutes les vues : historique (cartes + tableau), détail contrôle, groupement train
+- **Export** : compteur civile dans les exports email (HTML + texte) et PDF
+- **Stats** : compteur `civileCount` dans les statistiques agrégées
+
 ## [1.14.0] - 2026-04-21
 
 ### Ajouté — Embarquement amélioré (multi-agents, historique, partage)

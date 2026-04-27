@@ -496,6 +496,7 @@ function ContentAbout() {
           <li>Embarquement : partage multi-agents, auto-save, historique groupé par train, suppression individuelle</li>
           <li>Schéma train : horaires arr./dép. par gare, retards avec heure théorique barrée</li>
           <li>Éditeur de tuiles : aperçu live, liens multiples, édition/réorganisation/duplication de sous-tuiles</li>
+          <li>Contrôle en civile : toggle dédié, filtre historique, distinction visuelle émeraude</li>
           <li>Historique : filtrage par équipe/agent, badges et date picker inline</li>
           <li>Mode hors-ligne amélioré : cache auth local, pas de page blanche sans réseau</li>
           <li>Compatible mobile, tablette et PC</li>
