@@ -524,13 +524,15 @@ export default function HistoryPage() {
   // Group embarkment missions by date for inline display
   const embarkmentByDate = useMemo(() => {
     if (locationFilter !== 'all' && locationFilter !== 'gare') return {};
+    // Hide embarkments when badge filters are active (they don't apply to embarkment missions)
+    if (civileFilter || policeFilter || sugeFilter || overcrowdedFilter || cancelledFilter) return {};
     const byDate: Record<string, typeof embarkmentMissions> = {};
     embarkmentMissions.forEach(m => {
       if (!byDate[m.mission_date]) byDate[m.mission_date] = [];
       byDate[m.mission_date].push(m);
     });
     return byDate;
-  }, [embarkmentMissions, locationFilter]);
+  }, [embarkmentMissions, locationFilter, civileFilter, policeFilter, sugeFilter, overcrowdedFilter, cancelledFilter]);
 
   const groupedByDate = useMemo(() => {
     const byDate: Record<string, Control[]> = {};
