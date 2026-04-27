@@ -246,7 +246,7 @@ export function ControlDetailDialog({
                 const tcTotal = control.tarifs_controle ?? 0;
                 const pvTotal = control.pv ?? 0;
                 const hasAny = bordTotal > 0 || tcTotal > 0 || pvTotal > 0 || riTotal > 0
-                  || (control as any).is_police_on_board || (control as any).is_suge_on_board;
+                  || (control as any).is_civile || (control as any).is_police_on_board || (control as any).is_suge_on_board;
                 if (!hasAny) return null;
                 return (
                   <div className="flex flex-wrap gap-2">
@@ -269,6 +269,9 @@ export function ControlDetailDialog({
                       <Badge variant="outline" className="bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400 border-0">
                         RI: {riTotal}
                       </Badge>
+                    )}
+                    {(control as any).is_civile && (
+                      <Badge variant="outline" className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 border-0">En civile</Badge>
                     )}
                     {(control as any).is_police_on_board && (
                       <Badge variant="outline" className="bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 border-0">Police à bord</Badge>

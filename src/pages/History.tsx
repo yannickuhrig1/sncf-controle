@@ -37,6 +37,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { cn } from '@/lib/utils';
 import type { ViewMode } from '@/hooks/useControlsWithFilter';
 import {
   Loader2,
@@ -62,6 +63,7 @@ import {
   FileDown,
   Shield,
   Ban,
+  EyeOff,
 } from 'lucide-react';
 import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -139,9 +141,14 @@ function ControlRow({ control, onClick }: ControlRowProps) {
     ? ((fraudCount / control.nb_passagers) * 100)
     : 0;
 
+  const isCivile = !!(control as any).is_civile;
+
   return (
-    <Card 
-      className="cursor-pointer hover:bg-muted/50 transition-colors"
+    <Card
+      className={cn(
+        'cursor-pointer hover:bg-muted/50 transition-colors',
+        isCivile && 'border-emerald-300 bg-emerald-50/50 dark:border-emerald-800 dark:bg-emerald-950/20'
+      )}
       onClick={onClick}
     >
       <CardContent className="p-3 sm:p-4">
@@ -197,6 +204,7 @@ function ControlRow({ control, onClick }: ControlRowProps) {
                 + (control.tarif_bord_doc_naissance || 0) + (control.tarif_bord_autre || 0);
               const riTotal = (control.ri_positive || 0) + (control.ri_negative || 0);
               const badges = [
+                (control as any).is_civile           && { label: 'En civile',  cls: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 border-0' },
                 (control as any).is_cancelled        && { label: 'Supprimé',   cls: 'bg-slate-700 text-white border-0' },
                 (control as any).is_overcrowded      && { label: 'Sur-occ.',   cls: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400 border-0' },
                 (control as any).is_police_on_board  && { label: 'Police',     cls: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 border-0' },
@@ -275,6 +283,7 @@ export default function HistoryPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [locationFilter, setLocationFilter] = useState<LocationType | 'all'>('all');
   const [sortOption, setSortOption] = useState<SortOption>('date');
+  const [civileFilter, setCivileFilter] = useState(false);
   const [policeFilter, setPoliceFilter] = useState(false);
   const [sugeFilter, setSugeFilter] = useState(false);
   const [overcrowdedFilter, setOvercrowdedFilter] = useState(false);
@@ -466,6 +475,7 @@ export default function HistoryPage() {
       }
       
       // Badge filters
+      if (civileFilter && !(control as any).is_civile) return false;
       if (policeFilter && !(control as any).is_police_on_board) return false;
       if (sugeFilter && !(control as any).is_suge_on_board) return false;
       if (overcrowdedFilter && !(control as any).is_overcrowded) return false;
@@ -508,7 +518,7 @@ export default function HistoryPage() {
     }
 
     return result;
-  }, [displayControls, searchQuery, locationFilter, sortOption, periodDateRange, getFraudRate, policeFilter, sugeFilter, overcrowdedFilter, cancelledFilter]);
+  }, [displayControls, searchQuery, locationFilter, sortOption, periodDateRange, getFraudRate, civileFilter, policeFilter, sugeFilter, overcrowdedFilter, cancelledFilter]);
 
   // Group filtered controls by date, then sub-group multi-agent trains/gares
   // Group embarkment missions by date for inline display
@@ -569,7 +579,7 @@ export default function HistoryPage() {
       });
   }, [filteredControls, embarkmentByDate]);
 
-  const hasActiveFilters = searchQuery.trim() !== '' || locationFilter !== 'all' || sortOption !== 'date' || historyPeriod !== 'all' || policeFilter || sugeFilter || overcrowdedFilter || cancelledFilter;
+  const hasActiveFilters = searchQuery.trim() !== '' || locationFilter !== 'all' || sortOption !== 'date' || historyPeriod !== 'all' || civileFilter || policeFilter || sugeFilter || overcrowdedFilter || cancelledFilter;
 
   const clearFilters = () => {
     setSearchQuery('');
@@ -889,6 +899,12 @@ export default function HistoryPage() {
 
                   {/* Badge filters — same row on desktop, wraps on mobile */}
                   <div className="flex flex-wrap items-center gap-1.5 sm:ml-auto">
+                    <button type="button" onClick={() => setCivileFilter(v => !v)}
+                      className={`inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs font-medium transition-colors ${
+                        civileFilter ? 'bg-emerald-600 text-white border-emerald-600' : 'border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 dark:border-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400 dark:hover:bg-emerald-900/50'
+                      }`}>
+                      <EyeOff className="h-3.5 w-3.5" />Civile
+                    </button>
                     <button type="button" onClick={() => setPoliceFilter(v => !v)}
                       className={`inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs font-medium transition-colors ${
                         policeFilter ? 'bg-blue-600 text-white border-blue-600' : 'border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100 dark:border-blue-800 dark:bg-blue-900/30 dark:text-blue-400 dark:hover:bg-blue-900/50'

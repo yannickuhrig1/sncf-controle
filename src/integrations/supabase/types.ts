@@ -159,6 +159,7 @@ export type Database = {
           doc_naissance_amount: number | null
           id: string
           is_cancelled: boolean
+          is_civile: boolean
           is_overcrowded: boolean
           is_police_on_board: boolean
           is_suge_on_board: boolean
@@ -219,6 +220,7 @@ export type Database = {
           doc_naissance_amount?: number | null
           id?: string
           is_cancelled?: boolean | null
+          is_civile?: boolean | null
           is_overcrowded?: boolean | null
           is_police_on_board?: boolean | null
           is_suge_on_board?: boolean | null
@@ -279,6 +281,7 @@ export type Database = {
           doc_naissance_amount?: number | null
           id?: string
           is_cancelled?: boolean | null
+          is_civile?: boolean | null
           is_overcrowded?: boolean | null
           is_police_on_board?: boolean | null
           is_suge_on_board?: boolean | null

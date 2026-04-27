@@ -208,6 +208,11 @@ export function TrainGroupCard({
                       RI-:{control.ri_negative}
                     </Badge>
                   )}
+                  {(control as any).is_civile && (
+                    <Badge variant="outline" className="text-[9px] px-1 py-0 bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 border-0 h-4">
+                      Civile
+                    </Badge>
+                  )}
                   {(control as any).is_cancelled && (
                     <Badge variant="outline" className="text-[9px] px-1 py-0 bg-slate-700 text-white border-0 h-4">
                       Supprimé

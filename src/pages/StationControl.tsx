@@ -82,6 +82,7 @@ interface FormState {
   riNegative: number;
   notes: string;
   isCancelled: boolean;
+  isCivile: boolean;
   isOvercrowded: boolean;
   isPoliceOnBoard: boolean;
   isSugeOnBoard: boolean;
@@ -101,7 +102,7 @@ function makeInitialFormState(): FormState {
     nbPassagers: 0, stt50Count: 0, stt100Count: 0,
     tarifsControle: [], pvList: [],
     riPositive: 0, riNegative: 0,
-    notes: '', isCancelled: false, isOvercrowded: false,
+    notes: '', isCancelled: false, isCivile: false, isOvercrowded: false,
     isPoliceOnBoard: false, isSugeOnBoard: false,
     autreControleComment: '', autrePvComment: '',
     quickTrains: [],
@@ -291,6 +292,7 @@ export default function StationControl() {
       riNegative:    data.ri_negative || 0,
       notes:         data.notes || '',
       isCancelled:     data.is_cancelled     ?? false,
+      isCivile:        (data as any).is_civile ?? false,
       isOvercrowded:   data.is_overcrowded   ?? false,
       isPoliceOnBoard: (data as any).is_police_on_board ?? false,
       isSugeOnBoard:   (data as any).is_suge_on_board   ?? false,
@@ -410,6 +412,7 @@ export default function StationControl() {
       ri_negative:      formState.riNegative,
       notes:            notesParts.join(' | ') || null,
       is_cancelled:     formState.isCancelled,
+      is_civile:        formState.isCivile,
       is_overcrowded:   formState.isOvercrowded,
       is_police_on_board: formState.isPoliceOnBoard,
       is_suge_on_board:   formState.isSugeOnBoard,
@@ -878,6 +881,7 @@ export default function StationControl() {
                       {/* Checkboxes */}
                       <div className="flex items-center gap-4 flex-wrap pt-1">
                         {[
+                          { key: 'isCivile',        label: 'En civile' },
                           { key: 'isCancelled',     label: 'Train supprimé' },
                           { key: 'isPoliceOnBoard', label: 'Police présente' },
                         ].map(({ key, label }) => (

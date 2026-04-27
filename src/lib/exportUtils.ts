@@ -88,6 +88,7 @@ function getControlDetails(control: Control) {
     tarifBordAutre: control.tarif_bord_autre || 0,
     riPositive: control.ri_positive,
     riNegative: control.ri_negative,
+    isCivile: !!(control as any).is_civile,
     isPoliceOnBoard: !!(control as any).is_police_on_board,
     isSugeOnBoard: !!(control as any).is_suge_on_board,
     arrGare: (() => {
@@ -596,8 +597,8 @@ export function exportToPDF({ controls, title, dateRange, includeStats, orientat
     });
     y = lastTableY() + 10;
 
-    // Sécurité à bord (Police / SUGE) — même condition que HTML
-    if (stats.policeOnBoardCount > 0 || stats.sugeOnBoardCount > 0) {
+    // Sécurité à bord (Police / SUGE / Civile) — même condition que HTML
+    if (stats.policeOnBoardCount > 0 || stats.sugeOnBoardCount > 0 || stats.civileCount > 0) {
       if (y + 40 > safeH) newPage();
       const secW = (pageW - 28) / 3;
       y = sectionBar(doc, 'Sécurité à bord', 14, y, secW, C.blue);
@@ -605,6 +606,7 @@ export function exportToPDF({ controls, title, dateRange, includeStats, orientat
         startY: y,
         head: [['Type', 'Nbre']],
         body: [
+          ...(stats.civileCount > 0         ? [['En civile',     stats.civileCount.toString()]]         : []),
           ...(stats.policeOnBoardCount > 0 ? [['Police à bord', stats.policeOnBoardCount.toString()]] : []),
           ...(stats.sugeOnBoardCount   > 0 ? [['SUGE à bord',   stats.sugeOnBoardCount.toString()]]   : []),
         ],
@@ -1904,11 +1906,12 @@ export function exportToHTML({ controls, title, dateRange, includeStats, exportM
           </table>
         </div>
         ` : ''}
-        ${(stats.policeOnBoardCount > 0 || stats.sugeOnBoardCount > 0) ? `
+        ${(stats.policeOnBoardCount > 0 || stats.sugeOnBoardCount > 0 || stats.civileCount > 0) ? `
         <div class="ops-block" style="border-left:4px solid #2563eb">
           <h3 style="background:#2563eb;color:#fff">Sécurité à bord</h3>
           <table class="detail-table">
             <tr><th>Type</th><th>Nbre</th></tr>
+            ${detailRow('En civile', stats.civileCount)}
             ${detailRow('Police à bord', stats.policeOnBoardCount)}
             ${detailRow('SUGE à bord', stats.sugeOnBoardCount)}
           </table>
@@ -2200,8 +2203,9 @@ export function generateEmailContent({ controls, title, dateRange, includeStats 
     body += `   ────────────────────────\n`;
     body += `   TOTAL : ${stats.riPositive + stats.riNegative}\n\n`;
 
-    if (stats.policeOnBoardCount > 0 || stats.sugeOnBoardCount > 0) {
+    if (stats.policeOnBoardCount > 0 || stats.sugeOnBoardCount > 0 || stats.civileCount > 0) {
       body += `👮 SÉCURITÉ À BORD\n`;
+      if (stats.civileCount > 0)         body += `   En civile     : ${stats.civileCount}\n`;
       if (stats.policeOnBoardCount > 0) body += `   Police à bord : ${stats.policeOnBoardCount}\n`;
       if (stats.sugeOnBoardCount > 0)   body += `   SUGE à bord   : ${stats.sugeOnBoardCount}\n`;
       body += `\n`;
@@ -2254,8 +2258,9 @@ export function generateEmailContent({ controls, title, dateRange, includeStats 
     }
     body += `\n   🔍 RI : +${details.riPositive} / −${details.riNegative}\n`;
 
-    if (details.isPoliceOnBoard || details.isSugeOnBoard) {
+    if (details.isCivile || details.isPoliceOnBoard || details.isSugeOnBoard) {
       const secParts: string[] = [];
+      if (details.isCivile)        secParts.push('En civile');
       if (details.isPoliceOnBoard) secParts.push('Police à bord');
       if (details.isSugeOnBoard)   secParts.push('SUGE à bord');
       body += `   👮 ${secParts.join('  |  ')}\n`;

@@ -72,6 +72,7 @@ import {
   RefreshCw,
   Ban,
   Shield,
+  EyeOff,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -116,6 +117,7 @@ interface FormState {
   autreControleComment: string;
   autrePvComment: string;
   isCancelled: boolean;
+  isCivile: boolean;
   isOvercrowded: boolean;
   isPoliceOnBoard: boolean;
   isSugeOnBoard: boolean;
@@ -140,6 +142,7 @@ const INITIAL_FORM_STATE: FormState = {
   autreControleComment: '',
   autrePvComment: '',
   isCancelled: false,
+  isCivile: false,
   isOvercrowded: false,
   isPoliceOnBoard: false,
   isSugeOnBoard: false,
@@ -393,6 +396,7 @@ export default function OnboardControl() {
           autreControleComment: '',
           autrePvComment: '',
           isCancelled: (data as any).is_cancelled ?? false,
+          isCivile: (data as any).is_civile ?? false,
           isOvercrowded: (data as any).is_overcrowded ?? false,
           isPoliceOnBoard: (data as any).is_police_on_board ?? false,
           isSugeOnBoard: (data as any).is_suge_on_board ?? false,
@@ -691,6 +695,7 @@ export default function OnboardControl() {
         ri_negative: formState.riNegatif,
         notes: finalNotes,
         is_cancelled:       formState.isCancelled,
+        is_civile:          formState.isCivile,
         is_overcrowded:     formState.isOvercrowded,
         is_police_on_board: formState.isPoliceOnBoard,
         is_suge_on_board:   formState.isSugeOnBoard,
@@ -752,6 +757,7 @@ export default function OnboardControl() {
           ri_negative: formState.riNegatif,
           notes: formState.commentaire.trim() || null,
           is_cancelled:       formState.isCancelled,
+          is_civile:          formState.isCivile,
           is_overcrowded:     formState.isOvercrowded,
           is_police_on_board: formState.isPoliceOnBoard,
           is_suge_on_board:   formState.isSugeOnBoard,
@@ -761,7 +767,7 @@ export default function OnboardControl() {
         setFormState(INITIAL_FORM_STATE);
         return;
       }
-      
+
       toast.error('Erreur', { description: error.message || "Impossible d'enregistrer le contrôle" });
       triggerHaptic('error');
     }
@@ -1248,8 +1254,18 @@ export default function OnboardControl() {
                 </CardContent>
               </Card>
 
-              {/* Toggle buttons: Train supprimé, Sur-occupation, Police, SUGE */}
+              {/* Toggle buttons: Train supprimé, En civile, Sur-occupation, Police, SUGE */}
               <div className="flex flex-wrap gap-1.5">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className={cn('gap-1.5 text-xs border', formState.isCivile ? 'bg-emerald-600 border-emerald-600 text-white hover:bg-emerald-700 hover:text-white' : 'border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 hover:text-emerald-700')}
+                  onClick={() => setFormState(p => ({...p, isCivile: !p.isCivile}))}
+                >
+                  <EyeOff className="h-3.5 w-3.5" />
+                  En civile
+                </Button>
                 <Button
                   type="button"
                   variant="outline"
@@ -1541,8 +1557,18 @@ export default function OnboardControl() {
                 </Card>
                 </Collapsible>
 
-                {/* Toggle buttons: Train supprimé, Sur-occupation, Police, SUGE */}
+                {/* Toggle buttons: En civile, Train supprimé, Sur-occupation, Police, SUGE */}
                 <div className="flex flex-wrap gap-1.5">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className={cn('gap-1.5 text-xs border', formState.isCivile ? 'bg-emerald-600 border-emerald-600 text-white hover:bg-emerald-700 hover:text-white' : 'border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 hover:text-emerald-700')}
+                    onClick={() => setFormState(p => ({...p, isCivile: !p.isCivile}))}
+                  >
+                    <EyeOff className="h-3.5 w-3.5" />
+                    En civile
+                  </Button>
                   <Button
                     type="button"
                     variant="outline"

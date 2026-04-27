@@ -21,6 +21,7 @@ export interface ControlStats {
   pvDocNaissance: number;
   pvAutre: number;
   cancelledCount: number;
+  civileCount: number;
   overcrowdedCount: number;
   policeOnBoardCount: number;
   sugeOnBoardCount: number;
@@ -45,6 +46,7 @@ export function calculateStats(controls: Control[]): ControlStats {
       acc.pvDocNaissance += control.pv_doc_naissance ?? 0;
       acc.pvAutre += control.pv_autre ?? 0;
       if ((control as any).is_cancelled)        acc.cancelledCount++;
+      if ((control as any).is_civile)           acc.civileCount++;
       if ((control as any).is_overcrowded)      acc.overcrowdedCount++;
       if ((control as any).is_police_on_board)  acc.policeOnBoardCount++;
       if ((control as any).is_suge_on_board)    acc.sugeOnBoardCount++;
@@ -67,6 +69,7 @@ export function calculateStats(controls: Control[]): ControlStats {
       pvDocNaissance: 0,
       pvAutre: 0,
       cancelledCount: 0,
+      civileCount: 0,
       overcrowdedCount: 0,
       policeOnBoardCount: 0,
       sugeOnBoardCount: 0,
