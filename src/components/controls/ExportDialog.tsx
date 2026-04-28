@@ -56,6 +56,7 @@ import { downloadGroupedEmbarkmentPDF } from '@/lib/embarkmentExportUtils';
 import { calculateStats, formatFraudRate } from '@/lib/stats';
 import type { Database } from '@/integrations/supabase/types';
 import type { EmbarkmentTrain } from '@/components/controls/EmbarkmentControl';
+import { normalizeStationName } from '@/components/controls/StationAutocomplete';
 import { toast } from 'sonner';
 import { useUserPreferences, type PdfOrientation } from '@/hooks/useUserPreferences';
 import { PdfPreviewDialog } from './PdfPreviewDialog';
@@ -221,23 +222,39 @@ export function ExportDialog({ controls, embarkments = [], open, onOpenChange }:
     }
   }, [embarkments, dateFilter, customDateRange, selectedMonth, selectedMonthYear, weekOffset, monthOffset, yearOffset, selectedDay]);
 
+  // Group filtered embarkments by station+date so multi-agent missions on the
+  // same trains/horaires/gare are exported as a single page.
+  const groupedEmbarkments = useMemo(() => {
+    const buckets = new Map<string, EmbarkmentMissionLike[]>();
+    filteredEmbarkments.forEach(m => {
+      const key = `${normalizeStationName(m.station_name)}::${m.mission_date}`;
+      if (!buckets.has(key)) buckets.set(key, []);
+      buckets.get(key)!.push(m);
+    });
+    return Array.from(buckets.values()).map(missions => {
+      const first = missions[0];
+      const allTrains = missions.flatMap(m => m.trains);
+      const comments = missions.map(m => m.global_comment).filter(Boolean) as string[];
+      return {
+        mission: {
+          date: first.mission_date,
+          stationName: normalizeStationName(first.station_name),
+          globalComment: comments.length > 0 ? [...new Set(comments)].join(' | ') : '',
+          trains: allTrains,
+        },
+        isCompleted: missions.every(m => m.is_completed),
+      };
+    });
+  }, [filteredEmbarkments]);
+
   const handleExportEmbarkments = () => {
-    if (filteredEmbarkments.length === 0) {
+    if (groupedEmbarkments.length === 0) {
       toast.error("Aucun embarquement à exporter pour cette période");
       return;
     }
     try {
-      const grouped = filteredEmbarkments.map(m => ({
-        mission: {
-          date: m.mission_date,
-          stationName: m.station_name,
-          globalComment: m.global_comment || '',
-          trains: m.trains,
-        },
-        isCompleted: m.is_completed,
-      }));
-      downloadGroupedEmbarkmentPDF(grouped);
-      toast.success(`PDF embarquements généré (${filteredEmbarkments.length} mission${filteredEmbarkments.length > 1 ? 's' : ''})`);
+      downloadGroupedEmbarkmentPDF(groupedEmbarkments);
+      toast.success(`PDF embarquements généré (${groupedEmbarkments.length} mission${groupedEmbarkments.length > 1 ? 's' : ''})`);
     } catch {
       toast.error("Erreur lors de l'export des embarquements");
     }
@@ -550,7 +567,7 @@ export function ExportDialog({ controls, embarkments = [], open, onOpenChange }:
             {embarkments.length > 0 && (
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Embarquements</span>
-                <span className="font-medium">{filteredEmbarkments.length}</span>
+                <span className="font-medium">{groupedEmbarkments.length}</span>
               </div>
             )}
             <div className="flex justify-between text-sm">
@@ -652,28 +669,29 @@ export function ExportDialog({ controls, embarkments = [], open, onOpenChange }:
           </div>
         </div>
         
-        <DialogFooter className="flex-col sm:flex-row gap-2">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+        <DialogFooter className="flex flex-wrap gap-2 sm:justify-end">
+          <Button variant="outline" size="sm" onClick={() => onOpenChange(false)} className="order-last sm:order-none mr-auto sm:mr-0">
             Annuler
           </Button>
-          {filteredEmbarkments.length > 0 && (
-            <Button variant="secondary" onClick={handleExportEmbarkments}>
-              <Download className="h-4 w-4 mr-2" />
-              Embarquements ({filteredEmbarkments.length})
+          {groupedEmbarkments.length > 0 && (
+            <Button variant="secondary" size="sm" onClick={handleExportEmbarkments}>
+              <Download className="h-4 w-4 mr-1.5" />
+              Embarq. ({groupedEmbarkments.length})
             </Button>
           )}
           {exportFormat === 'pdf' && (
             <Button
               variant="secondary"
+              size="sm"
               onClick={handlePreview}
               disabled={filteredControls.length === 0}
             >
-              <Eye className="h-4 w-4 mr-2" />
-              Prévisualiser
+              <Eye className="h-4 w-4 mr-1.5" />
+              Aperçu
             </Button>
           )}
-          <Button onClick={handleExport} disabled={filteredControls.length === 0}>
-            <Download className="h-4 w-4 mr-2" />
+          <Button size="sm" onClick={handleExport} disabled={filteredControls.length === 0}>
+            <Download className="h-4 w-4 mr-1.5" />
             Contrôles ({filteredControls.length})
           </Button>
         </DialogFooter>

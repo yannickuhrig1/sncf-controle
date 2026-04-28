@@ -2,6 +2,12 @@
 
 Toutes les modifications notables de ce projet sont documentées dans ce fichier.
 
+## [1.17.1] - 2026-04-28
+
+### Corrigé
+- **Export — fusion des missions multi-agents** : les missions partageant la même gare et la même date sont désormais fusionnées en une seule entrée dans le PDF d'embarquements (auparavant : une page par agent même s'ils étaient sur les mêmes trains)
+- **Export — débordement du footer** : les boutons du dialogue d'export ne sortent plus de la page (flex-wrap + libellés raccourcis "Embarq." / "Aperçu")
+
 ## [1.17.0] - 2026-04-28
 
 ### Ajouté — Export des embarquements
