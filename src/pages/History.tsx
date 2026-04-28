@@ -640,6 +640,7 @@ export default function HistoryPage() {
       {/* Export Dialog */}
       <ExportDialog
         controls={mergeControlsByTrain(controls)}
+        embarkments={embarkmentMissions}
         open={exportOpen}
         onOpenChange={setExportOpen}
       />

@@ -42,18 +42,20 @@ import {
   ChevronRight,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { 
-  exportToPDF, 
-  exportToHTML, 
-  downloadHTML, 
-  generateEmailContent, 
+import {
+  exportToPDF,
+  exportToHTML,
+  downloadHTML,
+  generateEmailContent,
   openMailClient,
   downloadPDF,
   type ExportOptions,
   type ExportMode,
 } from '@/lib/exportUtils';
+import { downloadGroupedEmbarkmentPDF } from '@/lib/embarkmentExportUtils';
 import { calculateStats, formatFraudRate } from '@/lib/stats';
 import type { Database } from '@/integrations/supabase/types';
+import type { EmbarkmentTrain } from '@/components/controls/EmbarkmentControl';
 import { toast } from 'sonner';
 import { useUserPreferences, type PdfOrientation } from '@/hooks/useUserPreferences';
 import { PdfPreviewDialog } from './PdfPreviewDialog';
@@ -81,13 +83,22 @@ const MONTHS = [
 const currentYear = new Date().getFullYear();
 const YEARS = Array.from({ length: currentYear - 2019 }, (_, i) => 2020 + i).reverse();
 
+interface EmbarkmentMissionLike {
+  mission_date: string;
+  station_name: string;
+  global_comment: string | null;
+  trains: EmbarkmentTrain[];
+  is_completed: boolean;
+}
+
 interface ExportDialogProps {
   controls: Control[];
+  embarkments?: EmbarkmentMissionLike[];
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
-export function ExportDialog({ controls, open, onOpenChange }: ExportDialogProps) {
+export function ExportDialog({ controls, embarkments = [], open, onOpenChange }: ExportDialogProps) {
   const { preferences } = useUserPreferences();
   const [dateFilter, setDateFilter] = useState<DateFilterType>('today');
   const [customDateRange, setCustomDateRange] = useState<{ from: Date | undefined; to: Date | undefined }>({
@@ -173,6 +184,64 @@ export function ExportDialog({ controls, open, onOpenChange }: ExportDialogProps
         return controls;
     }
   }, [controls, dateFilter, customDateRange, selectedMonth, selectedMonthYear, weekOffset, monthOffset, yearOffset, selectedDay]);
+
+  // Filter embarkment missions with the same date logic
+  const filteredEmbarkments = useMemo(() => {
+    const now = new Date();
+    const inRange = (date: Date, start: Date, end: Date) => date >= start && date <= end;
+    const missionDate = (m: EmbarkmentMissionLike) => new Date(m.mission_date);
+
+    switch (dateFilter) {
+      case 'today':
+        return embarkments.filter(m => inRange(missionDate(m), startOfDay(selectedDay), endOfDay(selectedDay)));
+      case 'week': {
+        const refDate = weekOffset === 0 ? now : (weekOffset > 0 ? addWeeks(now, weekOffset) : subWeeks(now, Math.abs(weekOffset)));
+        return embarkments.filter(m => inRange(missionDate(m), startOfWeek(refDate, { weekStartsOn: 1 }), endOfWeek(refDate, { weekStartsOn: 1 })));
+      }
+      case 'month': {
+        const refDate = monthOffset === 0 ? now : (monthOffset > 0 ? addMonths(now, monthOffset) : subMonths(now, Math.abs(monthOffset)));
+        return embarkments.filter(m => inRange(missionDate(m), startOfMonth(refDate), endOfMonth(refDate)));
+      }
+      case 'specific_month': {
+        const targetDate = new Date(selectedMonthYear, selectedMonth, 1);
+        return embarkments.filter(m => inRange(missionDate(m), startOfMonth(targetDate), endOfMonth(targetDate)));
+      }
+      case 'year': {
+        const refDate = yearOffset === 0 ? now : (yearOffset > 0 ? addYears(now, yearOffset) : subYears(now, Math.abs(yearOffset)));
+        return embarkments.filter(m => inRange(missionDate(m), startOfYear(refDate), endOfYear(refDate)));
+      }
+      case 'custom': {
+        if (!customDateRange.from) return [];
+        const start = startOfDay(customDateRange.from);
+        const end = customDateRange.to ? endOfDay(customDateRange.to) : endOfDay(customDateRange.from);
+        return embarkments.filter(m => inRange(missionDate(m), start, end));
+      }
+      default:
+        return embarkments;
+    }
+  }, [embarkments, dateFilter, customDateRange, selectedMonth, selectedMonthYear, weekOffset, monthOffset, yearOffset, selectedDay]);
+
+  const handleExportEmbarkments = () => {
+    if (filteredEmbarkments.length === 0) {
+      toast.error("Aucun embarquement à exporter pour cette période");
+      return;
+    }
+    try {
+      const grouped = filteredEmbarkments.map(m => ({
+        mission: {
+          date: m.mission_date,
+          stationName: m.station_name,
+          globalComment: m.global_comment || '',
+          trains: m.trains,
+        },
+        isCompleted: m.is_completed,
+      }));
+      downloadGroupedEmbarkmentPDF(grouped);
+      toast.success(`PDF embarquements généré (${filteredEmbarkments.length} mission${filteredEmbarkments.length > 1 ? 's' : ''})`);
+    } catch {
+      toast.error("Erreur lors de l'export des embarquements");
+    }
+  };
 
   // Get date range string
   const getDateRangeString = () => {
@@ -478,6 +547,12 @@ export function ExportDialog({ controls, open, onOpenChange }: ExportDialogProps
               <span className="text-muted-foreground">Contrôles</span>
               <span className="font-medium">{filteredControls.length}</span>
             </div>
+            {embarkments.length > 0 && (
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Embarquements</span>
+                <span className="font-medium">{filteredEmbarkments.length}</span>
+              </div>
+            )}
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Voyageurs</span>
               <span className="font-medium">{stats.totalPassengers}</span>
@@ -581,10 +656,16 @@ export function ExportDialog({ controls, open, onOpenChange }: ExportDialogProps
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Annuler
           </Button>
+          {filteredEmbarkments.length > 0 && (
+            <Button variant="secondary" onClick={handleExportEmbarkments}>
+              <Download className="h-4 w-4 mr-2" />
+              Embarquements ({filteredEmbarkments.length})
+            </Button>
+          )}
           {exportFormat === 'pdf' && (
-            <Button 
-              variant="secondary" 
-              onClick={handlePreview} 
+            <Button
+              variant="secondary"
+              onClick={handlePreview}
               disabled={filteredControls.length === 0}
             >
               <Eye className="h-4 w-4 mr-2" />
@@ -593,7 +674,7 @@ export function ExportDialog({ controls, open, onOpenChange }: ExportDialogProps
           )}
           <Button onClick={handleExport} disabled={filteredControls.length === 0}>
             <Download className="h-4 w-4 mr-2" />
-            Exporter
+            Contrôles ({filteredControls.length})
           </Button>
         </DialogFooter>
       </DialogContent>

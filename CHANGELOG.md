@@ -2,6 +2,14 @@
 
 Toutes les modifications notables de ce projet sont documentées dans ce fichier.
 
+## [1.17.0] - 2026-04-28
+
+### Ajouté — Export des embarquements
+- **Bouton dédié dans l'`ExportDialog`** : "Embarquements (X)" qui exporte un PDF groupé des missions d'embarquement de la période sélectionnée
+- **Compteur "Embarquements"** dans le résumé du dialogue d'export quand des missions existent
+- Le bouton "Exporter" devient "Contrôles (X)" pour clarifier la séparation
+- Réutilise `downloadGroupedEmbarkmentPDF` (format dédié multi-missions paysage)
+
 ## [1.16.1] - 2026-04-28
 
 ### Corrigé
