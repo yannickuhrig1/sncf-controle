@@ -2,6 +2,13 @@
 
 Toutes les modifications notables de ce projet sont documentées dans ce fichier.
 
+## [1.18.0] - 2026-04-28
+
+### Ajouté — Onglet "Activité" dans Admin (admin only)
+- **Tableau par agent** avec sélecteur de période (jour / semaine / mois / tout) : nb contrôles, nb embarquements, voyageurs, fraudes, taux, dernière saisie. Tri sur chaque colonne.
+- **Présence en direct** : liste des agents en ligne (Supabase Realtime presence) avec leur dernière saisie.
+- **Journal d'activité** : timeline des 100 derniers événements (créations / modifications de contrôles et missions). Filtres par agent et recherche texte. Limite documentée : pas de tracking des suppressions ni des connexions (table d'audit non câblée).
+
 ## [1.17.3] - 2026-04-28
 
 ### Ajouté — PDF embarquement détaillé
