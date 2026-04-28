@@ -2,6 +2,16 @@
 
 Toutes les modifications notables de ce projet sont documentées dans ce fichier.
 
+## [1.17.3] - 2026-04-28
+
+### Ajouté — PDF embarquement détaillé
+- **Colonne "Commentaire"** ajoutée à la table des trains du PDF groupé (parité avec le PDF mission unique)
+- **Bloc "Commentaire global"** affiché après la table quand un commentaire de mission existe
+- **Largeurs de colonnes** harmonisées entre les deux exports (mission unique vs groupé)
+
+### Corrigé
+- **Emojis incidents** (👮 🚶 ⚠️ 📋) remplacés par texte (`Pol`, `Voies`, `Ligne`) — Helvetica de jsPDF ne les supporte pas et causait corruption + lettres espacées
+
 ## [1.17.2] - 2026-04-28
 
 ### Corrigé — PDF embarquement

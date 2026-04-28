@@ -228,13 +228,13 @@ export function exportEmbarkmentToPDF({ mission, includeStats = true, isComplete
       doc.roundedRect(incidentsX, yPosition, incidentCardWidth, incidentCardHeight, 3, 3, 'F');
       doc.setFontSize(10);
       doc.setTextColor(133, 100, 4);
-      doc.text(`👮 ${stats.incidentCounts.policePresence}`, incidentsX + incidentCardWidth / 2, yPosition + 14, { align: 'center' });
-      
+      doc.text(`Pol ${stats.incidentCounts.policePresence}`, incidentsX + incidentCardWidth / 2, yPosition + 14, { align: 'center' });
+
       doc.roundedRect(incidentsX + incidentCardWidth + incidentGap, yPosition, incidentCardWidth, incidentCardHeight, 3, 3, 'F');
-      doc.text(`🚶 ${stats.incidentCounts.trackCrossing}`, incidentsX + incidentCardWidth + incidentGap + incidentCardWidth / 2, yPosition + 14, { align: 'center' });
-      
+      doc.text(`Voies ${stats.incidentCounts.trackCrossing}`, incidentsX + incidentCardWidth + incidentGap + incidentCardWidth / 2, yPosition + 14, { align: 'center' });
+
       doc.roundedRect(incidentsX + 2 * (incidentCardWidth + incidentGap), yPosition, incidentCardWidth, incidentCardHeight, 3, 3, 'F');
-      doc.text(`⚠️ ${stats.incidentCounts.controlLineCrossing}`, incidentsX + 2 * (incidentCardWidth + incidentGap) + incidentCardWidth / 2, yPosition + 14, { align: 'center' });
+      doc.text(`Ligne ${stats.incidentCounts.controlLineCrossing}`, incidentsX + 2 * (incidentCardWidth + incidentGap) + incidentCardWidth / 2, yPosition + 14, { align: 'center' });
     }
     
     yPosition += cardHeight + 12;
@@ -243,15 +243,15 @@ export function exportEmbarkmentToPDF({ mission, includeStats = true, isComplete
   // Trains detail table
   doc.setFontSize(11);
   doc.setTextColor(0, 0, 139);
-  doc.text('📋 Détail des trains', 14, yPosition);
+  doc.text('Détail des trains', 14, yPosition);
   yPosition += 6;
 
   const trainTableData = mergedMission.trains.map(train => {
     const trainFraudRate = train.controlled > 0 ? (train.refused / train.controlled) * 100 : 0;
     const incidents = [
-      train.policePresence ? '👮' : '',
-      train.trackCrossing ? '🚶' : '',
-      train.controlLineCrossing ? '⚠️' : '',
+      train.policePresence ? 'Pol' : '',
+      train.trackCrossing ? 'Voies' : '',
+      train.controlLineCrossing ? 'Ligne' : '',
     ].filter(Boolean).join(' ') || '-';
     
     return [
@@ -987,9 +987,9 @@ export function downloadGroupedEmbarkmentPDF(missions: GroupedMissionExport[]) {
     const trainData = mission.trains.map(train => {
       const rate = train.controlled > 0 ? (train.refused / train.controlled) * 100 : 0;
       const incidents = [
-        train.policePresence ? '👮' : '',
-        train.trackCrossing ? '🚶' : '',
-        train.controlLineCrossing ? '⚠️' : '',
+        train.policePresence ? 'Pol' : '',
+        train.trackCrossing ? 'Voies' : '',
+        train.controlLineCrossing ? 'Ligne' : '',
       ].filter(Boolean).join(' ') || '-';
       return [
         train.trainNumber,
@@ -1001,17 +1001,30 @@ export function downloadGroupedEmbarkmentPDF(missions: GroupedMissionExport[]) {
         train.refused.toString(),
         `${rate.toFixed(1)}%`,
         incidents,
+        train.comment ? (train.comment.length > 60 ? train.comment.substring(0, 60) + '...' : train.comment) : '-',
       ];
     });
 
     autoTable(doc, {
       startY: y,
-      head: [['N° Train', 'Départ', 'Quai', 'Origine', 'Dest.', 'Ctrl.', 'Ref.', 'Fraude', 'Inc.']],
+      head: [['N° Train', 'Départ', 'Quai', 'Origine', 'Destination', 'Ctrl.', 'Ref.', 'Fraude', 'Inc.', 'Commentaire']],
       body: trainData,
       theme: 'grid',
-      headStyles: { fillColor: [0, 0, 139], fontSize: 9 },
+      headStyles: { fillColor: [0, 0, 139], fontSize: 9, fontStyle: 'bold' },
       bodyStyles: { fontSize: 9 },
       alternateRowStyles: { fillColor: [248, 250, 252] },
+      columnStyles: {
+        0: { cellWidth: 22, fontStyle: 'bold' },
+        1: { cellWidth: 18, halign: 'center' },
+        2: { cellWidth: 14, halign: 'center' },
+        3: { cellWidth: 35 },
+        4: { cellWidth: 35 },
+        5: { cellWidth: 14, halign: 'center' },
+        6: { cellWidth: 14, halign: 'center' },
+        7: { cellWidth: 18, halign: 'center' },
+        8: { cellWidth: 22, halign: 'center' },
+        9: { cellWidth: 'auto' },
+      },
       margin: { left: 14, right: 14 },
       didParseCell: function(data) {
         if (data.section === 'body' && data.column.index === 7) {
@@ -1024,6 +1037,24 @@ export function downloadGroupedEmbarkmentPDF(missions: GroupedMissionExport[]) {
         }
       },
     });
+
+    // Global comment if any
+    if (mission.globalComment && mission.globalComment.trim()) {
+      const finalY = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 8;
+      const boxY = finalY > pageHeight - 35 ? (doc.addPage(), 20) : finalY;
+      doc.setFillColor(240, 244, 248);
+      doc.roundedRect(14, boxY, pageWidth - 28, 24, 3, 3, 'F');
+      doc.setDrawColor(0, 0, 139);
+      doc.setLineWidth(0.5);
+      doc.line(14, boxY, 14, boxY + 24);
+      doc.setFontSize(9);
+      doc.setTextColor(0, 0, 139);
+      doc.text('Commentaire global', 18, boxY + 6);
+      doc.setFontSize(9);
+      doc.setTextColor(60, 60, 60);
+      const wrapped = doc.splitTextToSize(mission.globalComment.trim(), pageWidth - 36);
+      doc.text(wrapped, 18, boxY + 12);
+    }
 
     addFooter(mission.stationName);
     pageNumber++;
