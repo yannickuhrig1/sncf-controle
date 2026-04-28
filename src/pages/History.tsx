@@ -168,20 +168,37 @@ export default function HistoryPage() {
     return byDate;
   }, [embarkmentMissions, filters.locationFilter, filters.civileFilter, filters.policeFilter, filters.sugeFilter, filters.overcrowdedFilter, filters.cancelledFilter]);
 
-  // Merge embarkment-only dates into the grouped list
+  // Merge embarkment-only dates into the grouped list, and inject embarkment stats into each day's totals
   const allDayGroups = useMemo(() => {
+    const embarkStatsByDate: Record<string, { passengers: number; fraud: number }> = {};
+    Object.entries(embarkmentByDate).forEach(([date, missions]) => {
+      let passengers = 0;
+      let fraud = 0;
+      missions.forEach(m => {
+        m.trains.forEach((t: { controlled?: number; refused?: number }) => {
+          passengers += t.controlled ?? 0;
+          fraud += t.refused ?? 0;
+        });
+      });
+      embarkStatsByDate[date] = { passengers, fraud };
+    });
+
     const dates = new Set([
       ...groupedByDate.map(g => g.date),
       ...Object.keys(embarkmentByDate),
     ]);
     const map = new Map(groupedByDate.map(g => [g.date, g]));
+
     return Array.from(dates)
       .sort((a, b) => new Date(b).getTime() - new Date(a).getTime())
-      .map(date => map.get(date) ?? {
-        date,
-        groups: [],
-        solo: [],
-        totals: { passengers: 0, fraud: 0, rate: 0 },
+      .map(date => {
+        const base = map.get(date) ?? { date, groups: [], solo: [], totals: { passengers: 0, fraud: 0, rate: 0 } };
+        const extra = embarkStatsByDate[date];
+        if (!extra) return base;
+        const passengers = base.totals.passengers + extra.passengers;
+        const fraud = base.totals.fraud + extra.fraud;
+        const rate = passengers > 0 ? (fraud / passengers) * 100 : 0;
+        return { ...base, totals: { passengers, fraud, rate } };
       });
   }, [groupedByDate, embarkmentByDate]);
 

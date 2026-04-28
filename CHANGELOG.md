@@ -2,6 +2,14 @@
 
 Toutes les modifications notables de ce projet sont documentées dans ce fichier.
 
+## [1.16.1] - 2026-04-28
+
+### Corrigé
+- **Historique — totaux du jour** : voyageurs, fraudes et taux affichés dans l'en-tête d'un jour agrègent désormais aussi les missions d'embarquement (auparavant : 0 voyageurs et pas de taux quand un jour ne contenait que des embarquements)
+
+### Modifié
+- **Export — sélection de jour** : l'option "Aujourd'hui" devient "Jour" et permet de choisir librement la date à exporter via un calendrier
+
 ## [1.16.0] - 2026-04-28
 
 ### Refonte — Page Historique

@@ -96,6 +96,7 @@ export function ExportDialog({ controls, open, onOpenChange }: ExportDialogProps
   });
   const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth());
   const [selectedMonthYear, setSelectedMonthYear] = useState<number>(new Date().getFullYear());
+  const [selectedDay, setSelectedDay] = useState<Date>(new Date());
   const [exportFormat, setExportFormat] = useState<ExportFormat>('html');
   const [includeStats, setIncludeStats] = useState(true);
   const [pdfOrientation, setPdfOrientation] = useState<PdfOrientation>(
@@ -116,11 +117,11 @@ export function ExportDialog({ controls, open, onOpenChange }: ExportDialogProps
     
     switch (dateFilter) {
       case 'today': {
-        const todayStart = startOfDay(now);
-        const todayEnd = endOfDay(now);
+        const dayStart = startOfDay(selectedDay);
+        const dayEnd = endOfDay(selectedDay);
         return controls.filter(c => {
           const date = new Date(c.control_date);
-          return date >= todayStart && date <= todayEnd;
+          return date >= dayStart && date <= dayEnd;
         });
       }
       case 'week': {
@@ -171,14 +172,14 @@ export function ExportDialog({ controls, open, onOpenChange }: ExportDialogProps
       default:
         return controls;
     }
-  }, [controls, dateFilter, customDateRange, selectedMonth, selectedMonthYear, weekOffset, monthOffset, yearOffset]);
+  }, [controls, dateFilter, customDateRange, selectedMonth, selectedMonthYear, weekOffset, monthOffset, yearOffset, selectedDay]);
 
   // Get date range string
   const getDateRangeString = () => {
     const now = new Date();
     switch (dateFilter) {
       case 'today':
-        return format(now, 'dd MMMM yyyy', { locale: fr });
+        return format(selectedDay, 'dd MMMM yyyy', { locale: fr });
       case 'week': {
         const refDate = weekOffset === 0 ? now : (weekOffset > 0 ? addWeeks(now, weekOffset) : subWeeks(now, Math.abs(weekOffset)));
         const weekStart = startOfWeek(refDate, { weekStartsOn: 1 });
@@ -355,8 +356,33 @@ export function ExportDialog({ controls, open, onOpenChange }: ExportDialogProps
             }}>
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="today" id="today" />
-                <Label htmlFor="today" className="font-normal cursor-pointer">Aujourd'hui</Label>
+                <Label htmlFor="today" className="font-normal cursor-pointer">Jour</Label>
               </div>
+              {dateFilter === 'today' && (
+                <div className="pl-6">
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-8 justify-start text-left font-normal text-xs"
+                      >
+                        <CalendarIcon className="mr-2 h-3.5 w-3.5" />
+                        {format(selectedDay, 'dd MMMM yyyy', { locale: fr })}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={selectedDay}
+                        onSelect={(d) => d && setSelectedDay(d)}
+                        locale={fr}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+              )}
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="week" id="week" />
                 <Label htmlFor="week" className="font-normal cursor-pointer">Semaine</Label>
