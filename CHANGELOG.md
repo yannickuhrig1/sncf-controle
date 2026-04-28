@@ -2,6 +2,13 @@
 
 Toutes les modifications notables de ce projet sont documentées dans ce fichier.
 
+## [1.17.2] - 2026-04-28
+
+### Corrigé — PDF embarquement
+- **Caractères corrompus** : suppression des emojis 🚂 et ✓ dans les PDF d'embarquement (Helvetica de jsPDF ne les supporte pas, ils s'affichaient en `Ø=Þ‚` / `'`)
+- **Lettres espacées dans les titres** : conséquence des emojis ; les titres "SNCF Contrôles - Export Groupé" et "TERMINÉE" s'affichent désormais normalement
+- L'export HTML conserve les emojis (le navigateur les rend correctement)
+
 ## [1.17.1] - 2026-04-28
 
 ### Corrigé

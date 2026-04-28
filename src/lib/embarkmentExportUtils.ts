@@ -143,14 +143,14 @@ export function exportEmbarkmentToPDF({ mission, includeStats = true, isComplete
   
   doc.setFontSize(18);
   doc.setTextColor(255, 255, 255);
-  doc.text('🚂 SNCF Contrôles - Mission Embarquement', 14, 16);
-  
+  doc.text('SNCF Contrôles - Mission Embarquement', 14, 16);
+
   // Status badge
   if (isCompleted) {
     doc.setFillColor(34, 139, 34);
     doc.roundedRect(pageWidth - 45, 8, 35, 10, 3, 3, 'F');
     doc.setFontSize(9);
-    doc.text('✓ TERMINÉE', pageWidth - 27.5, 14.5, { align: 'center' });
+    doc.text('TERMINÉE', pageWidth - 27.5, 14.5, { align: 'center' });
   } else {
     doc.setFillColor(59, 130, 246);
     doc.roundedRect(pageWidth - 45, 8, 35, 10, 3, 3, 'F');
@@ -864,7 +864,7 @@ export function downloadGroupedEmbarkmentPDF(missions: GroupedMissionExport[]) {
   doc.rect(0, 0, pageWidth, 40, 'F');
   doc.setFontSize(22);
   doc.setTextColor(255, 255, 255);
-  doc.text('🚂 SNCF Contrôles - Export Groupé', pageWidth / 2, 20, { align: 'center' });
+  doc.text('SNCF Contrôles - Export Groupé', pageWidth / 2, 20, { align: 'center' });
   doc.setFontSize(14);
   doc.text(`${missions.length} mission(s) embarquement`, pageWidth / 2, 32, { align: 'center' });
 
@@ -884,7 +884,7 @@ export function downloadGroupedEmbarkmentPDF(missions: GroupedMissionExport[]) {
       stats.totalControlled.toString(),
       stats.totalRefused.toString(),
       `${stats.globalFraudRate.toFixed(1)}%`,
-      isCompleted ? '✓ Terminée' : 'En cours',
+      isCompleted ? 'Terminée' : 'En cours',
     ];
   });
 
@@ -933,13 +933,13 @@ export function downloadGroupedEmbarkmentPDF(missions: GroupedMissionExport[]) {
     doc.rect(0, 0, pageWidth, 28, 'F');
     doc.setFontSize(16);
     doc.setTextColor(255, 255, 255);
-    doc.text(`🚂 ${mission.stationName}`, 14, 16);
-    
+    doc.text(mission.stationName, 14, 16);
+
     if (isCompleted) {
       doc.setFillColor(34, 139, 34);
       doc.roundedRect(pageWidth - 45, 8, 35, 10, 3, 3, 'F');
       doc.setFontSize(9);
-      doc.text('✓ TERMINÉE', pageWidth - 27.5, 14.5, { align: 'center' });
+      doc.text('TERMINÉE', pageWidth - 27.5, 14.5, { align: 'center' });
     }
 
     doc.setFontSize(10);
