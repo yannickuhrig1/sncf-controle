@@ -2,6 +2,16 @@
 
 Toutes les modifications notables de ce projet sont documentées dans ce fichier.
 
+## [1.16.0] - 2026-04-28
+
+### Refonte — Page Historique
+- **Nouvelle carte contrôle** (`ControlCard`) : bandeau coloré gauche (vert / jaune / orange / rouge) selon le taux de fraude pour repérage visuel rapide
+- **Filtres condensés** : barre unifiée recherche + type + bouton "Filtres" (popover) regroupant badges (Civile, Police, SUGE, Sur-occ., Supprimé) et tri avancé. Compteur de filtres actifs sur le bouton.
+- **Chips supprimables** des filtres actifs sous la barre, avec compteur "X sur Y" intégré
+- **En-tête de jour repensé** (`HistoryDateGroup`) : sticky avec backdrop-blur, badge "Aujourd'hui" automatique, résumé voyageurs / fraudes / taux du jour
+- **Doublon supprimé** : la barre de recherche/filtres interne d'`EmbarkmentHistoryView` ne s'affiche plus quand le composant est rendu inline dans un jour (prop `embedded`) — la recherche du haut suffit
+- **Refactor** : logique filter/sort/group/merge extraite vers le hook `useHistoryFilters`. `History.tsx` passe de 1142 → 640 lignes
+
 ## [1.15.0] - 2026-04-22
 
 ### Ajouté — Contrôle en civile
