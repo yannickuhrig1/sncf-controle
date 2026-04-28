@@ -94,6 +94,10 @@ interface EmbarkmentHistoryViewProps {
   onDelete?: (id: string) => Promise<boolean>;
   onRemoveTrain?: (missionId: string, trainId: string) => Promise<boolean>;
   isLoading?: boolean;
+  /** Quand true, n'affiche que les cartes — pas de filtres, ni stats, ni en-tête de date.
+   *  Utilisé quand le composant est rendu à l'intérieur d'un HistoryDateGroup
+   *  qui fournit déjà la recherche globale et l'en-tête. */
+  embedded?: boolean;
 }
 
 // Avatar helpers (same as TrainGroupCard)
@@ -659,7 +663,7 @@ function MissionCard({ mission, onClick, onDelete }: { mission: EmbarkmentMissio
   );
 }
 
-export function EmbarkmentHistoryView({ missions, viewMode, profileMap = {}, onMissionClick, onDelete, onRemoveTrain, isLoading }: EmbarkmentHistoryViewProps) {
+export function EmbarkmentHistoryView({ missions, viewMode, profileMap = {}, onMissionClick, onDelete, onRemoveTrain, isLoading, embedded = false }: EmbarkmentHistoryViewProps) {
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   // Internal state for embarkment-specific filtering
   const [internalViewMode, setInternalViewMode] = useState<EmbarkmentViewMode>('list');
@@ -787,6 +791,48 @@ export function EmbarkmentHistoryView({ missions, viewMode, profileMap = {}, onM
 
   // Determine effective view mode (use internal for grid, parent for list/table)
   const effectiveViewMode = internalViewMode === 'grid' ? 'grid' : viewMode;
+
+  // Embedded mode: rendered inline inside HistoryDateGroup which already provides
+  // the date header and the global search. Skip filters, stats and date header.
+  if (embedded) {
+    const allGroups = sortedDates.flatMap(date => groupedByStationDate[date] ?? []);
+    if (allGroups.length === 0) return null;
+    return (
+      <>
+        <div className="space-y-2">
+          {allGroups.map((group) => (
+            <GroupedMissionCard
+              key={group.key}
+              group={group}
+              profileMap={profileMap}
+              onMissionClick={onMissionClick}
+              onDelete={onDelete ? handleDeleteRequest : undefined}
+              onRemoveTrain={onRemoveTrain}
+            />
+          ))}
+        </div>
+        <AlertDialog open={confirmDeleteId !== null} onOpenChange={(open) => { if (!open) setConfirmDeleteId(null); }}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Supprimer cette mission ?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Cette action est irréversible. La mission sera définitivement supprimée.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Annuler</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleDeleteConfirm}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                Supprimer
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </>
+    );
+  }
 
   // Render table view
   if (effectiveViewMode === 'table') {
