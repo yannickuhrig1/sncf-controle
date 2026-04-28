@@ -81,6 +81,8 @@ import { UserPlus, Phone } from 'lucide-react';
 import type { Database as DbType } from '@/integrations/supabase/types';
 import { useUserPreferences } from '@/hooks/useUserPreferences';
 import { FraudThresholdsSettings } from '@/components/admin/FraudThresholdsSettings';
+import { ActivityTab } from '@/components/admin/ActivityTab';
+import { Activity } from 'lucide-react';
 
 type Profile = DbType['public']['Tables']['profiles']['Row'];
 type Team = DbType['public']['Tables']['teams']['Row'];
@@ -672,11 +674,17 @@ export default function AdminPage() {
         {/* Tabs */}
         <Tabs defaultValue="users" className="space-y-4">
           <div className="overflow-x-auto pb-1">
-          <TabsList className={`grid w-full ${isAdmin() ? 'grid-cols-7' : 'grid-cols-6'} min-w-[560px]`}>
+          <TabsList className={`grid w-full ${isAdmin() ? 'grid-cols-8' : 'grid-cols-6'} min-w-[640px]`}>
             <TabsTrigger value="users" className="flex items-center gap-1 text-xs">
               <Users className="h-3.5 w-3.5" />
               Utilisateurs
             </TabsTrigger>
+            {isAdmin() && (
+              <TabsTrigger value="activity" className="flex items-center gap-1 text-xs">
+                <Activity className="h-3.5 w-3.5" />
+                Activité
+              </TabsTrigger>
+            )}
             <TabsTrigger value="teams" className="flex items-center gap-1 text-xs">
               <Building2 className="h-3.5 w-3.5" />
               Équipes
@@ -838,6 +846,16 @@ export default function AdminPage() {
               </CardContent>
             </Card>
           </TabsContent>
+
+          {/* Activity Tab (admin only) */}
+          {isAdmin() && (
+            <TabsContent value="activity" className="space-y-4">
+              <ActivityTab
+                onlineUsers={onlineUsers}
+                profileToUserId={Object.fromEntries(profiles.map(p => [p.id, p.user_id]))}
+              />
+            </TabsContent>
+          )}
 
           {/* Teams Tab */}
           <TabsContent value="teams" className="space-y-4">
