@@ -2,6 +2,11 @@
 
 Toutes les modifications notables de ce projet sont documentées dans ce fichier.
 
+## [1.19.1] - 2026-04-29
+
+### Modifié
+- **Audit log** : rétention réduite de 90 à 30 jours (migration `20260429080000_audit_log_retention_30d.sql`, déjà appliquée en prod)
+
 ## [1.19.0] - 2026-04-29
 
 ### Ajouté — Audit log applicatif (version pro)
