@@ -26,6 +26,11 @@ import {
   Pencil,
   PlusCircle,
   Search,
+  Trash2,
+  LogIn,
+  LogOut,
+  ShieldCheck,
+  UserCog,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAgentActivity, type ActivityPeriod, type AgentActivity } from '@/hooks/useAgentActivity';
@@ -60,10 +65,17 @@ function formatRelativeOrAbsolute(iso: string | null): string {
 
 function eventIcon(type: ActivityEvent['type']) {
   switch (type) {
-    case 'control_created':    return <PlusCircle className="h-3.5 w-3.5 text-emerald-600" />;
-    case 'control_updated':    return <Pencil className="h-3.5 w-3.5 text-blue-600" />;
-    case 'embarkment_created': return <Building2 className="h-3.5 w-3.5 text-emerald-600" />;
-    case 'embarkment_updated': return <Pencil className="h-3.5 w-3.5 text-blue-600" />;
+    case 'control_created':     return <PlusCircle className="h-3.5 w-3.5 text-emerald-600" />;
+    case 'control_updated':     return <Pencil className="h-3.5 w-3.5 text-blue-600" />;
+    case 'control_deleted':     return <Trash2 className="h-3.5 w-3.5 text-red-600" />;
+    case 'embarkment_created':  return <Building2 className="h-3.5 w-3.5 text-emerald-600" />;
+    case 'embarkment_updated':  return <Pencil className="h-3.5 w-3.5 text-blue-600" />;
+    case 'embarkment_deleted':  return <Trash2 className="h-3.5 w-3.5 text-red-600" />;
+    case 'role_change':         return <UserCog className="h-3.5 w-3.5 text-purple-600" />;
+    case 'approve':             return <ShieldCheck className="h-3.5 w-3.5 text-emerald-600" />;
+    case 'team_change':         return <UserCog className="h-3.5 w-3.5 text-indigo-600" />;
+    case 'login':               return <LogIn className="h-3.5 w-3.5 text-slate-500" />;
+    case 'logout':              return <LogOut className="h-3.5 w-3.5 text-slate-500" />;
   }
 }
 
@@ -75,7 +87,7 @@ export function ActivityTab({ onlineUsers, profileToUserId }: ActivityTabProps) 
   const [feedSearch, setFeedSearch] = useState('');
 
   const { activity, isLoading: activityLoading } = useAgentActivity(period);
-  const { events, isLoading: feedLoading } = useActivityFeed();
+  const { events, isLoading: feedLoading, hasAuditLog } = useActivityFeed();
 
   const sortedActivity = useMemo<AgentActivity[]>(() => {
     const sign = sortDir === 'asc' ? 1 : -1;
@@ -325,9 +337,11 @@ export function ActivityTab({ onlineUsers, profileToUserId }: ActivityTabProps) 
               ))}
             </ul>
           )}
-          <p className="mt-4 text-[11px] text-muted-foreground italic">
-            Limites : seules les créations et modifications sont visibles. Les suppressions et connexions ne sont pas tracées (table d'audit non câblée).
-          </p>
+          {!hasAuditLog && (
+            <p className="mt-4 text-[11px] text-muted-foreground italic">
+              Mode dégradé : la table d'audit n'est pas encore appliquée à la base. Seules les créations et modifications dérivées de <code>created_at</code>/<code>updated_at</code> sont affichées. Demandez à l'admin DB d'appliquer la migration <code>20260428120000_audit_log.sql</code> pour activer le tracking complet (suppressions, login/logout, changements de rôle).
+            </p>
+          )}
         </CardContent>
       </Card>
     </div>

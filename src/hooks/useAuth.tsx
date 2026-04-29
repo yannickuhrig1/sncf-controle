@@ -261,6 +261,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return { error: new Error('Votre compte est en attente de validation par un administrateur ou manager.') };
     }
 
+    // Log audit event (silently fail if RPC isn't deployed yet)
+    try {
+      await (supabase as any).rpc('log_auth_event', { p_action: 'login' });
+    } catch { /* RPC absente : ignore */ }
+
     return { error: null };
   };
 
@@ -290,6 +295,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signOut = async () => {
+    // Log BEFORE signing out so auth.uid() is still resolvable
+    try {
+      await (supabase as any).rpc('log_auth_event', { p_action: 'logout' });
+    } catch { /* RPC absente : ignore */ }
     clearAuthCache();
     await supabase.auth.signOut();
     setProfile(null);
