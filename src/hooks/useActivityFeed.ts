@@ -5,18 +5,32 @@ import type { Database } from '@/integrations/supabase/types';
 
 type Control = Database['public']['Tables']['controls']['Row'];
 
-export type ActivityEventType = 'control_created' | 'control_updated' | 'embarkment_created' | 'embarkment_updated';
+export type ActivityEventType =
+  | 'control_created' | 'control_updated' | 'control_deleted'
+  | 'embarkment_created' | 'embarkment_updated' | 'embarkment_deleted'
+  | 'role_change' | 'approve' | 'team_change'
+  | 'login' | 'logout';
 
 export interface ActivityEvent {
   id: string;
-  agentId: string;
+  agentId: string;       // profiles.id (résolu côté client)
+  userId: string | null; // auth.users.id (depuis audit_log.user_id)
   agentName: string;
   type: ActivityEventType;
   timestamp: string;
-  /** Description courte pour l'affichage timeline */
   summary: string;
-  /** Pour permettre cliquer et ouvrir le contrôle/mission */
-  refId: string;
+  refId: string | null;
+  meta: Record<string, any>;
+}
+
+interface AuditLogRow {
+  id: string;
+  created_at: string;
+  user_id: string | null;
+  action: string;
+  entity_type: string;
+  entity_id: string | null;
+  meta: Record<string, any>;
 }
 
 interface RawEmbarkmentMission {
@@ -29,27 +43,108 @@ interface RawEmbarkmentMission {
 }
 
 const FEED_LIMIT = 100;
+const UPDATE_THRESHOLD_MS = 60_000;
 
-/**
- * Considère un événement comme une "modification" (vs création) si la
- * différence entre updated_at et created_at dépasse cette tolérance.
- * Évite les faux positifs lors d'une création (Supabase écrit les deux
- * timestamps avec quelques ms d'écart). */
-const UPDATE_THRESHOLD_MS = 60_000; // 1 minute
+function buildSummary(action: string, entityType: string, meta: Record<string, any>): string {
+  const verb =
+    action === 'create' ? 'a créé' :
+    action === 'update' ? 'a modifié' :
+    action === 'delete' ? 'a supprimé' :
+    action === 'login' ? 's\'est connecté' :
+    action === 'logout' ? 's\'est déconnecté' :
+    action === 'role_change' ? `a changé le rôle de ${meta.profile_name || 'un utilisateur'} (${meta.old_role} → ${meta.new_role})` :
+    action === 'approve' ? `a approuvé ${meta.profile_name || 'un utilisateur'}` :
+    action === 'team_change' ? `a changé l'équipe de ${meta.profile_name || 'un utilisateur'}` :
+    action;
+
+  if (action === 'login' || action === 'logout' || action === 'role_change' || action === 'approve' || action === 'team_change') {
+    return verb;
+  }
+
+  if (entityType === 'control') {
+    const where = meta.train_number
+      ? `train ${meta.train_number}`
+      : meta.origin && meta.destination
+        ? `${meta.origin} → ${meta.destination}`
+        : meta.location ?? '';
+    return `${verb} un contrôle ${where}`.trim();
+  }
+
+  if (entityType === 'embarkment_mission') {
+    return `${verb} la mission ${meta.station_name ?? ''}`.trim();
+  }
+
+  return `${verb} ${entityType}`;
+}
+
+function mapAction(action: string, entityType: string): ActivityEventType {
+  if (entityType === 'control') {
+    if (action === 'create') return 'control_created';
+    if (action === 'update') return 'control_updated';
+    if (action === 'delete') return 'control_deleted';
+  }
+  if (entityType === 'embarkment_mission') {
+    if (action === 'create') return 'embarkment_created';
+    if (action === 'update') return 'embarkment_updated';
+    if (action === 'delete') return 'embarkment_deleted';
+  }
+  if (entityType === 'profile') {
+    if (action === 'role_change') return 'role_change';
+    if (action === 'approve') return 'approve';
+    if (action === 'team_change') return 'team_change';
+  }
+  if (action === 'login') return 'login';
+  if (action === 'logout') return 'logout';
+  return 'control_updated'; // fallback safe
+}
 
 export function useActivityFeed() {
+  // Profiles for name resolution (and user_id → profile.id mapping)
   const { data: profiles = [] } = useQuery({
     queryKey: ['admin-feed-profiles'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('profiles')
-        .select('id, first_name, last_name');
+        .select('id, user_id, first_name, last_name');
       if (error) throw error;
       return data ?? [];
     },
     staleTime: 5 * 60 * 1000,
   });
 
+  const userIdToProfile = useMemo(() => {
+    const m: Record<string, { id: string; name: string }> = {};
+    profiles.forEach(p => {
+      m[p.user_id] = {
+        id: p.id,
+        name: `${p.first_name ?? ''} ${p.last_name ?? ''}`.trim() || 'Agent inconnu',
+      };
+    });
+    return m;
+  }, [profiles]);
+
+  // Try the audit_log table first
+  const auditQuery = useQuery({
+    queryKey: ['admin-feed-audit-log'],
+    queryFn: async (): Promise<AuditLogRow[] | null> => {
+      const { data, error } = await (supabase as any)
+        .from('audit_log')
+        .select('id, created_at, user_id, action, entity_type, entity_id, meta')
+        .order('created_at', { ascending: false })
+        .limit(FEED_LIMIT);
+      if (error) {
+        // Table absente / RLS -> on remonte null pour déclencher le fallback
+        return null;
+      }
+      return data as AuditLogRow[];
+    },
+    staleTime: 30 * 1000,
+    retry: false,
+  });
+
+  const useFallback = auditQuery.data === null || auditQuery.isError;
+
+  // Fallback: derive from controls + embarkment_missions
   const { data: controls = [], isLoading: controlsLoading } = useQuery({
     queryKey: ['admin-feed-controls'],
     queryFn: async () => {
@@ -61,6 +156,7 @@ export function useActivityFeed() {
       if (error) throw error;
       return data as Control[];
     },
+    enabled: useFallback,
     staleTime: 30 * 1000,
   });
 
@@ -75,16 +171,32 @@ export function useActivityFeed() {
       if (error) throw error;
       return (data ?? []) as RawEmbarkmentMission[];
     },
+    enabled: useFallback,
     staleTime: 30 * 1000,
   });
 
-  const profileMap = useMemo(
-    () => Object.fromEntries(profiles.map(p => [p.id, `${p.first_name ?? ''} ${p.last_name ?? ''}`.trim() || 'Agent inconnu'])),
-    [profiles]
-  );
-
   const events = useMemo<ActivityEvent[]>(() => {
+    // Source 1: audit_log if available
+    if (!useFallback && auditQuery.data) {
+      return auditQuery.data.map(row => {
+        const profile = row.user_id ? userIdToProfile[row.user_id] : null;
+        return {
+          id: row.id,
+          agentId: profile?.id ?? '',
+          userId: row.user_id,
+          agentName: profile?.name ?? 'Agent inconnu',
+          type: mapAction(row.action, row.entity_type),
+          timestamp: row.created_at,
+          summary: buildSummary(row.action, row.entity_type, row.meta || {}),
+          refId: row.entity_id,
+          meta: row.meta || {},
+        };
+      });
+    }
+
+    // Source 2: derived events (legacy)
     const evs: ActivityEvent[] = [];
+    const profileById = Object.fromEntries(profiles.map(p => [p.id, `${p.first_name ?? ''} ${p.last_name ?? ''}`.trim()]));
 
     controls.forEach(c => {
       const created = new Date(c.created_at).getTime();
@@ -98,11 +210,13 @@ export function useActivityFeed() {
       evs.push({
         id: `c-${c.id}-${isUpdate ? 'u' : 'c'}`,
         agentId: c.agent_id,
-        agentName: profileMap[c.agent_id] ?? 'Agent inconnu',
+        userId: null,
+        agentName: profileById[c.agent_id] || 'Agent inconnu',
         type: isUpdate ? 'control_updated' : 'control_created',
         timestamp: isUpdate ? c.updated_at : c.created_at,
         summary: `${isUpdate ? 'a modifié' : 'a créé'} un contrôle ${where}`,
         refId: c.id,
+        meta: {},
       });
     });
 
@@ -113,21 +227,25 @@ export function useActivityFeed() {
       evs.push({
         id: `m-${m.id}-${isUpdate ? 'u' : 'c'}`,
         agentId: m.agent_id,
-        agentName: profileMap[m.agent_id] ?? 'Agent inconnu',
+        userId: null,
+        agentName: profileById[m.agent_id] || 'Agent inconnu',
         type: isUpdate ? 'embarkment_updated' : 'embarkment_created',
         timestamp: isUpdate ? m.updated_at : m.created_at,
         summary: `${isUpdate ? 'a modifié' : 'a créé'} la mission ${m.station_name}`,
         refId: m.id,
+        meta: {},
       });
     });
 
     return evs
       .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
       .slice(0, FEED_LIMIT);
-  }, [controls, missions, profileMap]);
+  }, [useFallback, auditQuery.data, userIdToProfile, controls, missions, profiles]);
 
   return {
     events,
-    isLoading: controlsLoading || missionsLoading,
+    isLoading: useFallback ? (controlsLoading || missionsLoading) : auditQuery.isLoading,
+    /** True quand on lit la table audit_log, false quand on tombe sur le fallback dérivé. */
+    hasAuditLog: !useFallback,
   };
 }

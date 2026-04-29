@@ -2,6 +2,18 @@
 
 Toutes les modifications notables de ce projet sont documentées dans ce fichier.
 
+## [1.19.0] - 2026-04-29
+
+### Ajouté — Audit log applicatif (version pro)
+- **Migration `20260428120000_audit_log.sql`** : table `audit_log` avec triggers `SECURITY DEFINER` sur `controls`, `embarkment_missions` et `profiles` (changements de rôle/équipe/approbation).
+- **RPC `log_auth_event(p_action)`** appelée à chaque login/logout côté client pour tracer les sessions.
+- **Lecture admin uniquement** via RLS, indexée sur `created_at`, `user_id`, `(entity_type, entity_id)`.
+- **Politique de rétention** : fonction `cleanup_audit_log()` supprime les entrées de plus de 90 jours (à brancher sur un cron Supabase).
+- **Hook `useActivityFeed`** lit désormais `audit_log` ; **fallback gracieux** sur les événements dérivés tant que la migration n'est pas appliquée.
+- **Nouveaux types d'événements** dans le journal : suppressions, login, logout, changement de rôle, approbation.
+
+> ⚠️ La migration SQL n'est pas appliquée automatiquement. Voir `supabase/migrations/20260428120000_audit_log.sql` et l'appliquer via Supabase Studio ou la CLI quand tu es prêt.
+
 ## [1.18.0] - 2026-04-28
 
 ### Ajouté — Onglet "Activité" dans Admin (admin only)
