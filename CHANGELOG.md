@@ -2,6 +2,11 @@
 
 Toutes les modifications notables de ce projet sont documentées dans ce fichier.
 
+## [1.19.2] - 2026-04-29
+
+### Ajouté
+- **pg_cron activé** : la fonction `cleanup_audit_log()` est désormais exécutée automatiquement tous les jours à 3h du matin (UTC) — supprime les entrées d'audit > 30 jours sans intervention manuelle (job `cleanup-audit-log-daily`)
+
 ## [1.19.1] - 2026-04-29
 
 ### Modifié
